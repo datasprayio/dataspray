@@ -18,9 +18,9 @@
         <skipITs />
     </properties>
 
-
     <modules>
         <module>dataspray-common</module>
+        <module>dataspray-core-parent</module>
     </modules>
 
     <scm>
