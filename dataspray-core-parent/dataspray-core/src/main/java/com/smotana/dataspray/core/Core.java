@@ -1,9 +1,16 @@
 package com.smotana.dataspray.core;
 
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Value;
+import com.smotana.dataspray.core.sample.SampleProject;
 
 public interface Core {
 
-    String install(String name);
+    /**
+     * Initialize a new project
+     */
+    void init(String name, SampleProject sample);
+
+    void install();
+
+    void deploy();
+
 }

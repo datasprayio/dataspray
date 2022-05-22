@@ -8,27 +8,22 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>dataspray-cli</artifactId>
+    <artifactId>dataspray-definition</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>DataSpray CLI</name>
+    <name>DataSpray Definition</name>
     <url>https://dataspray.io</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <mainClass>com.smotana.dataspray.core.Cli</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>info.picocli</groupId>
-            <artifactId>picocli-spring-boot-starter</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.smotana.dataspray.core</groupId>
-            <artifactId>dataspray-definition</artifactId>
-            <classifier>models</classifier>
+            <artifactId>dataspray-definition-generator</artifactId>
+            <classifier>generator</classifier>
             <version>${version}</version>
         </dependency>
 
@@ -69,34 +64,53 @@
                 </configuration>
             </plugin>
             <plugin>
-                <!-- TODO cross compile for macos/linux/win -->
-                <!-- https://blogs.oracle.com/developers/post/building-cross-platform-native-images-with-graalvm -->
-                <groupId>org.graalvm.buildtools</groupId>
-                <artifactId>native-maven-plugin</artifactId>
-                <extensions>true</extensions>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>build-native</id>
+                        <id>process-schema</id>
+                        <phase>generate-sources</phase>
                         <goals>
-                            <goal>build</goal>
+                            <goal>java</goal>
                         </goals>
-                        <phase>package</phase>
                     </execution>
                 </executions>
                 <configuration>
-                    <imageName>dataspray</imageName>
-                    <mainClass>${mainClass}</mainClass>
-                    <buildArgs>
-                        <buildArg>--verbose</buildArg>
-                        <!-- Include resource bundles here -->
-                        <!-- You may want to whitelist from the list in target/native/agent-output/test/session-*/resource-config.json -->
-                        <buildArg>-H:IncludeResourceBundles='net.sourceforge.argparse4j.internal.ArgumentParserImpl'
-                        </buildArg>
-                    </buildArgs>
-                    <agent>
-                        <enabled>true</enabled>
-                    </agent>
+                    <async>false</async>
+                    <mainClass>com.smotana.dataspray.definition.generator.DefinitionGenerator</mainClass>
+                    <includePluginDependencies>false</includePluginDependencies>
+                    <includeProjectDependencies>true</includeProjectDependencies>
+                    <addOutputToClasspath>false</addOutputToClasspath>
+                    <addResourcesToClasspath>false</addResourcesToClasspath>
+                    <arguments>
+                        <!-- schemaInputFileYaml -->
+                        <argument>${project.basedir}/src/main/resources/schema/dataspray.schema.yaml</argument>
+                        <!-- schemaOutputFileJson -->
+                        <argument>${project.build.directory}/generated-schema/dataspray.schema.json</argument>
+                        <!-- codeGenOutputDir -->
+                        <argument>${project.basedir}/src/main/java/</argument>
+                    </arguments>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>${project.basedir}/src/main/assembly/models.xml</descriptor>
+                        <descriptor>${project.basedir}/src/main/assembly/schema.xml</descriptor>
+                    </descriptors>
+                    <tarLongFileMode>posix</tarLongFileMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

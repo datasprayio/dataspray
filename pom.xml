@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.smotana.dataspray</groupId>
@@ -14,11 +15,12 @@
         <projectlombok.version>1.18.22</projectlombok.version>
         <node.version>v16.15.0</node.version>
         <pnpm.version>v7.0.0</pnpm.version>
-        <skipTests />
-        <skipITs />
+        <skipTests/>
+        <skipITs/>
     </properties>
 
     <modules>
+        <module>dataspray-site</module>
         <module>dataspray-common</module>
         <module>dataspray-core-parent</module>
     </modules>
@@ -43,6 +45,16 @@
             <url>https://s3-us-west-2.amazonaws.com/dynamodb-local/release</url>
         </repository>
     </repositories>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>30.1.1-jre</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
@@ -124,14 +136,4 @@
             </plugins>
         </pluginManagement>
     </build>
-
-    <dependencyManagement>
-        <dependencies>
-<!--            <dependency>-->
-<!--                <groupId>org.slf4j</groupId>-->
-<!--                <artifactId>slf4j-api</artifactId>-->
-<!--                <version>${slf4j.version}</version>-->
-<!--            </dependency>-->
-        </dependencies>
-    </dependencyManagement>
 </project>

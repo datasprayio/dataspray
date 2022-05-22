@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=https://json-schema.org/draft-03/schema
+$schema: https://json-schema.org/draft-07/schema
+# CodeGen feature support: https://github.com/joelittlejohn/jsonschema2pojo/wiki/Reference
+$id: https://dataspray.io/schema/dataspray.schema.json
+
+title: DataSpray definition
+description: DataSpray definition containing resources and configuration
+
+type: object
+required:
+  - dataspray
+properties:
+  version:
+    description: Version of DataSpray definition
+    enum:
+      - v0.0.1
+
+  kafkaStores:
+    type: array
+    items:
+      $ref: '#/$defs/kafkaStore'
+
+  javaProcessors:
+    type: array
+    items:
+      $ref: '#/$defs/javaProcessor'
+
+$defs:
+  item:
+    type: object
+    required:
+      - name
+    properties:
+      name:
+        type: string
+
+  store:
+    extends:
+      $ref: '#/$defs/item'
+    type: object
+    required:
+      - kind
+    properties:
+      kind:
+        type: string
+  kafkaStore:
+    extends:
+      $ref: '#/$defs/store'
+    type: object
+    required:
+      - endpoint
+    properties:
+      endpoint:
+        type: string
+
+  processor:
+    extends:
+      $ref: '#/$defs/item'
+    type: object
+  javaProcessor:
+    extends:
+      $ref: '#/$defs/processor'
+    type: object
+    required:
+      - processorType
+    properties:
+      processorType:
+        type: string
+
