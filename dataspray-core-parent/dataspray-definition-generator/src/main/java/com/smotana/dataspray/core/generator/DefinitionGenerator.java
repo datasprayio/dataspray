@@ -1,4 +1,4 @@
-package com.smotana.dataspray.definition.generator;
+package com.smotana.dataspray.core.generator;
 
 import org.jsonschema2pojo.Jsonschema2Pojo;
 

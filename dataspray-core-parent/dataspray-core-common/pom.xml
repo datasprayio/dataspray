@@ -8,11 +8,11 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>dataspray-core</artifactId>
+    <artifactId>dataspray-core-common</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>DataSpray Core</name>
+    <name>DataSpray Core Common</name>
     <url>https://dataspray.io</url>
 
     <properties>
@@ -21,10 +21,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.smotana.dataspray.core</groupId>
-            <artifactId>dataspray-definition</artifactId>
-            <classifier>models</classifier>
-            <version>${project.version}</version>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.dampcake</groupId>
+            <artifactId>gson-immutable</artifactId>
         </dependency>
     </dependencies>
 </project>

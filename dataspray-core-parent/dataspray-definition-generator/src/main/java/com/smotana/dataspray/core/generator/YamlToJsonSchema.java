@@ -1,4 +1,4 @@
-package com.smotana.dataspray.definition.generator;
+package com.smotana.dataspray.core.generator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

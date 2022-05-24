@@ -1,4 +1,4 @@
-package com.smotana.dataspray.definition.generator;
+package com.smotana.dataspray.core.generator;
 
 import org.jsonschema2pojo.AnnotationStyle;
 import org.jsonschema2pojo.DefaultGenerationConfig;
@@ -28,10 +28,7 @@ public class SchemaGenerationConfig extends DefaultGenerationConfig {
 
     @Override
     public FileFilter getFileFilter() {
-        return file -> {
-            System.err.println("Im here" + file.toString());
-            return file.isFile() && file.getName().endsWith(".yaml");
-        };
+        return file -> file.isFile() && file.getName().endsWith(".yaml");
     }
 
     @Override
@@ -76,7 +73,7 @@ public class SchemaGenerationConfig extends DefaultGenerationConfig {
 
     @Override
     public String getTargetPackage() {
-        return "com.smotana.dataspray.definition.model";
+        return "com.smotana.dataspray.core.definition.model";
     }
 
     @Override
@@ -104,7 +101,6 @@ public class SchemaGenerationConfig extends DefaultGenerationConfig {
         return true;
     }
 
-
     @Override
     public boolean isUseOptionalForGetters() {
         return true;
@@ -112,9 +108,8 @@ public class SchemaGenerationConfig extends DefaultGenerationConfig {
 
     @Override
     public boolean isRemoveOldOutput() {
-        return true;
+        return false;
     }
-
 
     @Override
     public boolean isIncludeConstructors() {
@@ -130,7 +125,6 @@ public class SchemaGenerationConfig extends DefaultGenerationConfig {
     public boolean isIncludeSetters() {
         return false;
     }
-
 
     @Override
     public boolean isIncludeDynamicAccessors() {

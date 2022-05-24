@@ -1,4 +1,4 @@
-package com.smotana.dataspray.core;
+package com.smotana.dataspray.core.cli;
 
 import org.junit.Test;
 

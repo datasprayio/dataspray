@@ -1,5 +1,7 @@
-package com.smotana.dataspray.core;
+package com.smotana.dataspray.core.cli;
 
+import com.google.inject.AbstractModule;
+import com.google.inject.Module;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
@@ -18,5 +20,14 @@ public class Install implements Runnable {
             System.out.printf("%s: %s",
                     code.toLowerCase(), new Locale(code).getDisplayLanguage());
         }
+    }
+
+    public static Module module() {
+        return new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(Install.class).asEagerSingleton();
+            }
+        };
     }
 }

@@ -10,11 +10,13 @@
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.22/lombok-1.18.22.jar" />
         </processorPath>
+        <module name="dataspray-definition-generator" />
+        <module name="dataspray-server" />
+        <module name="dataspray-cli" />
+        <module name="dataspray-core-common" />
         <module name="dataspray-site" />
         <module name="dataspray-core" />
-        <module name="dataspray-server" />
         <module name="dataspray-definition" />
-        <module name="dataspray-cli" />
       </profile>
     </annotationProcessing>
   </component>
