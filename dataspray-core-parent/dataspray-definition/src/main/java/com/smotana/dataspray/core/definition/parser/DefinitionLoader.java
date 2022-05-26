@@ -6,11 +6,15 @@ import java.io.InputStream;
 import java.io.Reader;
 
 public interface DefinitionLoader {
-    DataSprayDefinition loadAsYaml(Reader definitionReader);
+    DataSprayDefinition fromYaml(Reader definitionReader);
 
-    DataSprayDefinition loadAsYaml(InputStream definitionInputStream);
+    DataSprayDefinition fromYaml(InputStream definitionInputStream);
 
-    DataSprayDefinition loadAsYaml(String definitionStr);
+    DataSprayDefinition fromYaml(String definitionStr);
 
-    DataSprayDefinition loadAsJson(String definitionStr);
+    DataSprayDefinition fromJson(String definitionStr);
+
+    String toJson(DataSprayDefinition definition, boolean prettyPrint);
+
+    String toYaml(DataSprayDefinition definition);
 }

@@ -53,7 +53,7 @@ public class SchemaGenerationConfig extends DefaultGenerationConfig {
 
     @Override
     public AnnotationStyle getAnnotationStyle() {
-        return AnnotationStyle.GSON;
+        return AnnotationStyle.JACKSON2;
     }
 
     @Override
@@ -63,7 +63,7 @@ public class SchemaGenerationConfig extends DefaultGenerationConfig {
 
     @Override
     public boolean isIncludeTypeInfo() {
-        return true;
+        return false;
     }
 
     @Override
@@ -119,6 +119,11 @@ public class SchemaGenerationConfig extends DefaultGenerationConfig {
     @Override
     public boolean isIncludeCopyConstructor() {
         return true;
+    }
+
+    @Override
+    public boolean isIncludeAdditionalProperties() {
+        return false;
     }
 
     @Override

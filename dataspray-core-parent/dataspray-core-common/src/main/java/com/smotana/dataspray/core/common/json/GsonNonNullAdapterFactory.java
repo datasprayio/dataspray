@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-package com.smotana.dataspray.core.definition.json;
+package com.smotana.dataspray.core.common.json;
 
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;

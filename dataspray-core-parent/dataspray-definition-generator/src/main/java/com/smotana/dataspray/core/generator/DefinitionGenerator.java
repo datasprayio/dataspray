@@ -1,5 +1,8 @@
 package com.smotana.dataspray.core.generator;
 
+import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
+import com.google.inject.Module;
 import org.jsonschema2pojo.Jsonschema2Pojo;
 
 import java.io.File;
@@ -8,20 +11,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 public class DefinitionGenerator {
-    private final String schemaInputFileYaml;
-    private final String schemaOutputFileJson;
-    private final String codeGenOutputDir;
 
-    private DefinitionGenerator(
+    @Inject
+    private YamlToJsonSchema yamlToJsonSchema;
+
+    public void run(
             String schemaInputFileYaml,
             String schemaOutputFileJson,
-            String codeGenOutputDir) {
-        this.schemaInputFileYaml = schemaInputFileYaml;
-        this.schemaOutputFileJson = schemaOutputFileJson;
-        this.codeGenOutputDir = codeGenOutputDir;
-    }
-
-    public void run() throws IOException {
+            String codeGenOutputDir) throws IOException {
         System.err.println("SchemaProcessor loading yaml from: " + schemaInputFileYaml);
         final URL schemaInputFileYamlUrl;
         File schemaInputFile = new File(schemaInputFileYaml);
@@ -44,7 +41,7 @@ public class DefinitionGenerator {
             }
         }
         System.err.println("SchemaProcessor generating json to: " + schemaOutputFileJson);
-        new YamlToJsonSchema(schemaInputFileYamlUrl, schemaOutputFile).convert();
+        yamlToJsonSchema.convert(schemaInputFileYamlUrl, schemaOutputFile);
 
         // Generate pojos
         System.err.println("SchemaProcessor generating pojo to: " + codeGenOutputDir);
@@ -55,8 +52,18 @@ public class DefinitionGenerator {
                 new SystemRuleLogger());
     }
 
+    public static Module module() {
+        return new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(DefinitionGenerator.class).asEagerSingleton();
+            }
+        };
+    }
+
     public static void main(String[] args) throws Exception {
         assert args.length == 3;
-        new DefinitionGenerator(args[0], args[1], args[2]).run();
+        GeneratorInjector.INSTANCE.get().getInstance(DefinitionGenerator.class)
+                .run(args[0], args[1], args[2]);
     }
 }

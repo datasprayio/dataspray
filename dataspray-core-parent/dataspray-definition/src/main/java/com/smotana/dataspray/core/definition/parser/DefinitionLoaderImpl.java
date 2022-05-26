@@ -1,14 +1,16 @@
 package com.smotana.dataspray.core.definition.parser;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.smotana.dataspray.core.definition.model.DataSprayDefinition;
 import lombok.extern.slf4j.Slf4j;
-import org.yaml.snakeyaml.Yaml;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 
@@ -16,55 +18,85 @@ import java.io.Reader;
 public class DefinitionLoaderImpl implements DefinitionLoader {
 
     @Inject
-    private Gson gson;
-    @Inject
     private DefinitionValidator validator;
+    @Inject
+    private ObjectMapper objectMapper;
 
-    @Override
-    public DataSprayDefinition loadAsYaml(Reader definitionYamlReader) {
-        String definitionJsonStr;
-        try {
-            definitionJsonStr = gson.toJson(new Yaml().load(definitionYamlReader));
-        } catch (Exception ex) {
-            throw new DefinitionLoadingException(ex.getMessage(), ex);
-        }
-        return loadAsJson(definitionJsonStr);
+    private ObjectWriter objectWriterPrettyPrint;
+
+    @Inject
+    private void setup() {
+        this.objectWriterPrettyPrint = objectMapper.copy().writerWithDefaultPrettyPrinter();
     }
 
     @Override
-    public DataSprayDefinition loadAsYaml(InputStream definitionYamlInputStream) {
-        String definitionJsonStr;
-        try {
-            definitionJsonStr = gson.toJson(new Yaml().load(definitionYamlInputStream));
-        } catch (Exception ex) {
-            throw new DefinitionLoadingException(ex.getMessage(), ex);
-        }
-        return loadAsJson(definitionJsonStr);
-    }
-
-    @Override
-    public DataSprayDefinition loadAsYaml(String definitionYamlStr) {
-        String definitionJsonStr;
-        try {
-            definitionJsonStr = gson.toJson(new Yaml().load(definitionYamlStr));
-        } catch (Exception ex) {
-            throw new DefinitionLoadingException(ex.getMessage(), ex);
-        }
-        return loadAsJson(definitionJsonStr);
-    }
-
-    @Override
-    public DataSprayDefinition loadAsJson(String definitionStr) {
+    public DataSprayDefinition fromYaml(Reader definitionYamlReader) {
         DataSprayDefinition definition;
         try {
-            definition = gson.fromJson(definitionStr, DataSprayDefinition.class);
-        } catch (JsonSyntaxException ex) {
+            definition = new YAMLMapper().readValue(definitionYamlReader, DataSprayDefinition.class);
+        } catch (IOException ex) {
             throw new DefinitionLoadingException(ex.getMessage(), ex);
         }
-
         validator.validate(definition);
-
         return definition;
+    }
+
+    @Override
+    public DataSprayDefinition fromYaml(InputStream definitionYamlInputStream) {
+        DataSprayDefinition definition;
+        try {
+            definition = new YAMLMapper().readValue(definitionYamlInputStream, DataSprayDefinition.class);
+        } catch (IOException ex) {
+            throw new DefinitionLoadingException(ex.getMessage(), ex);
+        }
+        validator.validate(definition);
+        return definition;
+    }
+
+    @Override
+    public DataSprayDefinition fromYaml(String definitionYamlStr) {
+        DataSprayDefinition definition;
+        try {
+            definition = new YAMLMapper().readValue(definitionYamlStr, DataSprayDefinition.class);
+        } catch (IOException ex) {
+            throw new DefinitionLoadingException(ex.getMessage(), ex);
+        }
+        validator.validate(definition);
+        return definition;
+    }
+
+    @Override
+    public DataSprayDefinition fromJson(String definitionStr) {
+        DataSprayDefinition definition;
+        try {
+            definition = objectMapper.readValue(definitionStr, DataSprayDefinition.class);
+        } catch (IOException ex) {
+            throw new DefinitionLoadingException(ex.getMessage(), ex);
+        }
+        validator.validate(definition);
+        return definition;
+    }
+
+    @Override
+    public String toJson(DataSprayDefinition definition, boolean prettyPrint) {
+        try {
+            return prettyPrint
+                    ? objectWriterPrettyPrint.writeValueAsString(definition)
+                    : objectMapper.writeValueAsString(definition);
+        } catch (JsonProcessingException ex) {
+            throw new DefinitionLoadingException(ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public String toYaml(DataSprayDefinition definition) {
+        String definitionJson = toJson(definition, false);
+        try {
+            return new YAMLMapper().writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(objectMapper.readTree(definitionJson));
+        } catch (JsonProcessingException ex) {
+            throw new DefinitionLoadingException(ex.getMessage(), ex);
+        }
     }
 
     public static Module module() {

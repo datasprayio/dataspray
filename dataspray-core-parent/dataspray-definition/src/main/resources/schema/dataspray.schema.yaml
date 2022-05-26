@@ -25,14 +25,10 @@ properties:
     items:
       $ref: '#/$defs/kafkaStore'
 
-  # TODO cloudProcessors:
-  #    type: array
-  #    items:
-  #      $ref: '#/$defs/cloudProcessor'
-  samzaProcessors:
+  javaProcessors:
     type: array
     items:
-      $ref: '#/$defs/samzaProcessor'
+      $ref: '#/$defs/javaProcessor'
 
 $defs:
   ###
@@ -54,8 +50,11 @@ $defs:
       $ref: '#/$defs/item'
     type: object
     required:
+      - name
       - serde
     properties:
+      name:
+        type: string
       serde:
         enum:
           # TODO xml, thrift, capnp, flatbuffers, sbe, ...
@@ -147,19 +146,35 @@ $defs:
     type: object
 
   # Java
-  samzaProcessor:
+  javaProcessor:
     extends:
       $ref: '#/$defs/processor'
     type: object
     required:
-      - processorType
+      - dialect
     properties:
       dialect:
-        enum: [ java, javaSamza ]
-      stores:
-        type: object
-      kafkaStoreNames:
+        enum: [ vanilla, samza ]
+      inputs:
         type: array
         items:
-          type: string
+          type: object
+          required:
+            - dataFormatName
+          properties:
+            name:
+              type: string
+            dataFormatName:
+              type: string
+      outputs:
+        type: array
+        items:
+          type: object
+          required:
+            - dataFormatName
+          properties:
+            name:
+              type: string
+            dataFormatName:
+              type: string
 

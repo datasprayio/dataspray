@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.smotana.dataspray.core.definition.model.DataFormat;
 import com.smotana.dataspray.core.definition.model.DataSprayDefinition;
 import com.smotana.dataspray.core.definition.model.KafkaStore;
 import lombok.extern.slf4j.Slf4j;
@@ -17,15 +18,22 @@ public class DefinitionValidatorImpl implements DefinitionValidator {
 
     @Override
     public void validate(DataSprayDefinition definition) throws DefinitionLoadingException {
-        ImmutableSet<String> kafkaStoreNames = validateUniqueAndGetResourceNames("KafkaStores", definition.getKafkaStores().stream().flatMap(Collection::stream)
+        ImmutableSet<String> dataFormatNames = validateUniqueAndGetResourceNames("data format", definition.getDataFormats().stream().flatMap(Collection::stream)
+                .map(DataFormat::getName));
+        ImmutableSet<String> kafkaStoreNames = validateUniqueAndGetResourceNames("Kafka store", definition.getKafkaStores().stream().flatMap(Collection::stream)
                 .map(KafkaStore::getName));
 
         // TODO assert all references are valid, here is an example:
         // Java processors
-        definition.getSamzaProcessors().stream().flatMap(Collection::stream).forEach(processor -> {
-            processor.getKafkaStoreNames().stream().flatMap(Collection::stream).forEach(kafkaStoreName -> {
-                if (!kafkaStoreNames.contains(kafkaStoreName)) {
-                    throw new DefinitionLoadingException("Processor " + processor.getName() + " using non-existent store " + kafkaStoreName);
+        definition.getJavaProcessors().stream().flatMap(Collection::stream).forEach(processor -> {
+            processor.getInputs().stream().flatMap(Collection::stream).forEach(input -> {
+                if (!dataFormatNames.contains(input.getDataFormatName())) {
+                    throw new DefinitionLoadingException("Processor " + processor.getName() + " using input " + input.getName() + " with non-existent data format " + input.getDataFormatName());
+                }
+            });
+            processor.getOutputs().stream().flatMap(Collection::stream).forEach(output -> {
+                if (!dataFormatNames.contains(output.getDataFormatName())) {
+                    throw new DefinitionLoadingException("Processor " + processor.getName() + " using output " + output.getName() + " with non-existent data format " + output.getDataFormatName());
                 }
             });
         });

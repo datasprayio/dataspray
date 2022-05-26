@@ -1,9 +1,7 @@
-package com.smotana.dataspray.core.definition.json;
+package com.smotana.dataspray.core.common.json;
 
-import com.dampcake.gson.immutable.ImmutableAdapterFactory;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -23,27 +21,21 @@ import java.time.LocalDate;
 
 @Slf4j
 @Singleton
-public class GsonProvider implements Provider<Gson> {
-    private Gson gson;
+public class JacksonProvider implements Provider<ObjectMapper> {
+    private volatile ObjectMapper objectMapper;
 
     @Override
-    public Gson get() {
-        if (gson == null) {
-            synchronized (GsonProvider.class) {
-                if (gson == null) {
-                    gson = new GsonBuilder()
-                            .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
-                            .disableHtmlEscaping()
-                            .registerTypeAdapterFactory(ImmutableAdapterFactory.forGuava())
-                            .registerTypeAdapterFactory(new GsonNonNullAdapterFactory())
-                            .registerTypeAdapter(Instant.class, new InstantTypeConverter())
-                            .registerTypeAdapter(LocalDate.class, new LocalDateTypeConverter())
-                            .registerTypeAdapterFactory(ExplicitNull.get())
-                            .create();
+    public ObjectMapper get() {
+        if (objectMapper == null) {
+            synchronized (JacksonProvider.class) {
+                if (objectMapper == null) {
+                    objectMapper = new ObjectMapper()
+                            .registerModule(new Jdk8Module().configureAbsentsAsNulls(true))
+                            .findAndRegisterModules();
                 }
             }
         }
-        return gson;
+        return objectMapper;
     }
 
     private static class InstantTypeConverter
@@ -76,7 +68,7 @@ public class GsonProvider implements Provider<Gson> {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(Gson.class).toProvider(GsonProvider.class).asEagerSingleton();
+                bind(ObjectMapper.class).toProvider(JacksonProvider.class).asEagerSingleton();
             }
         };
     }

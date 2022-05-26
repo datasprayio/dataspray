@@ -1,4 +1,4 @@
-package com.smotana.dataspray.core.definition.json;
+package com.smotana.dataspray.core.common.json;
 
 import com.dampcake.gson.immutable.ImmutableAdapterFactory;
 import com.google.gson.FieldNamingPolicy;
@@ -24,7 +24,7 @@ import java.time.LocalDate;
 @Slf4j
 @Singleton
 public class GsonProvider implements Provider<Gson> {
-    private Gson gson;
+    private volatile Gson gson;
 
     @Override
     public Gson get() {

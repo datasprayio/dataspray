@@ -14,7 +14,6 @@ public class CoreImpl implements Core {
         checkArgument(projectName.matches("^[a-zA-Z0-9-_.]$"), "Project name can only contain: A-Z a-z 0-9 - _ .");
         File projectDir = Paths.get(".", projectName).toFile();
         projectDir.mkdir();
-
     }
 
     @Override

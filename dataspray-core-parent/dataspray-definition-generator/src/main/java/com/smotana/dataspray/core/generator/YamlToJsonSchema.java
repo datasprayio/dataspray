@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
+import com.google.inject.Module;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,15 +18,11 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class YamlToJsonSchema {
-    private final URL schemaInputFileYamlUrl;
-    private final File schemaOutputFile;
 
-    public YamlToJsonSchema(URL schemaInputFileYamlUrl, File schemaOutputFile) {
-        this.schemaInputFileYamlUrl = schemaInputFileYamlUrl;
-        this.schemaOutputFile = schemaOutputFile;
-    }
+    @Inject
+    private ObjectMapper objectMapper;
 
-    public void convert() throws IOException {
+    public void convert(URL schemaInputFileYamlUrl, File schemaOutputFile) throws IOException {
         ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
         JsonNode node = yamlReader.readTree(schemaInputFileYamlUrl);
 
@@ -64,5 +63,14 @@ public class YamlToJsonSchema {
             }
         }
         return node;
+    }
+
+    public static Module module() {
+        return new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(YamlToJsonSchema.class).asEagerSingleton();
+            }
+        };
     }
 }
