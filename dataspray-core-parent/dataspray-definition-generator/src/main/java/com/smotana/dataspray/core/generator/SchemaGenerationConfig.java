@@ -48,7 +48,7 @@ public class SchemaGenerationConfig extends DefaultGenerationConfig {
 
     @Override
     public boolean isIncludeDynamicBuilders() {
-        return false;
+        return true;
     }
 
     @Override

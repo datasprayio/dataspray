@@ -56,7 +56,8 @@
                         <configuration>
                             <filesets>
                                 <fileset>
-                                    <directory>${project.basedir}/src/java/com/smotana/dataspray/definition/model
+                                    <directory>
+                                        ${project.basedir}/src/main/java/com/smotana/dataspray/core/definition/model
                                     </directory>
                                     <includes>
                                         <include>**</include>

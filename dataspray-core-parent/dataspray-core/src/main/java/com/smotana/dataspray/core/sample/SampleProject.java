@@ -15,10 +15,12 @@ import com.smotana.dataspray.core.definition.model.Topic;
 import java.util.List;
 
 public enum SampleProject {
-    EMPTY(new DataSprayDefinitionBuilder()
+    EMPTY(name -> new DataSprayDefinitionBuilder()
+            .withName(name)
             .withVersion(Version.V_1_0_0)
             .build()),
-    CLOUD(new DataSprayDefinitionBuilder()
+    CLOUD(name -> new DataSprayDefinitionBuilder()
+            .withName(name)
             .withVersion(Version.V_1_0_0)
             .withDataFormats(List.of(
                     new DataFormat.DataFormatBuilder()
@@ -73,13 +75,17 @@ public enum SampleProject {
                             .build()))
             .build());
 
-    private final DataSprayDefinition definition;
+    private final DefinitionCreator creator;
 
-    SampleProject(DataSprayDefinition definition) {
-        this.definition = definition;
+    SampleProject(DefinitionCreator creator) {
+        this.creator = creator;
     }
 
-    public DataSprayDefinition getDefinition() {
-        return definition;
+    public DataSprayDefinition getDefinitionForName(String name) {
+        return creator.create(name);
+    }
+
+    public interface DefinitionCreator {
+        DataSprayDefinition create(String name);
     }
 }

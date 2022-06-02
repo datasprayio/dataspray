@@ -73,6 +73,7 @@
                         </buildArg>
                     </buildArgs>
                     <!-- Don't be lied to, this property is allowed -->
+                    <!-- https://graalvm.github.io/native-build-tools/latest/maven-plugin.html#agent-support -->
                     <agent>
                         <enabled>true</enabled>
                     </agent>

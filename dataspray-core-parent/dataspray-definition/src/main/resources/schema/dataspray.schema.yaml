@@ -8,12 +8,16 @@ description: DataSpray definition containing resources and configuration
 
 type: object
 required:
-  - dataspray
+  - version
+  - name
 properties:
   version:
     description: Version of DataSpray definition
     enum:
       - v1.0.0
+  name:
+    description: Project name
+    type: string
 
   dataFormats:
     type: array

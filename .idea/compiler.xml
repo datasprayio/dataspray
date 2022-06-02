@@ -20,5 +20,10 @@
         <module name="dataspray-definition" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="dataspray-core-processors-parent" target="17" />
+      <module name="dataspray-processor-java" target="17" />
+      <module name="dataspray-processors" target="17" />
+    </bytecodeTargetLevel>
   </component>
 </project>
