@@ -1,6 +1,8 @@
 package com.smotana.dataspray.core;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
+import com.google.inject.Module;
 import com.smotana.dataspray.core.sample.SampleProject;
 
 import java.io.IOException;
@@ -15,14 +17,13 @@ public class CoreImpl implements Core {
     public void init(String projectName, SampleProject sample) throws IOException {
         checkArgument(projectName.matches("^[a-zA-Z0-9-_.]$"), "Project name can only contain: A-Z a-z 0-9 - _ .");
 
-        Project project = codegen.initProject(projectName, sample);
+        Project project = codegen.initProject(".", projectName, sample);
 
         codegen.generateAll(project);
     }
 
     @Override
     public void install() {
-
     }
 
     @Override
@@ -33,5 +34,14 @@ public class CoreImpl implements Core {
     @Override
     public void deploy() {
 
+    }
+
+    public static Module module() {
+        return new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(Core.class).to(CoreImpl.class).asEagerSingleton();
+            }
+        };
     }
 }

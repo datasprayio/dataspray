@@ -2,7 +2,9 @@ package com.smotana.dataspray.core;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
+import com.google.inject.Module;
 import com.samskivert.mustache.Mustache;
 import com.smotana.dataspray.core.definition.model.DataSprayDefinition;
 import com.smotana.dataspray.core.definition.model.Item;
@@ -21,6 +23,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,8 +41,8 @@ public class CodegenImpl implements Codegen {
     DefinitionLoader definitionLoader;
 
     @Override
-    public Project initProject(String projectName, SampleProject sample) throws IOException {
-        Path projectPath = Path.of(".", projectName);
+    public Project initProject(String basePath, String projectName, SampleProject sample) throws IOException {
+        Path projectPath = Path.of(basePath, projectName);
         File projectDir = projectPath.toFile();
 
         // Create project folder
@@ -89,18 +92,66 @@ public class CodegenImpl implements Codegen {
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("Cannot find java processor with name " + processorName));
 
-        createProcessorDir(project, processorName);
+        Path processorPath = createProcessorDir(project, processorName);
+        Template template;
+        switch (processor.getDialect()) {
+            case VANILLA -> template = Template.JAVA;
+            case SAMZA -> throw new RuntimeException("Samza not yet supported");
+            default -> throw new RuntimeException(processor.getDialect() + " not yet supported");
+        }
+        codegen(project, processorPath, template);
     }
 
-    private void createProcessorDir(Project project, String processorName) {
-        Path processorPath = Path.of(project.getPath().toString(), processorName);
-        if (processorPath.toFile().mkdir()) {
-            log.info("Created processor folder " + processorPath);
-        }
+    @Override
+    public void installAll(Project project) {
+        project.getDefinition()
+                .getJavaProcessors()
+                .stream()
+                .flatMap(Collection::stream)
+                .map(Item::getName)
+                .forEach(processorName -> installJava(project, processorName));
     }
 
     @SneakyThrows
-    private void codegen(Project project, Path processorPath, Template template, Object context) {
+    @Override
+    public void installJava(Project project, String processorName) {
+        JavaProcessor processor = project.getDefinition()
+                .getJavaProcessors()
+                .stream()
+                .flatMap(Collection::stream)
+                .filter(p -> p.getName().equals(processorName))
+                .findAny()
+                .orElseThrow(() -> new RuntimeException("Cannot find java processor with name " + processorName));
+
+        ProcessBuilder processBuilder = isWindows()
+                ? new ProcessBuilder("cmd.exe", "/c", "mvn clean install")
+                : new ProcessBuilder("sh", "-c", "mvn clean install");
+        processBuilder.directory(getProcessorDir(project, processorName).toFile());
+        processBuilder.redirectError(Redirect.INHERIT);
+        processBuilder.redirectInput(Redirect.INHERIT);
+        processBuilder.redirectOutput(Redirect.INHERIT);
+        Process process = processBuilder.start();
+
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new RuntimeException("Process exited with non-zero status " + exitCode);
+        }
+    }
+
+    private Path getProcessorDir(Project project, String processorName) {
+        return Path.of(project.getPath().toString(), processorName);
+    }
+
+    private Path createProcessorDir(Project project, String processorName) {
+        Path processorPath = getProcessorDir(project, processorName);
+        if (processorPath.toFile().mkdir()) {
+            log.info("Created processor folder " + processorPath);
+        }
+        return processorPath;
+    }
+
+    @SneakyThrows
+    private void codegen(Project project, Path processorPath, Template template) {
         // Create templates folder
         Path templatesPath = Path.of(project.getPath().toString(), TEMPLATES_FOLDER);
         if (templatesPath.toFile().mkdir()) {
@@ -116,16 +167,19 @@ public class CodegenImpl implements Codegen {
         if (templateInRepoDir.toFile().mkdir()) {
             log.info("Created {} template folder {}", template.getResourceName(), templatesPath);
         }
+        log.info("Walking over template in dir {}", templateInResourcesDir);
         Files.walk(templateInResourcesDir.toPath()).forEach(source -> {
-            if (!isGitIgnored(project, source)) {
+            if (isGitIgnored(project, source)) {
+                log.info("Skipping overwrite of source-controlled template file {}", source.getFileName());
                 return; // Do not replace checked in files
             }
             Path destination = Paths.get(templateInRepoDir.toString(), source.toString()
-                    .substring(templateInRepoDir.toString().length()));
+                    .substring(templateInResourcesDir.toString().length()));
             try {
+                log.info("Copying template file {}", source.getFileName());
                 Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
             }
         });
 
@@ -163,7 +217,7 @@ public class CodegenImpl implements Codegen {
 
     @SneakyThrows
     private File getTemplateFromResources(Template template) {
-        return new File(Thread.currentThread().getContextClassLoader().getResource("template/templates").toURI());
+        return new File(Thread.currentThread().getContextClassLoader().getResource("template/" + template.getResourceName()).toURI());
     }
 
     @SneakyThrows
@@ -181,9 +235,23 @@ public class CodegenImpl implements Codegen {
                 .contains(sourceAbsPath);
     }
 
+    private boolean isWindows() {
+        return System.getProperty("os.name")
+                .toLowerCase().startsWith("windows");
+    }
+
     @Value
     private static class MustacheContext {
         @NotNull
         Project project;
+    }
+
+    public static Module module() {
+        return new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(Codegen.class).to(CodegenImpl.class).asEagerSingleton();
+            }
+        };
     }
 }

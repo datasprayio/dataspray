@@ -65,7 +65,8 @@
                 <configuration>
                     <imageName>dataspray</imageName>
                     <mainClass>${mainClass}</mainClass>
-                    <buildArgs>
+                    <buildArgs combine.children="append">
+                        <buildArg>--no-fallback</buildArg>
                         <buildArg>--verbose</buildArg>
                         <!-- Include resource bundles here -->
                         <!-- You may want to whitelist from the list in target/native/agent-output/test/session-*/resource-config.json -->
