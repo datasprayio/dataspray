@@ -14,7 +14,7 @@ properties:
   version:
     description: Version of DataSpray definition
     enum:
-      - v1.0.0
+      - V1.0.0
   name:
     description: Project name
     type: string
@@ -62,12 +62,12 @@ $defs:
       serde:
         enum:
           # TODO xml, thrift, capnp, flatbuffers, sbe, ...
-          - binary
-          - string
-          - number
-          - json
-          - protobuf
-          - avro
+          - BINARY
+          - STRING
+          - NUMBER
+          - JSON
+          - PROTOBUF
+          - AVRO
 
   ###
   ## Stores
@@ -154,11 +154,9 @@ $defs:
     extends:
       $ref: '#/$defs/processor'
     type: object
-    required:
-      - dialect
     properties:
-      dialect:
-        enum: [ vanilla, samza ]
+      target:
+        enum: [ DATASPRAY, SAMZA, FLINK ]
       inputs:
         type: array
         items:

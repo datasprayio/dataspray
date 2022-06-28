@@ -103,7 +103,7 @@ public class SchemaGenerationConfig extends DefaultGenerationConfig {
 
     @Override
     public boolean isUseOptionalForGetters() {
-        return true;
+        return false;
     }
 
     @Override

@@ -25,18 +25,24 @@ public class DefinitionValidatorImpl implements DefinitionValidator {
 
         // TODO assert all references are valid, here is an example:
         // Java processors
-        definition.getJavaProcessors().stream().flatMap(Collection::stream).forEach(processor -> {
-            processor.getInputs().stream().flatMap(Collection::stream).forEach(input -> {
-                if (!dataFormatNames.contains(input.getDataFormatName())) {
-                    throw new DefinitionLoadingException("Processor " + processor.getName() + " using input " + input.getName() + " with non-existent data format " + input.getDataFormatName());
+        if (definition.getJavaProcessors() != null) {
+            definition.getJavaProcessors().forEach(processor -> {
+                if (processor.getInputs() != null) {
+                    processor.getInputs().forEach(input -> {
+                        if (!dataFormatNames.contains(input.getDataFormatName())) {
+                            throw new DefinitionLoadingException("Processor " + processor.getName() + " using input " + input.getName() + " with non-existent data format " + input.getDataFormatName());
+                        }
+                    });
+                }
+                if (processor.getOutputs() != null) {
+                    processor.getOutputs().forEach(output -> {
+                        if (!dataFormatNames.contains(output.getDataFormatName())) {
+                            throw new DefinitionLoadingException("Processor " + processor.getName() + " using output " + output.getName() + " with non-existent data format " + output.getDataFormatName());
+                        }
+                    });
                 }
             });
-            processor.getOutputs().stream().flatMap(Collection::stream).forEach(output -> {
-                if (!dataFormatNames.contains(output.getDataFormatName())) {
-                    throw new DefinitionLoadingException("Processor " + processor.getName() + " using output " + output.getName() + " with non-existent data format " + output.getDataFormatName());
-                }
-            });
-        });
+        }
     }
 
     private ImmutableSet<String> validateUniqueAndGetResourceNames(String resourceType, Stream<String> resourceNamesStream) throws DefinitionLoadingException {

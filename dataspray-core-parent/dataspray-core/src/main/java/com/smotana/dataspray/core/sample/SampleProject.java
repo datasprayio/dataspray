@@ -6,7 +6,6 @@ import com.smotana.dataspray.core.definition.model.DataSprayDefinition;
 import com.smotana.dataspray.core.definition.model.DataSprayDefinition.DataSprayDefinitionBuilder;
 import com.smotana.dataspray.core.definition.model.DataSprayDefinition.Version;
 import com.smotana.dataspray.core.definition.model.Input.InputBuilder;
-import com.smotana.dataspray.core.definition.model.JavaProcessor;
 import com.smotana.dataspray.core.definition.model.JavaProcessor.JavaProcessorBuilder;
 import com.smotana.dataspray.core.definition.model.KafkaStore.KafkaStoreBuilder;
 import com.smotana.dataspray.core.definition.model.Output.OutputBuilder;
@@ -37,7 +36,6 @@ public enum SampleProject {
                             .build()))
             .withJavaProcessors(List.of(
                     new JavaProcessorBuilder()
-                            .withDialect(JavaProcessor.Dialect.VANILLA)
                             .withInputs(List.of(
                                     new InputBuilder()
                                             .withDataFormatName("login")
@@ -53,7 +51,7 @@ public enum SampleProject {
                                             .withName("ip")
                                             .build()
                             ))
-                            .withName("asdf")
+                            .withName("app")
                             .build()))
             .withKafkaStores(List.of(
                     new KafkaStoreBuilder()

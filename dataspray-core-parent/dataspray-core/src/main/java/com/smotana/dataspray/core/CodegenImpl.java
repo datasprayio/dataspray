@@ -5,10 +5,13 @@ import com.google.common.io.Resources;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import com.samskivert.mustache.Mustache;
 import com.smotana.dataspray.core.definition.model.DataSprayDefinition;
 import com.smotana.dataspray.core.definition.model.Item;
 import com.smotana.dataspray.core.definition.model.JavaProcessor;
+import com.smotana.dataspray.core.definition.model.Processor;
 import com.smotana.dataspray.core.definition.parser.DefinitionLoader;
 import com.smotana.dataspray.core.sample.SampleProject;
 import lombok.SneakyThrows;
@@ -38,7 +41,16 @@ public class CodegenImpl implements Codegen {
     private static final String MUSTACHE_FILE_EXTENSION_INCLUDE = ".include.mustache";
 
     @Inject
-    DefinitionLoader definitionLoader;
+    private DefinitionLoader definitionLoader;
+    @Inject
+    @Named("IN")
+    private Redirect in;
+    @Inject
+    @Named("OUT")
+    private Redirect out;
+    @Inject
+    @Named("ERR")
+    private Redirect err;
 
     @Override
     public Project initProject(String basePath, String projectName, SampleProject sample) throws IOException {
@@ -93,13 +105,7 @@ public class CodegenImpl implements Codegen {
                 .orElseThrow(() -> new RuntimeException("Cannot find java processor with name " + processorName));
 
         Path processorPath = createProcessorDir(project, processorName);
-        Template template;
-        switch (processor.getDialect()) {
-            case VANILLA -> template = Template.JAVA;
-            case SAMZA -> throw new RuntimeException("Samza not yet supported");
-            default -> throw new RuntimeException(processor.getDialect() + " not yet supported");
-        }
-        codegen(project, processorPath, template);
+        codegen(project, processorPath, Template.JAVA, new ProcessorMustacheContext(project, processor));
     }
 
     @Override
@@ -127,9 +133,9 @@ public class CodegenImpl implements Codegen {
                 ? new ProcessBuilder("cmd.exe", "/c", "mvn clean install")
                 : new ProcessBuilder("sh", "-c", "mvn clean install");
         processBuilder.directory(getProcessorDir(project, processorName).toFile());
-        processBuilder.redirectError(Redirect.INHERIT);
-        processBuilder.redirectInput(Redirect.INHERIT);
-        processBuilder.redirectOutput(Redirect.INHERIT);
+        processBuilder.redirectError(err);
+        processBuilder.redirectInput(in);
+        processBuilder.redirectOutput(out);
         Process process = processBuilder.start();
 
         int exitCode = process.waitFor();
@@ -151,7 +157,7 @@ public class CodegenImpl implements Codegen {
     }
 
     @SneakyThrows
-    private void codegen(Project project, Path processorPath, Template template) {
+    private void codegen(Project project, Path processorPath, Template template, ProcessorMustacheContext processorContext) {
         // Create templates folder
         Path templatesPath = Path.of(project.getPath().toString(), TEMPLATES_FOLDER);
         if (templatesPath.toFile().mkdir()) {
@@ -159,7 +165,7 @@ public class CodegenImpl implements Codegen {
         }
 
         // Initialize templates folder
-        applyTemplate(getTemplateFromResources(Template.TEMPLATES), templatesPath, new MustacheContext(project));
+        applyTemplate(getTemplateFromResources(Template.TEMPLATES), templatesPath, new TemplatesMustacheContext(project));
 
         // Copy our template from resources to repo (Skipping over overriden files)
         File templateInResourcesDir = getTemplateFromResources(template);
@@ -184,15 +190,16 @@ public class CodegenImpl implements Codegen {
         });
 
         // Finally apply our template
-        applyTemplate(templateInRepoDir.toFile(), processorPath, new MustacheContext(project));
+        applyTemplate(templateInRepoDir.toFile(), processorPath, processorContext);
     }
 
-    private void applyTemplate(File templateDir, Path destination, MustacheContext context) {
+    private void applyTemplate(File templateDir, Path destination, Object context) {
         for (File item : templateDir.listFiles()) {
             if (item.isDirectory()) {
                 applyTemplate(item, Path.of(destination.toString(), item.getName()), context);
             } else if (item.isFile()) {
                 if (item.getName().endsWith(MUSTACHE_FILE_EXTENSION_TEMPLATE)) {
+                    destination.toFile().mkdirs();
                     runMustache(item,
                             Path.of(destination.toString(),
                                     StringUtils.removeEnd(item.toPath().getFileName().toString(), MUSTACHE_FILE_EXTENSION_TEMPLATE)),
@@ -207,7 +214,7 @@ public class CodegenImpl implements Codegen {
     }
 
     @SneakyThrows
-    private void runMustache(File mustacheFile, Path destinationFile, MustacheContext context) {
+    private void runMustache(File mustacheFile, Path destinationFile, Object context) {
         Mustache.Compiler c = Mustache.compiler().withLoader(name -> new FileReader(
                 Path.of(mustacheFile.getParent(), name + MUSTACHE_FILE_EXTENSION_INCLUDE).toFile(), Charsets.UTF_8));
         String template = Resources.toString(mustacheFile.toURI().toURL(), Charsets.UTF_8);
@@ -241,16 +248,30 @@ public class CodegenImpl implements Codegen {
     }
 
     @Value
-    private static class MustacheContext {
+    private static class TemplatesMustacheContext {
         @NotNull
         Project project;
     }
 
-    public static Module module() {
+    @Value
+    private static class ProcessorMustacheContext {
+        @NotNull
+        Project project;
+
+        @NotNull
+        Processor processor;
+    }
+
+    public static Module module(boolean useProcessInputOutput) {
         return new AbstractModule() {
             @Override
             protected void configure() {
                 bind(Codegen.class).to(CodegenImpl.class).asEagerSingleton();
+                if (useProcessInputOutput) {
+                    bind(Redirect.class).annotatedWith(Names.named("IN")).toInstance(Redirect.INHERIT);
+                    bind(Redirect.class).annotatedWith(Names.named("OUT")).toInstance(Redirect.INHERIT);
+                    bind(Redirect.class).annotatedWith(Names.named("ERR")).toInstance(Redirect.INHERIT);
+                }
             }
         };
     }

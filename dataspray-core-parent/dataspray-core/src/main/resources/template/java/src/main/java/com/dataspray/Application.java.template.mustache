@@ -1,0 +1,11 @@
+package com.dataspray;
+
+public interface Application {
+
+    {{#processor.inputs}}
+    {{name}}
+    {{/processor.inputs}}
+
+    void processName(dataFormatName name, Coordinator coordinator);
+
+}
