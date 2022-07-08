@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -18,10 +19,14 @@ public class DefinitionValidatorImpl implements DefinitionValidator {
 
     @Override
     public void validate(DataSprayDefinition definition) throws DefinitionLoadingException {
-        ImmutableSet<String> dataFormatNames = validateUniqueAndGetResourceNames("data format", definition.getDataFormats().stream().flatMap(Collection::stream)
-                .map(DataFormat::getName));
-        ImmutableSet<String> kafkaStoreNames = validateUniqueAndGetResourceNames("Kafka store", definition.getKafkaStores().stream().flatMap(Collection::stream)
-                .map(KafkaStore::getName));
+        ImmutableSet<String> dataFormatNames = validateUniqueAndGetResourceNames(
+                "data format",
+                Optional.ofNullable(definition.getDataFormats()).stream().flatMap(Collection::stream)
+                        .map(DataFormat::getName));
+        ImmutableSet<String> kafkaStoreNames = validateUniqueAndGetResourceNames(
+                "Kafka store",
+                Optional.ofNullable(definition.getKafkaStores()).stream().flatMap(Collection::stream)
+                        .map(KafkaStore::getName));
 
         // TODO assert all references are valid, here is an example:
         // Java processors

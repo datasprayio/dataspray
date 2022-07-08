@@ -8,13 +8,14 @@
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>dataspray-parent</name>
+    <name>DataSpray Parent</name>
+    <url>https://dataspray.io</url>
 
     <properties>
         <java.version>17</java.version>
         <projectlombok.version>1.18.22</projectlombok.version>
         <node.version>v16.15.0</node.version>
-        <pnpm.version>v7.0.0</pnpm.version>
+        <pnpm.version>v7.5.0</pnpm.version>
         <skipTests/>
         <skipITs/>
     </properties>

@@ -7,6 +7,12 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum Template {
     TEMPLATES("templates"),
+
+    DATA_FORMAT_JSON("data-format-json"),
+    DATA_FORMAT_PROTOBUF("data-format-protobuf"),
+    DATA_FORMAT_AVRO("data-format-avro"),
+
     JAVA("java");
-    String resourceName;
+
+    private final String resourceName;
 }

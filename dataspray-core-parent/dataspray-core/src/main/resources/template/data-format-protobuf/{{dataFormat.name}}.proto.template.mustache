@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+// Sample Protobuff schema definition
+// For more details see https://developers.google.com/protocol-buffers/docs/proto3
+
+option java_multiple_files = true;
+{{#project.namespace}}
+option java_package = "{{project.namespace}}";
+{{/project.namespace}}
+
+message {{dataFormat.name}} {
+  string name = 1;
+  int64 id = 2;
+  Type type = 3;
+  string email = 4;
+
+  enum Type {
+    ADMIN = 0;
+    USER = 1;
+  }
+}

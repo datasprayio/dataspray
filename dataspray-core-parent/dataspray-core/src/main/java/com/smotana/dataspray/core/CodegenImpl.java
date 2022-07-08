@@ -1,6 +1,7 @@
 package com.smotana.dataspray.core;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -8,10 +9,11 @@ import com.google.inject.Module;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.samskivert.mustache.Mustache;
+import com.samskivert.mustache.Mustache.TemplateLoader;
+import com.smotana.dataspray.core.definition.model.DataFormat;
 import com.smotana.dataspray.core.definition.model.DataSprayDefinition;
 import com.smotana.dataspray.core.definition.model.Item;
 import com.smotana.dataspray.core.definition.model.JavaProcessor;
-import com.smotana.dataspray.core.definition.model.Processor;
 import com.smotana.dataspray.core.definition.parser.DefinitionLoader;
 import com.smotana.dataspray.core.sample.SampleProject;
 import lombok.SneakyThrows;
@@ -21,7 +23,6 @@ import org.apache.commons.lang.StringUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
-import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -30,18 +31,22 @@ import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 public class CodegenImpl implements Codegen {
+    public static final String DATA_FORMATS_FOLDER = ".formats";
     private static final String TEMPLATES_FOLDER = ".templates";
     private static final String MUSTACHE_FILE_EXTENSION_TEMPLATE = ".template.mustache";
     private static final String MUSTACHE_FILE_EXTENSION_INCLUDE = ".include.mustache";
 
     @Inject
     private DefinitionLoader definitionLoader;
+    @Inject
+    private ContextBuilder contextBuilder;
     @Inject
     @Named("IN")
     private Redirect in;
@@ -86,32 +91,50 @@ public class CodegenImpl implements Codegen {
 
     @Override
     public void generateAll(Project project) {
-        project.getDefinition()
-                .getJavaProcessors()
-                .stream()
+        Optional.ofNullable(project.getDefinition().getDataFormats()).stream()
                 .flatMap(Collection::stream)
-                .map(Item::getName)
-                .forEach(processorName -> generateJava(project, processorName));
+                .forEach(dataFormat -> generateDataFormat(project, dataFormat));
+        Optional.ofNullable(project.getDefinition().getJavaProcessors()).stream()
+                .flatMap(Collection::stream)
+                .forEach(processor -> generateJava(project, processor));
+    }
+
+    @Override
+    public void generateDataFormat(Project project, String dataFormatName) {
+        generateDataFormat(project, Optional.ofNullable(project.getDefinition().getDataFormats()).stream()
+                .flatMap(Collection::stream)
+                .filter(p -> p.getName().equals(dataFormatName))
+                .findAny()
+                .orElseThrow(() -> new RuntimeException("Cannot find data format with name " + dataFormatName)));
+    }
+
+    private void generateDataFormat(Project project, DataFormat dataFormat) {
+        switch (dataFormat.getSerde()) {
+            case BINARY, NUMBER, STRING -> { /* Format is schemaless, Nothing to do*/ }
+            case JSON -> codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_JSON, contextBuilder.createForDataFormat(project, dataFormat));
+            case PROTOBUF -> codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_PROTOBUF, contextBuilder.createForDataFormat(project, dataFormat));
+            case AVRO -> codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_AVRO, contextBuilder.createForDataFormat(project, dataFormat));
+        }
     }
 
     @Override
     public void generateJava(Project project, String processorName) {
-        JavaProcessor processor = project.getDefinition()
-                .getJavaProcessors()
-                .stream()
+        generateJava(project, Optional.ofNullable(project.getDefinition().getJavaProcessors()).stream()
                 .flatMap(Collection::stream)
                 .filter(p -> p.getName().equals(processorName))
                 .findAny()
-                .orElseThrow(() -> new RuntimeException("Cannot find java processor with name " + processorName));
+                .orElseThrow(() -> new RuntimeException("Cannot find java processor with name " + processorName)));
+    }
 
-        Path processorPath = createProcessorDir(project, processorName);
-        codegen(project, processorPath, Template.JAVA, new ProcessorMustacheContext(project, processor));
+    private void generateJava(Project project, JavaProcessor processor) {
+        Path processorPath = createProjectDir(project, processor.getName());
+        codegen(project, processorPath, Template.JAVA, contextBuilder.createForProcessor(project, processor));
     }
 
     @Override
     public void installAll(Project project) {
-        project.getDefinition()
-                .getJavaProcessors()
+        Optional.ofNullable(project.getDefinition()
+                        .getJavaProcessors())
                 .stream()
                 .flatMap(Collection::stream)
                 .map(Item::getName)
@@ -121,8 +144,8 @@ public class CodegenImpl implements Codegen {
     @SneakyThrows
     @Override
     public void installJava(Project project, String processorName) {
-        JavaProcessor processor = project.getDefinition()
-                .getJavaProcessors()
+        JavaProcessor processor = Optional.ofNullable(project.getDefinition()
+                        .getJavaProcessors())
                 .stream()
                 .flatMap(Collection::stream)
                 .filter(p -> p.getName().equals(processorName))
@@ -132,7 +155,7 @@ public class CodegenImpl implements Codegen {
         ProcessBuilder processBuilder = isWindows()
                 ? new ProcessBuilder("cmd.exe", "/c", "mvn clean install")
                 : new ProcessBuilder("sh", "-c", "mvn clean install");
-        processBuilder.directory(getProcessorDir(project, processorName).toFile());
+        processBuilder.directory(getProjectDir(project, processorName).toFile());
         processBuilder.redirectError(err);
         processBuilder.redirectInput(in);
         processBuilder.redirectOutput(out);
@@ -144,20 +167,31 @@ public class CodegenImpl implements Codegen {
         }
     }
 
-    private Path getProcessorDir(Project project, String processorName) {
-        return Path.of(project.getPath().toString(), processorName);
+    private Path getProjectDir(Project project, String name) {
+        return Path.of(project.getPath().toString(), name);
     }
 
-    private Path createProcessorDir(Project project, String processorName) {
-        Path processorPath = getProcessorDir(project, processorName);
-        if (processorPath.toFile().mkdir()) {
-            log.info("Created processor folder " + processorPath);
+    private Path createProjectDir(Project project, String name) {
+        return createDir(getProjectDir(project, name));
+    }
+
+    private Path getDataFormatDir(Project project, DataFormat dataFormat) {
+        return Path.of(project.getPath().toString(), DATA_FORMATS_FOLDER, dataFormat.getName());
+    }
+
+    private Path createDataFormatDir(Project project, DataFormat dataFormat) {
+        return createDir(getDataFormatDir(project, dataFormat));
+    }
+
+    private Path createDir(Path dir) {
+        if (dir.toFile().mkdirs()) {
+            log.info("Created folder " + dir);
         }
-        return processorPath;
+        return dir;
     }
 
     @SneakyThrows
-    private void codegen(Project project, Path processorPath, Template template, ProcessorMustacheContext processorContext) {
+    private void codegen(Project project, Path processorPath, Template template, DatasprayContext processorContext) {
         // Create templates folder
         Path templatesPath = Path.of(project.getPath().toString(), TEMPLATES_FOLDER);
         if (templatesPath.toFile().mkdir()) {
@@ -165,7 +199,7 @@ public class CodegenImpl implements Codegen {
         }
 
         // Initialize templates folder
-        applyTemplate(getTemplateFromResources(Template.TEMPLATES), templatesPath, new TemplatesMustacheContext(project));
+        applyTemplate(project, getTemplateFromResources(Template.TEMPLATES), templatesPath, contextBuilder.createForTemplates(project));
 
         // Copy our template from resources to repo (Skipping over overriden files)
         File templateInResourcesDir = getTemplateFromResources(template);
@@ -179,30 +213,32 @@ public class CodegenImpl implements Codegen {
                 log.info("Skipping overwrite of source-controlled template file {}", source.getFileName());
                 return; // Do not replace checked in files
             }
-            Path destination = Paths.get(templateInRepoDir.toString(), source.toString()
+            Path destination = templateInRepoDir.resolve(source.toString()
                     .substring(templateInResourcesDir.toString().length()));
             try {
-                log.info("Copying template file {}", source.getFileName());
+                log.info("Copying template file {} to {}", source.getFileName(), destination);
                 Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
         });
 
-        // Finally apply our template
-        applyTemplate(templateInRepoDir.toFile(), processorPath, processorContext);
+        // Finally, apply our template
+        applyTemplate(project, templateInRepoDir.toFile(), processorPath, processorContext);
     }
 
-    private void applyTemplate(File templateDir, Path destination, Object context) {
+    private void applyTemplate(Project project, File templateDir, Path destination, DatasprayContext context) {
         for (File item : templateDir.listFiles()) {
             if (item.isDirectory()) {
-                applyTemplate(item, Path.of(destination.toString(), item.getName()), context);
+                applyTemplate(project, item, Path.of(destination.toString(), item.getName()), context);
             } else if (item.isFile()) {
                 if (item.getName().endsWith(MUSTACHE_FILE_EXTENSION_TEMPLATE)) {
+                    ExpandedFile expandedFile = expandFile(project, item.getName(), context);
+                    Path localDestination = destination.resolve(expandedFile.getPath());
                     destination.toFile().mkdirs();
                     runMustache(item,
-                            Path.of(destination.toString(),
-                                    StringUtils.removeEnd(item.toPath().getFileName().toString(), MUSTACHE_FILE_EXTENSION_TEMPLATE)),
+                            Path.of(localDestination.toString(),
+                                    StringUtils.removeEnd(expandedFile.getFilename(), MUSTACHE_FILE_EXTENSION_TEMPLATE)),
                             context);
                 } else if (item.getName().endsWith(MUSTACHE_FILE_EXTENSION_INCLUDE)) {
                     // Skip sub-templates
@@ -214,12 +250,46 @@ public class CodegenImpl implements Codegen {
     }
 
     @SneakyThrows
-    private void runMustache(File mustacheFile, Path destinationFile, Object context) {
-        Mustache.Compiler c = Mustache.compiler().withLoader(name -> new FileReader(
-                Path.of(mustacheFile.getParent(), name + MUSTACHE_FILE_EXTENSION_INCLUDE).toFile(), Charsets.UTF_8));
-        String template = Resources.toString(mustacheFile.toURI().toURL(), Charsets.UTF_8);
-        String content = c.compile(template).execute(context);
+    private void runMustache(File mustacheFile, Path destinationFile, DatasprayContext context) {
+        String mustacheStr = Resources.toString(mustacheFile.toURI().toURL(), Charsets.UTF_8);
+        String content = runMustache(mustacheStr, context, Optional.of(name ->
+                new FileReader(
+                        Path.of(mustacheFile.getParent(), name + MUSTACHE_FILE_EXTENSION_INCLUDE).toFile(),
+                        Charsets.UTF_8)));
         Files.writeString(destinationFile, content, Charsets.UTF_8);
+    }
+
+    @SneakyThrows
+    private String runMustache(String mustacheStr, DatasprayContext context, Optional<TemplateLoader> templateLoaderOpt) {
+        Mustache.Compiler c = Mustache.compiler();
+        templateLoaderOpt.ifPresent(c::withLoader);
+        return c.compile(mustacheStr).execute(context);
+    }
+
+    private ExpandedFile expandFile(Project project, String templatePath, DatasprayContext parentContext) {
+        // Since a filename cannot contain '/', use underscores '_' instead
+        templatePath = templatePath.replaceAll("\\{\\{_", "{{/");
+        String generatedPath = runMustache(templatePath, contextBuilder.createForFilename(parentContext, project), Optional.empty());
+        List<String> levels = Lists.newArrayList();
+        StringBuilder levelBuilder = new StringBuilder();
+        for (int i = 0; i < generatedPath.length(); i++) {
+            char currentChar = generatedPath.charAt(i);
+            if (currentChar == File.separatorChar) {
+                levels.add(levelBuilder.toString());
+                levelBuilder = new StringBuilder();
+            } else {
+                levelBuilder.append(currentChar);
+            }
+        }
+        return new ExpandedFile(
+                Path.of(".", levels.toArray(String[]::new)),
+                levelBuilder.toString());
+    }
+
+    @Value
+    private static class ExpandedFile {
+        Path path;
+        String filename;
     }
 
     @SneakyThrows
@@ -245,21 +315,6 @@ public class CodegenImpl implements Codegen {
     private boolean isWindows() {
         return System.getProperty("os.name")
                 .toLowerCase().startsWith("windows");
-    }
-
-    @Value
-    private static class TemplatesMustacheContext {
-        @NotNull
-        Project project;
-    }
-
-    @Value
-    private static class ProcessorMustacheContext {
-        @NotNull
-        Project project;
-
-        @NotNull
-        Processor processor;
     }
 
     public static Module module(boolean useProcessInputOutput) {

@@ -20,6 +20,7 @@ public enum SampleProject {
             .build()),
     CLOUD(name -> new DataSprayDefinitionBuilder()
             .withName(name)
+            .withNamespace("io.dataspray.sample")
             .withVersion(Version.V_1_0_0)
             .withDataFormats(List.of(
                     new DataFormat.DataFormatBuilder()

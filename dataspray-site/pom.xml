@@ -13,6 +13,9 @@
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
+    <name>DataSpray Site</name>
+    <url>https://dataspray.io</url>
+
     <build>
         <plugins>
             <plugin>

@@ -9,6 +9,8 @@ public interface Codegen {
 
     void generateAll(Project project);
 
+    void generateDataFormat(Project project, String dataFormatName);
+
     void generateJava(Project project, String processorName);
 
     void installAll(Project project);
