@@ -1,6 +1,7 @@
-{{#project.namespace}}
+{{#project.definition.namespace}}
 package {{.}};
-{{/project.namespace}}
+
+{{/project.definition.namespace}}
 public interface Application {
 
     {{#processor.inputs}}

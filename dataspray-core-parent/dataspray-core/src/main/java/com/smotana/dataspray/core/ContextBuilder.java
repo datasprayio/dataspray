@@ -22,7 +22,7 @@ public class ContextBuilder {
         return new DatasprayContext(ImmutableMap.<String, Object>builder()
                 .putAll(parentContext.getData())
                 .put("javaPackagePath", Optional.ofNullable(Strings.emptyToNull(project.getDefinition().getNamespace()))
-                        .map(namespace -> namespace.replaceAll("\\.", File.separator))
+                        .map(namespace -> namespace.replaceAll("\\.", File.separator) + File.separator)
                         .orElse(""))
                 .build());
     }

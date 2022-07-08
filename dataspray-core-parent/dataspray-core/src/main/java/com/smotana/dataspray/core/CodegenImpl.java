@@ -1,6 +1,7 @@
 package com.smotana.dataspray.core;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.google.inject.AbstractModule;
@@ -77,7 +78,7 @@ public class CodegenImpl implements Codegen {
         }
 
         // Create project definition
-        File dsProjectFile = Path.of(projectPath.toString(), "ds_project.yml").toFile();
+        File dsProjectFile = projectPath.resolve("ds_project.yml").toFile();
         if (!dsProjectFile.createNewFile()) {
             throw new IOException("File already exists: " + dsProjectFile.getPath());
         }
@@ -168,7 +169,7 @@ public class CodegenImpl implements Codegen {
     }
 
     private Path getProjectDir(Project project, String name) {
-        return Path.of(project.getPath().toString(), name);
+        return project.getPath().resolve(name);
     }
 
     private Path createProjectDir(Project project, String name) {
@@ -176,7 +177,7 @@ public class CodegenImpl implements Codegen {
     }
 
     private Path getDataFormatDir(Project project, DataFormat dataFormat) {
-        return Path.of(project.getPath().toString(), DATA_FORMATS_FOLDER, dataFormat.getName());
+        return project.getPath().resolve(DATA_FORMATS_FOLDER).resolve(dataFormat.getName());
     }
 
     private Path createDataFormatDir(Project project, DataFormat dataFormat) {
@@ -193,7 +194,7 @@ public class CodegenImpl implements Codegen {
     @SneakyThrows
     private void codegen(Project project, Path processorPath, Template template, DatasprayContext processorContext) {
         // Create templates folder
-        Path templatesPath = Path.of(project.getPath().toString(), TEMPLATES_FOLDER);
+        Path templatesPath = project.getPath().resolve(TEMPLATES_FOLDER);
         if (templatesPath.toFile().mkdir()) {
             log.info("Created templates folder " + templatesPath);
         }
@@ -203,23 +204,29 @@ public class CodegenImpl implements Codegen {
 
         // Copy our template from resources to repo (Skipping over overriden files)
         File templateInResourcesDir = getTemplateFromResources(template);
-        Path templateInRepoDir = Path.of(templatesPath.toString(), template.getResourceName());
+        Path templateInResourcesPath = templateInResourcesDir.toPath();
+        Path templateInRepoDir = templatesPath.resolve(template.getResourceName());
         if (templateInRepoDir.toFile().mkdir()) {
-            log.info("Created {} template folder {}", template.getResourceName(), templatesPath);
+            log.info("Created {} template folder {}", template.getResourceName(), templateInRepoDir);
         }
         log.info("Walking over template in dir {}", templateInResourcesDir);
-        Files.walk(templateInResourcesDir.toPath()).forEach(source -> {
-            if (isGitIgnored(project, source)) {
+        Files.walk(templateInResourcesPath).forEach(source -> {
+            Path destination = templateInRepoDir.resolve(templateInResourcesPath.relativize(source));
+            if (isGitIgnored(project, destination)) {
                 log.info("Skipping overwrite of source-controlled template file {}", source.getFileName());
                 return; // Do not replace checked in files
             }
-            Path destination = templateInRepoDir.resolve(source.toString()
-                    .substring(templateInResourcesDir.toString().length()));
-            try {
+
+            if (source.toFile().isDirectory()) {
+                log.info("Copying template dir {} to {}", source.getFileName(), destination);
+                destination.toFile().mkdirs();
+            } else {
                 log.info("Copying template file {} to {}", source.getFileName(), destination);
-                Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+                try {
+                    Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         });
 
@@ -230,16 +237,16 @@ public class CodegenImpl implements Codegen {
     private void applyTemplate(Project project, File templateDir, Path destination, DatasprayContext context) {
         for (File item : templateDir.listFiles()) {
             if (item.isDirectory()) {
-                applyTemplate(project, item, Path.of(destination.toString(), item.getName()), context);
+                applyTemplate(project, item, destination.resolve(item.getName()), context);
             } else if (item.isFile()) {
                 if (item.getName().endsWith(MUSTACHE_FILE_EXTENSION_TEMPLATE)) {
-                    ExpandedFile expandedFile = expandFile(project, item.getName(), context);
-                    Path localDestination = destination.resolve(expandedFile.getPath());
-                    destination.toFile().mkdirs();
-                    runMustache(item,
-                            Path.of(localDestination.toString(),
-                                    StringUtils.removeEnd(expandedFile.getFilename(), MUSTACHE_FILE_EXTENSION_TEMPLATE)),
-                            context);
+                    Optional<ExpandedFile> expandedFileOpt = expandFile(project, item.getName(), context);
+                    if (expandedFileOpt.isPresent()) {
+                        Path localDestination = destination.resolve(expandedFileOpt.get().getPath());
+                        runMustache(item,
+                                localDestination.resolve(StringUtils.removeEnd(expandedFileOpt.get().getFilename(), MUSTACHE_FILE_EXTENSION_TEMPLATE)),
+                                context);
+                    }
                 } else if (item.getName().endsWith(MUSTACHE_FILE_EXTENSION_INCLUDE)) {
                     // Skip sub-templates
                 } else {
@@ -254,8 +261,14 @@ public class CodegenImpl implements Codegen {
         String mustacheStr = Resources.toString(mustacheFile.toURI().toURL(), Charsets.UTF_8);
         String content = runMustache(mustacheStr, context, Optional.of(name ->
                 new FileReader(
-                        Path.of(mustacheFile.getParent(), name + MUSTACHE_FILE_EXTENSION_INCLUDE).toFile(),
+                        mustacheFile.getParentFile().toPath().resolve(name + MUSTACHE_FILE_EXTENSION_INCLUDE).toFile(),
                         Charsets.UTF_8)));
+        if (Strings.isNullOrEmpty(content)) {
+            return;
+        }
+        Optional.ofNullable(destinationFile.getParent())
+                .map(Path::toFile)
+                .ifPresent(File::mkdirs);
         Files.writeString(destinationFile, content, Charsets.UTF_8);
     }
 
@@ -266,10 +279,13 @@ public class CodegenImpl implements Codegen {
         return c.compile(mustacheStr).execute(context);
     }
 
-    private ExpandedFile expandFile(Project project, String templatePath, DatasprayContext parentContext) {
+    private Optional<ExpandedFile> expandFile(Project project, String templatePath, DatasprayContext parentContext) {
         // Since a filename cannot contain '/', use underscores '_' instead
         templatePath = templatePath.replaceAll("\\{\\{_", "{{/");
         String generatedPath = runMustache(templatePath, contextBuilder.createForFilename(parentContext, project), Optional.empty());
+        if (Strings.isNullOrEmpty(generatedPath)) {
+            return Optional.empty();
+        }
         List<String> levels = Lists.newArrayList();
         StringBuilder levelBuilder = new StringBuilder();
         for (int i = 0; i < generatedPath.length(); i++) {
@@ -281,9 +297,9 @@ public class CodegenImpl implements Codegen {
                 levelBuilder.append(currentChar);
             }
         }
-        return new ExpandedFile(
-                Path.of(".", levels.toArray(String[]::new)),
-                levelBuilder.toString());
+        return Optional.of(new ExpandedFile(
+                Path.of(".", levels.toArray(String[]::new)).normalize(),
+                levelBuilder.toString()));
     }
 
     @Value

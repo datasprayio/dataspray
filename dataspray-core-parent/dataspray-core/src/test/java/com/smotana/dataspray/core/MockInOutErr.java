@@ -20,14 +20,13 @@ import java.util.function.Consumer;
 
 @Slf4j
 public class MockInOutErr implements Closeable {
-
+    private static final String EOF = "EOF";
     private final Path tempDir;
     private final File in;
     private final File out;
     private final File err;
     private final Thread outTailer;
     private final Thread errTailer;
-    private volatile boolean keepTailing = true;
 
     @SneakyThrows
     public MockInOutErr() {
@@ -49,10 +48,12 @@ public class MockInOutErr implements Closeable {
         try (FileReader fileReader = new FileReader(file);
              BufferedReader bufferedReader = new BufferedReader(fileReader)) {
             String line;
-            while (keepTailing) {
+            while (true) {
                 line = bufferedReader.readLine();
                 if (line == null) {
                     Thread.sleep(100);
+                } else if (EOF.equals(line)) {
+                    break;
                 } else {
                     logger.accept(line);
                 }
@@ -78,15 +79,16 @@ public class MockInOutErr implements Closeable {
     public void write(String line) {
         try {
             Files.writeString(in.toPath(), line, Charsets.UTF_8, StandardOpenOption.APPEND);
-        } catch (IOException e) {
-            System.err.println(e);
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
     }
 
     @SneakyThrows
     @Override
     public void close() throws IOException {
-        keepTailing = false;
+        Files.writeString(out.toPath(), EOF, Charsets.UTF_8, StandardOpenOption.APPEND);
+        Files.writeString(err.toPath(), EOF, Charsets.UTF_8, StandardOpenOption.APPEND);
         outTailer.wait();
         errTailer.wait();
         out.delete();
