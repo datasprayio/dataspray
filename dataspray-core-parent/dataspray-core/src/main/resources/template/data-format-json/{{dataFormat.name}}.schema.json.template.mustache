@@ -2,5 +2,17 @@
   "$schema": "https://json-schema.org/draft-07/schema",
   "title": "{{dataFormat.name}}",
   "description": "Sample JSON schema; for utilities to edit this schema see https://json-schema.org/implementations.html",
-  "type": "object"
+  "type": "object",
+  "required": [ "id" ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "balance": {
+      "type": "number"
+    }
+  }
 }

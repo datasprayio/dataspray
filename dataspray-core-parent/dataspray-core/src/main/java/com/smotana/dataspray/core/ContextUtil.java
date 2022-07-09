@@ -12,6 +12,8 @@ public class ContextUtil implements CustomContext {
     @Override
     public Object get(String name) throws Exception {
         return switch (name) {
+            case "templatesFolder" -> CodegenImpl.TEMPLATES_FOLDER;
+            case "dataFormatsFolder" -> CodegenImpl.DATA_FORMATS_FOLDER;
             case "lowerCamelCase" -> (Lambda) (frag, out) -> out.write(camelCase(frag.execute(), false));
             case "upperCamelCase" -> (Lambda) (frag, out) -> out.write(camelCase(frag.execute(), true));
             case "dataFormatFolderRelative" -> Path.of("..", CodegenImpl.DATA_FORMATS_FOLDER);

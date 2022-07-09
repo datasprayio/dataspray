@@ -1,0 +1,13 @@
+{{#project.definition.namespace}}
+package {{.}};
+
+{{/project.definition.namespace}}
+public class ApplicationImpl implements Application {
+    {{#inputDataFormats}}
+
+    @Override
+    public void process{{#util.upperCamelCase}}{{this.name}}{{/util.upperCamelCase}}({{#util.upperCamelCase}}{{this.name}}{{/util.upperCamelCase}} {{#util.lowerCamelCase}}{{this.name}}{{/util.lowerCamelCase}}, Coordinator coordinator) {
+        // TODO
+    }
+    {{/inputDataFormats}}
+}

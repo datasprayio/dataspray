@@ -3,7 +3,7 @@
   <component name="CompilerConfiguration">
     <annotationProcessing>
       <profile default="true" name="Default" enabled="true" />
-      <profile name="Annotation profile for dataspray-parent" enabled="true">
+      <profile name="Annotation profile for DataSpray Parent" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -19,6 +19,7 @@
         <module name="dataspray-site" />
         <module name="dataspray-core" />
         <module name="dataspray-definition" />
+        <module name="dataspray-runner" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

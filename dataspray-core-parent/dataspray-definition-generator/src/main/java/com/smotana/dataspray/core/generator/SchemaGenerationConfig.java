@@ -118,7 +118,7 @@ public class SchemaGenerationConfig extends DefaultGenerationConfig {
 
     @Override
     public boolean isIncludeCopyConstructor() {
-        return true;
+        return false;
     }
 
     @Override

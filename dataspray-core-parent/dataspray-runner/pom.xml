@@ -8,11 +8,11 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>dataspray-definition-generator</artifactId>
+    <artifactId>dataspray-runner</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>DataSpray Definition Generator</name>
+    <name>DataSpray Runner</name>
     <url>https://dataspray.io</url>
 
     <properties>
@@ -20,17 +20,6 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>com.smotana.dataspray.core</groupId>
-            <artifactId>dataspray-core-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jsonschema2pojo</groupId>
-            <artifactId>jsonschema2pojo-core</artifactId>
-        </dependency>
-
         <!-- Logging-->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -64,11 +53,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <version>5.1.0</version>
-        </dependency>
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>30.1.1-jre</version>
@@ -87,28 +71,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <descriptors>
-                        <descriptor>${project.basedir}/src/main/assembly/generator.xml</descriptor>
-                    </descriptors>
-                    <tarLongFileMode>posix</tarLongFileMode>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>

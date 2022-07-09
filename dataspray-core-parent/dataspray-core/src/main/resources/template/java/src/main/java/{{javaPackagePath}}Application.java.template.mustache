@@ -3,11 +3,8 @@ package {{.}};
 
 {{/project.definition.namespace}}
 public interface Application {
+    {{#inputDataFormats}}
 
-    {{#processor.inputs}}
-    {{name}}
-    {{/processor.inputs}}
-
-    void processName(dataFormatName name, Coordinator coordinator);
-
+    void process{{#util.upperCamelCase}}{{this.name}}{{/util.upperCamelCase}}({{#util.upperCamelCase}}{{this.name}}{{/util.upperCamelCase}} {{#util.lowerCamelCase}}{{this.name}}{{/util.lowerCamelCase}}, Coordinator coordinator);
+    {{/inputDataFormats}}
 }

@@ -4,11 +4,11 @@ syntax = "proto3";
 // For more details see https://developers.google.com/protocol-buffers/docs/proto3
 
 option java_multiple_files = true;
-{{#project.namespace}}
-option java_package = "{{project.namespace}}";
-{{/project.namespace}}
+{{#project.definition.namespace}}
+option java_package = "{{.}}";
+{{/project.definition.namespace}}
 
-message {{dataFormat.name}} {
+message {{#util.upperCamelCase}}{{dataFormat.name}}{{/util.upperCamelCase}} {
   string name = 1;
   int64 id = 2;
   Type type = 3;

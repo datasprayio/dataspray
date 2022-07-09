@@ -40,7 +40,7 @@ import java.util.Optional;
 @Slf4j
 public class CodegenImpl implements Codegen {
     public static final String DATA_FORMATS_FOLDER = ".formats";
-    private static final String TEMPLATES_FOLDER = ".templates";
+    public static final String TEMPLATES_FOLDER = ".templates";
     private static final String MUSTACHE_FILE_EXTENSION_TEMPLATE = ".template.mustache";
     private static final String MUSTACHE_FILE_EXTENSION_INCLUDE = ".include.mustache";
 

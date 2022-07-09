@@ -5,10 +5,8 @@ import com.smotana.dataspray.core.definition.model.DataFormat.Serde;
 import com.smotana.dataspray.core.definition.model.DataSprayDefinition;
 import com.smotana.dataspray.core.definition.model.DataSprayDefinition.DataSprayDefinitionBuilder;
 import com.smotana.dataspray.core.definition.model.DataSprayDefinition.Version;
-import com.smotana.dataspray.core.definition.model.Input.InputBuilder;
 import com.smotana.dataspray.core.definition.model.JavaProcessor.JavaProcessorBuilder;
 import com.smotana.dataspray.core.definition.model.KafkaStore.KafkaStoreBuilder;
-import com.smotana.dataspray.core.definition.model.Output.OutputBuilder;
 import com.smotana.dataspray.core.definition.model.Topic;
 
 import java.util.List;
@@ -29,29 +27,16 @@ public enum SampleProject {
                             .build(),
                     new DataFormat.DataFormatBuilder()
                             .withName("login")
-                            .withSerde(Serde.JSON)
+                            .withSerde(Serde.PROTOBUF)
                             .build(),
                     new DataFormat.DataFormatBuilder()
                             .withName("ip")
-                            .withSerde(Serde.JSON)
+                            .withSerde(Serde.AVRO)
                             .build()))
             .withJavaProcessors(List.of(
                     new JavaProcessorBuilder()
-                            .withInputs(List.of(
-                                    new InputBuilder()
-                                            .withDataFormatName("login")
-                                            .withName("login")
-                                            .build(),
-                                    new InputBuilder()
-                                            .withDataFormatName("register")
-                                            .withName("register")
-                                            .build()))
-                            .withOutputs(List.of(
-                                    new OutputBuilder()
-                                            .withDataFormatName("ip")
-                                            .withName("ip")
-                                            .build()
-                            ))
+                            .withInputs(List.of("login", "register"))
+                            .withOutputs(List.of("ip"))
                             .withName("app")
                             .build()))
             .withKafkaStores(List.of(

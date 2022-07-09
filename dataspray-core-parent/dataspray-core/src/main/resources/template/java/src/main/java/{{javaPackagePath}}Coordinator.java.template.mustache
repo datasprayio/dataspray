@@ -1,10 +1,26 @@
-{{#project.definition.namespace}}
-package {{.}};
+package io.dataspray;
 
-{{/project.definition.namespace}}
-public interface Coordinator {
+import {{project.definition.namespace}}{{#project.definition.namespace}}.{{/project.definition.namespace}}Coordinator;
 
-    String getSourceName();
+public class CoordinatorImpl implements Coordinator {
 
-    void sendA(Message message);
+    private final RawCoordinator rawCoordinator;
+
+    private CoordinatorImpl(RawCoordinator rawCoordinator) {
+        this.rawCoordinator = rawCoordinator;
+    }
+
+    String getSourceName() {
+        return rawCoordinator.getSourceName();
+    }
+    {{#outputDataFormats}}
+
+    void send{{#util.upperCamelCase}}{{this.name}}{{/util.upperCamelCase}}({{#util.upperCamelCase}}{{this.name}}{{/util.upperCamelCase}} {{#util.lowerCamelCase}}{{this.name}}{{/util.lowerCamelCase}}) {
+        // TODO
+    }
+    {{/outputDataFormats}}
+
+    static Coordinator fromRaw(RawCoordinator rawCoordinator) {
+        return new CoordinatorImpl(rawCoordinator);
+    }
 }

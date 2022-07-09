@@ -152,6 +152,17 @@ $defs:
     extends:
       $ref: '#/$defs/item'
     type: object
+    properties:
+      inputs:
+        type: array
+        items:
+          description: Link to dataFormat name
+          type: string
+      outputs:
+        type: array
+        items:
+          description: Link to dataFormat name
+          type: string
 
   # Java
   javaProcessor:
@@ -161,26 +172,4 @@ $defs:
     properties:
       target:
         enum: [ DATASPRAY, SAMZA, FLINK ]
-      inputs:
-        type: array
-        items:
-          type: object
-          required:
-            - dataFormatName
-          properties:
-            name:
-              type: string
-            dataFormatName:
-              type: string
-      outputs:
-        type: array
-        items:
-          type: object
-          required:
-            - dataFormatName
-          properties:
-            name:
-              type: string
-            dataFormatName:
-              type: string
 

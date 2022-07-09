@@ -1,0 +1,14 @@
+{
+  "name": "{{#util.upperCamelCase}}{{dataFormat.name}}{{/util.upperCamelCase}}",
+  "type": "record",
+  {{#project.definition.namespace}}
+  "namespace": "{{.}}",
+  {{/project.definition.namespace}}
+  "fields": [
+    { "name": "name", "type": [ "string", "null" ], "default": "null" },
+    { "name": "enabled", "type": "boolean" },
+    { "name": "values", "type": {
+      "type": "array", "items": "long"
+    }}
+  ]
+}

@@ -1,0 +1,28 @@
+{{#project.definition.namespace}}
+package {{.}};
+
+{{/project.definition.namespace}}
+public class CoordinatorImpl {
+
+    private final RawCoordinator rawCoordinator;
+
+    private CoordinatorImpl(RawCoordinator rawCoordinator) {
+        this.rawCoordinator = rawCoordinator;
+    }
+
+    String getSourceName();
+    {{#outputDataFormats}}
+
+    @Override
+    public void send{{#util.upperCamelCase}}{{this.name}}{{/util.upperCamelCase}}({{#util.upperCamelCase}}{{this.name}}{{/util.upperCamelCase}} {{#util.lowerCamelCase}}{{this.name}}{{/util.lowerCamelCase}}) {
+
+    }
+    {{/outputDataFormats}}
+
+    {{#outputDataFormats}}
+
+    private byte[] toBytes{{#util.upperCamelCase}}{{this.name}}{{/util.upperCamelCase}}({{#util.upperCamelCase}}{{this.name}}{{/util.upperCamelCase}} {{#util.lowerCamelCase}}{{this.name}}{{/util.lowerCamelCase}}) {
+        // TODO
+    }
+    {{/outputDataFormats}}
+}

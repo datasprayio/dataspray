@@ -33,16 +33,16 @@ public class DefinitionValidatorImpl implements DefinitionValidator {
         if (definition.getJavaProcessors() != null) {
             definition.getJavaProcessors().forEach(processor -> {
                 if (processor.getInputs() != null) {
-                    processor.getInputs().forEach(input -> {
-                        if (!dataFormatNames.contains(input.getDataFormatName())) {
-                            throw new DefinitionLoadingException("Processor " + processor.getName() + " using input " + input.getName() + " with non-existent data format " + input.getDataFormatName());
+                    processor.getInputs().forEach(dataFormatName -> {
+                        if (!dataFormatNames.contains(dataFormatName)) {
+                            throw new DefinitionLoadingException("Processor " + processor.getName() + " using input with data format name " + dataFormatName + " not found");
                         }
                     });
                 }
                 if (processor.getOutputs() != null) {
-                    processor.getOutputs().forEach(output -> {
-                        if (!dataFormatNames.contains(output.getDataFormatName())) {
-                            throw new DefinitionLoadingException("Processor " + processor.getName() + " using output " + output.getName() + " with non-existent data format " + output.getDataFormatName());
+                    processor.getOutputs().forEach(dataFormatName -> {
+                        if (!dataFormatNames.contains(dataFormatName)) {
+                            throw new DefinitionLoadingException("Processor " + processor.getName() + " using output with data format name " + dataFormatName + " not found");
                         }
                     });
                 }
