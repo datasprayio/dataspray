@@ -4,7 +4,6 @@ package com.smotana.dataspray.core.common.json;
 
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
-import com.google.gson.GsonNonNull;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
@@ -12,47 +11,48 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
 /**
- * Force Gson to abide by @GsonNonNull annotation.
+ * Force Gson to abide by @javax.annotation.Nonnull annotation.
  */
-public class GsonNonNullAdapterFactory implements TypeAdapterFactory {
+public class JavaxNonnullAdapterFactory implements TypeAdapterFactory {
     public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
         final TypeAdapter<T> delegate = gson.getDelegateAdapter(this, type);
-        boolean parentHasNonNull = type.getRawType().isAnnotationPresent(GsonNonNull.class);
-        ImmutableList<Field> nonNullFields = Arrays.stream(type.getRawType().getDeclaredFields())
-                .filter(field -> field.isAnnotationPresent(GsonNonNull.class))
+        boolean parentHasNonnull = type.getRawType().isAnnotationPresent(Nonnull.class);
+        ImmutableList<Field> nonnullFields = Arrays.stream(type.getRawType().getDeclaredFields())
+                .filter(field -> field.isAnnotationPresent(Nonnull.class))
                 .collect(ImmutableList.toImmutableList());
-        if (nonNullFields.isEmpty()) {
+        if (nonnullFields.isEmpty()) {
             return delegate;
         }
-        nonNullFields.forEach(field -> field.setAccessible(true));
+        nonnullFields.forEach(field -> field.setAccessible(true));
         return new TypeAdapter<T>() {
             @Override
             public void write(JsonWriter out, T value) throws IOException {
-                assertNonNull(value);
+                assertNonnull(value);
                 delegate.write(out, value);
             }
 
             @Override
             public T read(JsonReader in) throws IOException {
                 T instance = delegate.read(in);
-                assertNonNull(instance);
+                assertNonnull(instance);
                 return instance;
             }
 
-            private void assertNonNull(T instance) {
+            private void assertNonnull(T instance) {
                 if (instance == null) {
-                    if (parentHasNonNull) {
+                    if (parentHasNonnull) {
                         throw new JsonSyntaxException("Json missing class " + type.getRawType().getSimpleName());
                     } else {
                         return;
                     }
                 }
-                for (Field field : nonNullFields) {
+                for (Field field : nonnullFields) {
                     Object o;
                     try {
                         o = field.get(instance);

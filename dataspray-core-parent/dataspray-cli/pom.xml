@@ -26,12 +26,6 @@
             <artifactId>dataspray-core-common</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.smotana.dataspray.core</groupId>
-            <artifactId>dataspray-definition</artifactId>
-            <classifier>models</classifier>
-            <version>${project.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>info.picocli</groupId>

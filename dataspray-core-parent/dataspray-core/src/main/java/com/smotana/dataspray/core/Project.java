@@ -1,6 +1,6 @@
 package com.smotana.dataspray.core;
 
-import com.smotana.dataspray.core.definition.model.DataSprayDefinition;
+import com.smotana.dataspray.core.definition.model.Definition;
 import lombok.NonNull;
 import lombok.Value;
 import org.eclipse.jgit.api.Git;
@@ -14,5 +14,5 @@ public class Project {
     @NonNull
     Git git;
     @NonNull
-    DataSprayDefinition definition;
+    Definition definition;
 }

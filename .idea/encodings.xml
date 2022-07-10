@@ -7,9 +7,6 @@
     <file url="file://$PROJECT_DIR$/dataspray-core-parent/dataspray-core-common/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-core-parent/dataspray-core/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-core-parent/dataspray-core/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-core-parent/dataspray-definition-generator/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-core-parent/dataspray-definition/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-core-parent/dataspray-definition/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-core-parent/dataspray-runner/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-stream/src/main/java" charset="UTF-8" />
   </component>

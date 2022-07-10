@@ -2,7 +2,6 @@ package com.smotana.dataspray.core;
 
 import com.google.inject.Inject;
 import com.smotana.dataspray.core.definition.parser.DefinitionLoaderImpl;
-import com.smotana.dataspray.core.definition.parser.DefinitionValidatorImpl;
 import com.smotana.dataspray.core.sample.SampleProject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -49,7 +48,6 @@ public class CodegenTest extends CoreAbstractTest {
         install(mockInOutErr.module());
 
         install(DefinitionLoaderImpl.module());
-        install(DefinitionValidatorImpl.module());
         install(CodegenImpl.module(false));
     }
 

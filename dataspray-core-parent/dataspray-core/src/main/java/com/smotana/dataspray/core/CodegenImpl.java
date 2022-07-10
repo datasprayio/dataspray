@@ -12,15 +12,14 @@ import com.google.inject.name.Names;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.TemplateLoader;
 import com.smotana.dataspray.core.definition.model.DataFormat;
-import com.smotana.dataspray.core.definition.model.DataSprayDefinition;
-import com.smotana.dataspray.core.definition.model.Item;
+import com.smotana.dataspray.core.definition.model.Definition;
 import com.smotana.dataspray.core.definition.model.JavaProcessor;
+import com.smotana.dataspray.core.definition.model.Processor;
 import com.smotana.dataspray.core.definition.parser.DefinitionLoader;
 import com.smotana.dataspray.core.sample.SampleProject;
 import lombok.SneakyThrows;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
@@ -82,7 +81,7 @@ public class CodegenImpl implements Codegen {
         if (!dsProjectFile.createNewFile()) {
             throw new IOException("File already exists: " + dsProjectFile.getPath());
         }
-        DataSprayDefinition definition = sample.getDefinitionForName(projectName);
+        Definition definition = sample.getDefinitionForName(projectName);
         try (FileOutputStream fos = new FileOutputStream(dsProjectFile)) {
             fos.write(definitionLoader.toYaml(definition).getBytes(StandardCharsets.UTF_8));
         }
@@ -138,7 +137,7 @@ public class CodegenImpl implements Codegen {
                         .getJavaProcessors())
                 .stream()
                 .flatMap(Collection::stream)
-                .map(Item::getName)
+                .map(Processor::getName)
                 .forEach(processorName -> installJava(project, processorName));
     }
 
@@ -244,7 +243,8 @@ public class CodegenImpl implements Codegen {
                     if (expandedFileOpt.isPresent()) {
                         Path localDestination = destination.resolve(expandedFileOpt.get().getPath());
                         runMustache(item,
-                                localDestination.resolve(StringUtils.removeEnd(expandedFileOpt.get().getFilename(), MUSTACHE_FILE_EXTENSION_TEMPLATE)),
+                                localDestination.resolve(expandedFileOpt.get().getFilename()
+                                        .substring(0, expandedFileOpt.get().getFilename().length() - MUSTACHE_FILE_EXTENSION_TEMPLATE.length())),
                                 context);
                     }
                 } else if (item.getName().endsWith(MUSTACHE_FILE_EXTENSION_INCLUDE)) {

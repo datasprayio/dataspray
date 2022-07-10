@@ -35,7 +35,7 @@ public class GsonProvider implements Provider<Gson> {
                             .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
                             .disableHtmlEscaping()
                             .registerTypeAdapterFactory(ImmutableAdapterFactory.forGuava())
-                            .registerTypeAdapterFactory(new GsonNonNullAdapterFactory())
+                            .registerTypeAdapterFactory(new JavaxNonnullAdapterFactory())
                             .registerTypeAdapter(Instant.class, new InstantTypeConverter())
                             .registerTypeAdapter(LocalDate.class, new LocalDateTypeConverter())
                             .registerTypeAdapterFactory(ExplicitNull.get())
