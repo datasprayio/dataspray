@@ -45,7 +45,7 @@ public class ContextBuilder {
     private ImmutableMap.Builder<String, Object> createProjectBase(
             Project project) {
         return ImmutableMap.<String, Object>builder()
-                .put("project", project)
+                .put("definition", project.getDefinition())
                 .put("util", contextUtil);
     }
 }

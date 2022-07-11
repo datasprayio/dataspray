@@ -1,6 +1,6 @@
 package com.smotana.dataspray.core.definition.model;
 
-import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
@@ -8,11 +8,8 @@ import javax.annotation.Nonnull;
 
 @Value
 @SuperBuilder(toBuilder = true)
-@AllArgsConstructor
-public class DataStream {
-    @Nonnull
-    String name;
-
+@EqualsAndHashCode(callSuper = true)
+public class DataStream extends Item {
     @Nonnull
     String dataFormatName;
 }

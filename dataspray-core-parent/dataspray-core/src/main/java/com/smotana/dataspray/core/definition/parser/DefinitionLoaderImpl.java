@@ -18,17 +18,19 @@ import java.io.Reader;
 public class DefinitionLoaderImpl implements DefinitionLoader {
 
     @Inject
-    private Gson gson;
-    @Inject
     private Yaml yaml;
     @Inject
     private ObjectMapper objectMapper;
+    @Inject
+    private Gson gson;
 
     private Gson gsonPrettyPrint;
 
     @Inject
     private void setup() {
-        this.gsonPrettyPrint = gson.newBuilder().setPrettyPrinting().create();
+        gsonPrettyPrint = gson.newBuilder()
+                .setPrettyPrinting()
+                .create();
     }
 
     @Override

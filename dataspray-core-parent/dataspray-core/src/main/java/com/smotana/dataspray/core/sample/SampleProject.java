@@ -17,7 +17,7 @@ public enum SampleProject {
             .build()),
     CLOUD(name -> Definition.builder()
             .name(name)
-            .namespace("io.dataspray.sample")
+            .namespace("com.example.app")
             .version(Version.V_1_0_0)
             .dataFormats(ImmutableSet.of(
                     DataFormat.builder()
@@ -35,19 +35,19 @@ public enum SampleProject {
             .javaProcessors(ImmutableSet.of(
                     JavaProcessor.builder()
                             .name("app")
-                            .inputs(ImmutableSet.of(
+                            .inputStreams(ImmutableSet.of(
                                     StreamLink.builder()
                                             .storeName("myKafka")
-                                            .streamName("login")
+                                            .streamName("evt_login")
                                             .build(),
                                     StreamLink.builder()
                                             .storeName("myKafka")
-                                            .streamName("register")
+                                            .streamName("evt_register")
                                             .build()))
-                            .outputs(ImmutableSet.of(
+                            .outputStreams(ImmutableSet.of(
                                     StreamLink.builder()
                                             .storeName("myKafka")
-                                            .streamName("ip")
+                                            .streamName("last_ip")
                                             .build()))
                             .build()))
             .kafkaStores(ImmutableSet.of(

@@ -4,6 +4,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
+import javax.annotation.Nonnull;
+
 @Value
 @SuperBuilder(toBuilder = true)
 @EqualsAndHashCode(callSuper = true)
@@ -13,5 +15,6 @@ public class KafkaStore extends Store {
      * hostname:port pairs. It's not necessary to list every single Kafka node in the cluster.
      * (Can be null)
      */
+    @Nonnull
     String bootstrapServers;
 }

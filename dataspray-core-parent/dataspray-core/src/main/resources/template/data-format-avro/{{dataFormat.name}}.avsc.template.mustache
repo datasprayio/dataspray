@@ -1,9 +1,9 @@
 {
-  "name": "{{#util.upperCamelCase}}{{dataFormat.name}}{{/util.upperCamelCase}}",
+  "name": "{{{dataFormat.nameCamelUpper}}}",
   "type": "record",
-  {{#project.definition.namespace}}
-  "namespace": "{{.}}",
-  {{/project.definition.namespace}}
+  {{#definition.namespace}}
+  "namespace": "{{{.}}}",
+  {{/definition.namespace}}
   "fields": [
     { "name": "name", "type": [ "string", "null" ], "default": "null" },
     { "name": "enabled", "type": "boolean" },

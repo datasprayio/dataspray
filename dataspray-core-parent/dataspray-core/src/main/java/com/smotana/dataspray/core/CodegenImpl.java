@@ -1,5 +1,6 @@
 package com.smotana.dataspray.core;
 
+import com.google.common.base.Ascii;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
@@ -11,6 +12,7 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.TemplateLoader;
+import com.samskivert.mustache.MustacheException;
 import com.smotana.dataspray.core.definition.model.DataFormat;
 import com.smotana.dataspray.core.definition.model.Definition;
 import com.smotana.dataspray.core.definition.model.JavaProcessor;
@@ -91,8 +93,7 @@ public class CodegenImpl implements Codegen {
 
     @Override
     public void generateAll(Project project) {
-        Optional.ofNullable(project.getDefinition().getDataFormats()).stream()
-                .flatMap(Collection::stream)
+        project.getDefinition().getDataFormats()
                 .forEach(dataFormat -> generateDataFormat(project, dataFormat));
         Optional.ofNullable(project.getDefinition().getJavaProcessors()).stream()
                 .flatMap(Collection::stream)
@@ -101,8 +102,7 @@ public class CodegenImpl implements Codegen {
 
     @Override
     public void generateDataFormat(Project project, String dataFormatName) {
-        generateDataFormat(project, Optional.ofNullable(project.getDefinition().getDataFormats()).stream()
-                .flatMap(Collection::stream)
+        generateDataFormat(project, project.getDefinition().getDataFormats().stream()
                 .filter(p -> p.getName().equals(dataFormatName))
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("Cannot find data format with name " + dataFormatName)));
@@ -110,7 +110,7 @@ public class CodegenImpl implements Codegen {
 
     private void generateDataFormat(Project project, DataFormat dataFormat) {
         switch (dataFormat.getSerde()) {
-            case BINARY, NUMBER, STRING -> { /* Format is schemaless, Nothing to do*/ }
+            case BINARY, STRING -> { /* Format is schemaless, Nothing to do*/ }
             case JSON -> codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_JSON, contextBuilder.createForDataFormat(project, dataFormat));
             case PROTOBUF -> codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_PROTOBUF, contextBuilder.createForDataFormat(project, dataFormat));
             case AVRO -> codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_AVRO, contextBuilder.createForDataFormat(project, dataFormat));
@@ -274,9 +274,15 @@ public class CodegenImpl implements Codegen {
 
     @SneakyThrows
     private String runMustache(String mustacheStr, DatasprayContext context, Optional<TemplateLoader> templateLoaderOpt) {
-        Mustache.Compiler c = Mustache.compiler();
+        Mustache.Compiler c = Mustache.compiler()
+                .escapeHTML(false)
+                .standardsMode(false);
         templateLoaderOpt.ifPresent(c::withLoader);
-        return c.compile(mustacheStr).execute(context);
+        try {
+            return c.compile(mustacheStr).execute(context);
+        } catch (MustacheException ex) {
+            throw new RuntimeException(ex.getMessage() + "; For template '" + Ascii.truncate(mustacheStr, 100, "...") + "'", ex);
+        }
     }
 
     private Optional<ExpandedFile> expandFile(Project project, String templatePath, DatasprayContext parentContext) {

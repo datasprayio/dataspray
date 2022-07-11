@@ -15,36 +15,36 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        {{#jsonDataFormats.size}}
-        <jackson.version>2.13.3</jackson.version>
-        {{/jsonDataFormats.size}}
-        {{#protobufDataFormats.size}}
+        {{#processor.jsonStreams.size}}
+        <gson.version>2.9.0</gson.version>
+        {{/processor.jsonStreams.size}}
+        {{#processor.protobufStreams.size}}
         <protobuf.version>3.7.0</protobuf.version>
-        {{/protobufDataFormats.size}}
-        {{#avroDataFormats.size}}
+        {{/processor.protobufStreams.size}}
+        {{#processor.avroStreams.size}}
         <avro.version>1.11.0</avro.version>
-        {{/avroDataFormats.size}}
+        {{/processor.avroStreams.size}}
     </properties>
 
     <dependencies>
-        {{#jsonDataFormats.size}}
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
+            <groupId>com.smotana.dataspray</groupId>
+            <artifactId>dataspray-runner</artifactId>
+            <version>{{{util.runnerVersion}}}</version>
         </dependency>
+        {{#processor.jsonStreams.size}}
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${gson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
             <version>3.0.2</version>
         </dependency>
-        {{/jsonDataFormats.size}}
-        {{#protobufDataFormats.size}}
+        {{/processor.jsonStreams.size}}
+        {{#processor.protobufStreams.size}}
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
@@ -55,18 +55,18 @@
             <artifactId>protobuf-java-util</artifactId>
             <version>${protobuf.version}</version>
         </dependency>
-        {{/protobufDataFormats.size}}
-        {{#avroDataFormats.size}}
+        {{/processor.protobufStreams.size}}
+        {{#processor.avroStreams.size}}
         <dependency>
           <groupId>org.apache.avro</groupId>
           <artifactId>avro</artifactId>
           <version>${avro.version}</version>
         </dependency>
-        {{/avroDataFormats.size}}
+        {{/processor.avroStreams.size}}
     </dependencies>
 
     <build>
-        {{#protobufDataFormats.size}}
+        {{#processor.protobufStreams.size}}
         <extensions>
             <extension>
                 <groupId>kr.motd.maven</groupId>
@@ -74,25 +74,26 @@
                 <version>1.7.0</version>
             </extension>
         </extensions>
-        {{/protobufDataFormats.size}}
+        {{/processor.protobufStreams.size}}
         <plugins>
-            {{#jsonDataFormats.size}}
+            {{#processor.jsonStreams.size}}
             <plugin>
                 <groupId>org.jsonschema2pojo</groupId>
                 <artifactId>jsonschema2pojo-maven-plugin</artifactId>
                 <version>1.1.2</version>
                 <configuration>
                     <sourcePaths>
-                        {{#jsonDataFormats}}
-                        <sourcePath>${project.basedir}/../{{util.dataFormatsFolder}}/{{this.name}}/</sourcePath>
-                        {{/jsonDataFormats}}
+                        {{#processor.jsonStreams}}
+                        <sourcePath>${project.basedir}/../{{{util.dataFormatsFolder}}}/{{{this.dataFormat.name}}}/</sourcePath>
+                        {{/processor.jsonStreams}}
                     </sourcePaths>
                     <outputDirectory>${project.build.directory}/generated-sources/json</outputDirectory>
-                    {{#project.definition.namespace}}
-                    <targetPackage>{{.}}</targetPackage>
-                    {{/project.definition.namespace}}
+                    {{#definition.namespace}}
+                    <targetPackage>{{{.}}}</targetPackage>
+                    {{/definition.namespace}}
 
                     <!-- Code generation directives -->
+                    <annotationStyle>gson</annotationStyle>
                     <generateBuilders>true</generateBuilders>
                     <useInnerClassBuilders>true</useInnerClassBuilders>
                     <includeDynamicBuilders>true</includeDynamicBuilders>
@@ -121,8 +122,8 @@
                     </execution>
                 </executions>
             </plugin>
-            {{/jsonDataFormats.size}}
-            {{#protobufDataFormats.size}}
+            {{/processor.jsonStreams.size}}
+            {{#processor.protobufStreams.size}}
             <plugin>
                 <groupId>org.xolstice.maven.plugins</groupId>
                 <artifactId>protobuf-maven-plugin</artifactId>
@@ -137,28 +138,28 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <protoSourceRoot>${project.basedir}/../{{util.dataFormatsFolder}}/</protoSourceRoot>
+                    <protoSourceRoot>${project.basedir}/../{{{util.dataFormatsFolder}}}/</protoSourceRoot>
                     <includes>
-                        {{#protobufDataFormats}}
-                        <include>{{this.name}}/**/*.proto</include>
-                        {{/protobufDataFormats}}
+                        {{#processor.protobufStreams}}
+                        <include>{{{this.dataFormat.name}}}/**/*.proto</include>
+                        {{/processor.protobufStreams}}
                     </includes>
                     <outputDirectory>${project.build.directory}/generated-sources/protobuf</outputDirectory>
                     <protocArtifact>com.google.protobuf:protoc:3.7.0:exe:${os.detected.classifier}</protocArtifact>
                 </configuration>
             </plugin>
-            {{/protobufDataFormats.size}}
-            {{#avroDataFormats.size}}
+            {{/processor.protobufStreams.size}}
+            {{#processor.avroStreams.size}}
             <plugin>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro-maven-plugin</artifactId>
                 <version>${avro.version}</version>
                 <configuration>
-                    <sourceDirectory>${project.basedir}/../{{util.dataFormatsFolder}}/</sourceDirectory>
+                    <sourceDirectory>${project.basedir}/../{{{util.dataFormatsFolder}}}/</sourceDirectory>
                     <includes>
-                        {{#avroDataFormats}}
-                        <include>{{this.name}}/**/*.avsc</include>
-                        {{/avroDataFormats}}
+                        {{#processor.avroStreams}}
+                        <include>{{{this.dataFormat.name}}}/**/*.avsc</include>
+                        {{/processor.avroStreams}}
                     </includes>
                     <outputDirectory>${project.build.directory}/generated-sources/avro/</outputDirectory>
                     <stringType>String</stringType>
@@ -176,7 +177,7 @@
                     </execution>
                 </executions>
             </plugin>
-            {{/avroDataFormats.size}}
+            {{/processor.avroStreams.size}}
         </plugins>
     </build>
 </project>

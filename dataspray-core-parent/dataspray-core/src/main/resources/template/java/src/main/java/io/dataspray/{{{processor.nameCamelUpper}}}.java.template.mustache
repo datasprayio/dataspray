@@ -1,0 +1,13 @@
+package io.dataspray;
+
+import io.dataspray.runner.Message;
+{{#processor.generatedInputStreams}}
+import {{{definition.namespace}}}.{{{dataFormat.nameCamelUpper}}};
+{{/processor.generatedInputStreams}}
+
+public interface {{{processor.nameCamelUpper}}} {
+    {{#processor.inputStreams}}
+
+    void process{{{uniqueNameCamelUpper}}}(Message<{{#util.upperCamelCase}}{{{this.dataFormat.name}}}{{/util.upperCamelCase}}> {{this.uniqueNameCamelLower}}, {{{processor.nameCamelUpper}}}Coordinator coordinator);
+    {{/processor.inputStreams}}
+}

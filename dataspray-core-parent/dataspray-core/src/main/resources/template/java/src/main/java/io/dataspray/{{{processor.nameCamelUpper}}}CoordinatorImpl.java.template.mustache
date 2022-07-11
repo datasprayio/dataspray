@@ -1,0 +1,26 @@
+package io.dataspray;
+
+public class {{{processor.nameCamelUpper}}}CoordinatorImpl implements Coordinator {
+
+    private final RawCoordinator rawCoordinator;
+
+    CoordinatorImpl(RawCoordinator rawCoordinator) {
+        this.rawCoordinator = rawCoordinator;
+    }
+
+    String getSourceName();
+    {{#processor.outputStreams}}
+
+    @Override
+    public void send{{{dataFormat.nameCamelUpper}}}({{{dataFormat.nameCamelUpper}}} {{{this.dataFormat.nameCamelLower}}}) {
+
+    }
+    {{/processor.outputStreams}}
+
+    {{#processor.outputStreams}}
+
+    private byte[] toBytes{{#util.upperCamelCase}}{{{this.dataFormat.name}}}{{/util.upperCamelCase}}({{#util.upperCamelCase}}{{{this.dataFormat.name}}}{{/util.upperCamelCase}} {{{this.dataFormat.nameCamelLower}}}) {
+        // TODO
+    }
+    {{/processor.outputStreams}}
+}
