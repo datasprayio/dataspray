@@ -1,0 +1,36 @@
+package {{{definition.javaPackage}}};
+
+{{#util.javaImportsFormat}}
+import io.dataspray.AbstractTest;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import io.dataspray.runner.Message;
+import io.dataspray.runner.TestMessage;
+import io.dataspray.{{{processor.nameCamelUpper}}};
+import io.dataspray.{{{processor.nameCamelUpper}}}Coordinator;
+{{/util.javaImportsFormat}}
+
+{{#util.javaImportsFormat}}
+import static org.junit.Assert.assertEquals;
+{{/util.javaImportsFormat}}
+
+public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
+    {{#processor.inputStreams}}
+
+    @Test(timeout = 10_000)
+    public void test{{{uniqueNameCamelUpper}}}() {
+        TestMessage<{{{dataFormat.nameCamelUpper}}}> msgExpected = createTestMessage{{{dataFormat.nameCamelUpper}}}({{>stream-sample-data}});
+
+        {{{processor.nameCamelUpper}}}.process(msgExpected, coordinator);
+
+        {{#processor.outputStreams}}
+        {{#-first}}
+        coordinator.assert{{{uniqueNameCamelUpper}}}SentData({{>stream-sample-data}});
+        {{/-first}}
+        {{^-first}}
+        coordinator.assert{{{uniqueNameCamelUpper}}}SentNone(0);
+        {{/-first}}
+        {{/processor.outputStreams}}
+    }
+    {{/processor.inputStreams}}
+}

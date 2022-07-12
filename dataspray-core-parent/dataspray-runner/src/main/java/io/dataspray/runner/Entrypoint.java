@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package io.dataspray.runner;
 
-public interface Coordinator {
+public interface Entrypoint {
 
-    void send(byte[] messageBytes, String destinationName);
+    void process(Message<byte[]> message, String sourceName, RawCoordinator coordinator);
 }

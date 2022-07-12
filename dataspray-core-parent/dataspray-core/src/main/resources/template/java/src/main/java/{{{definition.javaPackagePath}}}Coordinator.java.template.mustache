@@ -1,0 +1,8 @@
+package io.dataspray;
+
+public interface Coordinator {
+    {{#processor.outputStreams}}
+
+    void sendTo{{{uniqueNameCamelUpper}}}({{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}});
+    {{/processor.outputStreams}}
+}

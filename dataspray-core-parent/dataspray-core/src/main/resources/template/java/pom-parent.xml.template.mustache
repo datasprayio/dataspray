@@ -15,15 +15,16 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        {{#processor.jsonStreams.size}}
+        <lombok.version>1.18.22</lombok.version>
+        {{^processor.jsonStreams.empty}}
         <gson.version>2.9.0</gson.version>
-        {{/processor.jsonStreams.size}}
-        {{#processor.protobufStreams.size}}
+        {{/processor.jsonStreams.empty}}
+        {{^processor.protobufStreams.empty}}
         <protobuf.version>3.7.0</protobuf.version>
-        {{/processor.protobufStreams.size}}
-        {{#processor.avroStreams.size}}
+        {{/processor.protobufStreams.empty}}
+        {{^processor.avroStreams.empty}}
         <avro.version>1.11.0</avro.version>
-        {{/processor.avroStreams.size}}
+        {{/processor.avroStreams.empty}}
     </properties>
 
     <dependencies>
@@ -32,7 +33,12 @@
             <artifactId>dataspray-runner</artifactId>
             <version>{{{util.runnerVersion}}}</version>
         </dependency>
-        {{#processor.jsonStreams.size}}
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+        </dependency>
+        {{^processor.jsonStreams.empty}}
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
@@ -43,8 +49,8 @@
             <artifactId>jsr305</artifactId>
             <version>3.0.2</version>
         </dependency>
-        {{/processor.jsonStreams.size}}
-        {{#processor.protobufStreams.size}}
+        {{/processor.jsonStreams.empty}}
+        {{^processor.protobufStreams.empty}}
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
@@ -55,18 +61,34 @@
             <artifactId>protobuf-java-util</artifactId>
             <version>${protobuf.version}</version>
         </dependency>
-        {{/processor.protobufStreams.size}}
-        {{#processor.avroStreams.size}}
+        {{/processor.protobufStreams.empty}}
+        {{^processor.avroStreams.empty}}
         <dependency>
           <groupId>org.apache.avro</groupId>
           <artifactId>avro</artifactId>
           <version>${avro.version}</version>
         </dependency>
-        {{/processor.avroStreams.size}}
+        {{/processor.avroStreams.empty}}
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>com.smotana.dataspray</groupId>
+            <artifactId>dataspray-runner</artifactId>
+            <version>{{{util.runnerVersion}}}</version>
+            <classifier>tests</classifier>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
-        {{#processor.protobufStreams.size}}
+        {{^processor.protobufStreams.empty}}
         <extensions>
             <extension>
                 <groupId>kr.motd.maven</groupId>
@@ -74,9 +96,9 @@
                 <version>1.7.0</version>
             </extension>
         </extensions>
-        {{/processor.protobufStreams.size}}
+        {{/processor.protobufStreams.empty}}
         <plugins>
-            {{#processor.jsonStreams.size}}
+            {{^processor.jsonStreams.empty}}
             <plugin>
                 <groupId>org.jsonschema2pojo</groupId>
                 <artifactId>jsonschema2pojo-maven-plugin</artifactId>
@@ -88,9 +110,7 @@
                         {{/processor.jsonStreams}}
                     </sourcePaths>
                     <outputDirectory>${project.build.directory}/generated-sources/json</outputDirectory>
-                    {{#definition.namespace}}
-                    <targetPackage>{{{.}}}</targetPackage>
-                    {{/definition.namespace}}
+                    <targetPackage>{{{definition.javaPackage}}}</targetPackage>
 
                     <!-- Code generation directives -->
                     <annotationStyle>gson</annotationStyle>
@@ -122,8 +142,8 @@
                     </execution>
                 </executions>
             </plugin>
-            {{/processor.jsonStreams.size}}
-            {{#processor.protobufStreams.size}}
+            {{/processor.jsonStreams.empty}}
+            {{^processor.protobufStreams.empty}}
             <plugin>
                 <groupId>org.xolstice.maven.plugins</groupId>
                 <artifactId>protobuf-maven-plugin</artifactId>
@@ -148,8 +168,8 @@
                     <protocArtifact>com.google.protobuf:protoc:3.7.0:exe:${os.detected.classifier}</protocArtifact>
                 </configuration>
             </plugin>
-            {{/processor.protobufStreams.size}}
-            {{#processor.avroStreams.size}}
+            {{/processor.protobufStreams.empty}}
+            {{^processor.avroStreams.empty}}
             <plugin>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro-maven-plugin</artifactId>
@@ -177,7 +197,7 @@
                     </execution>
                 </executions>
             </plugin>
-            {{/processor.avroStreams.size}}
+            {{/processor.avroStreams.empty}}
         </plugins>
     </build>
 </project>

@@ -23,4 +23,24 @@ public class StringUtil {
         }
         return builder.toString();
     }
+
+    public static String javaPackageName(String text) {
+        StringBuilder builder = new StringBuilder();
+        boolean nextCharIsIdentifierStart = true;
+        for (int i = 0; i < text.length(); i++) {
+            char currentChar = text.charAt(i);
+            if (nextCharIsIdentifierStart && Character.isDigit(currentChar)) {
+                continue;
+            } else if (Character.isLetterOrDigit(currentChar)) {
+                builder.append(Character.toLowerCase(currentChar));
+                nextCharIsIdentifierStart = false;
+            } else if (!nextCharIsIdentifierStart && currentChar == '.') {
+                builder.append(currentChar);
+                nextCharIsIdentifierStart = true;
+            } else {
+                continue;
+            }
+        }
+        return builder.toString();
+    }
 }

@@ -84,6 +84,39 @@ public class Processor extends Item {
         return getStreams(true, false, Serde.AVRO);
     }
 
+    @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public ImmutableSet<StreamLink> getBinaryOutputStreams() {
+        return getStreams(false, true, Serde.BINARY);
+    }
+
+    @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public ImmutableSet<StreamLink> getStringOutputStreams() {
+        return getStreams(false, true, Serde.STRING);
+    }
+
+    @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public ImmutableSet<StreamLink> getGeneratedOutputStreams() {
+        return getStreams(false, true,
+                Serde.JSON,
+                Serde.PROTOBUF,
+                Serde.AVRO);
+    }
+
+    @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public ImmutableSet<StreamLink> getJsonOutputStreams() {
+        return getStreams(false, true, Serde.JSON);
+    }
+
+    @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public ImmutableSet<StreamLink> getProtobufOutputStreams() {
+        return getStreams(false, true, Serde.PROTOBUF);
+    }
+
+    @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public ImmutableSet<StreamLink> getAvroOutputStreams() {
+        return getStreams(false, true, Serde.AVRO);
+    }
+
     private ImmutableSet<StreamLink> getStreams(boolean includeInputs, boolean includeOutputs, Serde... serdesArray) {
         List<ImmutableSet<StreamLink>> streamSets = Lists.newArrayList();
         ImmutableSet<Serde> serdes = ImmutableSet.copyOf(serdesArray);

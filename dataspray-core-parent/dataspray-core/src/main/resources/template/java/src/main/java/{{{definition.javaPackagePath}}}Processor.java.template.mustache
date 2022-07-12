@@ -1,11 +1,10 @@
 package io.dataspray;
 
+{{#util.javaImportsFormat}}
 import io.dataspray.runner.Message;
-{{#processor.generatedInputStreams}}
-import {{{definition.namespace}}}.{{{dataFormat.nameCamelUpper}}};
-{{/processor.generatedInputStreams}}
+{{/util.javaImportsFormat}}
 
-public interface {{{processor.nameCamelUpper}}} {
+public interface Processor {
     {{#processor.inputStreams}}
 
     void process{{{uniqueNameCamelUpper}}}(Message<{{#util.upperCamelCase}}{{{this.dataFormat.name}}}{{/util.upperCamelCase}}> {{this.uniqueNameCamelLower}}, {{{processor.nameCamelUpper}}}Coordinator coordinator);

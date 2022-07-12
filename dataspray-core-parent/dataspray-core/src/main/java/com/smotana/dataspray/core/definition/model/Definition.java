@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.gson.annotations.SerializedName;
 import com.jcabi.aspects.Cacheable;
+import com.smotana.dataspray.core.util.StringUtil;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -39,8 +40,16 @@ public class Definition extends Item {
     String namespace;
 
     @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public String getJavaPackage() {
+        return StringUtil.javaPackageName(
+                Strings.nullToEmpty(getNamespace())
+                        + "."
+                        + getName());
+    }
+
+    @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public String getJavaPackagePath() {
-        return Optional.ofNullable(Strings.emptyToNull(getNamespace()))
+        return Optional.ofNullable(Strings.emptyToNull(getJavaPackage()))
                 .map(namespace -> namespace.replaceAll("\\.", File.separator) + File.separator)
                 .orElse("");
     }

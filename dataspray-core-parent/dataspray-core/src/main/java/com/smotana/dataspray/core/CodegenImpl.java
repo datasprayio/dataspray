@@ -277,7 +277,9 @@ public class CodegenImpl implements Codegen {
         Mustache.Compiler c = Mustache.compiler()
                 .escapeHTML(false)
                 .standardsMode(false);
-        templateLoaderOpt.ifPresent(c::withLoader);
+        if (templateLoaderOpt.isPresent()) {
+            c = c.withLoader(templateLoaderOpt.get());
+        }
         try {
             return c.compile(mustacheStr).execute(context);
         } catch (MustacheException ex) {

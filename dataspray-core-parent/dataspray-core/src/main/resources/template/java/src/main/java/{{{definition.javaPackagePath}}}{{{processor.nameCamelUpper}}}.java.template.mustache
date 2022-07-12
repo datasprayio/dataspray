@@ -1,0 +1,15 @@
+package {{{definition.javaPackage}}};
+
+{{#util.javaImportsFormat}}
+import io.dataspray.runner.Message;
+{{/util.javaImportsFormat}}
+
+public class {{{processor.nameCamelUpper}}} implements Processor {
+    {{#processor.inputStreams}}
+
+    @Override
+    public void process{{{uniqueNameCamelUpper}}}(Message<{{#util.upperCamelCase}}{{{this.dataFormat.name}}}{{/util.upperCamelCase}}> message, Coordinator coordinator) {
+        // TODO
+    }
+    {{/processor.inputStreams}}
+}

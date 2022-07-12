@@ -1,9 +1,7 @@
 {
   "name": "{{{dataFormat.nameCamelUpper}}}",
   "type": "record",
-  {{#definition.namespace}}
-  "namespace": "{{{.}}}",
-  {{/definition.namespace}}
+  "namespace": "{{{definition.javaPackage}}}",
   "fields": [
     { "name": "name", "type": [ "string", "null" ], "default": "null" },
     { "name": "enabled", "type": "boolean" },

@@ -1,0 +1,73 @@
+package io.dataspray;
+
+{{#util.javaImportsFormat}}
+import lombok.SneakyThrows;
+{{^processor.avroInputStreams.empty}}
+import java.io.IOException;
+{{/processor.avroInputStreams.empty}}
+{{^processor.jsonInputStreams.empty}}
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.protobuf.InvalidProtocolBufferException;
+import java.nio.charset.StandardCharsets;
+{{/processor.jsonInputStreams.empty}}
+import io.dataspray.runner.RawCoordinator;
+import io.dataspray.runner.Message;
+import io.dataspray.runner.Entrypoint;
+import io.dataspray.runner.RawCoordinator;
+{{^processor.stringInputStreams.empty}}
+import java.nio.charset.StandardCharsets;
+{{/processor.stringInputStreams.empty}}
+import {{{definition.javaPackage}}}.{{{processor.nameCamelUpper}}}Impl;
+{{/util.javaImportsFormat}}
+
+public class Runner implements Entrypoint {
+
+    private final Processor processor = new {{{processor.nameCamelUpper}}}();
+    {{^processor.jsonInputStreams.empty}}
+    private final Gson gson = new GsonBuilder()
+        .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
+        .disableHtmlEscaping()
+        .create();
+    {{/processor.jsonInputStreams.empty}}
+
+    @Override
+    public void process(Message<byte[]> message, String sourceName, RawCoordinator rawCoordinator) {
+        Coordinator coordinator = new {{{processor.nameCamelUpper}}}Coordinator(rawCoordinator);
+        switch(sourceName) {
+            {{#processor.inputStreams}}
+            {{#dataFormat.isSerdeBinary}}
+            case "{{{dataFormat.name}}}":
+                processor.process{{{uniqueNameCamelUpper}}}(message, coordinator);
+                break;
+            {{/dataFormat.isSerdeBinary}}
+            {{^dataFormat.isSerdeBinary}}
+            case "{{{dataFormat.name}}}":
+                processor.process{{{uniqueNameCamelUpper}}}(message.swapData(to{{{dataFormat.nameCamelUpper}}}(message.getData())), coordinator);
+                break;
+            {{/dataFormat.isSerdeBinary}}
+            {{/processor.inputStreams}}
+            default:
+                throw new RuntimeException("Received message from unexpected source: " + sourceName);
+        }
+    }
+    {{#processor.inputStreams}}
+
+    @SneakyThrows
+    private {{{dataFormat.nameCamelUpper}}} to{{{dataFormat.nameCamelUpper}}}(byte[] data) {
+        {{#dataFormat.isSerdeString}}
+        return new String(data, StandardCharsets.UTF_8);
+        {{/dataFormat.isSerdeString}}
+        {{#dataFormat.isSerdeJson}}
+        return gson.fromJson(new String(data, StandardCharsets.UTF_8), {{{dataFormat.nameCamelUpper}}}.class);
+        {{/dataFormat.isSerdeJson}}
+        {{#dataFormat.isSerdeProtobuf}}
+        return {{{dataFormat.nameCamelUpper}}}.parseFrom(data);
+        {{/dataFormat.isSerdeProtobuf}}
+        {{#dataFormat.isSerdeAvro}}
+        return {{{dataFormat.nameCamelUpper}}}.getDecoder().decode(data);
+        {{/dataFormat.isSerdeAvro}}
+    }
+    {{/processor.inputStreams}}
+}

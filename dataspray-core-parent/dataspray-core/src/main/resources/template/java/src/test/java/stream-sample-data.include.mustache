@@ -1,0 +1,17 @@
+{{#util.trim}}
+{{#dataFormat.isSerdeBinary}}
+new byte[] { 0x42 }
+{{/dataFormat.isSerdeBinary}}
+{{#dataFormat.isSerdeString}}
+"Forty two"
+{{/dataFormat.isSerdeString}}
+{{#dataFormat.isSerdeJson}}
+new {{{dataFormat.nameCamelUpper}}}()
+{{/dataFormat.isSerdeJson}}
+{{#dataFormat.isSerdeProtobuf}}
+{{{dataFormat.nameCamelUpper}}}.newBuilder().build()
+{{/dataFormat.isSerdeProtobuf}}
+{{#dataFormat.isSerdeAvro}}
+new {{{dataFormat.nameCamelUpper}}}()
+{{/dataFormat.isSerdeAvro}}
+{{/util.trim}}
