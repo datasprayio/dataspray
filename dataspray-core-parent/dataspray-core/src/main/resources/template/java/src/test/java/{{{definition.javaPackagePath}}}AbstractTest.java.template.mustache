@@ -1,0 +1,24 @@
+package {{{definition.javaPackage}}};
+
+{{#util.javaImportsFormat}}
+import org.junit.Before;
+import io.dataspray.runner.TestMessage;
+{{/util.javaImportsFormat}}
+
+public class AbstractTest {
+
+    protected Processor processor;
+    protected TestCoordinator coordinator;
+
+    @Before
+    public void initializeAbstractTest() {
+        processor = new {{{processor.nameCamelUpper}}}();
+        coordinator = new TestCoordinator();
+    }
+    {{#processor.inputStreams}}
+
+    public TestMessage<{{{dataFormat.nameCamelUpper}}}> createMessage{{{dataFormat.nameCamelUpper}}}({{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
+        return new TestMessage<>("{{{storeName}}}", "{{{streamName}}}", {{{dataFormat.nameCamelLower}}});
+    }
+    {{/processor.inputStreams}}
+}

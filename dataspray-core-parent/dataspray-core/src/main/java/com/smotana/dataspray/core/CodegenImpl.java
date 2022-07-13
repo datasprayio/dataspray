@@ -61,7 +61,8 @@ public class CodegenImpl implements Codegen {
 
     @Override
     public Project initProject(String basePath, String projectName, SampleProject sample) throws IOException {
-        Path projectPath = Path.of(basePath, projectName);
+        Definition definition = sample.getDefinitionForName(projectName);
+        Path projectPath = Path.of(basePath, definition.getNameDir());
         File projectDir = projectPath.toFile();
 
         // Create project folder
@@ -83,7 +84,6 @@ public class CodegenImpl implements Codegen {
         if (!dsProjectFile.createNewFile()) {
             throw new IOException("File already exists: " + dsProjectFile.getPath());
         }
-        Definition definition = sample.getDefinitionForName(projectName);
         try (FileOutputStream fos = new FileOutputStream(dsProjectFile)) {
             fos.write(definitionLoader.toYaml(definition).getBytes(StandardCharsets.UTF_8));
         }
@@ -127,7 +127,7 @@ public class CodegenImpl implements Codegen {
     }
 
     private void generateJava(Project project, JavaProcessor processor) {
-        Path processorPath = createProjectDir(project, processor.getName());
+        Path processorPath = createProjectDir(project, processor.getNameDir());
         codegen(project, processorPath, Template.JAVA, contextBuilder.createForProcessor(project, processor));
     }
 
@@ -155,7 +155,7 @@ public class CodegenImpl implements Codegen {
         ProcessBuilder processBuilder = isWindows()
                 ? new ProcessBuilder("cmd.exe", "/c", "mvn clean install")
                 : new ProcessBuilder("sh", "-c", "mvn clean install");
-        processBuilder.directory(getProjectDir(project, processorName).toFile());
+        processBuilder.directory(getProjectDir(project, processor.getNameDir()).toFile());
         processBuilder.redirectError(err);
         processBuilder.redirectInput(in);
         processBuilder.redirectOutput(out);
@@ -167,16 +167,16 @@ public class CodegenImpl implements Codegen {
         }
     }
 
-    private Path getProjectDir(Project project, String name) {
-        return project.getPath().resolve(name);
+    private Path getProjectDir(Project project, String nameDir) {
+        return project.getPath().resolve(nameDir);
     }
 
-    private Path createProjectDir(Project project, String name) {
-        return createDir(getProjectDir(project, name));
+    private Path createProjectDir(Project project, String nameDir) {
+        return createDir(getProjectDir(project, nameDir));
     }
 
     private Path getDataFormatDir(Project project, DataFormat dataFormat) {
-        return project.getPath().resolve(DATA_FORMATS_FOLDER).resolve(dataFormat.getName());
+        return project.getPath().resolve(DATA_FORMATS_FOLDER).resolve(dataFormat.getNameDir());
     }
 
     private Path createDataFormatDir(Project project, DataFormat dataFormat) {

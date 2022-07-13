@@ -1,4 +1,4 @@
-package io.dataspray;
+package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
 import io.dataspray.runner.Message;
@@ -7,6 +7,6 @@ import io.dataspray.runner.Message;
 public interface Processor {
     {{#processor.inputStreams}}
 
-    void process{{{uniqueNameCamelUpper}}}(Message<{{#util.upperCamelCase}}{{{this.dataFormat.name}}}{{/util.upperCamelCase}}> {{this.uniqueNameCamelLower}}, {{{processor.nameCamelUpper}}}Coordinator coordinator);
+    void process{{{uniqueNameCamelUpper}}}(Message<{{#util.upperCamelCase}}{{{this.dataFormat.name}}}{{/util.upperCamelCase}}> {{this.uniqueNameCamelLower}}, Coordinator coordinator);
     {{/processor.inputStreams}}
 }

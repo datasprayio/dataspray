@@ -1,0 +1,57 @@
+package {{{definition.javaPackage}}};
+
+{{#util.javaImportsFormat}}
+{{^processor.outputStreams.empty}}
+import lombok.SneakyThrows;
+import java.util.Collections;
+import java.util.List;
+import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
+{{/processor.outputStreams.empty}}
+{{/util.javaImportsFormat}}
+{{^processor.outputStreams.empty}}
+
+{{#util.javaImportsFormat}}
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+{{/util.javaImportsFormat}}
+{{/processor.outputStreams.empty}}
+
+public class TestCoordinator implements Coordinator {
+
+    {{#processor.outputStreams}}
+    private final List<{{{dataFormat.nameCamelUpper}}}> sent{{{dataFormat.nameCamelUpper}}} = Collections.synchronizedList(Lists.newArrayList());
+    {{/processor.outputStreams}}
+    {{#processor.outputStreams}}
+
+    @SneakyThrows
+    @Override
+    public void sendTo{{{uniqueNameCamelUpper}}}({{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
+        sent{{{dataFormat.nameCamelUpper}}}.add({{{dataFormat.nameCamelLower}}});
+    }
+    {{/processor.outputStreams}}
+    {{#processor.outputStreams}}
+
+    public ImmutableList<{{{dataFormat.nameCamelUpper}}}> getSent{{{dataFormat.nameCamelUpper}}}() {
+        return ImmutableList.copyOf(sent{{{dataFormat.nameCamelUpper}}});
+    }
+    {{/processor.outputStreams}}
+    {{#processor.outputStreams}}
+
+    public void assertSentNone{{{dataFormat.nameCamelUpper}}}() {
+        assertTrue(sent{{{dataFormat.nameCamelUpper}}}.isEmpty());
+    }
+    {{/processor.outputStreams}}
+    {{#processor.outputStreams}}
+
+    public void assertSentCount{{{dataFormat.nameCamelUpper}}}(int expectedCount) {
+        assertEquals(expectedCount, sent{{{dataFormat.nameCamelUpper}}}.size());
+    }
+    {{/processor.outputStreams}}
+    {{#processor.outputStreams}}
+
+    public void assertSent{{{dataFormat.nameCamelUpper}}}(List<{{{dataFormat.nameCamelUpper}}}> expectedSent) {
+        assertEquals(expectedSent, sent{{{dataFormat.nameCamelUpper}}});
+    }
+    {{/processor.outputStreams}}
+}

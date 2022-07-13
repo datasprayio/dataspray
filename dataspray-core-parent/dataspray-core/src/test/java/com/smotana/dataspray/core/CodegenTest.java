@@ -53,7 +53,7 @@ public class CodegenTest extends CoreAbstractTest {
 
     @Test
     public void test() throws Exception {
-        Project project = codegen.initProject(workingDir.toString(), "test", SampleProject.CLOUD);
+        Project project = codegen.initProject(workingDir.toString(), "Test Project", SampleProject.CLOUD);
         codegen.generateAll(project);
         codegen.installAll(project);
     }

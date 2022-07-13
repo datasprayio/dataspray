@@ -18,6 +18,11 @@ public class Item {
     String name;
 
     @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public String getNameDir() {
+        return StringUtil.dirName(name);
+    }
+
+    @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public String getNameCamelUpper() {
         return StringUtil.camelCase(name, true);
     }

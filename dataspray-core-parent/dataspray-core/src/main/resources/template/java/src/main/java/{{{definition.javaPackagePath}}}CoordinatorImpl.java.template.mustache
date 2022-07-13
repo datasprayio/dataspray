@@ -1,9 +1,7 @@
-package io.dataspray;
+package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
 import lombok.SneakyThrows;
-{{#processor.generatedOutputStreams}}
-{{/processor.generatedOutputStreams}}
 import io.dataspray.runner.RawCoordinator;
 {{^processor.stringOutputStreams.empty}}
 import java.nio.charset.StandardCharsets;
@@ -12,17 +10,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.StandardCharsets;
 {{/processor.jsonOutputStreams.empty}}
 {{^processor.avroOutputStreams.empty}}
-import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 {{/processor.avroOutputStreams.empty}}
 {{/util.javaImportsFormat}}
 
-public class TestCoordinator implements {{{processor.nameCamelUpper}}}Coordinator {
+public class CoordinatorImpl implements Coordinator {
 
-    private final Coordinator coordinator;
+    private final RawCoordinator rawCoordinator;
 
-    public {{{processor.nameCamelUpper}}}CoordinatorImpl(Coordinator coordinator) {
-        this.coordinator = coordinator;
+    public CoordinatorImpl(RawCoordinator rawCoordinator) {
+        this.rawCoordinator = rawCoordinator;
     }
     {{#processor.outputStreams}}
 
@@ -37,7 +34,7 @@ public class TestCoordinator implements {{{processor.nameCamelUpper}}}Coordinato
         }
 
         {{/dataFormat.isSerdeAvro}}
-        coordinator.send(
+        rawCoordinator.send(
             {{#dataFormat.isSerdeBinary}}
             {{{dataFormat.nameCamelLower}}},
             {{/dataFormat.isSerdeBinary}}
@@ -53,7 +50,7 @@ public class TestCoordinator implements {{{processor.nameCamelUpper}}}Coordinato
             {{#dataFormat.isSerdeAvro}}
             {{{dataFormat.nameCamelLower}}}Bytes,
             {{/dataFormat.isSerdeAvro}}
-            Coordinator.StoreType.KAFKA,
+            RawCoordinator.StoreType.KAFKA,
             "{{{storeName}}}",
             "{{{streamName}}}");
     }

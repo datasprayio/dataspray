@@ -1,4 +1,4 @@
-package io.dataspray;
+package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
 import lombok.SneakyThrows;
@@ -9,7 +9,6 @@ import java.io.IOException;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.protobuf.InvalidProtocolBufferException;
 import java.nio.charset.StandardCharsets;
 {{/processor.jsonInputStreams.empty}}
 import io.dataspray.runner.RawCoordinator;
@@ -19,7 +18,6 @@ import io.dataspray.runner.RawCoordinator;
 {{^processor.stringInputStreams.empty}}
 import java.nio.charset.StandardCharsets;
 {{/processor.stringInputStreams.empty}}
-import {{{definition.javaPackage}}}.{{{processor.nameCamelUpper}}}Impl;
 {{/util.javaImportsFormat}}
 
 public class Runner implements Entrypoint {
@@ -34,7 +32,7 @@ public class Runner implements Entrypoint {
 
     @Override
     public void process(Message<byte[]> message, String sourceName, RawCoordinator rawCoordinator) {
-        Coordinator coordinator = new {{{processor.nameCamelUpper}}}Coordinator(rawCoordinator);
+        Coordinator coordinator = new CoordinatorImpl(rawCoordinator);
         switch(sourceName) {
             {{#processor.inputStreams}}
             {{#dataFormat.isSerdeBinary}}

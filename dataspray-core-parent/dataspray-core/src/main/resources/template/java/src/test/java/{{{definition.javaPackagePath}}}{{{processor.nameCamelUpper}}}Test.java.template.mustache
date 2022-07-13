@@ -1,17 +1,12 @@
 package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
-import io.dataspray.AbstractTest;
 import org.junit.Test;
-import static org.junit.Assert.*;
-import io.dataspray.runner.Message;
-import io.dataspray.runner.TestMessage;
-import io.dataspray.{{{processor.nameCamelUpper}}};
-import io.dataspray.{{{processor.nameCamelUpper}}}Coordinator;
+import com.google.common.collect.ImmutableList;
 {{/util.javaImportsFormat}}
 
 {{#util.javaImportsFormat}}
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 {{/util.javaImportsFormat}}
 
 public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
@@ -19,16 +14,15 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
 
     @Test(timeout = 10_000)
     public void test{{{uniqueNameCamelUpper}}}() {
-        TestMessage<{{{dataFormat.nameCamelUpper}}}> msgExpected = createTestMessage{{{dataFormat.nameCamelUpper}}}({{>stream-sample-data}});
-
-        {{{processor.nameCamelUpper}}}.process(msgExpected, coordinator);
-
+        processor.process{{{uniqueNameCamelUpper}}}(
+            createMessage{{{dataFormat.nameCamelUpper}}}({{>../../stream-sample-data}}),
+            coordinator);
         {{#processor.outputStreams}}
         {{#-first}}
-        coordinator.assert{{{uniqueNameCamelUpper}}}SentData({{>stream-sample-data}});
+        coordinator.assertSent{{{dataFormat.nameCamelUpper}}}(ImmutableList.of({{>../../stream-sample-data}}));
         {{/-first}}
         {{^-first}}
-        coordinator.assert{{{uniqueNameCamelUpper}}}SentNone(0);
+        coordinator.assertSentNone{{{dataFormat.nameCamelUpper}}}(0);
         {{/-first}}
         {{/processor.outputStreams}}
     }

@@ -17,7 +17,7 @@ public enum SampleProject {
             .build()),
     CLOUD(name -> Definition.builder()
             .name(name)
-            .namespace("com.example.app")
+            .namespace("com.example")
             .version(Version.V_1_0_0)
             .dataFormats(ImmutableSet.of(
                     DataFormat.builder()
@@ -34,7 +34,7 @@ public enum SampleProject {
                             .build()))
             .javaProcessors(ImmutableSet.of(
                     JavaProcessor.builder()
-                            .name("app")
+                            .name("IP Extractor")
                             .inputStreams(ImmutableSet.of(
                                     StreamLink.builder()
                                             .storeName("myKafka")

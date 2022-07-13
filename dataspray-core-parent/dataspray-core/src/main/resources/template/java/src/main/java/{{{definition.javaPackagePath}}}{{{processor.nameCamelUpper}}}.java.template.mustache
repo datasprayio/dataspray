@@ -10,6 +10,11 @@ public class {{{processor.nameCamelUpper}}} implements Processor {
     @Override
     public void process{{{uniqueNameCamelUpper}}}(Message<{{#util.upperCamelCase}}{{{this.dataFormat.name}}}{{/util.upperCamelCase}}> message, Coordinator coordinator) {
         // TODO
+        {{#processor.outputStreams}}
+        {{#-first}}
+        coordinator.sendTo{{{uniqueNameCamelUpper}}}({{>../../stream-sample-data}});
+        {{/-first}}
+        {{/processor.outputStreams}}
     }
     {{/processor.inputStreams}}
 }
