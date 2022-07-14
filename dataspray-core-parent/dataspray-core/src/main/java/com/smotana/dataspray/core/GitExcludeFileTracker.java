@@ -30,11 +30,12 @@ public class GitExcludeFileTracker implements FileTracker {
     public static final String GIT_EXCLUDE_TMP_FILE = ".git/info/exclude.tmp";
 
     @Override
-    public void unlinkTrackedFiles(Project project, Optional<Path> subPathOpt) {
+    public void unlinkTrackedFiles(Project project, Optional<Path> subPathOpt, Optional<Long> maxDepthOpt) {
+        log.info("Deleting generated files, subpath {} maxDepth {}", subPathOpt, maxDepthOpt);
         subPathOpt = subPathOpt.map(subPath -> makeRelativeToProject(project, subPath));
-        ImmutableSet<Path> trackedPathsToUnlink = getTrackedFiles(project, subPathOpt);
+        ImmutableSet<Path> trackedPathsToUnlink = getTrackedFiles(project, subPathOpt, maxDepthOpt);
         for (Path trackedPath : trackedPathsToUnlink) {
-            log.info("Deleting previously generated file {}", trackedPath);
+            log.info("Deleting file {}", trackedPath);
             project.getPath().resolve(trackedPath).toFile().delete();
         }
         untrackFiles(project, trackedPathsToUnlink);
@@ -42,9 +43,10 @@ public class GitExcludeFileTracker implements FileTracker {
 
     @Override
     @SneakyThrows
-    public boolean trackAndUnlinkFile(Project project, Path relativePath) {
-        relativePath = makeRelativeToProject(project, relativePath);
+    public boolean trackFile(Project project, Path relativePath) {
+
         // Check if user has put an override in to not track this file
+        relativePath = makeRelativeToProject(project, relativePath);
         GitIgnoreParser gitIgnoreParser = GitIgnoreParser.get(project);
         Optional<Boolean> fileIgnoredWithDotGitignoreOpt = gitIgnoreParser.isFileIgnoredWithDotGitignore(relativePath);
         if (fileIgnoredWithDotGitignoreOpt.isPresent() && !fileIgnoredWithDotGitignoreOpt.get()) {
@@ -58,11 +60,6 @@ public class GitExcludeFileTracker implements FileTracker {
                     getOrCreateExcludeFile(project).toPath(),
                     System.lineSeparator() + NEXT_LINE_HEADER + System.lineSeparator() + addPrefixSeparator(relativePath.toString()),
                     StandardOpenOption.APPEND);
-        }
-
-        // Delete if already exists
-        if (relativePath.toFile().exists()) {
-            relativePath.toFile().delete();
         }
 
         return true;
@@ -81,9 +78,10 @@ public class GitExcludeFileTracker implements FileTracker {
     }
 
     @SneakyThrows
-    private ImmutableSet<Path> getTrackedFiles(Project project, Optional<Path> subPathOpt) {
+    private ImmutableSet<Path> getTrackedFiles(Project project, Optional<Path> subPathOpt, Optional<Long> maxDepthOpt) {
         ImmutableSet.Builder<Path> trackedFilesBuilder = ImmutableSet.builder();
         GitIgnoreParser gitignore = GitIgnoreParser.get(project);
+        maxDepthOpt = maxDepthOpt.map(maxDepth -> maxDepth + subPathOpt.map(Path::getNameCount).orElse(0));
         try (Scanner sc = new Scanner(getOrCreateExcludeFile(project))) {
             boolean nextLineIsManaged = false;
             while (sc.hasNextLine()) {
@@ -96,6 +94,9 @@ public class GitExcludeFileTracker implements FileTracker {
                     nextLineIsManaged = false;
                     Path trackedRelativePath = Path.of(removePrefixSeparator(nextLine));
                     if (subPathOpt.isPresent() && !trackedRelativePath.startsWith(subPathOpt.get())) {
+                        continue;
+                    }
+                    if (maxDepthOpt.isPresent() && (trackedRelativePath.getNameCount() - 1) > maxDepthOpt.get()) {
                         continue;
                     }
                     if (!gitignore.isFileIgnored(trackedRelativePath).orElse(true)) {

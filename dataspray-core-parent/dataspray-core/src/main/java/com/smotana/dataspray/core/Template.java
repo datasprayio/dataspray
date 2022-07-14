@@ -6,7 +6,8 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum Template {
-    TEMPLATES("templates"),
+    TEMPLATES("template"),
+    SCHEMAS("schema"),
 
     DATA_FORMAT_JSON("data-format-json"),
     DATA_FORMAT_PROTOBUF("data-format-protobuf"),

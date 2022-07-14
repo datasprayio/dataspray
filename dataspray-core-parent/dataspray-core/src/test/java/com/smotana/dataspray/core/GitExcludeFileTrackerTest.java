@@ -43,28 +43,28 @@ class GitExcludeFileTrackerTest extends CoreAbstractTest {
         File file3 = createFile("dir1/file3");
         File file4 = createFile("dir1/file4");
 
-        fileTracker.unlinkTrackedFiles(project, Optional.empty());
+        fileTracker.unlinkTrackedFiles(project, Optional.empty(), Optional.empty());
         assertTrue(file1.exists());
         assertTrue(file2.exists());
         assertTrue(file3.exists());
         assertTrue(file4.exists());
-        fileTracker.unlinkTrackedFiles(project, Optional.of(Path.of("dir1")));
+        fileTracker.unlinkTrackedFiles(project, Optional.of(Path.of("dir1")), Optional.of(1L));
         assertTrue(file1.exists());
         assertTrue(file2.exists());
         assertTrue(file3.exists());
         assertTrue(file4.exists());
 
-        assertTrue(fileTracker.trackAndUnlinkFile(project, Path.of("file5")));
+        assertTrue(fileTracker.trackFile(project, Path.of("file5")));
         File file5 = createFile("file5");
-        assertTrue(fileTracker.trackAndUnlinkFile(project, Path.of("file6")));
+        assertTrue(fileTracker.trackFile(project, Path.of("file6")));
         File file6 = createFile("file6");
-        assertTrue(fileTracker.trackAndUnlinkFile(project, Path.of("dir1/file7")));
+        assertTrue(fileTracker.trackFile(project, Path.of("dir1/file7")));
         File file7 = createFile("dir1/file7");
-        assertTrue(fileTracker.trackAndUnlinkFile(project, Path.of("dir1/file8")));
+        assertTrue(fileTracker.trackFile(project, Path.of("dir1/file8")));
         File file8 = createFile("dir1/file8");
-        assertTrue(fileTracker.trackAndUnlinkFile(project, Path.of("dir2/file9")));
+        assertTrue(fileTracker.trackFile(project, Path.of("dir2/file9")));
         File file9 = createFile("dir2/file9");
-        assertTrue(fileTracker.trackAndUnlinkFile(project, Path.of("dir2/file10")));
+        assertTrue(fileTracker.trackFile(project, Path.of("dir2/file10")));
         File file10 = createFile("dir2/file10");
 
         createFile(".gitignore", """
@@ -80,7 +80,7 @@ class GitExcludeFileTrackerTest extends CoreAbstractTest {
 
         log.info("{}:\n{}", GIT_EXCLUDE_FILE, Files.readString(project.getPath().resolve(GIT_EXCLUDE_FILE), StandardCharsets.UTF_8));
 
-        fileTracker.unlinkTrackedFiles(project, Optional.of(Path.of("dir1")));
+        fileTracker.unlinkTrackedFiles(project, Optional.of(Path.of("dir1")), Optional.empty());
         assertTrue(file1.exists());
         assertTrue(file2.exists());
         assertTrue(file3.exists());
@@ -92,7 +92,19 @@ class GitExcludeFileTrackerTest extends CoreAbstractTest {
         assertTrue(file9.exists());
         assertTrue(file10.exists());
 
-        fileTracker.unlinkTrackedFiles(project, Optional.empty());
+        fileTracker.unlinkTrackedFiles(project, Optional.empty(), Optional.of(0L));
+        assertTrue(file1.exists());
+        assertTrue(file2.exists());
+        assertTrue(file3.exists());
+        assertTrue(file4.exists());
+        assertTrue(file5.exists());
+        assertFalse(file6.exists());
+        assertTrue(file7.exists());
+        assertFalse(file8.exists());
+        assertTrue(file9.exists());
+        assertTrue(file10.exists());
+
+        fileTracker.unlinkTrackedFiles(project, Optional.empty(), Optional.empty());
         assertTrue(file1.exists());
         assertTrue(file2.exists());
         assertTrue(file3.exists());

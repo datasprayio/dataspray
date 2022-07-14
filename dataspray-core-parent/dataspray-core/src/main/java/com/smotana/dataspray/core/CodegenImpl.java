@@ -40,8 +40,8 @@ import java.util.Optional;
 
 @Slf4j
 public class CodegenImpl implements Codegen {
-    public static final String DATA_FORMATS_FOLDER = ".formats";
-    public static final String TEMPLATES_FOLDER = ".templates";
+    public static final String SCHEMAS_FOLDER = ".schema";
+    public static final String TEMPLATES_FOLDER = ".template";
     /** Template files, always overwritten unless overriden by user */
     private static final String MUSTACHE_FILE_EXTENSION_TEMPLATE = ".template.mustache";
     /** Sample files, only written if they don't already exist, intended to be edited by user */
@@ -64,6 +64,8 @@ public class CodegenImpl implements Codegen {
     @Inject
     @Named("ERR")
     private Redirect err;
+
+    private boolean schemasFolderGenerated = false;
 
     @Override
     public Project initProject(String basePath, String projectName, SampleProject sample) throws IOException {
@@ -182,10 +184,22 @@ public class CodegenImpl implements Codegen {
     }
 
     private Path getDataFormatDir(Project project, DataFormat dataFormat) {
-        return project.getPath().resolve(DATA_FORMATS_FOLDER).resolve(dataFormat.getNameDir());
+        return project.getPath().resolve(SCHEMAS_FOLDER).resolve(dataFormat.getNameDir());
     }
 
     private Path createDataFormatDir(Project project, DataFormat dataFormat) {
+        if (!schemasFolderGenerated) {
+            schemasFolderGenerated = true;
+
+            // Create schemas folder
+            Path schemasPath = project.getPath().resolve(SCHEMAS_FOLDER);
+            if (schemasPath.toFile().mkdir()) {
+                log.info("Created schemas folder " + schemasPath);
+            }
+
+            // Initialize templates folder
+            applyTemplate(project, getTemplateFromResources(Template.SCHEMAS), schemasPath, Optional.of(0L), contextBuilder.createForTemplates(project));
+        }
         return createDir(getDataFormatDir(project, dataFormat));
     }
 
@@ -205,51 +219,53 @@ public class CodegenImpl implements Codegen {
         }
 
         // Initialize templates folder
-        applyTemplate(project, getTemplateFromResources(Template.TEMPLATES), templatesPath, contextBuilder.createForTemplates(project));
+        applyTemplate(project, getTemplateFromResources(Template.TEMPLATES), templatesPath, Optional.of(0L), contextBuilder.createForTemplates(project));
 
         // Copy our template from resources to repo (Skipping over overriden files)
         File templateInResourcesDir = getTemplateFromResources(template);
         Path templateInResourcesPath = templateInResourcesDir.toPath();
         Path templateInRepoDir = templatesPath.resolve(template.getResourceName());
+        fileTracker.unlinkTrackedFiles(project, Optional.of(templateInRepoDir), Optional.empty());
         if (templateInRepoDir.toFile().mkdir()) {
             log.info("Created {} template folder {}", template.getResourceName(), templateInRepoDir);
         }
         log.info("Walking over template in dir {}", templateInResourcesDir);
-        Files.walk(templateInResourcesPath).forEach(source -> {
-            Path destination = templateInRepoDir.resolve(templateInResourcesPath.relativize(source));
-            if (isGitIgnored(project, destination)) {
-                log.info("Skipping overwrite of source-controlled template file {}", source.getFileName());
-                return; // Do not replace checked in files
-            }
+        Files.walk(templateInResourcesPath)
+                .map(Path::toFile)
+                .filter(File::isFile)
+                .forEach(source -> {
+                    Path destination = templateInRepoDir.resolve(templateInResourcesPath.relativize(source.toPath()));
+                    Path projectRelativePath = project.getPath().relativize(destination);
+                    if (!fileTracker.trackFile(project, projectRelativePath)) {
+                        log.info("Skipping file overriden by user {}", projectRelativePath);
+                        return;
+                    }
+                    Optional.ofNullable(destination.toFile().getParentFile())
+                            .ifPresent(File::mkdirs);
 
-            if (source.toFile().isDirectory()) {
-                log.info("Copying template dir {} to {}", source.getFileName(), destination);
-                destination.toFile().mkdirs();
-            } else {
-                log.info("Copying template file {} to {}", source.getFileName(), destination);
-                try {
-                    Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-        });
+                    log.info("Copying template file {} to {}", source.getName(), destination);
+                    try {
+                        Files.copy(source.toPath(), destination, StandardCopyOption.REPLACE_EXISTING);
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
 
         // Finally, apply our template
-        applyTemplate(project, templateInRepoDir.toFile(), processorPath, processorContext);
+        applyTemplate(project, templateInRepoDir.toFile(), processorPath, Optional.empty(), processorContext);
     }
 
-    private void applyTemplate(Project project, File templateDir, Path destination, DatasprayContext context) {
-        applyTemplate(project, templateDir, destination, context, true);
+    private void applyTemplate(Project project, File templateDir, Path destination, Optional<Long> maxDepthOpt, DatasprayContext context) {
+        applyTemplate(project, templateDir, destination, maxDepthOpt, context, true);
     }
 
-    private void applyTemplate(Project project, File templateDir, Path destination, DatasprayContext context, boolean isRoot) {
+    private void applyTemplate(Project project, File templateDir, Path destination, Optional<Long> maxDepthOpt, DatasprayContext context, boolean isRoot) {
         if (isRoot) {
-            fileTracker.unlinkTrackedFiles(project, Optional.of(destination));
+            fileTracker.unlinkTrackedFiles(project, Optional.of(destination), maxDepthOpt);
         }
         for (File item : templateDir.listFiles()) {
             if (item.isDirectory()) {
-                applyTemplate(project, item, destination.resolve(item.getName()), context, false);
+                applyTemplate(project, item, destination.resolve(item.getName()), maxDepthOpt, context, false);
             } else if (item.isFile()) {
                 boolean isSample = item.getName().endsWith(MUSTACHE_FILE_EXTENSION_SAMPLE);
                 if (isSample || item.getName().endsWith(MUSTACHE_FILE_EXTENSION_TEMPLATE)) {
@@ -262,7 +278,7 @@ public class CodegenImpl implements Codegen {
                         Path localFile = localDestination.resolve(expandedFileNameWithoutSuffix);
                         if (!isSample) {
                             Path localFilePath = localDestination.resolve(expandedFileNameWithoutSuffix);
-                            if (!fileTracker.trackAndUnlinkFile(project, localFilePath)) {
+                            if (!fileTracker.trackFile(project, localFilePath)) {
                                 log.debug("Skipping file overriden by user {}", item.getName());
                                 continue;
                             }
@@ -346,21 +362,6 @@ public class CodegenImpl implements Codegen {
     @SneakyThrows
     private File getTemplateFromResources(Template template) {
         return new File(Thread.currentThread().getContextClassLoader().getResource("template/" + template.getResourceName()).toURI());
-    }
-
-    @SneakyThrows
-    private boolean isGitIgnored(Project project, Path source) {
-        String sourceAbsPath = source.toAbsolutePath().toString();
-        return project.getGit()
-                .status()
-                .addPath(sourceAbsPath)
-                .call()
-                .getIgnoredNotInIndex()
-                // TODO Check if non-existent file is also ignored
-                // Right now we only skip if file exists AND is ignored here
-                // But we want to also check for file does not exist and is ignored
-                // Explore if the Status gives us this information
-                .contains(sourceAbsPath);
     }
 
     private boolean isWindows() {
