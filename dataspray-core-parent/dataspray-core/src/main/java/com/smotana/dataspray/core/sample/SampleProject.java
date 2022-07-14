@@ -14,6 +14,7 @@ public enum SampleProject {
     EMPTY(name -> Definition.builder()
             .name(name)
             .version(Version.V_1_0_0)
+            .dataFormats(ImmutableSet.of())
             .build()),
     CLOUD(name -> Definition.builder()
             .name(name)

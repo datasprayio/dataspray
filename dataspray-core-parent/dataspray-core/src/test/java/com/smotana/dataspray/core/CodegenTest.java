@@ -22,11 +22,22 @@ public class CodegenTest extends CoreAbstractTest {
     private static MockInOutErr mockInOutErr = new MockInOutErr();
     private Path workingDir;
 
+    @Override
+    protected void configure() {
+        super.configure();
+
+        install(mockInOutErr.module());
+
+        install(DefinitionLoaderImpl.module());
+        install(GitExcludeFileTracker.module());
+        install(CodegenImpl.module(false));
+    }
+
     @BeforeEach
     public void setupBefore() throws IOException {
         log.info("CWD: {}", System.getProperty("user.dir"));
         if (Path.of(System.getProperty("user.dir"), "target").toFile().isDirectory()) {
-            workingDir = Path.of(System.getProperty("user.dir"), "target", "sample-project");
+            workingDir = Path.of(System.getProperty("user.dir"), "target", "codegen-tests");
             FileUtils.deleteDirectory(workingDir.toFile());
             workingDir.toFile().mkdir();
         } else {
@@ -39,16 +50,6 @@ public class CodegenTest extends CoreAbstractTest {
     @AfterAll
     public static void cleanupAfterAll() throws IOException {
         mockInOutErr.close();
-    }
-
-    @Override
-    protected void configure() {
-        super.configure();
-
-        install(mockInOutErr.module());
-
-        install(DefinitionLoaderImpl.module());
-        install(CodegenImpl.module(false));
     }
 
     @Test

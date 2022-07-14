@@ -42,11 +42,17 @@ import java.util.Optional;
 public class CodegenImpl implements Codegen {
     public static final String DATA_FORMATS_FOLDER = ".formats";
     public static final String TEMPLATES_FOLDER = ".templates";
+    /** Template files, always overwritten unless overriden by user */
     private static final String MUSTACHE_FILE_EXTENSION_TEMPLATE = ".template.mustache";
+    /** Sample files, only written if they don't already exist, intended to be edited by user */
+    private static final String MUSTACHE_FILE_EXTENSION_SAMPLE = ".sample.mustache";
+    /** Sub-templates intended to be included by other templates/samples. */
     private static final String MUSTACHE_FILE_EXTENSION_INCLUDE = ".include.mustache";
 
     @Inject
     private DefinitionLoader definitionLoader;
+    @Inject
+    private FileTracker fileTracker;
     @Inject
     private ContextBuilder contextBuilder;
     @Inject
@@ -234,17 +240,39 @@ public class CodegenImpl implements Codegen {
     }
 
     private void applyTemplate(Project project, File templateDir, Path destination, DatasprayContext context) {
+        applyTemplate(project, templateDir, destination, context, true);
+    }
+
+    private void applyTemplate(Project project, File templateDir, Path destination, DatasprayContext context, boolean isRoot) {
+        if (isRoot) {
+            fileTracker.unlinkTrackedFiles(project, Optional.of(destination));
+        }
         for (File item : templateDir.listFiles()) {
             if (item.isDirectory()) {
-                applyTemplate(project, item, destination.resolve(item.getName()), context);
+                applyTemplate(project, item, destination.resolve(item.getName()), context, false);
             } else if (item.isFile()) {
-                if (item.getName().endsWith(MUSTACHE_FILE_EXTENSION_TEMPLATE)) {
+                boolean isSample = item.getName().endsWith(MUSTACHE_FILE_EXTENSION_SAMPLE);
+                if (isSample || item.getName().endsWith(MUSTACHE_FILE_EXTENSION_TEMPLATE)) {
                     Optional<ExpandedFile> expandedFileOpt = expandFile(project, item.getName(), context);
-                    if (expandedFileOpt.isPresent()) {
+                    if (expandedFileOpt.isPresent() && (!isSample || !expandedFileOpt.get().getPath().toFile().exists())) {
                         Path localDestination = destination.resolve(expandedFileOpt.get().getPath());
+                        String expandedFileNameWithoutSuffix = expandedFileOpt.get().getFilename()
+                                .substring(0, expandedFileOpt.get().getFilename().length()
+                                        - (isSample ? MUSTACHE_FILE_EXTENSION_SAMPLE : MUSTACHE_FILE_EXTENSION_TEMPLATE).length());
+                        if (!isSample) {
+                            Path localFilePath = localDestination.resolve(expandedFileNameWithoutSuffix);
+                            if (!fileTracker.trackAndUnlinkFile(project, localFilePath)) {
+                                log.debug("Skipping file overriden by user {}", item.getName());
+                                continue;
+                            }
+                        } else {
+                            if (localDestination.toFile().exists()) {
+                                log.debug("Skipping sample file which already exists {}", item.getName());
+                                continue;
+                            }
+                        }
                         runMustache(item,
-                                localDestination.resolve(expandedFileOpt.get().getFilename()
-                                        .substring(0, expandedFileOpt.get().getFilename().length() - MUSTACHE_FILE_EXTENSION_TEMPLATE.length())),
+                                localDestination.resolve(expandedFileNameWithoutSuffix),
                                 context);
                     }
                 } else if (item.getName().endsWith(MUSTACHE_FILE_EXTENSION_INCLUDE)) {
