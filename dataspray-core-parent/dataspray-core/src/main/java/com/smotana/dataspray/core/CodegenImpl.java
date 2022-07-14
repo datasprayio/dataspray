@@ -259,6 +259,7 @@ public class CodegenImpl implements Codegen {
                         String expandedFileNameWithoutSuffix = expandedFileOpt.get().getFilename()
                                 .substring(0, expandedFileOpt.get().getFilename().length()
                                         - (isSample ? MUSTACHE_FILE_EXTENSION_SAMPLE : MUSTACHE_FILE_EXTENSION_TEMPLATE).length());
+                        Path localFile = localDestination.resolve(expandedFileNameWithoutSuffix);
                         if (!isSample) {
                             Path localFilePath = localDestination.resolve(expandedFileNameWithoutSuffix);
                             if (!fileTracker.trackAndUnlinkFile(project, localFilePath)) {
@@ -266,14 +267,12 @@ public class CodegenImpl implements Codegen {
                                 continue;
                             }
                         } else {
-                            if (localDestination.toFile().exists()) {
+                            if (localFile.toFile().exists()) {
                                 log.debug("Skipping sample file which already exists {}", item.getName());
                                 continue;
                             }
                         }
-                        runMustache(item,
-                                localDestination.resolve(expandedFileNameWithoutSuffix),
-                                context);
+                        runMustache(item, localFile, context);
                     }
                 } else if (item.getName().endsWith(MUSTACHE_FILE_EXTENSION_INCLUDE)) {
                     // Skip sub-templates
