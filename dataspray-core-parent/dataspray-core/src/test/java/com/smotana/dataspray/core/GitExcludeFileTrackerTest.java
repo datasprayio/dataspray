@@ -1,5 +1,6 @@
 package com.smotana.dataspray.core;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.smotana.dataspray.core.sample.SampleProject;
 import lombok.extern.slf4j.Slf4j;
@@ -12,11 +13,11 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Optional;
 
 import static com.smotana.dataspray.core.GitExcludeFileTracker.GIT_EXCLUDE_FILE;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 class GitExcludeFileTrackerTest extends CoreAbstractTest {
@@ -43,16 +44,8 @@ class GitExcludeFileTrackerTest extends CoreAbstractTest {
         File file3 = createFile("dir1/file3");
         File file4 = createFile("dir1/file4");
 
-        fileTracker.unlinkTrackedFiles(project, Optional.empty(), Optional.empty());
-        assertTrue(file1.exists());
-        assertTrue(file2.exists());
-        assertTrue(file3.exists());
-        assertTrue(file4.exists());
-        fileTracker.unlinkTrackedFiles(project, Optional.of(Path.of("dir1")), Optional.of(1L));
-        assertTrue(file1.exists());
-        assertTrue(file2.exists());
-        assertTrue(file3.exists());
-        assertTrue(file4.exists());
+        assertEquals(ImmutableSet.of(), fileTracker.getTrackedFiles(project, Optional.empty(), Optional.empty()));
+        assertEquals(ImmutableSet.of(), fileTracker.getTrackedFiles(project, Optional.of(Path.of("dir1")), Optional.empty()));
 
         assertTrue(fileTracker.trackFile(project, Path.of("file5")));
         File file5 = createFile("file5");
@@ -80,7 +73,12 @@ class GitExcludeFileTrackerTest extends CoreAbstractTest {
 
         log.info("{}:\n{}", GIT_EXCLUDE_FILE, Files.readString(project.getPath().resolve(GIT_EXCLUDE_FILE), StandardCharsets.UTF_8));
 
-        fileTracker.unlinkTrackedFiles(project, Optional.of(Path.of("dir1")), Optional.empty());
+        assertTrackedFiles(project, Optional.of(Path.of("dir1")), Optional.empty(), file8);
+        assertTrackedFiles(project, Optional.empty(), Optional.of(0L), file6);
+        assertTrackedFiles(project, Optional.empty(), Optional.of(1L), file8, file6, file10);
+        assertTrackedFiles(project, Optional.empty(), Optional.empty(), file8, file6, file10);
+
+        fileTracker.unlinkUntrackFiles(project, fileTracker.getTrackedFiles(project, Optional.of(Path.of("dir1")), Optional.empty()));
         assertTrue(file1.exists());
         assertTrue(file2.exists());
         assertTrue(file3.exists());
@@ -92,7 +90,7 @@ class GitExcludeFileTrackerTest extends CoreAbstractTest {
         assertTrue(file9.exists());
         assertTrue(file10.exists());
 
-        fileTracker.unlinkTrackedFiles(project, Optional.empty(), Optional.of(0L));
+        fileTracker.unlinkUntrackFiles(project, fileTracker.getTrackedFiles(project, Optional.empty(), Optional.of(0L)));
         assertTrue(file1.exists());
         assertTrue(file2.exists());
         assertTrue(file3.exists());
@@ -104,7 +102,7 @@ class GitExcludeFileTrackerTest extends CoreAbstractTest {
         assertTrue(file9.exists());
         assertTrue(file10.exists());
 
-        fileTracker.unlinkTrackedFiles(project, Optional.empty(), Optional.empty());
+        fileTracker.unlinkUntrackFiles(project, fileTracker.getTrackedFiles(project, Optional.empty(), Optional.empty()));
         assertTrue(file1.exists());
         assertTrue(file2.exists());
         assertTrue(file3.exists());
@@ -115,6 +113,15 @@ class GitExcludeFileTrackerTest extends CoreAbstractTest {
         assertFalse(file8.exists());
         assertTrue(file9.exists());
         assertFalse(file10.exists());
+    }
+
+    private void assertTrackedFiles(Project project, Optional<Path> subPath, Optional<Long> maxDepthOpt, File... expectedFiles) {
+        assertEquals(
+                Arrays.stream(expectedFiles)
+                        .map(File::toPath)
+                        .map(p -> project.getPath().relativize(p))
+                        .collect(ImmutableSet.toImmutableSet()),
+                fileTracker.getTrackedFiles(project, subPath, maxDepthOpt));
     }
 
     private File createFile(String pathStr) throws Exception {

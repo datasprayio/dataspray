@@ -4,6 +4,7 @@ import com.google.common.base.Ascii;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -37,6 +38,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 public class CodegenImpl implements Codegen {
@@ -225,7 +227,7 @@ public class CodegenImpl implements Codegen {
         File templateInResourcesDir = getTemplateFromResources(template);
         Path templateInResourcesPath = templateInResourcesDir.toPath();
         Path templateInRepoDir = templatesPath.resolve(template.getResourceName());
-        fileTracker.unlinkTrackedFiles(project, Optional.of(templateInRepoDir), Optional.empty());
+        Set<Path> trackedFiles = Sets.newHashSet(fileTracker.getTrackedFiles(project, Optional.of(templateInRepoDir), Optional.empty()));
         if (templateInRepoDir.toFile().mkdir()) {
             log.info("Created {} template folder {}", template.getResourceName(), templateInRepoDir);
         }
@@ -236,9 +238,17 @@ public class CodegenImpl implements Codegen {
                 .forEach(source -> {
                     Path destination = templateInRepoDir.resolve(templateInResourcesPath.relativize(source.toPath()));
                     Path projectRelativePath = project.getPath().relativize(destination);
-                    if (!fileTracker.trackFile(project, projectRelativePath)) {
-                        log.info("Skipping file overriden by user {}", projectRelativePath);
-                        return;
+                    // Check if file was previously tracked
+                    if (!trackedFiles.remove(projectRelativePath)) {
+                        // If not, attempt to track it now
+                        if (!fileTracker.trackFile(project, projectRelativePath)) {
+                            log.debug("Skipping file overriden by user {}", projectRelativePath);
+                            return;
+                        } else {
+                            log.debug("Creating generated file {}", projectRelativePath);
+                        }
+                    } else {
+                        log.debug("Overwriting generated file {}", projectRelativePath);
                     }
                     Optional.ofNullable(destination.toFile().getParentFile())
                             .ifPresent(File::mkdirs);
@@ -250,22 +260,24 @@ public class CodegenImpl implements Codegen {
                         throw new RuntimeException(ex);
                     }
                 });
+        // Remove files that were not generated this round but previously most likely by older template
+        fileTracker.unlinkUntrackFiles(project, trackedFiles);
 
         // Finally, apply our template
         applyTemplate(project, templateInRepoDir.toFile(), processorPath, Optional.empty(), processorContext);
     }
 
     private void applyTemplate(Project project, File templateDir, Path destination, Optional<Long> maxDepthOpt, DatasprayContext context) {
-        applyTemplate(project, templateDir, destination, maxDepthOpt, context, true);
+        Set<Path> trackedFiles = Sets.newHashSet(fileTracker.getTrackedFiles(project, Optional.of(destination), maxDepthOpt));
+        applyTemplate(project, templateDir, destination, trackedFiles, context, true);
+        // Remove files that were not generated this round but previously most likely by older template
+        fileTracker.unlinkUntrackFiles(project, trackedFiles);
     }
 
-    private void applyTemplate(Project project, File templateDir, Path destination, Optional<Long> maxDepthOpt, DatasprayContext context, boolean isRoot) {
-        if (isRoot) {
-            fileTracker.unlinkTrackedFiles(project, Optional.of(destination), maxDepthOpt);
-        }
+    private void applyTemplate(Project project, File templateDir, Path destination, Set<Path> trackedFiles, DatasprayContext context, boolean isRoot) {
         for (File item : templateDir.listFiles()) {
             if (item.isDirectory()) {
-                applyTemplate(project, item, destination.resolve(item.getName()), maxDepthOpt, context, false);
+                applyTemplate(project, item, destination.resolve(item.getName()), trackedFiles, context, false);
             } else if (item.isFile()) {
                 boolean isSample = item.getName().endsWith(MUSTACHE_FILE_EXTENSION_SAMPLE);
                 if (isSample || item.getName().endsWith(MUSTACHE_FILE_EXTENSION_TEMPLATE)) {
@@ -277,10 +289,18 @@ public class CodegenImpl implements Codegen {
                                         - (isSample ? MUSTACHE_FILE_EXTENSION_SAMPLE : MUSTACHE_FILE_EXTENSION_TEMPLATE).length());
                         Path localFile = localDestination.resolve(expandedFileNameWithoutSuffix);
                         if (!isSample) {
-                            Path localFilePath = localDestination.resolve(expandedFileNameWithoutSuffix);
-                            if (!fileTracker.trackFile(project, localFilePath)) {
-                                log.debug("Skipping file overriden by user {}", item.getName());
-                                continue;
+                            Path relativeFilePath = expandedFileOpt.get().getPath().resolve(expandedFileNameWithoutSuffix);
+                            // Check if file was previously tracked
+                            if (!trackedFiles.remove(relativeFilePath)) {
+                                // If not, attempt to track it now
+                                if (!fileTracker.trackFile(project, relativeFilePath)) {
+                                    log.debug("Skipping file overriden by user {}", item.getName());
+                                    continue;
+                                } else {
+                                    log.debug("Creating generated file {}", item.getName());
+                                }
+                            } else {
+                                log.debug("Overwriting generated file {}", item.getName());
                             }
                         } else {
                             if (localFile.toFile().exists()) {

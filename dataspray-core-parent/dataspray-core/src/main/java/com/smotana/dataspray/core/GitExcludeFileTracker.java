@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Scanner;
 
@@ -30,15 +31,12 @@ public class GitExcludeFileTracker implements FileTracker {
     public static final String GIT_EXCLUDE_TMP_FILE = ".git/info/exclude.tmp";
 
     @Override
-    public void unlinkTrackedFiles(Project project, Optional<Path> subPathOpt, Optional<Long> maxDepthOpt) {
-        log.info("Deleting generated files, subpath {} maxDepth {}", subPathOpt, maxDepthOpt);
-        subPathOpt = subPathOpt.map(subPath -> makeRelativeToProject(project, subPath));
-        ImmutableSet<Path> trackedPathsToUnlink = getTrackedFiles(project, subPathOpt, maxDepthOpt);
-        for (Path trackedPath : trackedPathsToUnlink) {
-            log.info("Deleting file {}", trackedPath);
-            project.getPath().resolve(trackedPath).toFile().delete();
+    public void unlinkUntrackFiles(Project project, Collection<Path> relativePaths) {
+        for (Path path : relativePaths) {
+            log.info("Deleting file {}", path);
+            makeAbsoluteFromProject(project, path).toFile().delete();
         }
-        untrackFiles(project, trackedPathsToUnlink);
+        untrackFiles(project, relativePaths);
     }
 
     @Override
@@ -53,7 +51,7 @@ public class GitExcludeFileTracker implements FileTracker {
             return false;
         }
 
-        // Add as tracked if needed by includnig in .git/info/exclude
+        // Add as tracked if needed by including in .git/info/exclude
         Optional<Boolean> fileIgnoredWithInfoExcludeOpt = gitIgnoreParser.isFileIgnoredWithInfoExclude(relativePath);
         if (fileIgnoredWithInfoExcludeOpt.isEmpty() || !fileIgnoredWithInfoExcludeOpt.get()) {
             Files.writeString(
@@ -65,23 +63,13 @@ public class GitExcludeFileTracker implements FileTracker {
         return true;
     }
 
-    private String addPrefixSeparator(String pathStr) {
-        return pathStr.charAt(0) == File.separatorChar
-                ? pathStr
-                : File.separator + pathStr;
-    }
-
-    private String removePrefixSeparator(String pathStr) {
-        return pathStr.charAt(0) == File.separatorChar
-                ? pathStr.substring(1)
-                : pathStr;
-    }
-
+    @Override
     @SneakyThrows
-    private ImmutableSet<Path> getTrackedFiles(Project project, Optional<Path> subPathOpt, Optional<Long> maxDepthOpt) {
+    public ImmutableSet<Path> getTrackedFiles(Project project, Optional<Path> subPathOpt, Optional<Long> maxDepthOpt) {
+        Optional<Path> relativeSubPathOpt = subPathOpt.map(subPath -> makeRelativeToProject(project, subPath));
         ImmutableSet.Builder<Path> trackedFilesBuilder = ImmutableSet.builder();
         GitIgnoreParser gitignore = GitIgnoreParser.get(project);
-        maxDepthOpt = maxDepthOpt.map(maxDepth -> maxDepth + subPathOpt.map(Path::getNameCount).orElse(0));
+        maxDepthOpt = maxDepthOpt.map(maxDepth -> maxDepth + relativeSubPathOpt.map(Path::getNameCount).orElse(0));
         try (Scanner sc = new Scanner(getOrCreateExcludeFile(project))) {
             boolean nextLineIsManaged = false;
             while (sc.hasNextLine()) {
@@ -93,7 +81,7 @@ public class GitExcludeFileTracker implements FileTracker {
                 } else {
                     nextLineIsManaged = false;
                     Path trackedRelativePath = Path.of(removePrefixSeparator(nextLine));
-                    if (subPathOpt.isPresent() && !trackedRelativePath.startsWith(subPathOpt.get())) {
+                    if (relativeSubPathOpt.isPresent() && !trackedRelativePath.startsWith(relativeSubPathOpt.get())) {
                         continue;
                     }
                     if (maxDepthOpt.isPresent() && (trackedRelativePath.getNameCount() - 1) > maxDepthOpt.get()) {
@@ -110,7 +98,7 @@ public class GitExcludeFileTracker implements FileTracker {
     }
 
     @SneakyThrows
-    private void untrackFiles(Project project, ImmutableSet<Path> trackedPathsToUntrack) {
+    private void untrackFiles(Project project, Collection<Path> trackedPathsToUntrack) {
         if (trackedPathsToUntrack.isEmpty()) {
             return;
         }
@@ -142,6 +130,18 @@ public class GitExcludeFileTracker implements FileTracker {
         Files.move(excludeTmpFile.toPath(), excludeFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
 
+    private String addPrefixSeparator(String pathStr) {
+        return pathStr.charAt(0) == File.separatorChar
+                ? pathStr
+                : File.separator + pathStr;
+    }
+
+    private String removePrefixSeparator(String pathStr) {
+        return pathStr.charAt(0) == File.separatorChar
+                ? pathStr.substring(1)
+                : pathStr;
+    }
+
     private File getExcludeTmpFile(Project project) {
         File tmpFile = project.getPath().resolve(GIT_EXCLUDE_TMP_FILE).toFile();
         tmpFile.getParentFile().mkdirs();
@@ -160,11 +160,18 @@ public class GitExcludeFileTracker implements FileTracker {
         return excludeFile;
     }
 
-    private Path makeRelativeToProject(Project project, Path relativeFilePath) {
-        if (relativeFilePath.isAbsolute()) {
-            return project.getPath().relativize(relativeFilePath);
+    private Path makeRelativeToProject(Project project, Path path) {
+        if (path.isAbsolute()) {
+            return project.getPath().relativize(path);
         }
-        return relativeFilePath;
+        return path;
+    }
+
+    private Path makeAbsoluteFromProject(Project project, Path path) {
+        if (!path.isAbsolute()) {
+            return project.getPath().resolve(path);
+        }
+        return path;
     }
 
     public static Module module() {

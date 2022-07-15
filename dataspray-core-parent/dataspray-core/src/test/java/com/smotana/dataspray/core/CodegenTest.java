@@ -57,5 +57,8 @@ public class CodegenTest extends CoreAbstractTest {
         Project project = codegen.initProject(workingDir.toString(), "Test Project", SampleProject.CLOUD);
         codegen.generateAll(project);
         codegen.installAll(project);
+        log.info("And again");
+        codegen.generateAll(project);
+        codegen.installAll(project);
     }
 }
