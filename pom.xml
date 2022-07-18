@@ -16,6 +16,7 @@
         <projectlombok.version>1.18.22</projectlombok.version>
         <node.version>v16.15.0</node.version>
         <pnpm.version>v7.5.0</pnpm.version>
+        <awssdk.version>2.17.145</awssdk.version>
         <skipTests/>
         <skipITs/>
     </properties>
@@ -64,6 +65,13 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${projectlombok.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${awssdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

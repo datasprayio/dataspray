@@ -1,24 +1,33 @@
-import { Box, Grid, Skeleton, Typography } from "@mui/material"
-import GradientTypography from "./GradientTypography";
+import { Grid, Typography } from "@mui/material";
 
-const Hero = () => {
+const Block = (props: {
+  title: React.ReactNode;
+  description: React.ReactNode;
+  preview?: React.ReactNode;
+  mirror?: boolean;
+}) => {
+  const titleCmpt = (
+    <Grid item xs={12} sm={5}>
+      <Typography variant='h5' component='h2'>
+        {props.title}
+      </Typography>
+      <Typography variant='body1'>
+        {props.description}
+      </Typography>
+    </Grid>
+  );
+  const previewCmpt = (
+    <Grid item xs={12} sm={7}>
+      {props.preview}
+    </Grid>
+  );
   return (
-    <Grid container spacing={2} alignItems='center' maxHeight=''>
-      <Grid item xs={12}>
-        <Box textAlign='center'>
-          <Typography variant='h1' fontWeight='bold'>
-            Easy event processing
-          </Typography>
-          <GradientTypography variant='h1' color='primary' fontWeight='bold'>
-            DataSpray
-          </GradientTypography>
-        </Box>
-      </Grid>
-      <Grid item xs={12} sm={8}>
-        <Skeleton variant="rectangular" width='80vw' height='80vh' />
-      </Grid>
+    <Grid container spacing={2}>
+      {!props.mirror
+        ? [titleCmpt, previewCmpt]
+        : [previewCmpt, titleCmpt]}
     </Grid>
   )
 }
 
-export default Hero;
+export default Block;

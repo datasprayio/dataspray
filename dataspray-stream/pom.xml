@@ -21,5 +21,9 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>lambda</artifactId>
+        </dependency>
     </dependencies>
 </project>

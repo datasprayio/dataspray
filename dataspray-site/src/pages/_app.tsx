@@ -22,9 +22,6 @@ function MyApp({ Component, pageProps }: AppProps) {
             main: '#f06292',
           },
         },
-        typography: {
-          fontSize: 10,
-        }
       }),
     [prefersDarkMode],
   );

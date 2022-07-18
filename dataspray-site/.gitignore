@@ -37,3 +37,10 @@ yarn-error.log*
 # maven
 /target/
 /node/
+
+
+
+#### CUSTOM
+
+public/vscode-web
+

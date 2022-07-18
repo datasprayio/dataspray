@@ -39,6 +39,15 @@ public class GitIgnoreParser {
                 .or(() -> isFileIgnoredWithInfoExclude(relativePath));
     }
 
+    /**
+     * Re-implemented internals of JGit to load each .gitignore and exclude file separately. This is because JGit 6.2
+     * has a bug where the order of files is incorrect causing the exclude file to take precedence over user defined
+     * local .gitignore file. Once JGit 6.3 is released, this can be simplified; an example implementation can be seen
+     * in CGitIgnoreTest.jgitIgnoredAndUntracked method.
+     *
+     * Bug report: https://bugs.eclipse.org/bugs/show_bug.cgi?id=580381
+     * Simpler impl once bug is fixed: https://git.eclipse.org/c/jgit/jgit.git/tree/org.eclipse.jgit.test/tst/org/eclipse/jgit/ignore/CGitIgnoreTest.java?h=stable-6.2#n106
+     */
     @SneakyThrows
     public Optional<Boolean> isFileIgnoredWithDotGitignore(Path path) {
         Path relativeFilePath = makeRelativeToProject(path);
