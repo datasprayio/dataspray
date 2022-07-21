@@ -90,7 +90,6 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>${projectlombok.version}</version>
         </dependency>
 
         <!-- Test deps -->

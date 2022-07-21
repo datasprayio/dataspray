@@ -1,0 +1,311 @@
+openapi: 3.0.0
+info:
+  title: ClearFlask API
+  description: ClearFlask API documentation.
+  version: 1.0.0
+
+servers:
+  - url: https://clearflask.com/api/v1
+
+components:
+  responses:
+    Ok:
+      description: >-
+        HTTP 200 Ok
+        Request was successful. No response value supplied.
+  schemas:
+    Uri:
+      type: string
+    WatcherEvent:
+      type: object
+      required:
+        - type
+        - uri
+      properties:
+        type:
+          type: string
+          enum: [ CHANGED, CREATED, DELETED ]
+        uri:
+          $ref: '#/components/schemas/Uri'
+    WatcherEvents:
+      type: array
+      items:
+        $ref: '#/components/schemas/WatcherEvent'
+    FileType:
+      type:
+        type: string
+        enum:
+          - FILE
+          - DIRECTORY
+
+paths:
+  /ping:
+    get:
+      operationId: ping
+      tags: [ Admin ]
+      responses:
+        '200':
+          $ref: 'api-client.yaml#/components/responses/Ok'
+
+  # "/filesystem..." closely follows VSCode's FileSystemProvider and FileSystemWatcher APIs for ease of compatibility
+  # https://code.visualstudio.com/api/references/vscode-api#FileSystemProvider
+  # https://code.visualstudio.com/api/references/vscode-api#FileSystemWatcher
+  /filesystem/copy:
+    patch:
+      operationId: copy
+      tags: [ FileSystem ]
+      parameters:
+        - name: source
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uri'
+        - name: destination
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uri'
+        - name: overwrite
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          $ref: 'api-client.yaml#/components/responses/Ok'
+        '404':
+          description: Source doesn't exist or parent of destination doesn't exist
+        '409':
+          description: Destination exists and the overwrite option is not true
+        '403':
+          description: Permissions aren't sufficient
+  /filesystem/createDirectory:
+    put:
+      operationId: createDirectory
+      tags: [ FileSystem ]
+      parameters:
+        - name: uri
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uri'
+      responses:
+        '200':
+          $ref: 'api-client.yaml#/components/responses/Ok'
+        '404':
+          description: Parent of uri doesn't exist
+        '409':
+          description: Uri already exists
+        '403':
+          description: Permissions aren't sufficient
+  /filesystem/delete:
+    delete:
+      operationId: delete
+      tags: [ FileSystem ]
+      parameters:
+        - name: uri
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uri'
+        - name: recursive
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          $ref: 'api-client.yaml#/components/responses/Ok'
+        '404':
+          description: Uri doesn't exist
+        '403':
+          description: Permissions aren't sufficient
+  /filesystem/readDirectory:
+    get:
+      operationId: readDirectory
+      tags: [ FileSystem ]
+      parameters:
+        - name: uri
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uri'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                title: ReadDirectoryResponse
+                type: object
+                required:
+                properties:
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - name
+                        - type
+                        - isSymbolic
+                      properties:
+                        name:
+                          type: string
+                        type:
+                          $ref: '#/components/schemas/FileType'
+                        isSymbolic:
+                          type: boolean
+        '404':
+          description: Uri doesn't exist
+  /filesystem/readFile:
+    get:
+      operationId: readFile
+      tags: [ FileSystem ]
+      parameters:
+        - name: uri
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uri'
+      responses:
+        '200':
+          content:
+            application/binary:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Uri doesn't exist
+  /filesystem/rename:
+    patch:
+      operationId: rename
+      tags: [ FileSystem ]
+      parameters:
+        - name: oldUri
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uri'
+        - name: newUri
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uri'
+        - name: overwrite
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          $ref: 'api-client.yaml#/components/responses/Ok'
+        '404':
+          description: oldUri doesn't exist or parent of newUri doesn't exist
+        '409':
+          description: newUri exists and the overwrite option is not true
+        '403':
+          description: Permissions aren't sufficient
+  /filesystem/stat:
+    get:
+      operationId: stat
+      tags: [ FileSystem ]
+      parameters:
+        - name: uri
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uri'
+        - name: create
+          in: query
+          schema:
+            type: boolean
+        - name: overwrite
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                title: StatResponse
+                type: object
+                required:
+                properties:
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - ctime
+                        - mtime
+                        - permissions
+                        - size
+                        - type
+                        - isSymbolic
+                      properties:
+                        ctimeInMsEpoch:
+                          type: integer
+                          format: int64
+                        mtimeInMsEpoch:
+                          type: integer
+                          format: int64
+                        permissions:
+                          type: array
+                          items:
+                            type: string
+                            enum: [ READONLY ]
+                        sizeInBytes:
+                          type: integer
+                          format: int64
+                        type:
+                          $ref: '#/components/schemas/FileType'
+                        isSymbolic:
+                          type: boolean
+        '404':
+          description: uri doesn't exist
+  /filesystem/writeFile:
+    put:
+      operationId: rename
+      tags: [ FileSystem ]
+      parameters:
+        - name: uri
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uri'
+        - name: create
+          in: query
+          schema:
+            type: boolean
+        - name: overwrite
+          in: query
+          schema:
+            type: boolean
+      x-streaming: true
+      requestBody:
+        required: true
+        content:
+          application/binary:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          $ref: 'api-client.yaml#/components/responses/Ok'
+        '404':
+          description: uri doesn't exist and create is not set or parent of uri doesn't exist and create is set
+        '409':
+          description: uri already exists, create is set but overwrite is not set
+        '403':
+          description: Permissions aren't sufficient
+
+  /terminal/execute:
+    post:
+      operationId: execute
+      tags: [ Terminal ]
+      requestBody:
+        required: true
+        content:
+          application/string:
+            schema:
+              type: string
+      responses:
+        '200':
+          $ref: 'api-client.yaml#/components/responses/Ok'

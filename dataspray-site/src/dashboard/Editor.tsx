@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import 'vscode-web/dist/out/vs/workbench/workbench.web.main.css';
 import loadExternal from '../common/loadExternal';
 
 var inited = false;
@@ -8,7 +7,42 @@ const Editor = () => {
     (async function () {
       if (inited) return;
       inited = true;
+
       try {
+        // Picked up by workbench.js
+        (window as any).product = {
+          domElementId: 'vscode-web',
+          productConfiguration: {
+            nameShort: 'DataSpray Editor',
+            nameLong: 'DataSpray Editor',
+            applicationName: 'dataspray-editor',
+            dataFolderName: '.vscode-web',
+            version: '1.66.0',
+            extensionsGallery: {
+              serviceUrl: 'https://open-vsx.org/vscode/gallery',
+              itemUrl: 'https://open-vsx.org/vscode/item',
+              resourceUrlTemplate: 'https://openvsxorg.blob.core.windows.net/resources/{publisher}/{name}/{version}/{path}'
+            },
+            extensionEnabledApiProposals: {
+              'vscodevscode-web-playground': [
+                'fileSearchProvider',
+                'textSearchProvider',
+              ]
+            }
+          },
+          folderUri: {
+            scheme: 'memfs',
+            path: '/sample-folder',
+          },
+          additionalBuiltinExtensions: [
+            {
+              scheme: 'http',
+              path: '/myExt',
+            }
+          ],
+        };
+
+        loadExternal('/vscode-web/vs/workbench/workbench.web.main.css');
         await loadExternal('/vscode-web/vs/loader.js');
         await loadExternal('/vscode-web/vs/webPackagePaths.js');
 
@@ -36,8 +70,7 @@ const Editor = () => {
   });
   return (
     <>
-      Hello world
-
+      <div id='vscode-web' style={{ width: 500, height: 200, margin: 15, border: '1px solid black' }} />
     </>
   )
 }
