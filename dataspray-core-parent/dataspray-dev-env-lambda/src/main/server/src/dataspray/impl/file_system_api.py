@@ -1,16 +1,18 @@
 # coding: utf-8
 
 import errno
-from shutil import copy2, rmtree
-from os import makedirs, remove, listdir, rename, stat
-from os.path import isfile, islink, join, exists, dirname, normpath
+from shutil import copy2, copytree, rmtree
+from os import mkdir, rmdir, remove, listdir, scandir, rename as filerename, stat as filestat, name as osname
+from os.path import isfile, islink, join, exists, normpath, dirname
 from stat import *
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from dataspray.models.read_directory_response import ReadDirectoryResponse
 from dataspray.models.read_directory_response_files_inner import ReadDirectoryResponseFilesInner
 from dataspray.models.stat_response import StatResponse
 from dataspray.impl.util import uriToPath
-from pydantic import StrictBytes as file
+from dataspray.apis.file_system_api import file
+from pathlib import Path
 
 async def copy(
     sourceUri: str,
@@ -19,23 +21,31 @@ async def copy(
 ) -> None:
     source = uriToPath(sourceUri)
     destination = uriToPath(destinationUri)
+    if not exists(Path(destination).parent):
+        raise HTTPException(status_code=404)
     if exists(destination):
         if overwrite:
             if isfile(destination):
                 remove(destination)
             else:
                 rmtree(destination)
-        else:
+        elif isfile(destination):
             raise HTTPException(status_code=409)
     try:
-        copy2(source, destination)
+        if isfile(source):
+            copy2(source, destination)
+        else:
+            copytree(source, destination, copy_function=copy2)
     except FileNotFoundError:
         raise HTTPException(status_code=404)
     except OSError as e:
         if e.errno == errno.EPERM:
             raise HTTPException(status_code=403)
+        if e.errno == errno.EEXIST:
+            raise HTTPException(status_code=409)
         if e.errno == errno.ENOENT:
             raise HTTPException(status_code=404)
+        print('Unhandled exception', e)
         raise HTTPException(status_code=400)
 
 async def create_directory(
@@ -43,14 +53,15 @@ async def create_directory(
 ) -> None:
     path = uriToPath(uri)
     try:
-        makedirs(dirname(path))
+        mkdir(path)
     except OSError as e:
         if e.errno == errno.EPERM:
             raise HTTPException(status_code=403)
         if e.errno == errno.EEXIST:
             raise HTTPException(status_code=409)
         if e.errno == errno.ENOENT:
-            raise HTTPException(status_code=409)
+            raise HTTPException(status_code=404)
+        print('Unhandled exception', e)
         raise HTTPException(status_code=400)
 
 async def delete(
@@ -59,49 +70,73 @@ async def delete(
 ) -> None:
     path = uriToPath(uri)
     try:
-        remove(path)
+         if isfile(path):
+             remove(path)
+         else:
+            if not recursive:
+                rmdir(path)
+            else:
+                rmtree(path)
     except OSError as e:
         if e.errno == errno.EPERM:
             raise HTTPException(status_code=403)
         if e.errno == errno.ENOENT:
             raise HTTPException(status_code=404)
+        if e.errno == errno.ENOTEMPTY:
+            raise HTTPException(status_code=409)
+        print('Unhandled exception', e)
         raise HTTPException(status_code=400)
 
 async def read_directory(
     uri: str,
 ) -> ReadDirectoryResponse:
     path = uriToPath(uri)
+    files = list()
     try:
-        fileNames = listdir(path)
+        for file in scandir(path):
+            files.append(ReadDirectoryResponseFilesInner(
+                name=file.name,
+                isDir=file.is_dir(),
+                isSymbolic=file.is_symlink(),
+            ))
     except OSError as e:
         if e.errno == errno.EPERM:
             raise HTTPException(status_code=403)
         if e.errno == errno.ENOENT:
             raise HTTPException(status_code=404)
+        print('Unhandled exception', e)
         raise HTTPException(status_code=400)
-    files = list()
-    for fileName in fileNames:
-        filePath = normpath(join(path, fileName))
-        files.append(ReadDirectoryResponseFilesInner(
-            name=fileName,
-            is_dir=not isfile(filePath),
-            is_symbolic=not islink(filePath),
-        ))
-    return ReadDirectoryResponse(files)
+    return ReadDirectoryResponse(files=files)
 
 async def read_file(
     uri: str,
 ) -> file:
     path = uriToPath(uri)
+
     try:
-        with open(path, 'rb') as fileReader:
-            return fileReader.read()
+        fileReader = open(path, 'rb')
     except OSError as e:
         if e.errno == errno.EPERM:
             raise HTTPException(status_code=403)
         if e.errno == errno.ENOENT:
             raise HTTPException(status_code=404)
+        print('Unhandled exception', e)
         raise HTTPException(status_code=400)
+
+    def get_generator(chunk_size=1024):
+        try:
+            while True:
+                data = fileReader.read(chunk_size)
+                if not data:
+                    break
+                yield data
+        finally:
+            fileReader.close()
+
+    return StreamingResponse(
+        get_generator(),
+        media_type='application/binary',
+    )
 
 async def rename(
     oldUri: str,
@@ -110,6 +145,8 @@ async def rename(
 ) -> None:
     old = uriToPath(oldUri)
     new = uriToPath(newUri)
+    if not exists(old):
+        raise HTTPException(status_code=404)
     if exists(new):
         if overwrite:
              if isfile(new):
@@ -119,12 +156,13 @@ async def rename(
         else:
             raise HTTPException(status_code=409)
     try:
-        rename(old, new)
+        filerename(old, new)
     except OSError as e:
         if e.errno == errno.EPERM:
             raise HTTPException(status_code=403)
         if e.errno == errno.ENOENT:
             raise HTTPException(status_code=404)
+        print('Unhandled exception', e)
         raise HTTPException(status_code=400)
 
 async def stat(
@@ -132,20 +170,21 @@ async def stat(
 ) -> StatResponse:
     path = uriToPath(uri)
     try:
-        statinfo = stat(path)
+        statinfo = filestat(path)
     except OSError as e:
         if e.errno == errno.EPERM:
             raise HTTPException(status_code=403)
         if e.errno == errno.ENOENT:
             raise HTTPException(status_code=404)
+        print('Unhandled exception', e)
         raise HTTPException(status_code=400)
     return StatResponse(
-        ctime_in_ms_epoch=statinfo.st_ctime,
-        mtime_in_ms_epoch=statinfo.st_mtime,
-        isReadonly=statinfo.st_file_attributes & FILE_ATTRIBUTE_READONLY,
-        size_in_bytes=statinfo.st_size,
-        is_dir=S_ISDIR(statinfo.st_mode),
-        is_symbolic=S_ISLNK(statinfo.st_mode),
+        ctimeInMsEpoch=statinfo.st_ctime,
+        mtimeInMsEpoch=statinfo.st_mtime,
+        isReadonly=osname == 'nt' and statinfo.st_file_attributes & FILE_ATTRIBUTE_READONLY,
+        sizeInBytes=statinfo.st_size,
+        isDir=S_ISDIR(statinfo.st_mode),
+        isSymbolic=S_ISLNK(statinfo.st_mode),
     )
 
 async def write_file(
@@ -169,4 +208,5 @@ async def write_file(
             raise HTTPException(status_code=403)
         if e.errno == errno.ENOENT:
             raise HTTPException(status_code=404)
+        print('Unhandled exception', e)
         raise HTTPException(status_code=400)

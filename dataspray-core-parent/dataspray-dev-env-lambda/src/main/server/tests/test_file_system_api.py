@@ -1,11 +1,10 @@
 # coding: utf-8
 
-import json
 from fastapi.testclient import TestClient
 from dataspray.impl.util import pathToUri
 from dataspray.models.read_directory_response import ReadDirectoryResponse  # noqa: F401
-from dataspray.models.stat_response import StatResponse  # noqa: F401
-
+from dataspray.models.stat_response import StatResponse
+from dataspray.impl.config import getWorkingDirectory
 
 def test_all(client: TestClient):
 
@@ -24,7 +23,7 @@ def test_all(client: TestClient):
     assert response.status_code == 404
     response = read_file(client, 'file1')
     assert response.status_code == 200
-    assert response.body == 'file1 content2';
+    assert response.content == b'file1 content2';
 
     # Create dir1
     response = create_directory(client, "dir1/dir1")
@@ -59,7 +58,7 @@ def test_all(client: TestClient):
     # Read dir1
     response = read_directory(client, "dir1")
     assert response.status_code == 200
-    directory = ReadDirectoryResponse.parse_obj(json.loads(response.body))
+    directory = ReadDirectoryResponse.parse_obj(response.json())
     assert len(directory.files) == 2
     assertDirectoryResponseContains(directory, 'file1', False)
     assertDirectoryResponseContains(directory, 'dir2', True)
@@ -74,8 +73,27 @@ def test_all(client: TestClient):
     response = rename(client, "file1", "file3", False)
     assert response.status_code == 200
 
+    # Stat dir5
+    response = stat(client, "dir5")
+    assert response.status_code == 404
+
     # Stat dir3
+    response = stat(client, "dir3")
+    assert response.status_code == 200
+    statResponse = StatResponse.parse_obj(response.json())
+    assert statResponse.is_dir
+    assert not statResponse.is_readonly
+    assert not statResponse.is_symbolic
+    assert statResponse.size_in_bytes >= 0
+
     # Stat file3
+    response = stat(client, "file3")
+    assert response.status_code == 200
+    statResponse = StatResponse.parse_obj(response.json())
+    assert not statResponse.is_dir
+    assert not statResponse.is_readonly
+    assert not statResponse.is_symbolic
+    assert statResponse.size_in_bytes == 14
 
     # Delete dir1
     response = delete(client, "dir5", False)
@@ -92,8 +110,8 @@ def test_all(client: TestClient):
     # Read .
     response = read_directory(client, ".")
     assert response.status_code == 200
-    directory = ReadDirectoryResponse.parse_obj(json.loads(response.body))
-    assert len(directory.files) == 3
+    directory = ReadDirectoryResponse.parse_obj(response.json())
+    assert len(directory.files) == 2
     assertDirectoryResponseContains(directory, 'file3', False)
     assertDirectoryResponseContains(directory, 'dir3', True)
 
@@ -150,35 +168,29 @@ def read_file(client: TestClient, path: str):
             ("uri", pathToUri(path)),
         ],
     )
-
-    # uncomment below to assert the status code of the HTTP response
-    #assert response.status_code == 200
-
+    return response
 
 def rename(client: TestClient, oldPath: str, newPath: str, overwrite: bool = True):
     response = client.request(
         "PATCH",
         "/filesystem/rename",
         params=[
-            ("oldUri", pathToUri(oldPath)),
-            ("newUri", pathToUri(newPath)),
+            ("old_uri", pathToUri(oldPath)),
+            ("new_uri", pathToUri(newPath)),
             ("overwrite", overwrite),
         ],
     )
     return response
 
-def stat(client: TestClient, path: str, create: bool = False, overwrite: bool = True):
+def stat(client: TestClient, path: str):
     response = client.request(
         "GET",
         "/filesystem/stat",
         params=[
             ("uri", pathToUri(path)),
-            ("create", create),
-            ("overwrite", overwrite),
         ],
     )
     return response
-
 
 def write_file(client: TestClient, path: str, content: str, create: bool = False, overwrite: bool = True):
     response = client.request(
@@ -196,7 +208,8 @@ def write_file(client: TestClient, path: str, content: str, create: bool = False
 def assertDirectoryResponseContains(response: ReadDirectoryResponse, fileName: str, isDir: bool):
     for element in response.files:
         if not element.name == fileName:
-            return False
-        if not element.isDir == isDir:
-            return False
-    return True
+            continue
+        if not element.is_dir == isDir:
+            continue
+        return True
+    return False

@@ -296,4 +296,3 @@ paths:
             application/binary:
               schema:
                 type: string
-                format: byte
