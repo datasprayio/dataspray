@@ -4,10 +4,11 @@ from subprocess import Popen, STDOUT, PIPE
 from dataspray.impl.config import getWorkingDirectory
 from fastapi.responses import StreamingResponse
 import time
+from pydantic import StrictBytes as file
 
 async def execute(
     cmd: str,
-) -> str:
+) -> file:
     def get_generator():
         proc = Popen(
             cmd,

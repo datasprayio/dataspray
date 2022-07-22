@@ -13,6 +13,7 @@ from dataspray.models.stat_response import StatResponse
 from dataspray.impl.util import uriToPath
 from dataspray.apis.file_system_api import file
 from pathlib import Path
+from pydantic import StrictBytes as file
 
 async def copy(
     sourceUri: str,
