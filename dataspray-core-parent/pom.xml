@@ -30,6 +30,14 @@
         <module>dataspray-cli</module>
     </modules>
 
+    <repositories>
+        <repository>
+            <id>dynamodb-local-oregon</id>
+            <name>DynamoDB Local Release Repository</name>
+            <url>https://s3-us-west-2.amazonaws.com/dynamodb-local/release</url>
+        </repository>
+    </repositories>
+
     <properties>
         <java.version>17</java.version>
         <junit.version>5.8.2</junit.version>
@@ -37,6 +45,7 @@
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.2.9</logback.version>
         <jackson.version>2.13.3</jackson.version>
+        <awssdk.version>2.17.145</awssdk.version>
         <skipTests/>
         <skipITs/>
         <argLine/>
@@ -88,6 +97,23 @@
                 <groupId>com.jcabi</groupId>
                 <artifactId>jcabi-aspects</artifactId>
                 <version>0.23.2</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${awssdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awscdk</groupId>
+                <artifactId>aws-cdk-lib</artifactId>
+                <version>2.33.0</version>
+            </dependency>
+            <dependency>
+                <groupId>software.constructs</groupId>
+                <artifactId>constructs</artifactId>
+                <version>10.1.56</version>
             </dependency>
 
             <dependency>

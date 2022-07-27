@@ -53,6 +53,54 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>lambda</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>aws-cdk-lib</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.constructs</groupId>
+            <artifactId>constructs</artifactId>
+            <version>10.1.56</version>
+        </dependency>
+
+
+        <!-- Logging-->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-to-slf4j</artifactId>
+            <version>2.13.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+            <version>1.7.30</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -236,6 +284,14 @@
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>io.dataspray.devenv.CdkEntrypoint</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
                     <descriptors>
                         <descriptor>${project.basedir}/src/main/assembly/openapi.xml</descriptor>
                         <descriptor>${project.basedir}/src/main/assembly/frontend.xml</descriptor>
