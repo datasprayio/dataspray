@@ -21,17 +21,18 @@ import software.amazon.awscdk.services.lambda.FunctionUrl;
 import software.amazon.awscdk.services.lambda.FunctionUrlAuthType;
 import software.amazon.awscdk.services.lambda.FunctionUrlCorsOptions;
 import software.amazon.awscdk.services.lambda.FunctionUrlOptions;
+import software.amazon.awscdk.services.lambda.Handler;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
 import software.constructs.Construct;
 
 import java.util.UUID;
 
-public class DevEnvStack extends Stack {
+public class DevEnvRunnerStack extends Stack {
     public static final String STACK_ID_TAG_NAME = "dataspray-stack-id";
-    private static final String STACK_ID_TAG_VALUE = "dev-env";
+    private static final String STACK_ID_TAG_VALUE = "dev-env-runner";
 
-    public DevEnvStack(Construct parent, String stackId, StackProps props) {
+    public DevEnvRunnerStack(Construct parent, String stackId, DevEnvImageRepoStack repoStack, String imageTag, StackProps props) {
         super(parent, stackId, props);
 
         IVpc vpcDefault = Vpc.fromLookup(this, stackId + "-vpc", VpcLookupOptions.builder()
@@ -57,10 +58,12 @@ public class DevEnvStack extends Stack {
         SingletonFunction function = SingletonFunction.Builder.create(this, stackId + "-lambda")
                 .uuid(UUID.nameUUIDFromBytes(stackId.getBytes(Charsets.UTF_8)).toString())
                 .functionName(stackId)
-                .code(Code.fromAssetImage())
+                .code(Code.fromEcrImage(repoStack.getRepo()))
+                .handler(Handler.FROM_IMAGE)
+                .runtime(Runtime.FROM_IMAGE)
+                .vpc(vpcDefault)
                 .allowAllOutbound(true)
                 .architecture(Architecture.ARM_64)
-                .runtime(Runtime.PYTHON_3_9)
                 .memorySize(128)
                 .filesystem(software.amazon.awscdk.services.lambda.FileSystem
                         .fromEfsAccessPoint(fileSystem.addAccessPoint(stackId + "-efs-ap"), "/"))

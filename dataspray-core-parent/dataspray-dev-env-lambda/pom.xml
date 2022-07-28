@@ -106,6 +106,26 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <id>regex-property</id>
+                        <goals>
+                            <goal>regex-property</goal>
+                        </goals>
+                        <configuration>
+                            <name>project.version-pep440</name>
+                            <value>${project.version}</value>
+                            <regex>-</regex>
+                            <replacement>+</replacement>
+                            <failIfNoMatch>false</failIfNoMatch>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
                 <version>3.1.0</version>
                 <executions>
@@ -120,16 +140,18 @@
                                 <fileset>
                                     <directory>${project.basedir}/src/main/client</directory>
                                     <includes>
-                                        <include>apis/**/*</include>
-                                        <include>models/**/*</include>
-                                        <include>index.ts</include>
-                                        <include>runtime.ts</include>
+                                        <include>src/api/apis/**</include>
+                                        <include>src/api/models/**</include>
+                                        <include>src/api/index.ts</include>
+                                        <include>src/api/runtime.ts</include>
                                     </includes>
                                     <followSymlinks>false</followSymlinks>
                                 </fileset>
                                 <fileset>
                                     <directory>${project.basedir}/src/main/server</directory>
                                     <includes>
+                                        <include>.pytest_cache/**</include>
+                                        <include>dist/**</include>
                                         <include>src/dataspray/apis/**/*</include>
                                         <include>src/dataspray/models/**/*</include>
                                         <include>src/dataspray/main.py</include>
@@ -175,7 +197,7 @@
                             <output>${project.build.directory}/generated-sources/backend</output>
                             <generatorName>python-fastapi</generatorName>
                             <templateDirectory>${project.basedir}/src/main/template/python-fastapi</templateDirectory>
-                            <additionalProperties>packageName=dataspray,packageVersion=${project.version}
+                            <additionalProperties>packageName=dataspray,packageVersion=${project.version-pep440}
                             </additionalProperties>
                         </configuration>
                     </execution>
@@ -277,6 +299,92 @@
                             <arguments>
                                 <argument>tests</argument>
                             </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>backend-build</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${project.basedir}/src/main/server</workingDirectory>
+                            <executable>python3</executable>
+                            <arguments>
+                                <argument>-m</argument>
+                                <argument>build</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.coderplus.maven.plugins</groupId>
+                <artifactId>copy-rename-maven-plugin</artifactId>
+                <version>1.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-server-deps</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <sourceFile>${project.basedir}/src/main/server/requirements.txt</sourceFile>
+                            <destinationFile>${project.build.directory}/docker-root/requirements.txt</destinationFile>
+                            <overWrite>true</overWrite>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-server-dataspray</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <sourceFile>
+                                ${project.basedir}/src/main/server/dist/dataspray-${project.version-pep440}-py3-none-any.whl
+                            </sourceFile>
+                            <destinationFile>
+                                ${project.build.directory}/docker-root/dataspray-${project.version-pep440}-py3-none-any.whl
+                            </destinationFile>
+                            <overWrite>true</overWrite>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.36.1</version>
+                <configuration>
+                    <verbose>true</verbose>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>build</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>dataspray/dev-env-lambda</name>
+                                    <build>
+                                        <contextDir>${project.build.directory}/docker-root</contextDir>
+                                        <dockerFile>${basedir}/src/main/container/Dockerfile</dockerFile>
+                                        <filter>@</filter>
+                                        <tags>
+                                            <tag>latest</tag>
+                                            <tag>${project.version}</tag>
+                                        </tags>
+                                        <args>
+                                            <PROJECT_VERSION>${project.version-pep440}</PROJECT_VERSION>
+                                        </args>
+                                    </build>
+                                </image>
+                            </images>
                         </configuration>
                     </execution>
                 </executions>

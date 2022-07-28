@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface DevEnvManager {
 
-    DevEnv create(String id);
+    DevEnv create(String id, String imageTag);
 
     DevEnv get(String id);
 

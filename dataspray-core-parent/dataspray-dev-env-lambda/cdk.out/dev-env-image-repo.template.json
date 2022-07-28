@@ -1,0 +1,104 @@
+{
+ "Resources": {
+  "devenvimagereporepo92CB02DE": {
+   "Type": "AWS::ECR::Repository",
+   "Properties": {
+    "ImageTagMutability": "MUTABLE",
+    "LifecyclePolicy": {
+     "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":10,\"selection\":{\"tagStatus\":\"any\",\"countType\":\"imageCountMoreThan\",\"countNumber\":30},\"action\":{\"type\":\"expire\"}}]}"
+    },
+    "RepositoryPolicyText": {
+     "Statement": [
+      {
+       "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "Tags": [
+     {
+      "Key": "dataspray-stack-id",
+      "Value": "dev-env-image-repo"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "dev-env-image-repo/dev-env-image-repo-repo/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/zPSMzbWM1BMLC/WTU7J1s3JTNKrDi5JTM7WAQrFpyYX6VUHpRbkF2eW5BdV6jin5SF4tRBucX5pUXJqrY5XYlmivqG5noGesWJWcWamblFpXklmbqpeEIQGANq43qpqAAAA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "dev-env-image-repo/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "ExportsOutputFnGetAttdevenvimagereporepo92CB02DEArn36FEA44C": {
+   "Value": {
+    "Fn::GetAtt": [
+     "devenvimagereporepo92CB02DE",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "dev-env-image-repo:ExportsOutputFnGetAttdevenvimagereporepo92CB02DEArn36FEA44C"
+   }
+  },
+  "ExportsOutputRefdevenvimagereporepo92CB02DEFFB3A424": {
+   "Value": {
+    "Ref": "devenvimagereporepo92CB02DE"
+   },
+   "Export": {
+    "Name": "dev-env-image-repo:ExportsOutputRefdevenvimagereporepo92CB02DEFFB3A424"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

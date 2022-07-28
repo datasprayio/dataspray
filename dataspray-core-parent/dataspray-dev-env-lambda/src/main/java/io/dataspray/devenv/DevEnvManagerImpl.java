@@ -10,7 +10,7 @@ import java.util.Optional;
 @Slf4j
 public class DevEnvManagerImpl implements DevEnvManager {
     @Override
-    public DevEnv create(String stackId) {
+    public DevEnv create(String stackId, String imageTag) {
         // TODO
         // - Create Lambda as container image
         // - EFS storage
@@ -33,13 +33,15 @@ public class DevEnvManagerImpl implements DevEnvManager {
 
         String defaultAccount = System.getenv("CDK_DEFAULT_ACCOUNT");
         log.info("Creating dev env {} on account {}", stackId, defaultAccount);
-        App app = new App();
-        new DevEnvStack(app, stackId, StackProps.builder()
+        StackProps stackProps = StackProps.builder()
                 .env(Environment.builder()
                         .account(defaultAccount)
                         .region("us-east-1")
                         .build())
-                .build());
+                .build();
+        App app = new App();
+        DevEnvImageRepoStack imageRepoStack = new DevEnvImageRepoStack(app, "dev-env-image-repo", stackProps);
+        DevEnvRunnerStack runnerStack = new DevEnvRunnerStack(app, stackId, imageRepoStack, imageTag, stackProps);
         app.synth();
 
         return new DevEnv(stackId);
