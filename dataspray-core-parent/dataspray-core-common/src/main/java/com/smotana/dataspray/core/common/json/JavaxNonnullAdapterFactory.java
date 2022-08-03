@@ -21,16 +21,16 @@ import java.util.Arrays;
  */
 public class JavaxNonnullAdapterFactory implements TypeAdapterFactory {
     public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
-        final TypeAdapter<T> delegate = gson.getDelegateAdapter(this, type);
         boolean parentHasNonnull = type.getRawType().isAnnotationPresent(Nonnull.class);
         ImmutableList<Field> nonnullFields = Arrays.stream(type.getRawType().getDeclaredFields())
                 .filter(field -> field.isAnnotationPresent(Nonnull.class))
                 .collect(ImmutableList.toImmutableList());
-        if (nonnullFields.isEmpty()) {
-            return delegate;
+        if (!parentHasNonnull && nonnullFields.isEmpty()) {
+            return null;
         }
+        final TypeAdapter<T> delegate = gson.getDelegateAdapter(this, type);
         nonnullFields.forEach(field -> field.setAccessible(true));
-        return new TypeAdapter<T>() {
+        return new TypeAdapter<>() {
             @Override
             public void write(JsonWriter out, T value) throws IOException {
                 assertNonnull(value);

@@ -167,7 +167,6 @@
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>6.0.1</version>
                 <executions>
                     <execution>
                         <id>generate-frontend</id>
@@ -179,7 +178,8 @@
                             <inputSpec>${project.basedir}/src/main/openapi/api.yaml</inputSpec>
                             <output>${project.build.directory}/generated-sources/frontend</output>
                             <generatorName>typescript-fetch</generatorName>
-                            <templateDirectory>${project.basedir}/src/main/template/typescript-fetch</templateDirectory>
+                            <templateDirectory>${project.basedir}/src/main/openapi/template/typescript-fetch
+                            </templateDirectory>
                             <additionalProperties>typescriptThreePlus=true
                                 ,supportsES6=true
                                 ,enumPropertyNaming=original
@@ -196,7 +196,8 @@
                             <inputSpec>${project.basedir}/src/main/openapi/api.yaml</inputSpec>
                             <output>${project.build.directory}/generated-sources/backend</output>
                             <generatorName>python-fastapi</generatorName>
-                            <templateDirectory>${project.basedir}/src/main/template/python-fastapi</templateDirectory>
+                            <templateDirectory>${project.basedir}/src/main/openapi/template/python-fastapi
+                            </templateDirectory>
                             <additionalProperties>packageName=dataspray,packageVersion=${project.version-pep440}
                             </additionalProperties>
                         </configuration>

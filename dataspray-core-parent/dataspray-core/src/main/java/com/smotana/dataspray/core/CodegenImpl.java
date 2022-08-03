@@ -9,15 +9,12 @@ import com.google.common.io.Resources;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.name.Named;
-import com.google.inject.name.Names;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.TemplateLoader;
 import com.samskivert.mustache.MustacheException;
 import com.smotana.dataspray.core.definition.model.DataFormat;
 import com.smotana.dataspray.core.definition.model.Definition;
 import com.smotana.dataspray.core.definition.model.JavaProcessor;
-import com.smotana.dataspray.core.definition.model.Processor;
 import com.smotana.dataspray.core.definition.parser.DefinitionLoader;
 import com.smotana.dataspray.core.sample.SampleProject;
 import lombok.SneakyThrows;
@@ -30,7 +27,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,6 +38,7 @@ import java.util.Set;
 
 @Slf4j
 public class CodegenImpl implements Codegen {
+    public static final String PROJECT_FILENAME = "ds_project.yml";
     public static final String SCHEMAS_FOLDER = ".schema";
     public static final String TEMPLATES_FOLDER = ".template";
     /** Template files, always overwritten unless overriden by user */
@@ -57,20 +54,12 @@ public class CodegenImpl implements Codegen {
     private FileTracker fileTracker;
     @Inject
     private ContextBuilder contextBuilder;
-    @Inject
-    @Named("IN")
-    private Redirect in;
-    @Inject
-    @Named("OUT")
-    private Redirect out;
-    @Inject
-    @Named("ERR")
-    private Redirect err;
 
     private boolean schemasFolderGenerated = false;
 
     @Override
-    public Project initProject(String basePath, String projectName, SampleProject sample) throws IOException {
+    @SneakyThrows
+    public Project initProject(String basePath, String projectName, SampleProject sample) {
         Definition definition = sample.getDefinitionForName(projectName);
         Path projectPath = Path.of(basePath, definition.getNameDir());
         File projectDir = projectPath.toFile();
@@ -90,7 +79,7 @@ public class CodegenImpl implements Codegen {
         }
 
         // Create project definition
-        File dsProjectFile = projectPath.resolve("ds_project.yml").toFile();
+        File dsProjectFile = projectPath.resolve(PROJECT_FILENAME).toFile();
         if (!dsProjectFile.createNewFile()) {
             throw new IOException("File already exists: " + dsProjectFile.getPath());
         }
@@ -98,6 +87,18 @@ public class CodegenImpl implements Codegen {
             fos.write(definitionLoader.toYaml(definition).getBytes(StandardCharsets.UTF_8));
         }
 
+        return new Project(projectPath, git, definition);
+    }
+
+    @Override
+    @SneakyThrows
+    public Project loadProject(String projectPathStr) {
+        Path projectPath = Path.of(projectPathStr);
+        Definition definition;
+        try (FileReader reader = new FileReader(projectPath.resolve(PROJECT_FILENAME).toFile())) {
+            definition = definitionLoader.fromYaml(reader);
+        }
+        Git git = Git.open(projectPath.toFile());
         return new Project(projectPath, git, definition);
     }
 
@@ -137,52 +138,16 @@ public class CodegenImpl implements Codegen {
     }
 
     private void generateJava(Project project, JavaProcessor processor) {
-        Path processorPath = createProjectDir(project, processor.getNameDir());
+        Path processorPath = createProcessorDir(project, processor.getNameDir());
         codegen(project, processorPath, Template.JAVA, contextBuilder.createForProcessor(project, processor));
     }
 
-    @Override
-    public void installAll(Project project) {
-        Optional.ofNullable(project.getDefinition()
-                        .getJavaProcessors())
-                .stream()
-                .flatMap(Collection::stream)
-                .map(Processor::getName)
-                .forEach(processorName -> installJava(project, processorName));
-    }
-
-    @SneakyThrows
-    @Override
-    public void installJava(Project project, String processorName) {
-        JavaProcessor processor = Optional.ofNullable(project.getDefinition()
-                        .getJavaProcessors())
-                .stream()
-                .flatMap(Collection::stream)
-                .filter(p -> p.getName().equals(processorName))
-                .findAny()
-                .orElseThrow(() -> new RuntimeException("Cannot find java processor with name " + processorName));
-
-        ProcessBuilder processBuilder = isWindows()
-                ? new ProcessBuilder("cmd.exe", "/c", "mvn clean install")
-                : new ProcessBuilder("sh", "-c", "mvn clean install");
-        processBuilder.directory(getProjectDir(project, processor.getNameDir()).toFile());
-        processBuilder.redirectError(err);
-        processBuilder.redirectInput(in);
-        processBuilder.redirectOutput(out);
-        Process process = processBuilder.start();
-
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            throw new RuntimeException("Process exited with non-zero status " + exitCode);
-        }
-    }
-
-    private Path getProjectDir(Project project, String nameDir) {
+    public static Path getProcessorDir(Project project, String nameDir) {
         return project.getPath().resolve(nameDir);
     }
 
-    private Path createProjectDir(Project project, String nameDir) {
-        return createDir(getProjectDir(project, nameDir));
+    private Path createProcessorDir(Project project, String nameDir) {
+        return createDir(getProcessorDir(project, nameDir));
     }
 
     private Path getDataFormatDir(Project project, DataFormat dataFormat) {
@@ -384,21 +349,11 @@ public class CodegenImpl implements Codegen {
         return new File(Thread.currentThread().getContextClassLoader().getResource("template/" + template.getResourceName()).toURI());
     }
 
-    private boolean isWindows() {
-        return System.getProperty("os.name")
-                .toLowerCase().startsWith("windows");
-    }
-
-    public static Module module(boolean useProcessInputOutput) {
+    public static Module module() {
         return new AbstractModule() {
             @Override
             protected void configure() {
                 bind(Codegen.class).to(CodegenImpl.class).asEagerSingleton();
-                if (useProcessInputOutput) {
-                    bind(Redirect.class).annotatedWith(Names.named("IN")).toInstance(Redirect.INHERIT);
-                    bind(Redirect.class).annotatedWith(Names.named("OUT")).toInstance(Redirect.INHERIT);
-                    bind(Redirect.class).annotatedWith(Names.named("ERR")).toInstance(Redirect.INHERIT);
-                }
             }
         };
     }

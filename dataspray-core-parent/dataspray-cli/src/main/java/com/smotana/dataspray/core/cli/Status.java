@@ -6,23 +6,23 @@ import com.google.inject.Module;
 import com.smotana.dataspray.core.Core;
 import picocli.CommandLine.Command;
 
-@Command(name = "install",
-        description = "compile and install component(s)")
-public class Install implements Runnable {
+@Command(name = "status",
+        description = "check status of all tasks")
+public class Status implements Runnable {
 
     @Inject
     private Core core;
 
     @Override
     public void run() {
-        core.install();
+        core.status();
     }
 
     public static Module module() {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(Install.class).asEagerSingleton();
+                bind(Status.class).asEagerSingleton();
             }
         };
     }

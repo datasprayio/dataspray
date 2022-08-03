@@ -1,5 +1,6 @@
 package com.smotana.dataspray.core.definition.parser;
 
+import com.google.gson.JsonElement;
 import com.smotana.dataspray.core.definition.model.Definition;
 
 import java.io.InputStream;
@@ -13,6 +14,8 @@ public interface DefinitionLoader {
     Definition fromYaml(String definitionStr);
 
     Definition fromJson(String definitionStr);
+
+    Definition fromJson(JsonElement definition);
 
     String toJson(Definition definition, boolean prettyPrint);
 

@@ -23,9 +23,9 @@
 
     <modules>
         <module>dataspray-common</module>
-        <module>dataspray-site</module>
-        <module>dataspray-stream</module>
         <module>dataspray-core-parent</module>
+        <module>dataspray-stream</module>
+        <module>dataspray-site</module>
     </modules>
 
     <scm>

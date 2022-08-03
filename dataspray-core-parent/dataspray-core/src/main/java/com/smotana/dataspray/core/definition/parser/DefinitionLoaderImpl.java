@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -35,22 +36,27 @@ public class DefinitionLoaderImpl implements DefinitionLoader {
 
     @Override
     public Definition fromYaml(Reader definitionYamlReader) {
-        return fromJson(gson.toJson(yaml.load(definitionYamlReader), Definition.class));
+        return fromJson(SnakeYamlUtil.toGsonElement(yaml.load(definitionYamlReader)));
     }
 
     @Override
     public Definition fromYaml(InputStream definitionYamlInputStream) {
-        return fromJson(gson.toJson(yaml.load(definitionYamlInputStream), Definition.class));
+        return fromJson(SnakeYamlUtil.toGsonElement(yaml.load(definitionYamlInputStream)));
     }
 
     @Override
     public Definition fromYaml(String definitionYamlStr) {
-        return fromJson(gson.toJson(yaml.load(definitionYamlStr), Definition.class));
+        return fromJson(SnakeYamlUtil.toGsonElement(yaml.load(definitionYamlStr)));
     }
 
     @Override
     public Definition fromJson(String definitionStr) {
         return gson.fromJson(definitionStr, Definition.class);
+    }
+
+    @Override
+    public Definition fromJson(JsonElement definition) {
+        return gson.fromJson(definition, Definition.class);
     }
 
     @Override

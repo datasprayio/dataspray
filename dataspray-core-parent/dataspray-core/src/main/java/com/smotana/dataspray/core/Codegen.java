@@ -2,18 +2,14 @@ package com.smotana.dataspray.core;
 
 import com.smotana.dataspray.core.sample.SampleProject;
 
-import java.io.IOException;
-
 public interface Codegen {
-    Project initProject(String basePath, String projectName, SampleProject sample) throws IOException;
+    Project initProject(String basePath, String projectName, SampleProject sample);
+
+    Project loadProject(String projectPath);
 
     void generateAll(Project project);
 
     void generateDataFormat(Project project, String dataFormatName);
 
     void generateJava(Project project, String processorName);
-
-    void installAll(Project project);
-
-    void installJava(Project project, String processorName);
 }

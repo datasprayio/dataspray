@@ -8,10 +8,14 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
+import com.smotana.dataspray.core.BuilderImpl;
+import com.smotana.dataspray.core.CodegenImpl;
+import com.smotana.dataspray.core.CoreImpl;
+import com.smotana.dataspray.core.GitExcludeFileTracker;
+import com.smotana.dataspray.core.RuntimeImpl;
 import com.smotana.dataspray.core.common.json.GsonProvider;
 import com.smotana.dataspray.core.common.json.JacksonProvider;
 import com.smotana.dataspray.core.definition.parser.DefinitionLoaderImpl;
-import com.smotana.dataspray.core.definition.parser.DefinitionValidatorImpl;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,10 +48,18 @@ public enum CliInjector {
             protected void configure() {
                 // CLI commands
                 install(Cli.module());
+                install(Init.module());
                 install(Install.module());
+                install(Status.module());
+                install(Deploy.module());
 
+                install(CoreImpl.module());
+                install(CodegenImpl.module());
+                install(BuilderImpl.module(true));
+                install(RuntimeImpl.module());
+
+                install(GitExcludeFileTracker.module());
                 install(DefinitionLoaderImpl.module());
-                install(DefinitionValidatorImpl.module());
 
                 install(GsonProvider.module());
                 install(JacksonProvider.module());

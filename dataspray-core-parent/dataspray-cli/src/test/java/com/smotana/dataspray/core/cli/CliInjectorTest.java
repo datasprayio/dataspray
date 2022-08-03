@@ -5,8 +5,8 @@ import com.google.common.util.concurrent.ServiceManager;
 import com.google.gson.Gson;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
+import com.smotana.dataspray.core.CoreImpl;
 import com.smotana.dataspray.core.definition.parser.DefinitionLoaderImpl;
-import com.smotana.dataspray.core.definition.parser.DefinitionValidatorImpl;
 import org.junit.Test;
 
 class CliInjectorTest {
@@ -18,10 +18,11 @@ class CliInjectorTest {
         ImmutableSet.of(
                 Cli.class,
                 Install.class,
+                Init.class,
                 ServiceManager.class,
                 Gson.class,
                 DefinitionLoaderImpl.class,
-                DefinitionValidatorImpl.class
+                CoreImpl.class
         ).forEach(injector::getBinding);
     }
 }

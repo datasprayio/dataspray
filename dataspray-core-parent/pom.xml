@@ -22,9 +22,10 @@
     <url>https://dataspray.io</url>
 
     <modules>
-        <module>dataspray-api</module>
+        <module>dataspray-stream-client</module>
         <module>dataspray-core-common</module>
-        <module>dataspray-dev-env-lambda</module>
+        <!-- Remote dev env coming soon... -->
+        <!--<module>dataspray-dev-env-lambda</module>-->
         <module>dataspray-runner</module>
         <module>dataspray-core</module>
         <module>dataspray-cli</module>
@@ -294,6 +295,11 @@
                             </path>
                         </annotationProcessorPaths>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.openapitools</groupId>
+                    <artifactId>openapi-generator-maven-plugin</artifactId>
+                    <version>6.0.1</version>
                 </plugin>
             </plugins>
         </pluginManagement>

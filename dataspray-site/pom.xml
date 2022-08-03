@@ -82,6 +82,9 @@
                         <configuration>
                             <nodeVersion>${node.version}</nodeVersion>
                             <pnpmVersion>${pnpm.version}</pnpmVersion>
+                            <environmentVariables>
+                                <ADBLOCK>1</ADBLOCK>
+                            </environmentVariables>
                         </configuration>
                     </execution>
                     <execution>

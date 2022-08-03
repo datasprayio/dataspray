@@ -8,7 +8,10 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
 @Command(subcommands = {
+        Init.class,
         Install.class,
+        Deploy.class,
+        Status.class,
 })
 public class Cli {
     @Spec

@@ -15,9 +15,11 @@ import java.nio.file.Path;
 import java.util.UUID;
 
 @Slf4j
-public class CodegenTest extends CoreAbstractTest {
+public class CodegenBuilderTest extends CoreAbstractTest {
     @Inject
     private Codegen codegen;
+    @Inject
+    private Builder builder;
 
     private static MockInOutErr mockInOutErr = new MockInOutErr();
     private Path workingDir;
@@ -30,7 +32,8 @@ public class CodegenTest extends CoreAbstractTest {
 
         install(DefinitionLoaderImpl.module());
         install(GitExcludeFileTracker.module());
-        install(CodegenImpl.module(false));
+        install(CodegenImpl.module());
+        install(BuilderImpl.module(false));
     }
 
     @BeforeEach
@@ -56,9 +59,9 @@ public class CodegenTest extends CoreAbstractTest {
     public void test() throws Exception {
         Project project = codegen.initProject(workingDir.toString(), "Test Project", SampleProject.CLOUD);
         codegen.generateAll(project);
-        codegen.installAll(project);
+        builder.installAll(project);
         log.info("And again");
         codegen.generateAll(project);
-        codegen.installAll(project);
+        builder.installAll(project);
     }
 }

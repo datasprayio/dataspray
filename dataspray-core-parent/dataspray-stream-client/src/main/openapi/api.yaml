@@ -1,0 +1,191 @@
+openapi: 3.0.0
+info:
+  title: DataSpray Stream API
+  description: ClearFlask API documentation.
+  version: 1.0.0
+
+servers:
+  - url: https://stream.dataspray.io/api/v1
+
+components:
+  responses:
+    Ok:
+      description: >-
+        HTTP 200 Ok
+        Request was successful. No response value supplied.
+  schemas:
+    UploadCodeResponse:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+    DeployRequest:
+      type: object
+      required:
+        - name
+        - codeUrl
+      properties:
+        codeUrl:
+          type: string
+        name:
+          type: string
+    UpdateRequest:
+      type: object
+      properties:
+        codeUrl:
+          type: string
+    TaskStatuses:
+      type: object
+      required:
+        - tasks
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskStatus'
+    TaskStatus:
+      type: object
+      required:
+        - id
+      properties:
+        taskId:
+          type: string
+        status:
+          type: string
+          enum: [ Running, Paused ]
+
+paths:
+  /ping:
+    get:
+      operationId: ping
+      tags: [ Admin ]
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /code/upload:
+    put:
+      operationId: uploadCode
+      tags: [ Stream ]
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: commitHash
+          in: query
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/zip:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadCodeResponse'
+
+  /stream/deploy:
+    post:
+      operationId: deploy
+      tags: [ Stream ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeployRequest'
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskStatus'
+  /stream/status:
+    get:
+      operationId: statusAll
+      tags: [ Stream ]
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskStatuses'
+  /stream/task/{taskId}/status/:
+    get:
+      operationId: status
+      tags: [ Stream ]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRequest'
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskStatus'
+    patch:
+      operationId: update
+      tags: [ Stream ]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeployRequest'
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskStatus'
+    delete:
+      operationId: stop
+      tags: [ Stream ]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeployRequest'
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskStatus'
