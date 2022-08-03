@@ -24,10 +24,14 @@ import java.time.LocalDate;
 @Slf4j
 @Singleton
 public class GsonProvider implements Provider<Gson> {
-    private volatile Gson gson;
+    private static volatile Gson gson;
 
     @Override
     public Gson get() {
+        return GsonProvider.getStatic();
+    }
+
+    public static Gson getStatic() {
         if (gson == null) {
             synchronized (GsonProvider.class) {
                 if (gson == null) {

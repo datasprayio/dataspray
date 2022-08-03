@@ -14,23 +14,44 @@ components:
         HTTP 200 Ok
         Request was successful. No response value supplied.
   schemas:
+    UploadCodeRequest:
+      type: object
+      required:
+        - taskId
+        - contentLengthBytes
+      properties:
+        taskId:
+          type: string
+        contentLengthBytes:
+          type: integer
+          format: int64
     UploadCodeResponse:
       type: object
       required:
         - url
       properties:
-        url:
+        presignedUrl:
           type: string
     DeployRequest:
       type: object
       required:
-        - name
+        - taskId
         - codeUrl
       properties:
+        taskId:
+          type: string
         codeUrl:
           type: string
-        name:
+        runtime:
           type: string
+          # Subset of software.amazon.awssdk.services.lambda.model.Runtime
+          enum:
+            - JAVA8
+            - JAVA11
+            - NODEJS14_X
+            - PYTHON3_9
+            - GO1_X
+            - RUBY2_7
     UpdateRequest:
       type: object
       properties:
@@ -54,7 +75,19 @@ components:
           type: string
         status:
           type: string
-          enum: [ Running, Paused ]
+          enum:
+            - RUNNING
+            - PAUSED
+            - MISSING
+        lastUpdateStatus:
+          type: string
+          # Matches software.amazon.awssdk.services.lambda.model.LastUpdateStatus
+          enum:
+            - SUCCESSFUL
+            - FAILED
+            - IN_PROGRESS
+        lastUpdateStatusReason:
+          type: string
 
 paths:
   /ping:
@@ -69,23 +102,12 @@ paths:
     put:
       operationId: uploadCode
       tags: [ Stream ]
-      parameters:
-        - name: name
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: commitHash
-          in: query
-          schema:
-            type: string
       requestBody:
         required: true
         content:
-          application/zip:
+          application/json:
             schema:
-              type: string
-              format: binary
+              $ref: '#/components/schemas/UploadCodeRequest'
       responses:
         '200':
           description: Ok
@@ -132,12 +154,6 @@ paths:
           required: true
           schema:
             type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateRequest'
       responses:
         '200':
           description: Ok
@@ -145,6 +161,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskStatus'
+  /stream/task/{taskId}/update/:
     patch:
       operationId: update
       tags: [ Stream ]
@@ -159,7 +176,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DeployRequest'
+              $ref: '#/components/schemas/UpdateRequest'
       responses:
         '200':
           description: Ok
@@ -167,8 +184,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskStatus'
+  /stream/task/{taskId}/pause/:
     delete:
-      operationId: stop
+      operationId: pause
       tags: [ Stream ]
       parameters:
         - name: taskId
@@ -176,12 +194,40 @@ paths:
           required: true
           schema:
             type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DeployRequest'
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskStatus'
+  /stream/task/{taskId}/resume/:
+    delete:
+      operationId: resume
+      tags: [ Stream ]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskStatus'
+  /stream/task/{taskId}/delete/:
+    delete:
+      operationId: delete
+      tags: [ Stream ]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Ok

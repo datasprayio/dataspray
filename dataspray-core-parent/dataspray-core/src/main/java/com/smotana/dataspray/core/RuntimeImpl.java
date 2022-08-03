@@ -56,7 +56,7 @@ public class RuntimeImpl implements Runtime {
 
         // Then initiate deployment
         TaskStatus deployStatus = streamApi.deploy(new DeployRequest()
-                .name(processor.getName())
+                .taskId(processor.getName())
                 .codeUrl(uploadCodeResponse.getUrl()));
         printStatus(deployStatus);
     }
