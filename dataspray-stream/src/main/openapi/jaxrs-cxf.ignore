@@ -1,2 +1,8 @@
-**/src/test/**
-**/src/main/java/**/impl/**
+**src/main/**/impl/*
+**src/test/**
+**/pom.xml
+**/.openapi-generator/*
+**/.openapi-generator-ignore
+.openapi-generator
+.openapi-generator-ignore
+pom.xml
