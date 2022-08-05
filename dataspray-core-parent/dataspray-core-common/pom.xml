@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>dataspray-core-parent</artifactId>
-        <groupId>com.smotana.dataspray.core</groupId>
+        <groupId>io.dataspray.core</groupId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 

@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>dataspray-parent</artifactId>
-        <groupId>com.smotana.dataspray</groupId>
+        <groupId>io.dataspray</groupId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
@@ -22,7 +22,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.smotana.dataspray.core</groupId>
+            <groupId>io.dataspray.core</groupId>
             <artifactId>dataspray-core-common</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -82,7 +82,7 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>com.smotana.dataspray</groupId>
+                                    <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-common</artifactId>
                                     <classifier>template-jaxrs-cxf</classifier>
                                     <version>${project.version}</version>
@@ -93,7 +93,7 @@
                                     <includes>**</includes>
                                 </artifactItem>
                                 <artifactItem>
-                                    <groupId>com.smotana.dataspray</groupId>
+                                    <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-stream-client</artifactId>
                                     <classifier>schema-ingest</classifier>
                                     <version>${project.version}</version>
