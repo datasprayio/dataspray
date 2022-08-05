@@ -170,8 +170,9 @@ public class StreamResourceApi extends AbstractResource implements StreamApi {
                                 .bucket(CODE_BUCKET)
                                 .key(key)
                                 .contentLength(uploadCodeRequest.getContentLengthBytes())
+                                .contentType("application/zip")
                                 .build())
-                        .signatureDuration(Duration.ofDays(1))
+                        .signatureDuration(Duration.ofHours(1))
                         .build())
                 .url()
                 .toExternalForm();

@@ -99,8 +99,8 @@
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.basedir}/src/main/openapi/</outputDirectory>
-                                    <includes>api.yaml</includes>
+                                    <outputDirectory>${project.build.directory}/openapi/</outputDirectory>
+                                    <includes>api-ingest.yaml</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -118,7 +118,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/src/main/openapi/api.yaml</inputSpec>
+                            <inputSpec>${project.build.directory}/openapi/api-ingest.yaml</inputSpec>
                             <generatorName>jaxrs-cxf</generatorName>
                             <ignoreFileOverride>
                                 ${project.basedir}/src/main/openapi/template/jaxrs-cxf/.openapi-generator-ignore

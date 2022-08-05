@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: DataSpray Stream API
+  title: DataSpray Stream Ingest API
   description: ClearFlask API documentation.
   version: 1.0.0
 
@@ -37,7 +37,7 @@ paths:
   /ping:
     get:
       operationId: ping
-      tags: [ Admin ]
+      tags: [ Ping ]
       responses:
         '200':
           $ref: '#/components/responses/Ok'
@@ -47,7 +47,12 @@ paths:
       operationId: message
       tags: [ Ingest ]
       parameters:
-        - name: taskId
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: targetId
           in: path
           required: true
           schema:

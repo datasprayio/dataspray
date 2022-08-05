@@ -16,6 +16,7 @@ import io.dataspray.core.RuntimeImpl;
 import io.dataspray.core.common.json.GsonProvider;
 import io.dataspray.core.common.json.JacksonProvider;
 import io.dataspray.core.definition.parser.DefinitionLoaderImpl;
+import io.dataspray.stream.client.StreamApiImpl;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -58,6 +59,7 @@ public enum CliInjector {
                 install(BuilderImpl.module(true));
                 install(RuntimeImpl.module());
 
+                install(StreamApiImpl.module());
                 install(GitExcludeFileTracker.module());
                 install(DefinitionLoaderImpl.module());
 

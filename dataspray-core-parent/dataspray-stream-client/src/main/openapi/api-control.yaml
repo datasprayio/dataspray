@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: DataSpray Stream API
+  title: DataSpray Stream Control API
   description: ClearFlask API documentation.
   version: 1.0.0
 
@@ -28,9 +28,12 @@ components:
     UploadCodeResponse:
       type: object
       required:
-        - url
+        - presignedUrl
+        - codeUrl
       properties:
         presignedUrl:
+          type: string
+        codeUrl:
           type: string
     DeployRequest:
       type: object
@@ -93,7 +96,7 @@ paths:
   /ping:
     get:
       operationId: ping
-      tags: [ Admin ]
+      tags: [ Ping ]
       responses:
         '200':
           $ref: '#/components/responses/Ok'
@@ -101,7 +104,7 @@ paths:
   /code/upload:
     put:
       operationId: uploadCode
-      tags: [ Stream ]
+      tags: [ Control ]
       requestBody:
         required: true
         content:
@@ -119,7 +122,7 @@ paths:
   /stream/deploy:
     post:
       operationId: deploy
-      tags: [ Stream ]
+      tags: [ Control ]
       requestBody:
         required: true
         content:
@@ -136,7 +139,7 @@ paths:
   /stream/status:
     get:
       operationId: statusAll
-      tags: [ Stream ]
+      tags: [ Control ]
       responses:
         '200':
           description: Ok
@@ -147,7 +150,7 @@ paths:
   /stream/task/{taskId}/status/:
     get:
       operationId: status
-      tags: [ Stream ]
+      tags: [ Control ]
       parameters:
         - name: taskId
           in: path
@@ -164,7 +167,7 @@ paths:
   /stream/task/{taskId}/update/:
     patch:
       operationId: update
-      tags: [ Stream ]
+      tags: [ Control ]
       parameters:
         - name: taskId
           in: path
@@ -187,7 +190,7 @@ paths:
   /stream/task/{taskId}/pause/:
     delete:
       operationId: pause
-      tags: [ Stream ]
+      tags: [ Control ]
       parameters:
         - name: taskId
           in: path
@@ -204,7 +207,7 @@ paths:
   /stream/task/{taskId}/resume/:
     delete:
       operationId: resume
-      tags: [ Stream ]
+      tags: [ Control ]
       parameters:
         - name: taskId
           in: path
@@ -221,7 +224,7 @@ paths:
   /stream/task/{taskId}/delete/:
     delete:
       operationId: delete
-      tags: [ Stream ]
+      tags: [ Control ]
       parameters:
         - name: taskId
           in: path

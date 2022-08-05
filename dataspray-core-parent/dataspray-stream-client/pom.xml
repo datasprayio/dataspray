@@ -118,6 +118,11 @@
         </dependency>
 
         <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
@@ -134,22 +139,22 @@
                 <artifactId>openapi-generator-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>generate-client</id>
+                        <id>generate-client-stream</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/src/main/openapi/api.yaml</inputSpec>
+                            <inputSpec>${project.basedir}/src/main/openapi/api-control.yaml</inputSpec>
                             <generatorName>java</generatorName>
                             <ignoreFileOverride>
                                 ${project.basedir}/src/main/openapi/template/java/.openapi-generator-ignore
                             </ignoreFileOverride>
                             <typeMappings>OffsetDateTime=Instant</typeMappings>
                             <additionalProperties>java8=true
-                                ,modelPackage=io.dataspray.stream.client.model
-                                ,apiPackage=io.dataspray.stream.client
-                                ,invokerPackage=io.dataspray.stream.client
-                                ,groupId=io.dataspray.stream.client
+                                ,modelPackage=io.dataspray.stream.control.client.model
+                                ,apiPackage=io.dataspray.stream.control.client
+                                ,invokerPackage=io.dataspray.stream.control.client
+                                ,groupId=io.dataspray.stream.control.client
                                 ,artifactId=client
                                 ,dateLibrary=java8
                                 ,disableHtmlEscaping=true
@@ -158,7 +163,38 @@
                                 ,removeEnumValuePrefix=false
                                 ,sourceFolder=target/main/java
                             </additionalProperties>
-                            <output>${project.build.directory}/generated-sources/client</output>
+                            <output>${project.build.directory}/generated-sources/client-control</output>
+                            <configOptions>
+                                <sourceFolder>src/main/java</sourceFolder>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-client-ingest</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/openapi/api-ingest.yaml</inputSpec>
+                            <generatorName>java</generatorName>
+                            <ignoreFileOverride>
+                                ${project.basedir}/src/main/openapi/template/java/.openapi-generator-ignore
+                            </ignoreFileOverride>
+                            <typeMappings>OffsetDateTime=Instant</typeMappings>
+                            <additionalProperties>java8=true
+                                ,modelPackage=io.dataspray.stream.ingest.client.model
+                                ,apiPackage=io.dataspray.stream.ingest.client
+                                ,invokerPackage=io.dataspray.ingest.stream.client
+                                ,groupId=io.dataspray.stream.ingest.client
+                                ,artifactId=client
+                                ,dateLibrary=java8
+                                ,disableHtmlEscaping=true
+                                ,hideGenerationTimestamp=true
+                                ,useBeanValidation=true
+                                ,removeEnumValuePrefix=false
+                                ,sourceFolder=target/main/java
+                            </additionalProperties>
+                            <output>${project.build.directory}/generated-sources/client-ingest</output>
                             <configOptions>
                                 <sourceFolder>src/main/java</sourceFolder>
                             </configOptions>
@@ -171,7 +207,8 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
                     <descriptors>
-                        <descriptor>${project.basedir}/src/main/assembly/schema.xml</descriptor>
+                        <descriptor>${project.basedir}/src/main/assembly/schema-control.xml</descriptor>
+                        <descriptor>${project.basedir}/src/main/assembly/schema-ingest.xml</descriptor>
                     </descriptors>
                     <tarLongFileMode>posix</tarLongFileMode>
                 </configuration>
