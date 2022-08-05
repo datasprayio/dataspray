@@ -141,7 +141,8 @@
                         <configuration>
                             <inputSpec>${project.basedir}/src/main/openapi/api.yaml</inputSpec>
                             <generatorName>java</generatorName>
-                            <ignoreFileOverride>${project.basedir}/src/main/openapi/api.ignore
+                            <ignoreFileOverride>
+                                ${project.basedir}/src/main/openapi/template/java/.openapi-generator-ignore
                             </ignoreFileOverride>
                             <typeMappings>OffsetDateTime=Instant</typeMappings>
                             <additionalProperties>java8=true

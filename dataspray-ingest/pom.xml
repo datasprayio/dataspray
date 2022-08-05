@@ -9,7 +9,7 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>dataspray-stream</artifactId>
+    <artifactId>dataspray-ingest</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -95,7 +95,7 @@
                                 <artifactItem>
                                     <groupId>com.smotana.dataspray</groupId>
                                     <artifactId>dataspray-stream-client</artifactId>
-                                    <classifier>schema-manage</classifier>
+                                    <classifier>schema-ingest</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
