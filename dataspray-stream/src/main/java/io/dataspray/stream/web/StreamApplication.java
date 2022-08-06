@@ -1,7 +1,7 @@
 package io.dataspray.stream.web;
 
 import io.dataspray.stream.resource.AdminResourceApi;
-import io.dataspray.stream.resource.StreamResourceApi;
+import io.dataspray.stream.resource.ControlResourceApi;
 import lombok.extern.slf4j.Slf4j;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
@@ -28,7 +28,7 @@ public class StreamApplication extends ResourceConfig {
 
         // Add all resources here
         register(AdminResourceApi.class);
-        register(StreamResourceApi.class);
+        register(ControlResourceApi.class);
 
         // TODO Authentication and roles
         register(RolesAllowedDynamicFeature.class);

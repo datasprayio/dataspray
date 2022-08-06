@@ -1,0 +1,22 @@
+{{#discriminator}}{{>typeInfoAnnotation}}{{/discriminator}}{{#description}}
+    /**
+    * {{{description}}}
+    */
+{{/description}}
+@Value
+@Builder(toBuilder = true)
+@AllArgsConstructor
+public class {{classname}}{{#parent}} extends {{{parent}}}{{/parent}} {
+{{#vars}}{{#isEnum}}{{^isContainer}}
+    {{>enumClass}}{{/isContainer}}{{#isContainer}}{{#mostInnerItems}}
+    {{>enumClass}}{{/mostInnerItems}}{{/isContainer}}{{/isEnum}}
+{{#description}}
+    /**
+    * {{{description}}}
+    */
+{{/description}}
+{{#required}}    @NonNull
+    @Nonnull
+{{/required}}    @SerializedName("{{name}}")
+    {{{datatypeWithEnum}}} {{name}};
+{{/vars}}}

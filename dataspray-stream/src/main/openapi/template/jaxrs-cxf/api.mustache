@@ -1,0 +1,50 @@
+package {{package}};
+
+{{#imports}}import {{import}};
+{{/imports}}
+
+import java.util.List;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+{{#useBeanValidation}}
+import javax.validation.constraints.*;
+import javax.validation.Valid;
+import javax.annotation.Nullable;
+{{/useBeanValidation}}
+import javax.ws.rs.core.StreamingOutput;
+import java.io.InputStream;
+
+
+{{#appName}}
+/**
+ * {{{appName}}}
+ *
+ {{#appDescription}}
+ * <p>{{{appDescription}}}
+ *
+ {{/appDescription}}
+ */
+{{/appName}}
+public interface {{classname}}  {
+{{#operations}}
+{{#operation}}
+
+    {{#summary}}
+    /**
+     * {{summary}}
+     *
+     {{#notes}}
+     * {{notes}}
+     *
+     {{/notes}}
+     */
+    {{/summary}}
+    @{{httpMethod}}
+    {{#subresourceOperation}}@Path("{{{path}}}"){{/subresourceOperation}}
+{{#hasConsumes}}    @Consumes({ {{#consumes}}"{{{mediaType}}}"{{^-last}}, {{/-last}}{{/consumes}} }){{/hasConsumes}}
+{{#hasProduces}}    @Produces({ {{#produces}}"{{{mediaType}}}"{{^-last}}, {{/-last}}{{/produces}} }){{/hasProduces}}
+    {{>returnTypes}} {{operationId}}({{#allParams}}{{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{>formParams}}{{#hasMore}}, {{/hasMore}}{{/allParams}});
+{{/operation}}
+}
+{{/operations}}
+

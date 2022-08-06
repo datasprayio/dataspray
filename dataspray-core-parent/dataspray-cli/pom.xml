@@ -114,6 +114,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <skip>${skipNative}</skip>
                     <imageName>dataspray</imageName>
                     <mainClass>${mainClass}</mainClass>
                     <buildArgs combine.children="append">

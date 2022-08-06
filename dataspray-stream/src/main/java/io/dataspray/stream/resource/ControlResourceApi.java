@@ -4,7 +4,7 @@ import com.google.common.base.Enums;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Singleton;
-import io.dataspray.stream.server.StreamApi;
+import io.dataspray.stream.server.ControlApi;
 import io.dataspray.stream.server.model.DeployRequest;
 import io.dataspray.stream.server.model.TaskStatus;
 import io.dataspray.stream.server.model.TaskStatus.StatusEnum;
@@ -44,7 +44,7 @@ import java.util.Optional;
 
 @Slf4j
 @Singleton
-public class StreamResourceApi extends AbstractResource implements StreamApi {
+public class ControlResourceApi extends AbstractResource implements ControlApi {
     private static final int CODE_MAX_CONCURRENCY = 100;
     private static final long CODE_MAX_SIZE_IN_BYTES = 50 * 1024 * 1024;
     private static final String CODE_BUCKET = "io.dataspray.code";
@@ -165,6 +165,7 @@ public class StreamResourceApi extends AbstractResource implements StreamApi {
                 + uploadCodeRequest.getTaskId()
                 + "-"
                 + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(Instant.now()) + ".zip";
+        String codeUrl = "s3://" + CODE_BUCKET + "/" + key;
         String presignedUrl = S3Presigner.create().presignPutObject(PutObjectPresignRequest.builder()
                         .putObjectRequest(PutObjectRequest.builder()
                                 .bucket(CODE_BUCKET)
@@ -176,7 +177,7 @@ public class StreamResourceApi extends AbstractResource implements StreamApi {
                         .build())
                 .url()
                 .toExternalForm();
-        return new UploadCodeResponse(presignedUrl);
+        return new UploadCodeResponse(presignedUrl, codeUrl);
     }
 
     private String getFunctionName(String taskId) {

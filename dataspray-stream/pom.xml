@@ -95,7 +95,7 @@
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-stream-client</artifactId>
-                                    <classifier>schema-manage</classifier>
+                                    <classifier>schema-control</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>

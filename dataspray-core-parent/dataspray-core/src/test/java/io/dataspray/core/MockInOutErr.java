@@ -20,6 +20,9 @@ import java.util.function.Consumer;
 
 @Slf4j
 public class MockInOutErr implements Closeable {
+    private static final org.slf4j.Logger logOut = org.slf4j.LoggerFactory.getLogger("OUT");
+    private static final org.slf4j.Logger logErr = org.slf4j.LoggerFactory.getLogger("ERR");
+
     private static final String EOF = "EOF";
     private final Path tempDir;
     private final File in;
@@ -27,6 +30,7 @@ public class MockInOutErr implements Closeable {
     private final File err;
     private final Thread outTailer;
     private final Thread errTailer;
+    private volatile boolean acceptEof = false;
 
     @SneakyThrows
     public MockInOutErr() {
@@ -37,8 +41,8 @@ public class MockInOutErr implements Closeable {
         in.createNewFile();
         out.createNewFile();
         err.createNewFile();
-        outTailer = new Thread(() -> tail(out, line -> log.info("OUT: {}", line)));
-        errTailer = new Thread(() -> tail(err, line -> log.error("ERR: {}", line)));
+        outTailer = new Thread(() -> tail(out, line -> logOut.info("{}", line)));
+        errTailer = new Thread(() -> tail(err, line -> logErr.error("{}", line)));
         outTailer.start();
         errTailer.start();
     }
@@ -51,8 +55,8 @@ public class MockInOutErr implements Closeable {
             while (true) {
                 line = bufferedReader.readLine();
                 if (line == null) {
-                    Thread.sleep(100);
-                } else if (EOF.equals(line)) {
+                    Thread.sleep(300);
+                } else if (acceptEof && EOF.equals(line)) {
                     break;
                 } else {
                     logger.accept(line);
@@ -76,23 +80,30 @@ public class MockInOutErr implements Closeable {
         return ProcessBuilder.Redirect.appendTo(err);
     }
 
-    public void write(String line) {
-        try {
-            Files.writeString(in.toPath(), line, Charsets.UTF_8, StandardOpenOption.APPEND);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+    @SneakyThrows
+    public void write(String data) {
+        write(data, in);
+    }
+
+    @SneakyThrows
+    public void write(String data, File file) {
+        Files.writeString(file.toPath(), data, Charsets.UTF_8, StandardOpenOption.APPEND);
     }
 
     @SneakyThrows
     @Override
     public void close() throws IOException {
-        Files.writeString(out.toPath(), EOF, Charsets.UTF_8, StandardOpenOption.APPEND);
-        Files.writeString(err.toPath(), EOF, Charsets.UTF_8, StandardOpenOption.APPEND);
+        acceptEof = true;
+
+        write(EOF, out);
+        write(EOF, err);
+
         outTailer.wait();
         errTailer.wait();
+
         out.delete();
         err.delete();
+
         tempDir.toFile().delete();
     }
 
