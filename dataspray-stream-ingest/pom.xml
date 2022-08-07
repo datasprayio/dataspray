@@ -9,11 +9,11 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>dataspray-stream</artifactId>
+    <artifactId>dataspray-stream-ingest</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>DataSpray Stream</name>
+    <name>DataSpray Stream Ingest</name>
     <url>https://dataspray.io</url>
 
     <properties>
@@ -95,12 +95,12 @@
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-stream-client</artifactId>
-                                    <classifier>schema-control</classifier>
+                                    <classifier>schema-ingest</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/openapi/</outputDirectory>
-                                    <includes>api-control.yaml</includes>
+                                    <includes>api-ingest.yaml</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -118,7 +118,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.build.directory}/openapi/api-control.yaml</inputSpec>
+                            <inputSpec>${project.build.directory}/openapi/api-ingest.yaml</inputSpec>
                             <generatorName>jaxrs-cxf</generatorName>
                             <ignoreFileOverride>
                                 ${project.basedir}/src/main/openapi/template/jaxrs-cxf/.openapi-generator-ignore

@@ -24,7 +24,8 @@
     <modules>
         <module>dataspray-common</module>
         <module>dataspray-core-parent</module>
-        <module>dataspray-stream</module>
+        <module>dataspray-stream-control</module>
+        <module>dataspray-stream-ingest</module>
         <module>dataspray-site</module>
     </modules>
 

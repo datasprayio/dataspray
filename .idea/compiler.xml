@@ -13,9 +13,10 @@
         </processorPath>
         <module name="dataspray-dev-env-lambda" />
         <module name="dataspray-server" />
+        <module name="dataspray-stream-ingest" />
         <module name="dataspray-stream-client" />
         <module name="dataspray-cli" />
-        <module name="dataspray-stream" />
+        <module name="dataspray-stream-control" />
         <module name="dataspray-core-common" />
         <module name="dataspray-site" />
         <module name="dataspray-core" />

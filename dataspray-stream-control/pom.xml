@@ -9,11 +9,11 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>dataspray-ingest</artifactId>
+    <artifactId>dataspray-stream-control</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>DataSpray Stream</name>
+    <name>DataSpray Stream Control</name>
     <url>https://dataspray.io</url>
 
     <properties>
@@ -88,19 +88,19 @@
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.basedir}/src/main/openapi/template/jaxrs-cxf
+                                    <outputDirectory>${project.build.directory}/openapi/template/jaxrs-cxf
                                     </outputDirectory>
                                     <includes>**</includes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-stream-client</artifactId>
-                                    <classifier>schema-ingest</classifier>
+                                    <classifier>schema-control</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/openapi/</outputDirectory>
-                                    <includes>api-ingest.yaml</includes>
+                                    <includes>api-control.yaml</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -118,13 +118,12 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.build.directory}/openapi/api-ingest.yaml</inputSpec>
+                            <inputSpec>${project.build.directory}/openapi/api-control.yaml</inputSpec>
                             <generatorName>jaxrs-cxf</generatorName>
                             <ignoreFileOverride>
-                                ${project.basedir}/src/main/openapi/template/jaxrs-cxf/.openapi-generator-ignore
+                                ${project.build.directory}/openapi/template/jaxrs-cxf/.openapi-generator-ignore
                             </ignoreFileOverride>
-                            <templateDirectory>${project.basedir}/src/main/openapi/template/jaxrs-cxf
-                            </templateDirectory>
+                            <templateDirectory>${project.build.directory}/openapi/template/jaxrs-cxf</templateDirectory>
                             <typeMappings>OffsetDateTime=Instant</typeMappings>
                             <additionalProperties>java8=true
                                 ,modelPackage=io.dataspray.stream.server.model
