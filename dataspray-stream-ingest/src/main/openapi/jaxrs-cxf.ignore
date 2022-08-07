@@ -1,8 +1,0 @@
-**src/main/**/impl/*
-**src/test/**
-**/pom.xml
-**/.openapi-generator/*
-**/.openapi-generator-ignore
-.openapi-generator
-.openapi-generator-ignore
-pom.xml

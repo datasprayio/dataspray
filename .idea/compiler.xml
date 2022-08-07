@@ -21,6 +21,7 @@
         <module name="dataspray-site" />
         <module name="dataspray-core" />
         <module name="dataspray-runner" />
+        <module name="dataspray-base-lambda" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

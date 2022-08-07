@@ -1,0 +1,71 @@
+openapi: 3.0.0
+info:
+  title: DataSpray Stream Ingest API
+  description: ClearFlask API documentation.
+  version: 1.0.0
+
+servers:
+  - url: https://ingest.dataspray.io/api
+
+components:
+  responses:
+    Ok:
+      description: >-
+        HTTP 200 Ok
+        Request was successful. No response value supplied.
+  schemas:
+    Message:
+      type: object
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+
+paths:
+  /v1/ping:
+    get:
+      operationId: ping
+      tags: [ Ping ]
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /v1/account/{accountId}/target/{targetId}/message:
+    post:
+      operationId: message
+      tags: [ Ingest ]
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: targetId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ok
+        '402':
+          description: Account requires billing attention
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Account or queue not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: Payload too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

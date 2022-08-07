@@ -184,7 +184,7 @@
                             <additionalProperties>java8=true
                                 ,modelPackage=io.dataspray.stream.ingest.client.model
                                 ,apiPackage=io.dataspray.stream.ingest.client
-                                ,invokerPackage=io.dataspray.ingest.stream.client
+                                ,invokerPackage=io.dataspray.stream.ingest.client
                                 ,groupId=io.dataspray.stream.ingest.client
                                 ,artifactId=client
                                 ,dateLibrary=java8

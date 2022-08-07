@@ -22,6 +22,7 @@
     <url>https://dataspray.io</url>
 
     <modules>
+        <module>dataspray-base-lambda</module>
         <module>dataspray-stream-client</module>
         <module>dataspray-core-common</module>
         <!-- Remote dev env coming soon... -->
@@ -179,6 +180,15 @@
                 <version>${projectlombok.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>io.quarkus</groupId>
+                <artifactId>quarkus-bom</artifactId>
+                <version>2.11.1.Final</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Test deps -->
             <dependency>
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
