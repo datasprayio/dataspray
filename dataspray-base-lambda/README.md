@@ -8,7 +8,7 @@ This project allows you to deploy an OpenApi spec with a Quarkus Lambda applicat
 
 ```xml
 <dependency>
-    <groupId>io.dataspray.core</groupId>
+    <groupId>io.dataspray</groupId>
     <artifactId>dataspray-base-lambda</artifactId>
     <version>${project.version}</version>
 </dependency>

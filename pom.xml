@@ -288,7 +288,20 @@
                 <plugin>
                     <groupId>io.dataspray</groupId>
                     <artifactId>aws-cdk-maven-plugin</artifactId>
-                    <version>1.0.1</version>
+                    <version>1.0.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.jboss.jandex</groupId>
+                    <artifactId>jandex-maven-plugin</artifactId>
+                    <version>1.2.3</version>
+                    <executions>
+                        <execution>
+                            <id>make-index</id>
+                            <goals>
+                                <goal>jandex</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>

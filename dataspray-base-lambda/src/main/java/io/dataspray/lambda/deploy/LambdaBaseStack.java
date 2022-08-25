@@ -19,7 +19,6 @@ import software.amazon.awscdk.services.certificatemanager.Certificate;
 import software.amazon.awscdk.services.certificatemanager.CertificateValidation;
 import software.amazon.awscdk.services.lambda.Architecture;
 import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.lambda.Handler;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
 import software.amazon.awscdk.services.route53.HostedZone;
@@ -35,6 +34,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class LambdaBaseStack extends BaseStack {
     private static final String QUARKUS_FUNCTION_PATH = "target/function.zip";
+    private static final String QUARKUS_LAMBDA_HANDLER = "io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest";
     protected final SingletonFunction function;
     protected final HostedZone dnsZone;
     protected final Certificate certificate;
@@ -54,6 +54,7 @@ public class LambdaBaseStack extends BaseStack {
 
     private LambdaBaseStack(Construct parent, Options options, Map<String, Object> openApiSpec, String functionName) {
         super(parent, functionName);
+        String stackId = functionName;
         addApiGatewayExtensionsToOpenapiSpec(openApiSpec, functionName);
 
         checkArgument(new File(QUARKUS_FUNCTION_PATH).isFile(), "Asset file doesn't exist: " + QUARKUS_FUNCTION_PATH);
@@ -62,9 +63,8 @@ public class LambdaBaseStack extends BaseStack {
                 .uuid(UUID.nameUUIDFromBytes(functionName.getBytes(Charsets.UTF_8)).toString())
                 .functionName(functionName)
                 .code(Code.fromAsset(QUARKUS_FUNCTION_PATH))
-                .handler(Handler.FROM_IMAGE)
-                .runtime(Runtime.FROM_IMAGE)
-                .allowAllOutbound(true)
+                .handler(QUARKUS_LAMBDA_HANDLER)
+                .runtime(Runtime.JAVA_11)
                 .architecture(Architecture.ARM_64)
                 .memorySize(options.getMemorySize())
                 .build();
@@ -73,15 +73,15 @@ public class LambdaBaseStack extends BaseStack {
         String domain = serverUrl.getHost();
         String baseDomain = InternetDomainName.from(domain).topPrivateDomain().toString();
 
-        dnsZone = HostedZone.Builder.create(this, getStackId() + "-zone")
+        dnsZone = HostedZone.Builder.create(this, stackId + "-zone")
                 .zoneName(baseDomain)
                 .build();
 
-        certificate = Certificate.Builder.create(this, getStackId() + "-cert")
+        certificate = Certificate.Builder.create(this, stackId + "-cert")
                 .domainName(domain)
                 .validation(CertificateValidation.fromDns(dnsZone))
                 .build();
-        gateway = SpecRestApi.Builder.create(this, getStackId() + "-apigateway")
+        gateway = SpecRestApi.Builder.create(this, stackId + "-apigateway")
                 .apiDefinition(ApiDefinition.fromInline(openApiSpec))
                 .domainName(DomainNameOptions.builder()
                         .certificate(certificate)

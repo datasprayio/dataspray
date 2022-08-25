@@ -21,8 +21,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.dataspray.core</groupId>
-            <artifactId>dataspray-core-common</artifactId>
+            <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

@@ -22,12 +22,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.dataspray.core</groupId>
-            <artifactId>dataspray-core-common</artifactId>
+            <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.dataspray.core</groupId>
+            <groupId>io.dataspray</groupId>
             <artifactId>dataspray-base-lambda</artifactId>
             <version>${project.version}</version>
         </dependency>

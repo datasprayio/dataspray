@@ -22,8 +22,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.dataspray.core</groupId>
-            <artifactId>dataspray-core-common</artifactId>
+            <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -60,6 +60,10 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.jboss.jandex</groupId>
+                <artifactId>jandex-maven-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
