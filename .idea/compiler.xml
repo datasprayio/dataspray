@@ -18,9 +18,9 @@
         <module name="dataspray-cli" />
         <module name="dataspray-stream-control" />
         <module name="dataspray-store" />
+        <module name="dataspray-site" />
         <module name="dataspray-core" />
         <module name="dataspray-core-common" />
-        <module name="dataspray-site" />
         <module name="dataspray-runner" />
         <module name="dataspray-base-lambda" />
       </profile>

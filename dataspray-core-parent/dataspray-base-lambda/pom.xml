@@ -50,6 +50,14 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>aws-cdk-lib</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>apigatewayv2-alpha</artifactId>
+        </dependency>
 
         <!-- Quarkus -->
         <dependency>
@@ -78,93 +86,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-schema</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>io.dataspray</groupId>
-                                    <artifactId>dataspray-common</artifactId>
-                                    <classifier>template-jaxrs-cxf</classifier>
-                                    <version>${project.version}</version>
-                                    <type>tar.gz</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/openapi/template/jaxrs-cxf
-                                    </outputDirectory>
-                                    <includes>**</includes>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>io.dataspray</groupId>
-                                    <artifactId>dataspray-stream-client</artifactId>
-                                    <classifier>schema-ingest</classifier>
-                                    <version>${project.version}</version>
-                                    <type>tar.gz</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/openapi/</outputDirectory>
-                                    <includes>api-ingest.yaml</includes>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.openapitools</groupId>
-                <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>4.1.3</version>
-                <executions>
-                    <execution>
-                        <id>generate-server</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.build.directory}/openapi/api-ingest.yaml</inputSpec>
-                            <generatorName>jaxrs-cxf</generatorName>
-                            <ignoreFileOverride>
-                                ${project.build.directory}/openapi/template/jaxrs-cxf/.openapi-generator-ignore
-                            </ignoreFileOverride>
-                            <templateDirectory>${project.build.directory}/openapi/template/jaxrs-cxf
-                            </templateDirectory>
-                            <typeMappings>OffsetDateTime=Instant</typeMappings>
-                            <additionalProperties>java8=true
-                                ,modelPackage=io.dataspray.stream.server.model
-                                ,apiPackage=io.dataspray.stream.server
-                                ,invokerPackage=io.dataspray.stream.server
-                                ,groupId=io.dataspray
-                                ,artifactId=dataspray
-                                ,dateLibrary=java8
-                                ,disableHtmlEscaping=true
-                                ,generateApiTests=false
-                                ,generateApiDocumentation=false
-                                ,generateModelTests=false
-                                ,generateModelDocumentation=false
-                                ,generateSupportingFiles=false
-                                ,hideGenerationTimestamp=true
-                                ,addConsumesProducesJson=true
-                                ,useBeanValidation=true
-                                ,removeEnumValuePrefix=false
-                                ,sourceFolder=src/main/java
-                            </additionalProperties>
-                            <output>${project.build.directory}/generated-sources/server</output>
-                            <configOptions>
-                                <sourceFolder>src/main/java</sourceFolder>
-                            </configOptions>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>
