@@ -101,9 +101,11 @@ Create a CDK endpoint to create Lambda
 
 ```java
 public static void main(String[] args) {
-    new LambdaBaseStack(Options.builder()
+    App app = new App();
+    new LambdaBaseStack(app, Options.builder()
             .openapiYamlPath("target/openapi/api-ingest.yaml")
             .build());
+    app.synth();
 }
 ```
 

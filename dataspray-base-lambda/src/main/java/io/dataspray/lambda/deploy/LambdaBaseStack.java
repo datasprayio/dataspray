@@ -40,10 +40,6 @@ public class LambdaBaseStack extends BaseStack {
     protected final Certificate certificate;
     protected final SpecRestApi gateway;
 
-    public LambdaBaseStack(Options options) {
-        this(createApp(), options);
-    }
-
     public LambdaBaseStack(Construct parent, Options options) {
         this(parent, options, constructOpenApiForApiGateway(options));
     }
