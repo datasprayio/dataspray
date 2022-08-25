@@ -20,17 +20,17 @@
         <module name="dataspray-store" />
         <module name="dataspray-site" />
         <module name="dataspray-core" />
-        <module name="dataspray-core-common" />
         <module name="dataspray-runner" />
         <module name="dataspray-base-lambda" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="dataspray-api" target="17" />
+      <module name="dataspray-core-common" target="17" />
+      <module name="dataspray-core-parent" target="17" />
       <module name="dataspray-core-processors-parent" target="17" />
       <module name="dataspray-definition" target="17" />
       <module name="dataspray-definition-generator" target="17" />
-      <module name="dataspray-dev-env-lambda" target="17" />
       <module name="dataspray-processor-java" target="17" />
       <module name="dataspray-processors" target="17" />
     </bytecodeTargetLevel>

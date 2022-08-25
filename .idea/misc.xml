@@ -8,6 +8,7 @@
         <option value="$PROJECT_DIR$/dataspray-core-parent/dataspray-stream-client/pom.xml" />
         <option value="$PROJECT_DIR$/dataspray-stream-ingest/pom.xml" />
         <option value="$PROJECT_DIR$/dataspray-core-parent/dataspray-base-lambda/pom.xml" />
+        <option value="$PROJECT_DIR$/dataspray-dev-env-lambda/pom.xml" />
       </list>
     </option>
   </component>
