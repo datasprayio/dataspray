@@ -34,7 +34,7 @@
         <module>dataspray-base-lambda</module>
         <module>dataspray-stream-client</module>
         <!-- Remote dev env coming soon... -->
-        <!--<module>dataspray-dev-env-lambda</module>-->
+        <!--<module>dataspray-remote-workspace</module>-->
         <module>dataspray-runner</module>
         <module>dataspray-core</module>
         <module>dataspray-cli</module>

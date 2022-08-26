@@ -12,10 +12,10 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.22/lombok-1.18.22.jar" />
         </processorPath>
         <module name="dataspray-common" />
-        <module name="dataspray-dev-env-lambda" />
         <module name="dataspray-stream-ingest" />
         <module name="dataspray-stream-client" />
         <module name="dataspray-cli" />
+        <module name="dataspray-remote-workspace" />
         <module name="dataspray-stream-control" />
         <module name="dataspray-store" />
         <module name="dataspray-site" />
