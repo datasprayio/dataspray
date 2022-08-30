@@ -176,8 +176,8 @@
                         <id>run-cdk</id>
                         <goals>
                             <goal>synth</goal>
-                            <!--<goal>bootstrap</goal>-->
-                            <!--<goal>deploy</goal>-->
+                            <goal>bootstrap</goal>
+                            <goal>deploy</goal>
                         </goals>
                         <configuration>
                             <app>io.dataspray.stream.ingest.deploy.IngestStack</app>

@@ -14,8 +14,8 @@
         <module name="dataspray-common" />
         <module name="dataspray-stream-ingest" />
         <module name="dataspray-stream-client" />
-        <module name="dataspray-cli" />
         <module name="dataspray-remote-workspace" />
+        <module name="dataspray-cli" />
         <module name="dataspray-stream-control" />
         <module name="dataspray-store" />
         <module name="dataspray-site" />

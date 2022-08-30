@@ -11,6 +11,7 @@ import com.google.common.net.InternetDomainName;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.Value;
+import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.services.apigateway.ApiDefinition;
 import software.amazon.awscdk.services.apigateway.DomainNameOptions;
 import software.amazon.awscdk.services.apigateway.EndpointType;
@@ -22,6 +23,10 @@ import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
 import software.amazon.awscdk.services.route53.HostedZone;
+import software.amazon.awscdk.services.route53.RecordSet;
+import software.amazon.awscdk.services.route53.RecordTarget;
+import software.amazon.awscdk.services.route53.RecordType;
+import software.amazon.awscdk.services.route53.targets.ApiGateway;
 import software.constructs.Construct;
 
 import java.io.File;
@@ -38,7 +43,8 @@ public class LambdaBaseStack extends BaseStack {
     protected final SingletonFunction function;
     protected final HostedZone dnsZone;
     protected final Certificate certificate;
-    protected final SpecRestApi gateway;
+    protected final SpecRestApi restApi;
+    protected final RecordSet recordSet;
 
     public LambdaBaseStack(Construct parent, Options options) {
         this(parent, options, constructOpenApiForApiGateway(options));
@@ -50,10 +56,13 @@ public class LambdaBaseStack extends BaseStack {
 
     private LambdaBaseStack(Construct parent, Options options, Map<String, Object> openApiSpec, String functionName) {
         super(parent, functionName);
-        String stackId = functionName;
         addApiGatewayExtensionsToOpenapiSpec(openApiSpec, functionName);
-
         checkArgument(new File(QUARKUS_FUNCTION_PATH).isFile(), "Asset file doesn't exist: " + QUARKUS_FUNCTION_PATH);
+
+        String stackId = functionName;
+        URL serverUrl = getServerUrl(openApiSpec);
+        String domain = serverUrl.getHost();
+        String baseDomain = InternetDomainName.from(domain).topPrivateDomain().toString();
 
         function = SingletonFunction.Builder.create(this, functionName + "-lambda")
                 .uuid(UUID.nameUUIDFromBytes(functionName.getBytes(Charsets.UTF_8)).toString())
@@ -64,26 +73,28 @@ public class LambdaBaseStack extends BaseStack {
                 .architecture(Architecture.ARM_64)
                 .memorySize(options.getMemorySize())
                 .build();
-
-        URL serverUrl = getServerUrl(openApiSpec);
-        String domain = serverUrl.getHost();
-        String baseDomain = InternetDomainName.from(domain).topPrivateDomain().toString();
-
         dnsZone = HostedZone.Builder.create(this, stackId + "-zone")
                 .zoneName(baseDomain)
                 .build();
-
         certificate = Certificate.Builder.create(this, stackId + "-cert")
                 .domainName(domain)
                 .validation(CertificateValidation.fromDns(dnsZone))
                 .build();
-        gateway = SpecRestApi.Builder.create(this, stackId + "-apigateway")
+        restApi = SpecRestApi.Builder.create(this, stackId + "-apigateway")
                 .apiDefinition(ApiDefinition.fromInline(openApiSpec))
                 .domainName(DomainNameOptions.builder()
                         .certificate(certificate)
                         .endpointType(EndpointType.REGIONAL)
                         .domainName(domain)
                         .build())
+                .build();
+        recordSet = RecordSet.Builder.create(this, stackId + "-recordset")
+                .zone(dnsZone)
+                .recordType(RecordType.A)
+                .recordName(domain)
+                .target(RecordTarget.fromAlias(new ApiGateway(restApi)))
+                .ttl(Duration.seconds(30))
+                .deleteExisting(true)
                 .build();
     }
 
