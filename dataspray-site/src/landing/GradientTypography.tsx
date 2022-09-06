@@ -1,4 +1,4 @@
-import { Box, Grid, Skeleton, Typography, useTheme } from "@mui/material"
+import { Typography, useTheme } from "@mui/material";
 import React from "react";
 
 const GradientTypography = (props: React.ComponentProps<typeof Typography>) => {
@@ -19,8 +19,8 @@ const GradientTypography = (props: React.ComponentProps<typeof Typography>) => {
 
   return (
     <Typography
-      {...props}
       component='span'
+      {...props}
       sx={{
         ...props.sx,
         background: `linear-gradient(to right, ${from}, ${to})`,

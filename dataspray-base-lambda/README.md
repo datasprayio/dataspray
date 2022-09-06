@@ -67,6 +67,8 @@ This project allows you to deploy an OpenApi spec with a Quarkus Lambda applicat
 
 ### 3. Implement API
 
+Here is the API implementation
+
 ```java
 @Slf4j
 @ApplicationScoped
@@ -79,20 +81,68 @@ public class PingResource extends AbstractResource implements PingApi {
 }
 ```
 
+Here are the tests
+
+`PingTest.java`:
+
+```java
+@QuarkusTest
+public class PingTest {
+
+    @Test
+    public void testPing() {
+        RestAssured.when().get("/api/ping")
+                .then().statusCode(200);
+    }
+}
+```
+
+An integration test that runs unit tests against the final function code. Usually it is important to ensure code
+contains all required classes.
+
+`PingIT.java`:
+
+```java
+@QuarkusIntegrationTest
+public class PingIT extends PingTest { }
+```
+
 ### 4. Build Quarkus app
 
 ```xml
-<plugin>
-    <groupId>io.quarkus</groupId>
-    <artifactId>quarkus-maven-plugin</artifactId>
-    <executions>
-        <execution>
-            <goals>
-                <goal>build</goal>
-            </goals>
-        </execution>
-    </executions>
-</plugin>
+<plugins>
+    <plugin>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-maven-plugin</artifactId>
+        <executions>
+            <execution>
+                <goals>
+                    <goal>build</goal>
+                </goals>
+            </execution>
+        </executions>
+    </plugin>
+    <!-- For integration tests -->
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+            <execution>
+                <goals>
+                    <goal>integration-test</goal>
+                    <goal>verify</goal>
+                </goals>
+                <configuration>
+                    <systemPropertyVariables>
+                        <native.image.path>${project.build.directory}/${project.build.finalName}-runner
+                        </native.image.path>
+                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                    </systemPropertyVariables>
+                </configuration>
+            </execution>
+        </executions>
+    </plugin>
+</plugins>
 ```
 
 ### 5. Deploy using CDK

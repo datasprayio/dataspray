@@ -18,11 +18,15 @@ import software.amazon.awscdk.services.apigateway.EndpointType;
 import software.amazon.awscdk.services.apigateway.SpecRestApi;
 import software.amazon.awscdk.services.certificatemanager.Certificate;
 import software.amazon.awscdk.services.certificatemanager.CertificateValidation;
+import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.Architecture;
 import software.amazon.awscdk.services.lambda.Code;
+import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
 import software.amazon.awscdk.services.route53.HostedZone;
+import software.amazon.awscdk.services.route53.HostedZoneProviderProps;
+import software.amazon.awscdk.services.route53.IHostedZone;
 import software.amazon.awscdk.services.route53.RecordSet;
 import software.amazon.awscdk.services.route53.RecordTarget;
 import software.amazon.awscdk.services.route53.RecordType;
@@ -41,7 +45,7 @@ public class LambdaBaseStack extends BaseStack {
     private static final String QUARKUS_FUNCTION_PATH = "target/function.zip";
     private static final String QUARKUS_LAMBDA_HANDLER = "io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest";
     protected final SingletonFunction function;
-    protected final HostedZone dnsZone;
+    protected final IHostedZone dnsZone;
     protected final Certificate certificate;
     protected final SpecRestApi restApi;
     protected final RecordSet recordSet;
@@ -64,18 +68,9 @@ public class LambdaBaseStack extends BaseStack {
         String domain = serverUrl.getHost();
         String baseDomain = InternetDomainName.from(domain).topPrivateDomain().toString();
 
-        function = SingletonFunction.Builder.create(this, functionName + "-lambda")
-                .uuid(UUID.nameUUIDFromBytes(functionName.getBytes(Charsets.UTF_8)).toString())
-                .functionName(functionName)
-                .code(Code.fromAsset(QUARKUS_FUNCTION_PATH))
-                .handler(QUARKUS_LAMBDA_HANDLER)
-                .runtime(Runtime.JAVA_11)
-                .architecture(Architecture.ARM_64)
-                .memorySize(options.getMemorySize())
-                .build();
-        dnsZone = HostedZone.Builder.create(this, stackId + "-zone")
-                .zoneName(baseDomain)
-                .build();
+        dnsZone = HostedZone.fromLookup(this, baseDomain + "-zone", HostedZoneProviderProps.builder()
+                .domainName(baseDomain)
+                .build());
         certificate = Certificate.Builder.create(this, stackId + "-cert")
                 .domainName(domain)
                 .validation(CertificateValidation.fromDns(dnsZone))
@@ -96,6 +91,21 @@ public class LambdaBaseStack extends BaseStack {
                 .ttl(Duration.seconds(30))
                 .deleteExisting(true)
                 .build();
+        function = SingletonFunction.Builder.create(this, functionName + "-lambda")
+                .uuid(UUID.nameUUIDFromBytes(functionName.getBytes(Charsets.UTF_8)).toString())
+                .functionName(functionName)
+                .code(Code.fromAsset(QUARKUS_FUNCTION_PATH))
+                .handler(QUARKUS_LAMBDA_HANDLER)
+                .runtime(Runtime.JAVA_11)
+                .architecture(Architecture.ARM_64)
+                .memorySize(options.getMemorySize())
+                .build();
+        function.addPermission(functionName + "-gateway-to-lambda-permisson", Permission.builder()
+                .sourceArn(restApi.arnForExecuteApi())
+                .principal(ServicePrincipal.Builder
+                        .create("apigateway.amazonaws.com").build())
+                .action("lambda:InvokeFunction")
+                .build());
     }
 
     @SneakyThrows

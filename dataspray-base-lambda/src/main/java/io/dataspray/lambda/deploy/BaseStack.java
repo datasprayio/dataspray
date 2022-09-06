@@ -17,6 +17,7 @@ public abstract class BaseStack extends Stack {
                 StackProps.builder()
                         .env(Environment.builder()
                                 .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
+                                .region(System.getenv("CDK_DEFAULT_REGION"))
                                 .build())
                         .build());
 

@@ -15,7 +15,7 @@
         <java.version>17</java.version>
         <junit.version>5.8.2</junit.version>
         <projectlombok.version>1.18.22</projectlombok.version>
-        <quarkus.version>2.11.1.Final</quarkus.version>
+        <quarkus.version>2.12.0.Final</quarkus.version>
         <node.version>v16.15.0</node.version>
         <pnpm.version>v7.5.0</pnpm.version>
         <slf4j.version>1.7.25</slf4j.version>
@@ -39,6 +39,7 @@
         <module>dataspray-core</module>
         <module>dataspray-cli</module>
         <module>dataspray-store</module>
+        <module>dataspray-backend</module>
         <module>dataspray-stream-control</module>
         <module>dataspray-stream-ingest</module>
         <module>dataspray-site</module>
@@ -93,9 +94,19 @@
                 <version>2.9.0</version>
             </dependency>
             <dependency>
+                <groupId>io.gsonfire</groupId>
+                <artifactId>gson-fire</artifactId>
+                <version>1.8.5</version>
+            </dependency>
+            <dependency>
                 <groupId>com.dampcake</groupId>
                 <artifactId>gson-immutable</artifactId>
                 <version>1.2</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.ws.rs</groupId>
+                <artifactId>jsr311-api</artifactId>
+                <version>1.1.1</version>
             </dependency>
             <dependency>
                 <groupId>javax.ws.rs</groupId>
@@ -108,6 +119,11 @@
                 <version>2.0.1.Final</version>
             </dependency>
             <dependency>
+                <groupId>io.swagger</groupId>
+                <artifactId>swagger-annotations</artifactId>
+                <version>1.6.5</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>3.0.2</version>
@@ -115,7 +131,12 @@
             <dependency>
                 <groupId>jakarta.annotation</groupId>
                 <artifactId>jakarta.annotation-api</artifactId>
-                <version>2.1.1</version>
+                <version>1.3.5</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>1.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
@@ -228,6 +249,11 @@
                 <artifactId>jackson-dataformat-yaml</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.openapitools</groupId>
+                <artifactId>jackson-databind-nullable</artifactId>
+                <version>0.2.3</version>
+            </dependency>
 
             <!-- Logging-->
             <dependency>
@@ -300,7 +326,7 @@
                 <plugin>
                     <groupId>io.dataspray</groupId>
                     <artifactId>aws-cdk-maven-plugin</artifactId>
-                    <version>1.0.3-SNAPSHOT</version>
+                    <version>1.2.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jboss.jandex</groupId>
