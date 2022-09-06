@@ -1,7 +1,7 @@
 import { Typography, useTheme } from "@mui/material";
 import React from "react";
 
-const GradientTypography = (props: React.ComponentProps<typeof Typography>) => {
+const GradientTypography = (props: React.ComponentPropsWithoutRef<typeof Typography>) => {
   const theme = useTheme();
 
   var from, to;
