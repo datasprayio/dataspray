@@ -24,18 +24,23 @@
         <dependency>
             <groupId>io.dataspray</groupId>
             <artifactId>dataspray-common</artifactId>
-            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-common</artifactId>
+            <type>test-jar</type>
+            <classifier>tests</classifier>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.dataspray</groupId>
             <artifactId>dataspray-base-lambda</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.dataspray</groupId>
             <artifactId>dataspray-store</artifactId>
-            <version>${project.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

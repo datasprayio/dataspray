@@ -12,6 +12,10 @@
     </appender>
 
     <logger name="org.eclipse.jgit" level="info"/>
+    <logger name="io.quarkus" level="info"/>
+    <logger name="io.quarkus" level="info"/>
+    <logger name="org.apache.http" level="info"/>
+    <logger name="org.eclipse" level="info"/>
 
     <root level="TRACE">
         <appender-ref ref="CONSOLE"/>

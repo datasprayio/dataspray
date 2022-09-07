@@ -70,6 +70,40 @@
         <dependencies>
             <dependency>
                 <groupId>io.dataspray</groupId>
+                <artifactId>dataspray-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
+                <artifactId>dataspray-common</artifactId>
+                <type>test-jar</type>
+                <classifier>tests</classifier>
+                <scope>test</scope>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
+                <artifactId>dataspray-stream-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
+                <artifactId>dataspray-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
+                <artifactId>dataspray-base-lambda</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
+                <artifactId>dataspray-store</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.dataspray</groupId>
                 <artifactId>single-table</artifactId>
                 <version>0.0.4</version>
             </dependency>
@@ -326,7 +360,7 @@
                 <plugin>
                     <groupId>io.dataspray</groupId>
                     <artifactId>aws-cdk-maven-plugin</artifactId>
-                    <version>1.2.0</version>
+                    <version>1.2.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jboss.jandex</groupId>
@@ -369,6 +403,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
                     <version>3.1.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.2.2</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -427,6 +466,9 @@
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-maven-plugin</artifactId>
                     <version>2.11.2.Final</version>
+                    <configuration>
+                        <javaVersion>${java.version}</javaVersion>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.openapitools</groupId>

@@ -46,9 +46,14 @@ public class RuntimeImpl implements Runtime {
     @Override
     public void deploy(Project project, JavaProcessor processor) {
         switch (processor.getTarget()) {
-            case DATASPRAY -> deployStream(project, processor);
-            case SAMZA, FLINK -> throw new RuntimeException("Not yet implemented");
-            default -> throw new RuntimeException("Unknown target " + processor.getTarget());
+            case DATASPRAY:
+                deployStream(project, processor);
+                break;
+            case SAMZA:
+            case FLINK:
+                throw new RuntimeException("Not yet implemented");
+            default:
+                throw new RuntimeException("Unknown target " + processor.getTarget());
         }
     }
 

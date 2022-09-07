@@ -20,19 +20,28 @@ public class ContextUtil implements CustomContext {
 
     @Override
     public Object get(String name) throws Exception {
-        return switch (name) {
-            case "templatesFolder" -> CodegenImpl.TEMPLATES_FOLDER;
-            case "dataFormatsFolder" -> CodegenImpl.SCHEMAS_FOLDER;
-            case "runnerVersion" -> Optional.ofNullable(Strings.emptyToNull(getClass().getPackage().getImplementationVersion()))
-                    .or(() -> Optional.ofNullable(Strings.emptyToNull(System.getenv("PROJECT_VERSION"))))
-                    .orElseThrow(() -> new RuntimeException("Cannot determine runner version"));
-            case "lowerCamelCase" -> (Lambda) (frag, out) -> out.write(StringUtil.camelCase(frag.execute(), false));
-            case "upperCamelCase" -> (Lambda) (frag, out) -> out.write(StringUtil.camelCase(frag.execute(), true));
-            case "dataFormatFolderRelative" -> Path.of("..", CodegenImpl.SCHEMAS_FOLDER);
-            case "javaImportsFormat" -> (Lambda) this::javaImportsFormat;
-            case "trim" -> (Lambda) (frag, out) -> out.write(frag.execute().strip());
-            default -> null;
-        };
+        switch (name) {
+            case "templatesFolder":
+                return CodegenImpl.TEMPLATES_FOLDER;
+            case "dataFormatsFolder":
+                return CodegenImpl.SCHEMAS_FOLDER;
+            case "runnerVersion":
+                return Optional.ofNullable(Strings.emptyToNull(getClass().getPackage().getImplementationVersion()))
+                        .or(() -> Optional.ofNullable(Strings.emptyToNull(System.getenv("PROJECT_VERSION"))))
+                        .orElseThrow(() -> new RuntimeException("Cannot determine runner version"));
+            case "lowerCamelCase":
+                return (Lambda) (frag, out) -> out.write(StringUtil.camelCase(frag.execute(), false));
+            case "upperCamelCase":
+                return (Lambda) (frag, out) -> out.write(StringUtil.camelCase(frag.execute(), true));
+            case "dataFormatFolderRelative":
+                return Path.of("..", CodegenImpl.SCHEMAS_FOLDER);
+            case "javaImportsFormat":
+                return (Lambda) this::javaImportsFormat;
+            case "trim":
+                return (Lambda) (frag, out) -> out.write(frag.execute().strip());
+            default:
+                return null;
+        }
     }
 
     private void javaImportsFormat(Template.Fragment frag, Writer out) throws IOException {

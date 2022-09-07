@@ -59,16 +59,14 @@ class GitExcludeFileTrackerTest extends CoreAbstractTest {
         assertTrue(fileTracker.trackFile(project, Path.of("dir2/file10")));
         File file10 = createFile("dir2/file10");
 
-        createFile(".gitignore", """
-                /file6
-                /dir1/file8
-                !/file5
-                !/dir1/file7
-                """);
-        createFile("dir2/.gitignore", """
-                /file10
-                !/file9
-                """);
+        createFile(".gitignore",
+                "/file6\n"
+                        + "/dir1/file8\n"
+                        + "!/file5\n"
+                        + "!/dir1/file7\n");
+        createFile("dir2/.gitignore",
+                "/file10\n"
+                        + "!/file9\n");
 
         log.info("{}:\n{}", GitExcludeFileTracker.GIT_EXCLUDE_FILE, Files.readString(project.getPath().resolve(GitExcludeFileTracker.GIT_EXCLUDE_FILE), StandardCharsets.UTF_8));
 

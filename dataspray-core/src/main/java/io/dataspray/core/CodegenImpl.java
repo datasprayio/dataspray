@@ -120,11 +120,19 @@ public class CodegenImpl implements Codegen {
     }
 
     private void generateDataFormat(Project project, DataFormat dataFormat) {
-        switch (dataFormat.getSerde()) {
-            case BINARY, STRING -> { /* Format is schemaless, Nothing to do*/ }
-            case JSON -> codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_JSON, contextBuilder.createForDataFormat(project, dataFormat));
-            case PROTOBUF -> codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_PROTOBUF, contextBuilder.createForDataFormat(project, dataFormat));
-            case AVRO -> codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_AVRO, contextBuilder.createForDataFormat(project, dataFormat));
+        switch (dataFormat.getSerde()) {/* Format is schemaless, Nothing to do*/
+            case BINARY:
+            case STRING:
+                break;
+            case JSON:
+                codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_JSON, contextBuilder.createForDataFormat(project, dataFormat));
+                break;
+            case PROTOBUF:
+                codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_PROTOBUF, contextBuilder.createForDataFormat(project, dataFormat));
+                break;
+            case AVRO:
+                codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_AVRO, contextBuilder.createForDataFormat(project, dataFormat));
+                break;
         }
     }
 
