@@ -110,38 +110,15 @@
     <build>
         <plugins>
             <plugin>
-                <!-- TODO cross compile for macos/linux/win -->
-                <!-- https://blogs.oracle.com/developers/post/building-cross-platform-native-images-with-graalvm -->
-                <groupId>org.graalvm.buildtools</groupId>
-                <artifactId>native-maven-plugin</artifactId>
-                <extensions>true</extensions>
+                <groupId>io.quarkus</groupId>
+                <artifactId>quarkus-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>build-native</id>
                         <goals>
                             <goal>build</goal>
                         </goals>
-                        <phase>package</phase>
                     </execution>
                 </executions>
-                <configuration>
-                    <skip>${skipNative}</skip>
-                    <imageName>dataspray</imageName>
-                    <mainClass>${mainClass}</mainClass>
-                    <buildArgs combine.children="append">
-                        <buildArg>--no-fallback</buildArg>
-                        <buildArg>--verbose</buildArg>
-                        <!-- Include resource bundles here -->
-                        <!-- You may want to whitelist from the list in target/native/agent-output/test/session-*/resource-config.json -->
-                        <buildArg>-H:IncludeResourceBundles='net.sourceforge.argparse4j.internal.ArgumentParserImpl'
-                        </buildArg>
-                    </buildArgs>
-                    <!-- Don't be lied to, this property is allowed -->
-                    <!-- https://graalvm.github.io/native-build-tools/latest/maven-plugin.html#agent-support -->
-                    <agent>
-                        <enabled>true</enabled>
-                    </agent>
-                </configuration>
             </plugin>
         </plugins>
     </build>
