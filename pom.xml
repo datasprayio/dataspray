@@ -451,6 +451,9 @@
                     <configuration>
                         <source>${maven.compiler.source}</source>
                         <target>${maven.compiler.target}</target>
+                        <verbose>true</verbose>
+                        <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                        <fork>true</fork>
                         <annotationProcessors>
                             <annotationProcessor>lombok.launch.AnnotationProcessorHider$AnnotationProcessor
                             </annotationProcessor>
