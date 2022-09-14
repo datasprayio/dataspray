@@ -1,7 +1,6 @@
 package io.dataspray.stream.control;
 
 import io.dataspray.lambda.resource.AbstractResource;
-import io.dataspray.stream.server.PingApi;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.enterprise.context.ApplicationScoped;

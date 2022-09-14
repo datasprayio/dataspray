@@ -143,11 +143,11 @@
                             </templateDirectory>
                             <typeMappings>OffsetDateTime=Instant</typeMappings>
                             <additionalProperties>java8=true
-                                ,modelPackage=io.dataspray.stream.server.model
-                                ,apiPackage=io.dataspray.stream.server
-                                ,invokerPackage=io.dataspray.stream.server
+                                ,modelPackage=io.dataspray.stream.ingest.model
+                                ,apiPackage=io.dataspray.stream.ingest
+                                ,invokerPackage=io.dataspray.stream.ingest
                                 ,groupId=io.dataspray
-                                ,artifactId=dataspray
+                                ,artifactId=dataspray-stream-ingest
                                 ,dateLibrary=java8
                                 ,disableHtmlEscaping=true
                                 ,generateApiTests=false

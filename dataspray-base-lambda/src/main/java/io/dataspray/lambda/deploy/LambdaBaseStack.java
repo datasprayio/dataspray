@@ -163,6 +163,6 @@ public class LambdaBaseStack extends BaseStack {
         String openapiYamlPath;
         @NonNull
         @lombok.Builder.Default
-        int memorySize = 128;
+        int memorySize = 512;
     }
 }

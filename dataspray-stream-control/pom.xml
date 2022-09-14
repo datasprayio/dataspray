@@ -160,11 +160,11 @@
                             <templateDirectory>${project.build.directory}/openapi/template/jaxrs-cxf</templateDirectory>
                             <typeMappings>OffsetDateTime=Instant</typeMappings>
                             <additionalProperties>java8=true
-                                ,modelPackage=io.dataspray.stream.server.model
-                                ,apiPackage=io.dataspray.stream.server
-                                ,invokerPackage=io.dataspray.stream.server
+                                ,modelPackage=io.dataspray.stream.control.model
+                                ,apiPackage=io.dataspray.stream.control
+                                ,invokerPackage=io.dataspray.stream.control
                                 ,groupId=io.dataspray
-                                ,artifactId=dataspray
+                                ,artifactId=dataspray-stream-control
                                 ,dateLibrary=java8
                                 ,disableHtmlEscaping=true
                                 ,generateApiTests=false
