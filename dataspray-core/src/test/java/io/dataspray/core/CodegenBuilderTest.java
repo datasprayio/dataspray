@@ -1,58 +1,51 @@
 package io.dataspray.core;
 
-import com.google.inject.Inject;
-import io.dataspray.core.definition.parser.DefinitionLoaderImpl;
 import io.dataspray.core.sample.SampleProject;
+import io.quarkus.test.junit.QuarkusTest;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
+import javax.inject.Inject;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.UUID;
 
 @Slf4j
-public class CodegenBuilderTest extends CoreAbstractTest {
+@QuarkusTest
+public class CodegenBuilderTest {
     @Inject
-    private Codegen codegen;
+    Codegen codegen;
     @Inject
-    private Builder builder;
+    Builder builder;
+    @Inject
+    MockInOutErr mockInOutErr;
 
-    private static MockInOutErr mockInOutErr = new MockInOutErr();
     private Path workingDir;
 
-    @Override
-    protected void configure() {
-        super.configure();
-
-        install(mockInOutErr.module());
-
-        install(DefinitionLoaderImpl.module());
-        install(GitExcludeFileTracker.module());
-        install(CodegenImpl.module());
-        install(BuilderImpl.module(false));
-    }
-
     @BeforeEach
-    public void setupBefore() throws IOException {
-        log.info("CWD: {}", System.getProperty("user.dir"));
+    @SneakyThrows
+    public void beforeEach() {
         if (Path.of(System.getProperty("user.dir"), "target").toFile().isDirectory()) {
             workingDir = Path.of(System.getProperty("user.dir"), "target", "codegen-tests");
             FileUtils.deleteDirectory(workingDir.toFile());
             workingDir.toFile().mkdir();
+            log.info("WorkingDir: {}", workingDir);
         } else {
-            workingDir = Files.createTempDirectory(UUID.randomUUID().toString());
+            workingDir = Files.createTempDirectory(CodegenBuilderTest.class.getSimpleName());
+            workingDir.toFile().deleteOnExit();
         }
-        log.info("WorkingDir: {}", workingDir);
-        mockInOutErr = new MockInOutErr();
     }
 
-    @AfterAll
-    public static void cleanupAfterAll() throws IOException {
-        mockInOutErr.close();
+    @AfterEach
+    @SneakyThrows
+    public void afterEach() {
+        Files.walk(workingDir)
+                .filter(Files::isRegularFile)
+                .forEach(p -> log.debug("Working dir file: {}", workingDir.relativize(p)));
+        workingDir.toFile().delete();
     }
 
     @Test

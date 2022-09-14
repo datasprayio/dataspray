@@ -11,8 +11,8 @@ import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
@@ -20,19 +20,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import static io.dataspray.store.BillingStore.IMPL_LIMITLESS;
-
 @Slf4j
 @ApplicationScoped
 public class IngestResource extends AbstractResource implements IngestApi {
     /** Can be supplied via header, query param */
     private static final String API_TOKEN_HEADER_NAME = "x-api-key";
     private static final String API_TOKEN_QUERY_NAME = "api_key";
-    private static final String API_TOKEN_COOKIE_NAME = "api-key";
+    private static final String API_TOKEN_COOKIE_NAME = "x-api-key";
     private static final String API_TOKEN_AUTHORIZATION_TYPE = "bearer";
 
     @Inject
-    @Named(IMPL_LIMITLESS)
     BillingStore billingStore;
     @Inject
     QueueStore queueStore;
@@ -71,7 +68,8 @@ public class IngestResource extends AbstractResource implements IngestApi {
                     }
                     return Optional.of(authorizationHeaderValues.get(1));
                 })
-                // TODO Then check cookie API_TOKEN_COOKIE_NAME
+                .or(() -> Optional.ofNullable(headers.getCookies().get(API_TOKEN_COOKIE_NAME))
+                        .map(Cookie::getValue))
                 // Then check query param
                 .or(() -> Optional.ofNullable(uriInfo.getQueryParameters().get(API_TOKEN_QUERY_NAME))
                         .flatMap(values -> values.stream().findFirst()));

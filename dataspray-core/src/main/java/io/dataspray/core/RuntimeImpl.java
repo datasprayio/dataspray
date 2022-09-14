@@ -1,9 +1,6 @@
 package io.dataspray.core;
 
 import com.google.common.base.Strings;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Module;
 import io.dataspray.core.definition.model.JavaProcessor;
 import io.dataspray.stream.client.StreamApi;
 import io.dataspray.stream.control.client.model.DeployRequest;
@@ -15,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -28,12 +27,13 @@ import java.util.Iterator;
 import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
+@ApplicationScoped
 public class RuntimeImpl implements Runtime {
 
     @Inject
-    private ContextBuilder contextBuilder;
+    ContextBuilder contextBuilder;
     @Inject
-    private StreamApi streamApi;
+    StreamApi streamApi;
 
     @Override
     @SneakyThrows
@@ -114,14 +114,5 @@ public class RuntimeImpl implements Runtime {
 
     private void printStatus(TaskStatus taskStatus) {
         log.info("{}\t{}", taskStatus.getTaskId(), taskStatus.getStatus());
-    }
-
-    public static Module module() {
-        return new AbstractModule() {
-            @Override
-            protected void configure() {
-                bind(Runtime.class).to(RuntimeImpl.class).asEagerSingleton();
-            }
-        };
     }
 }

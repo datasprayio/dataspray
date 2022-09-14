@@ -1,12 +1,15 @@
 package io.dataspray.core.cli;
 
-import org.junit.Test;
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.QuarkusMainTest;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-
+@QuarkusMainTest
 public class CliTest {
-    @Test(timeout = 10_000)
+    @Test
+    @Launch(value = {}, exitCode = 2)
     public void test() throws Exception {
-        assertEquals(2, Cli.mainWithExitCode(new String[]{}));
     }
+
+    // TODO https://quarkus.io/guides/command-mode-reference#testing-command-mode-applications
 }

@@ -8,5 +8,4 @@ public interface StreamApi {
     IngestApi ingest();
 
     ControlApi control();
-
 }

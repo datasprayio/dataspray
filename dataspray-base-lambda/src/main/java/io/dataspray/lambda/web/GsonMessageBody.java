@@ -3,7 +3,7 @@ package io.dataspray.lambda.web;
 import com.google.common.base.Charsets;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
-import io.dataspray.core.common.json.GsonProvider;
+import io.dataspray.core.common.json.GsonUtil;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -40,7 +40,7 @@ public class GsonMessageBody implements MessageBodyWriter<Object>, MessageBodyRe
             MultivaluedMap<String, String> httpHeaders,
             InputStream entityStream) throws IOException {
         try (InputStreamReader streamReader = new InputStreamReader(entityStream, Charsets.UTF_8)) {
-            return GsonProvider.getStatic().fromJson(streamReader, genericType);
+            return GsonUtil.get().fromJson(streamReader, genericType);
         } catch (JsonSyntaxException ex) {
             throw new BadRequestException(ex.getMessage(), ex);
         }
@@ -62,7 +62,7 @@ public class GsonMessageBody implements MessageBodyWriter<Object>, MessageBodyRe
             MultivaluedMap<String, Object> httpHeaders,
             OutputStream entityStream) throws IOException {
         try (OutputStreamWriter writer = new OutputStreamWriter(entityStream, Charsets.UTF_8)) {
-            GsonProvider.getStatic().toJson(object, genericType, writer);
+            GsonUtil.get().toJson(object, genericType, writer);
         } catch (JsonIOException ex) {
             throw new IOException("Failed to construct JSON", ex);
         }

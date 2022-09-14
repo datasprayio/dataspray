@@ -1,7 +1,9 @@
 package io.dataspray.core.common.json;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.dampcake.gson.immutable.ImmutableAdapterFactory;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -9,33 +11,53 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import com.google.inject.AbstractModule;
-import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
+import io.quarkus.arc.DefaultBean;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Named;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDate;
 
 @Slf4j
-@Singleton
-public class JacksonProvider implements Provider<ObjectMapper> {
-    private volatile ObjectMapper objectMapper;
+@ApplicationScoped
+public class GsonUtil {
+    public static final String PRETTY_PRINT = "pretty-print";
+    private static volatile Gson gson;
 
-    @Override
-    public ObjectMapper get() {
-        if (objectMapper == null) {
-            synchronized (JacksonProvider.class) {
-                if (objectMapper == null) {
-                    objectMapper = new ObjectMapper()
-                            .registerModule(new Jdk8Module().configureAbsentsAsNulls(true))
-                            .findAndRegisterModules();
+    @ApplicationScoped
+    @DefaultBean
+    Gson getInstance() {
+        return GsonUtil.get();
+    }
+
+    @ApplicationScoped
+    @Named(PRETTY_PRINT)
+    Gson getInstancePrettyPrint() {
+        return get()
+                .newBuilder()
+                .setPrettyPrinting()
+                .create();
+    }
+
+    public static Gson get() {
+        if (gson == null) {
+            synchronized (GsonUtil.class) {
+                if (gson == null) {
+                    gson = new GsonBuilder()
+                            .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
+                            .disableHtmlEscaping()
+                            .registerTypeAdapterFactory(ImmutableAdapterFactory.forGuava())
+                            .registerTypeAdapterFactory(new JavaxNonnullAdapterFactory())
+                            .registerTypeAdapter(Instant.class, new InstantTypeConverter())
+                            .registerTypeAdapter(LocalDate.class, new LocalDateTypeConverter())
+                            .registerTypeAdapterFactory(ExplicitNull.get())
+                            .create();
                 }
             }
         }
-        return objectMapper;
+        return gson;
     }
 
     private static class InstantTypeConverter
@@ -62,14 +84,5 @@ public class JacksonProvider implements Provider<ObjectMapper> {
         public LocalDate deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
             return LocalDate.parse(json.getAsString());
         }
-    }
-
-    public static Module module() {
-        return new AbstractModule() {
-            @Override
-            protected void configure() {
-                bind(ObjectMapper.class).toProvider(JacksonProvider.class).asEagerSingleton();
-            }
-        };
     }
 }

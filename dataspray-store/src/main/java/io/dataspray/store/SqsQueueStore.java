@@ -9,16 +9,10 @@ import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Default;
-import javax.inject.Named;
 import java.util.Base64;
 import java.util.Base64.Encoder;
 
-import static io.dataspray.store.QueueStore.IMPL_SQS;
-
-@Default
 @ApplicationScoped
-@Named(IMPL_SQS)
 public class SqsQueueStore implements QueueStore {
     @ConfigProperty(defaultValue = "us-east-1")
     String awsRegion;

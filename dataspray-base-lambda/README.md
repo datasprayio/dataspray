@@ -122,26 +122,6 @@ public class PingIT extends PingTest { }
             </execution>
         </executions>
     </plugin>
-    <!-- For integration tests -->
-    <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <executions>
-            <execution>
-                <goals>
-                    <goal>integration-test</goal>
-                    <goal>verify</goal>
-                </goals>
-                <configuration>
-                    <systemPropertyVariables>
-                        <native.image.path>${project.build.directory}/${project.build.finalName}-runner
-                        </native.image.path>
-                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                    </systemPropertyVariables>
-                </configuration>
-            </execution>
-        </executions>
-    </plugin>
 </plugins>
 ```
 
@@ -180,3 +160,12 @@ Call CDK maven plugin
     </executions>
 </plugin>
 ```
+
+## Native builds
+
+_TODO:_
+
+- _Triggered using a "native" profile_
+- _Build native container (Either GH Actions on linux or docker image)_
+- _Integration tests using container_
+- _Deploy Lambda custom runtime_

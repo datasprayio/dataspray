@@ -5,12 +5,21 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import org.yaml.snakeyaml.Yaml;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Map;
 
+@ApplicationScoped
 public class SnakeYamlUtil {
+
+    @Dependent
+    Yaml getInstance() {
+        return new Yaml();
+    }
 
     /**
      * Wraps the object returned by the Snake YAML parser into a GSON JsonElement
@@ -18,7 +27,7 @@ public class SnakeYamlUtil {
      *
      * https://stackoverflow.com/a/48490088
      */
-    public static JsonElement toGsonElement(Object o) {
+    public JsonElement toGsonElement(Object o) {
 
         //NULL => JsonNull
         if (o == null)

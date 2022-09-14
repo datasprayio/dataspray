@@ -1,11 +1,10 @@
 package io.dataspray.core;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.AbstractModule;
-import com.google.inject.Module;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Files;
@@ -25,6 +24,7 @@ import java.util.Scanner;
  * Git.
  */
 @Slf4j
+@ApplicationScoped
 public class GitExcludeFileTracker implements FileTracker {
     public static final String NEXT_LINE_HEADER = "# DO NOT EDIT this and next line; managed by DataSpray".trim();
     public static final String GIT_EXCLUDE_FILE = ".git/info/exclude";
@@ -172,14 +172,5 @@ public class GitExcludeFileTracker implements FileTracker {
             return project.getPath().resolve(path);
         }
         return path;
-    }
-
-    public static Module module() {
-        return new AbstractModule() {
-            @Override
-            protected void configure() {
-                bind(FileTracker.class).to(GitExcludeFileTracker.class).asEagerSingleton();
-            }
-        };
     }
 }

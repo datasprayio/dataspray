@@ -12,7 +12,8 @@
     <url>https://dataspray.io</url>
 
     <properties>
-        <java.version>11</java.version>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <junit.version>5.8.2</junit.version>
         <projectlombok.version>1.18.22</projectlombok.version>
         <quarkus.version>2.12.0.Final</quarkus.version>
@@ -108,11 +109,6 @@
                 <version>0.0.4</version>
             </dependency>
             <dependency>
-                <groupId>com.google.inject</groupId>
-                <artifactId>guice</artifactId>
-                <version>5.1.0</version>
-            </dependency>
-            <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>30.1.1-jre</version>
@@ -184,6 +180,11 @@
                 <version>${quarkus.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.quarkus</groupId>
+                <artifactId>quarkus-picocli</artifactId>
+                <version>${quarkus.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.quarkus</groupId>
@@ -447,8 +448,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.0</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
+                        <source>${maven.compiler.source}</source>
+                        <target>${maven.compiler.target}</target>
                         <annotationProcessors>
                             <annotationProcessor>lombok.launch.AnnotationProcessorHider$AnnotationProcessor
                             </annotationProcessor>

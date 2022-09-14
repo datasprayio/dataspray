@@ -1,14 +1,17 @@
 package io.dataspray.core;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
 import io.dataspray.core.sample.SampleProject;
+import io.quarkus.test.junit.QuarkusTest;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -19,24 +22,34 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
-class GitExcludeFileTrackerTest extends CoreAbstractTest {
+@QuarkusTest
+class GitExcludeFileTrackerTest {
 
-    @TempDir
-    private File workingDir;
     @Inject
-    private FileTracker fileTracker;
+    FileTracker fileTracker;
 
-    @Override
-    protected void configure() {
-        super.configure();
+    private Path workingDir;
 
-        install(GitExcludeFileTracker.module());
+    @BeforeEach
+    @SneakyThrows
+    public void beforeEach() {
+        workingDir = Files.createTempDirectory(GitExcludeFileTrackerTest.class.getSimpleName());
+        workingDir.toFile().deleteOnExit();
+    }
+
+    @AfterEach
+    @SneakyThrows
+    public void afterEach() {
+        Files.walk(workingDir)
+                .filter(Files::isRegularFile)
+                .forEach(p -> log.debug("Working dir file: {}", workingDir.relativize(p)));
+        workingDir.toFile().delete();
     }
 
     @Test
     void test() throws Exception {
-        Git.init().setDirectory(workingDir).call();
-        Project project = new Project(workingDir.toPath(), Git.open(workingDir), SampleProject.EMPTY.getDefinitionForName("test"));
+        Git.init().setDirectory(workingDir.toFile()).call();
+        Project project = new Project(workingDir, Git.open(workingDir.toFile()), SampleProject.EMPTY.getDefinitionForName("test"));
 
         File file1 = createFile("file1");
         File file2 = createFile("file2");
@@ -126,7 +139,7 @@ class GitExcludeFileTrackerTest extends CoreAbstractTest {
     }
 
     private File createFile(String pathStr, String content) throws Exception {
-        File file = workingDir.toPath().resolve(pathStr).toFile();
+        File file = workingDir.resolve(pathStr).toFile();
         file.getParentFile().mkdirs();
         FileUtils.writeStringToFile(file, content, StandardCharsets.UTF_8, false);
         return file;

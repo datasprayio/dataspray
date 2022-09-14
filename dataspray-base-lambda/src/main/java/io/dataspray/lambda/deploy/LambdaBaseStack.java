@@ -153,7 +153,7 @@ public class LambdaBaseStack extends BaseStack {
         }
         openApiSpec.put("x-amazon-apigateway-endpoint-configuration", ImmutableMap.of(
                 "disableExecuteApiEndpoint", true));
-        openApiSpec.put("x-amazon-apigateway-binary-media-types", ImmutableList.of("application/zip"));
+        openApiSpec.put("x-amazon-apigateway-binary-media-types", ImmutableList.of("*/*"));
     }
 
     @Value

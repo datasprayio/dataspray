@@ -38,6 +38,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.ws.rs.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -45,6 +46,7 @@ import java.util.Optional;
 
 @Slf4j
 @ApplicationScoped
+@Path("/api")
 public class ControlResource extends AbstractResource implements ControlApi {
     private static final int CODE_MAX_CONCURRENCY = 100;
     private static final long CODE_MAX_SIZE_IN_BYTES = 50 * 1024 * 1024;

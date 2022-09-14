@@ -1,27 +1,21 @@
 package io.dataspray.core.parser;
 
-import com.google.inject.Inject;
-import io.dataspray.core.CoreAbstractTest;
 import io.dataspray.core.definition.model.Definition;
 import io.dataspray.core.definition.parser.DefinitionLoader;
-import io.dataspray.core.definition.parser.DefinitionLoaderImpl;
 import io.dataspray.core.sample.SampleProject;
+import io.quarkus.test.junit.QuarkusTest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import javax.inject.Inject;
+
 @Slf4j
-public class DefinitionLoaderTest extends CoreAbstractTest {
+@QuarkusTest
+public class DefinitionLoaderTest {
 
     @Inject
-    private DefinitionLoader loader;
-
-    @Override
-    protected void configure() {
-        super.configure();
-
-        install(DefinitionLoaderImpl.module());
-    }
+    DefinitionLoader loader;
 
     @Test
     public void testSerde() throws Exception {

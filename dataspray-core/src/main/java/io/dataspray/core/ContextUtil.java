@@ -1,12 +1,12 @@
 package io.dataspray.core;
 
 import com.google.common.base.Strings;
-import com.google.inject.Singleton;
 import com.samskivert.mustache.Mustache.CustomContext;
 import com.samskivert.mustache.Mustache.Lambda;
 import com.samskivert.mustache.Template;
 import io.dataspray.core.util.StringUtil;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Path;
@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@Singleton
+@ApplicationScoped
 public class ContextUtil implements CustomContext {
 
     @Override

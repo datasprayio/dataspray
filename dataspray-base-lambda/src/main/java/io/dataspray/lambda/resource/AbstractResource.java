@@ -1,5 +1,7 @@
 package io.dataspray.lambda.resource;
 
+import io.quarkus.amazon.lambda.http.model.AwsProxyRequest;
+import io.quarkus.amazon.lambda.http.model.AwsProxyRequestContext;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.Path;
@@ -13,6 +15,12 @@ import javax.ws.rs.ext.Provider;
 @Path("/")
 @Provider
 public abstract class AbstractResource {
+    @Context
+    protected com.amazonaws.services.lambda.runtime.Context lambdaContext;
+    @Context
+    protected AwsProxyRequestContext proxyRequestContext;
+    @Context
+    protected AwsProxyRequest proxyRequest;
     @Context
     protected SecurityContext securityContext;
     @Context

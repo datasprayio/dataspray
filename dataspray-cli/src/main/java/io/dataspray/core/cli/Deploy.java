@@ -1,11 +1,10 @@
 package io.dataspray.core.cli;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Module;
 import io.dataspray.core.Core;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
+
+import javax.inject.Inject;
 
 @Command(name = "deploy",
         description = "deploy tasks")
@@ -15,7 +14,7 @@ public class Deploy implements Runnable {
     private String taskId;
 
     @Inject
-    private Core core;
+    Core core;
 
     @Override
     public void run() {
@@ -24,14 +23,5 @@ public class Deploy implements Runnable {
         } else {
             core.deploy(taskId);
         }
-    }
-
-    public static Module module() {
-        return new AbstractModule() {
-            @Override
-            protected void configure() {
-                bind(Deploy.class).asEagerSingleton();
-            }
-        };
     }
 }

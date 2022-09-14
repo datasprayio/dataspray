@@ -1,30 +1,29 @@
 package io.dataspray.core;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Module;
-import com.google.inject.name.Named;
-import com.google.inject.name.Names;
 import io.dataspray.core.definition.model.JavaProcessor;
 import io.dataspray.core.definition.model.Processor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.Collection;
 import java.util.Optional;
 
 @Slf4j
+@ApplicationScoped
 public class BuilderImpl implements Builder {
     @Inject
     @Named("IN")
-    private Redirect in;
+    Redirect in;
     @Inject
     @Named("OUT")
-    private Redirect out;
+    Redirect out;
     @Inject
     @Named("ERR")
-    private Redirect err;
+    Redirect err;
 
     @Override
     public void installAll(Project project) {
@@ -67,17 +66,21 @@ public class BuilderImpl implements Builder {
                 .toLowerCase().startsWith("windows");
     }
 
-    public static Module module(boolean useProcessInputOutput) {
-        return new AbstractModule() {
-            @Override
-            protected void configure() {
-                bind(Builder.class).to(BuilderImpl.class).asEagerSingleton();
-                if (useProcessInputOutput) {
-                    bind(Redirect.class).annotatedWith(Names.named("IN")).toInstance(Redirect.INHERIT);
-                    bind(Redirect.class).annotatedWith(Names.named("OUT")).toInstance(Redirect.INHERIT);
-                    bind(Redirect.class).annotatedWith(Names.named("ERR")).toInstance(Redirect.INHERIT);
-                }
-            }
-        };
+    @Named("IN")
+    @ApplicationScoped
+    public static ProcessBuilder.Redirect getInput() {
+        return Redirect.INHERIT;
+    }
+
+    @Named("OUT")
+    @ApplicationScoped
+    public static ProcessBuilder.Redirect getOutput() {
+        return Redirect.INHERIT;
+    }
+
+    @Named("ERR")
+    @ApplicationScoped
+    public static ProcessBuilder.Redirect getError() {
+        return Redirect.INHERIT;
     }
 }

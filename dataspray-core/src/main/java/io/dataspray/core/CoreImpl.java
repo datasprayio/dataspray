@@ -1,14 +1,14 @@
 package io.dataspray.core;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Module;
 import io.dataspray.core.sample.SampleProject;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+@ApplicationScoped
 public class CoreImpl implements Core {
     @Inject
     Codegen codegen;
@@ -56,14 +56,5 @@ public class CoreImpl implements Core {
         project.getDefinition().getJavaProcessors().stream()
                 .filter(processor -> filterProcessorNameOpt.isEmpty() || filterProcessorNameOpt.get().equals(processor.getName()))
                 .forEach(processor -> runtime.deploy(project, processor));
-    }
-
-    public static Module module() {
-        return new AbstractModule() {
-            @Override
-            protected void configure() {
-                bind(Core.class).to(CoreImpl.class).asEagerSingleton();
-            }
-        };
     }
 }

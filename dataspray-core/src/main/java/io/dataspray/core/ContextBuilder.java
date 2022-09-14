@@ -1,16 +1,17 @@
 package io.dataspray.core;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import io.dataspray.core.definition.model.DataFormat;
 import io.dataspray.core.definition.model.Processor;
 
-@Singleton
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+
+@ApplicationScoped
 public class ContextBuilder {
 
     @Inject
-    private ContextUtil contextUtil;
+    ContextUtil contextUtil;
 
     public DatasprayContext createForFilename(
             DatasprayContext parentContext,

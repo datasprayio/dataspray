@@ -6,9 +6,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Module;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.TemplateLoader;
 import com.samskivert.mustache.MustacheException;
@@ -23,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -37,6 +36,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
+@ApplicationScoped
 public class CodegenImpl implements Codegen {
     public static final String PROJECT_FILENAME = "ds_project.yml";
     public static final String SCHEMAS_FOLDER = ".schema";
@@ -49,11 +49,11 @@ public class CodegenImpl implements Codegen {
     private static final String MUSTACHE_FILE_EXTENSION_INCLUDE = ".include.mustache";
 
     @Inject
-    private DefinitionLoader definitionLoader;
+    DefinitionLoader definitionLoader;
     @Inject
-    private FileTracker fileTracker;
+    FileTracker fileTracker;
     @Inject
-    private ContextBuilder contextBuilder;
+    ContextBuilder contextBuilder;
 
     private boolean schemasFolderGenerated = false;
 
@@ -355,14 +355,5 @@ public class CodegenImpl implements Codegen {
     @SneakyThrows
     private File getTemplateFromResources(Template template) {
         return new File(Thread.currentThread().getContextClassLoader().getResource("template/" + template.getResourceName()).toURI());
-    }
-
-    public static Module module() {
-        return new AbstractModule() {
-            @Override
-            protected void configure() {
-                bind(Codegen.class).to(CodegenImpl.class).asEagerSingleton();
-            }
-        };
     }
 }

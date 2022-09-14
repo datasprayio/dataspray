@@ -1,10 +1,8 @@
 package io.dataspray.core;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Singleton;
 import com.samskivert.mustache.Mustache.CustomContext;
 
-@Singleton
 public class DatasprayContext implements CustomContext {
 
     private final ImmutableMap<String, Object> data;

@@ -1,12 +1,11 @@
 package io.dataspray.stream.client;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Module;
-import com.google.inject.Singleton;
 import io.dataspray.stream.control.client.ControlApi;
 import io.dataspray.stream.ingest.client.IngestApi;
 
-@Singleton
+import javax.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
 public class StreamApiImpl implements StreamApi {
     private volatile IngestApi ingestApi;
     private volatile ControlApi controlApi;
@@ -33,14 +32,5 @@ public class StreamApiImpl implements StreamApi {
             }
         }
         return controlApi;
-    }
-
-    public static Module module() {
-        return new AbstractModule() {
-            @Override
-            protected void configure() {
-                bind(StreamApi.class).to(StreamApiImpl.class).asEagerSingleton();
-            }
-        };
     }
 }
