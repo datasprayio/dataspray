@@ -1,7 +1,8 @@
-import { Typography, useTheme } from "@mui/material";
+import { Typography, TypographyTypeMap, useTheme } from "@mui/material";
+import { OverridableComponent } from "@mui/material/OverridableComponent";
 import React from "react";
 
-const GradientTypography = (props: React.ComponentPropsWithoutRef<typeof Typography>) => {
+const GradientTypography: OverridableComponent<TypographyTypeMap> = (props: React.ComponentPropsWithoutRef<typeof Typography>) => {
   const theme = useTheme();
 
   var from, to;
