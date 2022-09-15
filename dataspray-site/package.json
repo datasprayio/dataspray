@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev:dev": "next dev",
+    "dev": "concurrently -n NX,TS -c cyan,green \"next dev -p 1234\" \"yarn dev:ts --watch\"",
+    "dev:ts": "tsc --noEmit --incremental --preserveWatchOutput --pretty",
     "build": "next build && next export",
     "start": "next start",
     "lint": "next lint"
@@ -25,6 +27,7 @@
     "@types/node": "17.0.31",
     "@types/react": "18.0.15",
     "@types/react-dom": "18.0.6",
+    "concurrently": "^7.4.0",
     "copy-webpack-plugin": "^11.0.0",
     "eslint": "8.15.0",
     "eslint-config-next": "12.1.6",
