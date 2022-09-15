@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev:dev": "next dev",
-    "dev": "concurrently -n NX,TS -c cyan,green \"next dev -p 1234\" \"yarn dev:ts --watch\"",
+    "dev": "concurrently -n NX,TS -c cyan,green \"next dev\" \"yarn dev:ts --watch\"",
     "dev:ts": "tsc --noEmit --incremental --preserveWatchOutput --pretty",
     "build": "next build && next export",
     "start": "next start",
