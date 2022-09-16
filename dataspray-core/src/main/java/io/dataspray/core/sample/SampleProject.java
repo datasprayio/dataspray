@@ -35,6 +35,7 @@ public enum SampleProject {
             .javaProcessors(ImmutableSet.of(
                     JavaProcessor.builder()
                             .name("IP Extractor")
+                            .target(JavaProcessor.Target.DATASPRAY)
                             .inputStreams(ImmutableSet.of(
                                     StreamLink.builder()
                                             .storeName("myKafka")

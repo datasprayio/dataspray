@@ -2,6 +2,8 @@ package io.dataspray.core;
 
 import io.dataspray.core.sample.SampleProject;
 
+import java.io.FileNotFoundException;
+
 public interface Core {
 
     /**
@@ -18,5 +20,5 @@ public interface Core {
 
     void deploy();
 
-    void deploy(String processorName);
+    void deploy(String processorName) throws FileNotFoundException;
 }

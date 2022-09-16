@@ -8,7 +8,7 @@
     <conversionRule conversionWord="loggingHighlight" converterClass="io.dataspray.core.logger.LoggingHighlight"/>
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%loggingHighlight(%msg) %n</pattern>
+            <pattern>%loggingHighlight(%msg %ex{0}) %nopex%n</pattern>
         </encoder>
     </appender>
 

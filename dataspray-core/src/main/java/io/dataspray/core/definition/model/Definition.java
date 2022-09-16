@@ -7,6 +7,7 @@ import com.google.gson.annotations.SerializedName;
 import com.jcabi.aspects.Cacheable;
 import io.dataspray.core.util.StringUtil;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Value;
@@ -57,7 +58,8 @@ public class Definition extends Item {
     @Nonnull
     ImmutableSet<DataFormat> dataFormats;
 
-    ImmutableSet<KafkaStore> kafkaStores;
+    @Builder.Default
+    ImmutableSet<KafkaStore> kafkaStores = ImmutableSet.of();
 
     @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public ImmutableSet<Store> getStores() {
@@ -66,7 +68,8 @@ public class Definition extends Item {
                 .build();
     }
 
-    ImmutableSet<JavaProcessor> javaProcessors;
+    @Builder.Default
+    ImmutableSet<JavaProcessor> javaProcessors = ImmutableSet.of();
 
     public ImmutableSet<JavaProcessor> getJavaProcessors() {
         initialize();
@@ -74,7 +77,7 @@ public class Definition extends Item {
     }
 
     @NonFinal
-    transient boolean inited = false;
+    transient boolean inited;
 
     private void initialize() {
         if (inited) {

@@ -1,13 +1,17 @@
 package io.dataspray.core;
 
 import io.dataspray.core.sample.SampleProject;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.io.FileNotFoundException;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+@Slf4j
 @ApplicationScoped
 public class CoreImpl implements Core {
     @Inject
@@ -41,20 +45,30 @@ public class CoreImpl implements Core {
     }
 
     @Override
+    @SneakyThrows
     public void deploy() {
         deploy(Optional.empty());
     }
 
     @Override
-    public void deploy(String processorName) {
+    public void deploy(String processorName) throws FileNotFoundException {
         deploy(Optional.of(processorName));
     }
 
-    private void deploy(Optional<String> filterProcessorNameOpt) {
+    private void deploy(Optional<String> filterProcessorNameOpt) throws FileNotFoundException {
         Project project = codegen.loadProject(".");
 
-        project.getDefinition().getJavaProcessors().stream()
-                .filter(processor -> filterProcessorNameOpt.isEmpty() || filterProcessorNameOpt.get().equals(processor.getName()))
-                .forEach(processor -> runtime.deploy(project, processor));
+        long deployCount = project.getDefinition().getJavaProcessors().stream()
+                .filter(processor -> {
+                    if (filterProcessorNameOpt.isPresent() && !filterProcessorNameOpt.get().equalsIgnoreCase(processor.getName())) {
+                        return false;
+                    }
+                    runtime.deploy(project, processor);
+                    return true;
+                })
+                .count();
+        if (filterProcessorNameOpt.isPresent() && deployCount == 0) {
+            throw new FileNotFoundException("Could not find processor by name: " + filterProcessorNameOpt.get());
+        }
     }
 }
