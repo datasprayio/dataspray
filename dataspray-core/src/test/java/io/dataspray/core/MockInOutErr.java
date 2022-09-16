@@ -1,12 +1,11 @@
 package io.dataspray.core;
 
 import com.google.common.base.Charsets;
-import io.quarkus.arc.Priority;
+import com.google.common.collect.ImmutableMap;
+import io.quarkus.test.junit.QuarkusTestProfile;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.enterprise.inject.Alternative;
-import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.Closeable;
@@ -16,12 +15,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 
 @Slf4j
 @Singleton
-public class MockInOutErr implements Closeable {
+public class MockInOutErr implements Closeable, QuarkusTestProfile {
     private static final org.slf4j.Logger logOut = org.slf4j.LoggerFactory.getLogger("OUT");
     private static final org.slf4j.Logger logErr = org.slf4j.LoggerFactory.getLogger("ERR");
 
@@ -70,28 +70,12 @@ public class MockInOutErr implements Closeable {
         }
     }
 
-    @Named("IN")
-    @Singleton
-    @Alternative
-    @Priority(1)
-    public ProcessBuilder.Redirect getInput() {
-        return ProcessBuilder.Redirect.from(in);
-    }
-
-    @Named("OUT")
-    @Singleton
-    @Alternative
-    @Priority(1)
-    public ProcessBuilder.Redirect getOutput() {
-        return ProcessBuilder.Redirect.appendTo(out);
-    }
-
-    @Named("ERR")
-    @Singleton
-    @Alternative
-    @Priority(1)
-    public ProcessBuilder.Redirect getError() {
-        return ProcessBuilder.Redirect.appendTo(err);
+    @Override
+    public Map<String, String> getConfigOverrides() {
+        return ImmutableMap.of(
+                BuilderImpl.BUILDER_IN, in.getPath(),
+                BuilderImpl.BUILDER_OUT, out.getPath(),
+                BuilderImpl.BUILDER_ERR, err.getPath());
     }
 
     @SneakyThrows

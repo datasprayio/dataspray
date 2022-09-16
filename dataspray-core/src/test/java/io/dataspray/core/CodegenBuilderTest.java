@@ -2,6 +2,7 @@ package io.dataspray.core;
 
 import io.dataspray.core.sample.SampleProject;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -15,6 +16,7 @@ import java.nio.file.Path;
 
 @Slf4j
 @QuarkusTest
+@TestProfile(MockInOutErr.class)
 public class CodegenBuilderTest {
     @Inject
     Codegen codegen;

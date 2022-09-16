@@ -4,10 +4,10 @@ import io.dataspray.core.definition.model.JavaProcessor;
 import io.dataspray.core.definition.model.Processor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.inject.Named;
+import java.io.File;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.Collection;
 import java.util.Optional;
@@ -15,15 +15,16 @@ import java.util.Optional;
 @Slf4j
 @ApplicationScoped
 public class BuilderImpl implements Builder {
-    @Inject
-    @Named("IN")
-    Redirect in;
-    @Inject
-    @Named("OUT")
-    Redirect out;
-    @Inject
-    @Named("ERR")
-    Redirect err;
+    public static final String BUILDER_IN = "builder.in";
+    public static final String BUILDER_OUT = "builder.out";
+    public static final String BUILDER_ERR = "builder.err";
+
+    @ConfigProperty(name = BUILDER_IN)
+    Optional<String> in;
+    @ConfigProperty(name = BUILDER_OUT)
+    Optional<String> out;
+    @ConfigProperty(name = BUILDER_ERR)
+    Optional<String> err;
 
     @Override
     public void installAll(Project project) {
@@ -50,9 +51,10 @@ public class BuilderImpl implements Builder {
                 ? new ProcessBuilder("cmd.exe", "/c", "mvn clean install")
                 : new ProcessBuilder("sh", "-c", "mvn clean install");
         processBuilder.directory(CodegenImpl.getProcessorDir(project, processor.getNameDir()).toFile());
-        processBuilder.redirectError(err);
-        processBuilder.redirectInput(in);
-        processBuilder.redirectOutput(out);
+
+        err.map(File::new).ifPresentOrElse(processBuilder::redirectError, () -> processBuilder.redirectError(Redirect.INHERIT));
+        in.map(File::new).ifPresentOrElse(processBuilder::redirectInput, () -> processBuilder.redirectInput(Redirect.INHERIT));
+        out.map(File::new).ifPresentOrElse(processBuilder::redirectOutput, () -> processBuilder.redirectOutput(Redirect.INHERIT));
         Process process = processBuilder.start();
 
         int exitCode = process.waitFor();
@@ -64,23 +66,5 @@ public class BuilderImpl implements Builder {
     private boolean isWindows() {
         return System.getProperty("os.name")
                 .toLowerCase().startsWith("windows");
-    }
-
-    @Named("IN")
-    @ApplicationScoped
-    public static ProcessBuilder.Redirect getInput() {
-        return Redirect.INHERIT;
-    }
-
-    @Named("OUT")
-    @ApplicationScoped
-    public static ProcessBuilder.Redirect getOutput() {
-        return Redirect.INHERIT;
-    }
-
-    @Named("ERR")
-    @ApplicationScoped
-    public static ProcessBuilder.Redirect getError() {
-        return Redirect.INHERIT;
     }
 }

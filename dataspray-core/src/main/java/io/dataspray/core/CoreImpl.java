@@ -19,7 +19,7 @@ public class CoreImpl implements Core {
 
     @Override
     public void init(String projectName, SampleProject sample) {
-        checkArgument(projectName.matches("^[a-zA-Z0-9-_.]$"), "Project name can only contain: A-Z a-z 0-9 - _ .");
+        checkArgument(projectName.matches("^[a-zA-Z0-9-_.]+$"), "Project name can only contain: A-Z a-z 0-9 - _ .");
 
         Project project = codegen.initProject(".", projectName, sample);
 
