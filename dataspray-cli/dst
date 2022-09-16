@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+./target/slimjre/bin/java -jar target/dataspray-cli-0.0.1-SNAPSHOT-runner.jar "$@"
+

@@ -6,7 +6,7 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
 @TopCommand
-@Command(subcommands = {
+@Command(name = "dst", subcommands = {
         Init.class,
         Install.class,
         Deploy.class,

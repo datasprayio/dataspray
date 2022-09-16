@@ -18,6 +18,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mainClass>io.dataspray.core.cli.Cli</mainClass>
+        <!--        <executable-suffix/>-->
+        <!--        <distribution.directory>${project.build.directory}/distributions</distribution.directory>-->
         <skipNative/>
     </properties>
 
@@ -108,7 +110,18 @@
     </dependencies>
 
     <build>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.7.0</version>
+            </extension>
+        </extensions>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
@@ -120,6 +133,231 @@
                     </execution>
                 </executions>
             </plugin>
+            <!--            <plugin>-->
+            <!--                <groupId>org.jreleaser</groupId>-->
+            <!--                <artifactId>jreleaser-maven-plugin</artifactId>-->
+            <!--                <configuration>-->
+            <!--                    <jreleaser>-->
+            <!--                        <project>-->
+            <!--                            <java>-->
+            <!--                                <mainClass>${app.main.class}</exec.mainClass>-->
+            <!--                            </java>-->
+            <!--                        </project>-->
+            <!--                        <release>-->
+            <!--                            <github>-->
+            <!--                                <owner>duke</owner>-->
+            <!--                                <overwrite>true</overwrite>-->
+            <!--                            </github>-->
+            <!--                        </release>-->
+            <!--                        <distributions>-->
+            <!--                            <app>-->
+            <!--                                <artifacts>-->
+            <!--                                    <artifact>-->
+            <!--                                        <path>-->
+            <!--                                            ${app.distribution.directory}/${project.artifactId}-${project.version}.zip-->
+            <!--                                        </path>-->
+            <!--                                    </artifact>-->
+            <!--                                    <artifact>-->
+            <!--                                        <path>-->
+            <!--                                            ${app.distribution.directory}/${project.artifactId}-${project.version}.tar.gz-->
+            <!--                                        </path>-->
+            <!--                                    </artifact>-->
+            <!--                                </artifacts>-->
+            <!--                            </app>-->
+            <!--                        </distributions>-->
+            <!--                    </jreleaser>-->
+            <!--                </configuration>-->
+            <!--            </plugin>-->
+            <!--            <plugin>-->
+            <!--                <groupId>org.apache.maven.plugins</groupId>-->
+            <!--                <artifactId>maven-assembly-plugin</artifactId>-->
+            <!--                <version>3.3.0</version>-->
+            <!--                <configuration>-->
+            <!--                    <attach>false</attach>-->
+            <!--                    <appendAssemblyId>false</appendAssemblyId>-->
+            <!--                    <finalName>${project.artifactId}-${project.version}-${os.detected.classifier}</finalName>-->
+            <!--                    <outputDirectory>${distribution.directory}</outputDirectory>-->
+            <!--                    <workDirectory>${project.build.directory}/assembly/work</workDirectory>-->
+            <!--                    <descriptors>-->
+            <!--                        <descriptor>src/main/assembly/assembly.xml</descriptor>-->
+            <!--                    </descriptors>-->
+            <!--                </configuration>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <id>make-distribution</id>-->
+            <!--                        <phase>package</phase>-->
+            <!--                        <goals>-->
+            <!--                            <goal>single</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
+            <!--            <plugin>-->
+            <!--                <groupId>io.github.fvarrui</groupId>-->
+            <!--                <artifactId>javapackager</artifactId>-->
+            <!--                <version>1.6.7</version>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <phase>package</phase>-->
+            <!--                        <goals>-->
+            <!--                            <goal>package</goal>-->
+            <!--                        </goals>-->
+            <!--                        <configuration>-->
+            <!--                            <bundleJre>true</bundleJre>-->
+            <!--                            <customizedJre>true</customizedJre>-->
+            <!--                            <generateInstaller>true</generateInstaller>-->
+            <!--                            <administratorRequired>false</administratorRequired>-->
+            <!--                            <platform>auto</platform>-->
+            <!--                            <runnableJar>${project.build.directory}/${project.artifactId}-${project.version}-runner.jar-->
+            <!--                            </runnableJar>-->
+            <!--                            <modules>-->
+            <!--                                <module>java.base</module>-->
+            <!--                                <module>java.compiler</module>-->
+            <!--                                <module>java.datatransfer</module>-->
+            <!--                                <module>java.desktop</module>-->
+            <!--                                <module>java.instrument</module>-->
+            <!--                                <module>java.logging</module>-->
+            <!--                                <module>java.management</module>-->
+            <!--                                <module>java.naming</module>-->
+            <!--                                <module>java.rmi</module>-->
+            <!--                                <module>java.security.jgss</module>-->
+            <!--                                <module>java.security.sasl</module>-->
+            <!--                                <module>java.sql</module>-->
+            <!--                                <module>java.transaction.xa</module>-->
+            <!--                                <module>java.xml</module>-->
+            <!--                                <module>jdk.jconsole</module>-->
+            <!--                                <module>jdk.management</module>-->
+            <!--                                <module>jdk.unsupported</module>-->
+            <!--                                <module>jdk.zipfs</module>-->
+            <!--                            </modules>-->
+            <!--                            <linuxConfig></linuxConfig>-->
+            <!--                            <macConfig></macConfig>-->
+            <!--                            <winConfig></winConfig>-->
+            <!--                        </configuration>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
+            <!--            <plugin>-->
+            <!--                <groupId>org.jreleaser</groupId>-->
+            <!--                <artifactId>jreleaser-maven-plugin</artifactId>-->
+            <!--                <configuration>-->
+            <!--                    <jreleaser>-->
+            <!--                        <release>-->
+            <!--                            <github>-->
+            <!--                                <changelog>-->
+            <!--                                    <formatted>ALWAYS</formatted>-->
+            <!--                                    <preset>conventional-commits</preset>-->
+            <!--                                </changelog>-->
+            <!--                            </github>-->
+            <!--                        </release>-->
+            <!--                        <distributions>-->
+            <!--                            <app>-->
+            <!--                                <type>NATIVE_IMAGE</type>-->
+            <!--                                <artifacts>-->
+            <!--                                    <artifact>-->
+            <!--                                        <path>-->
+            <!--                                            ${distribution.directory}/{{distributionName}}-{{projectVersion}}-linux-x86_64.tar.gz-->
+            <!--                                        </path>-->
+            <!--                                        <platform>linux-x86_64</platform>-->
+            <!--                                    </artifact>-->
+            <!--                                    <artifact>-->
+            <!--                                        <path>-->
+            <!--                                            ${distribution.directory}/{{distributionName}}-{{projectVersion}}-windows-x86_64.zip-->
+            <!--                                        </path>-->
+            <!--                                        <platform>windows-x86_64</platform>-->
+            <!--                                    </artifact>-->
+            <!--                                    <artifact>-->
+            <!--                                        <path>-->
+            <!--                                            ${distribution.directory}/{{distributionName}}-{{projectVersion}}-osx-x86_64.zip-->
+            <!--                                        </path>-->
+            <!--                                        <platform>osx-x86_64</platform>-->
+            <!--                                    </artifact>-->
+            <!--                                </artifacts>-->
+            <!--                            </app>-->
+            <!--                        </distributions>-->
+            <!--                    </jreleaser>-->
+            <!--                </configuration>-->
+            <!--            </plugin>-->
+            <plugin>
+                <groupId>com.github.akman</groupId>
+                <artifactId>jlink-maven-plugin</artifactId>
+                <configuration>
+                    <noheaderfiles>true</noheaderfiles>
+                    <nomanpages>true</nomanpages>
+                    <compress>
+                        <compression>ZIP</compression>
+                    </compress>
+                    <stripdebug>true</stripdebug>
+                    <addmodules>
+                        <!--                        <addmodule>dataspray.cli</addmodule>-->
+                        <addmodule>java.base</addmodule>
+                        <addmodule>java.compiler</addmodule>
+                        <addmodule>java.datatransfer</addmodule>
+                        <addmodule>java.desktop</addmodule>
+                        <addmodule>java.instrument</addmodule>
+                        <addmodule>java.logging</addmodule>
+                        <addmodule>java.management</addmodule>
+                        <addmodule>java.naming</addmodule>
+                        <addmodule>java.rmi</addmodule>
+                        <addmodule>java.security.jgss</addmodule>
+                        <addmodule>java.security.sasl</addmodule>
+                        <addmodule>java.sql</addmodule>
+                        <addmodule>java.transaction.xa</addmodule>
+                        <addmodule>java.xml</addmodule>
+                        <addmodule>jdk.jconsole</addmodule>
+                        <addmodule>jdk.management</addmodule>
+                        <addmodule>jdk.unsupported</addmodule>
+                        <addmodule>jdk.zipfs</addmodule>
+                    </addmodules>
+                    <output>${project.build.directory}/slimjre</output>
+                    <!--                    <launcher>-->
+                    <!--                        <command>dst</command>-->
+                    <!--                        <mainModule>dataspray.cli</mainModule>-->
+                    <!--                    </launcher>-->
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jlink</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--            <plugin>-->
+            <!--                <groupId>com.github.akman</groupId>-->
+            <!--                <artifactId>jpackage-maven-plugin</artifactId>-->
+            <!--                <version>0.1.5</version>-->
+            <!--                <configuration>-->
+            <!--                    <name>dst</name>-->
+            <!--                    <input>${project.build.directory}/slimjre</input>-->
+            <!--                    <mainjar>${project.build.directory}/dataspray-cli-0.0.1-SNAPSHOT-runner.jar</mainjar>-->
+            <!--                    <runtimeimage>${project.build.directory}/slimjre</runtimeimage>-->
+            <!--                    <toolhome>/Library/Java/JavaVirtualMachines/openjdk-14.0.1.jdk/Contents/Home</toolhome>-->
+            <!--                    <type>PKG</type>-->
+            <!--                </configuration>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <phase>verify</phase>-->
+            <!--                        <goals>-->
+            <!--                            <goal>jpackage</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
         </plugins>
     </build>
+    <!--    <profiles>-->
+    <!--        <profile>-->
+    <!--            <id>windows</id>-->
+    <!--            <activation>-->
+    <!--                <os>-->
+    <!--                    <family>windows</family>-->
+    <!--                </os>-->
+    <!--            </activation>-->
+    <!--            <properties>-->
+    <!--                <executable-suffix>.exe</executable-suffix>-->
+    <!--            </properties>-->
+    <!--        </profile>-->
+    <!--    </profiles>-->
 </project>

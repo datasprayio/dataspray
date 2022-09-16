@@ -4,6 +4,7 @@ import io.dataspray.core.Core;
 import io.dataspray.core.sample.SampleProject;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 import javax.inject.Inject;
 
@@ -11,11 +12,11 @@ import javax.inject.Inject;
         description = "initialize a new project")
 public class Init implements Runnable {
 
-    @Option(required = true, names = "-n", description = "project name")
+    @Parameters(paramLabel = "NAME", description = "Project name")
     private String name;
 
-    @Option(names = "-s", defaultValue = "SampleProject.EMPTY", description = "Sample template: ${COMPLETION-CANDIDATES}")
-    private SampleProject sample;
+    @Option(names = {"-s", "--sample"}, defaultValue = "EMPTY", description = "Sample template: ${COMPLETION-CANDIDATES}")
+    private SampleProject sample = SampleProject.EMPTY;
 
     @Inject
     Core core;
