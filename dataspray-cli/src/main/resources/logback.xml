@@ -5,7 +5,7 @@
 
     <contextName>${appName}</contextName>
 
-    <conversionRule conversionWord="loggingHighlight" converterClass="io.dataspray.core.logger.LoggingHighlight"/>
+    <conversionRule conversionWord="loggingHighlight" converterClass="io.dataspray.core.cli.LoggingHighlight"/>
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%loggingHighlight(%msg %ex{0}) %nopex%n</pattern>

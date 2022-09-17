@@ -133,6 +133,24 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.skife.maven</groupId>
+                <artifactId>really-executable-jar-maven-plugin</artifactId>
+                <configuration>
+                    <programFile>dst</programFile>
+                    <scriptFile>${project.build.scriptSourceDirectory}/executable-jar-bootstrap.sh</scriptFile>
+                    <classifier>runner</classifier>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>really-executable-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- TODO figure out packaging. Most likely scenario: use GraalVM with GH actions to build native images and JReleaser -->
             <!--            <plugin>-->
             <!--                <groupId>org.jreleaser</groupId>-->
             <!--                <artifactId>jreleaser-maven-plugin</artifactId>-->
@@ -278,52 +296,53 @@
             <!--                    </jreleaser>-->
             <!--                </configuration>-->
             <!--            </plugin>-->
-            <plugin>
-                <groupId>com.github.akman</groupId>
-                <artifactId>jlink-maven-plugin</artifactId>
-                <configuration>
-                    <noheaderfiles>true</noheaderfiles>
-                    <nomanpages>true</nomanpages>
-                    <compress>
-                        <compression>ZIP</compression>
-                    </compress>
-                    <stripdebug>true</stripdebug>
-                    <addmodules>
-                        <!--                        <addmodule>dataspray.cli</addmodule>-->
-                        <addmodule>java.base</addmodule>
-                        <addmodule>java.compiler</addmodule>
-                        <addmodule>java.datatransfer</addmodule>
-                        <addmodule>java.desktop</addmodule>
-                        <addmodule>java.instrument</addmodule>
-                        <addmodule>java.logging</addmodule>
-                        <addmodule>java.management</addmodule>
-                        <addmodule>java.naming</addmodule>
-                        <addmodule>java.rmi</addmodule>
-                        <addmodule>java.security.jgss</addmodule>
-                        <addmodule>java.security.sasl</addmodule>
-                        <addmodule>java.sql</addmodule>
-                        <addmodule>java.transaction.xa</addmodule>
-                        <addmodule>java.xml</addmodule>
-                        <addmodule>jdk.jconsole</addmodule>
-                        <addmodule>jdk.management</addmodule>
-                        <addmodule>jdk.unsupported</addmodule>
-                        <addmodule>jdk.zipfs</addmodule>
-                    </addmodules>
-                    <output>${project.build.directory}/slimjre</output>
-                    <!--                    <launcher>-->
-                    <!--                        <command>dst</command>-->
-                    <!--                        <mainModule>dataspray.cli</mainModule>-->
-                    <!--                    </launcher>-->
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>jlink</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+            <!--            <plugin>-->
+            <!--                <groupId>com.github.akman</groupId>-->
+            <!--                <artifactId>jlink-maven-plugin</artifactId>-->
+            <!--                <version>0.1.11</version>-->
+            <!--                <configuration>-->
+            <!--                    <noheaderfiles>true</noheaderfiles>-->
+            <!--                    <nomanpages>true</nomanpages>-->
+            <!--                    <compress>-->
+            <!--                        <compression>ZIP</compression>-->
+            <!--                    </compress>-->
+            <!--                    <stripdebug>true</stripdebug>-->
+            <!--                    <addmodules>-->
+            <!--                        &lt;!&ndash;                        <addmodule>dataspray.cli</addmodule>&ndash;&gt;-->
+            <!--                        <addmodule>java.base</addmodule>-->
+            <!--                        <addmodule>java.compiler</addmodule>-->
+            <!--                        <addmodule>java.datatransfer</addmodule>-->
+            <!--                        <addmodule>java.desktop</addmodule>-->
+            <!--                        <addmodule>java.instrument</addmodule>-->
+            <!--                        <addmodule>java.logging</addmodule>-->
+            <!--                        <addmodule>java.management</addmodule>-->
+            <!--                        <addmodule>java.naming</addmodule>-->
+            <!--                        <addmodule>java.rmi</addmodule>-->
+            <!--                        <addmodule>java.security.jgss</addmodule>-->
+            <!--                        <addmodule>java.security.sasl</addmodule>-->
+            <!--                        <addmodule>java.sql</addmodule>-->
+            <!--                        <addmodule>java.transaction.xa</addmodule>-->
+            <!--                        <addmodule>java.xml</addmodule>-->
+            <!--                        <addmodule>jdk.jconsole</addmodule>-->
+            <!--                        <addmodule>jdk.management</addmodule>-->
+            <!--                        <addmodule>jdk.unsupported</addmodule>-->
+            <!--                        <addmodule>jdk.zipfs</addmodule>-->
+            <!--                    </addmodules>-->
+            <!--                    <output>${project.build.directory}/slimjre</output>-->
+            <!--                    &lt;!&ndash;                    <launcher>&ndash;&gt;-->
+            <!--                    &lt;!&ndash;                        <command>dst</command>&ndash;&gt;-->
+            <!--                    &lt;!&ndash;                        <mainModule>dataspray.cli</mainModule>&ndash;&gt;-->
+            <!--                    &lt;!&ndash;                    </launcher>&ndash;&gt;-->
+            <!--                </configuration>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <phase>verify</phase>-->
+            <!--                        <goals>-->
+            <!--                            <goal>jlink</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
             <!--            <plugin>-->
             <!--                <groupId>com.github.akman</groupId>-->
             <!--                <artifactId>jpackage-maven-plugin</artifactId>-->

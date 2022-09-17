@@ -504,9 +504,9 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>com.github.akman</groupId>
-                    <artifactId>jlink-maven-plugin</artifactId>
-                    <version>0.1.11</version>
+                    <groupId>org.skife.maven</groupId>
+                    <artifactId>really-executable-jar-maven-plugin</artifactId>
+                    <version>1.5.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.openapitools</groupId>

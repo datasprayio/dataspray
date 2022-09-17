@@ -1,4 +1,4 @@
-package io.dataspray.core.logger;
+package io.dataspray.core.cli;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
