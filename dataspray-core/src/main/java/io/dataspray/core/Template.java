@@ -3,6 +3,8 @@ package io.dataspray.core;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.nio.file.Path;
+
 @Getter
 @AllArgsConstructor
 public enum Template {
@@ -16,4 +18,12 @@ public enum Template {
     JAVA("java");
 
     private final String resourceName;
+
+    public TemplateFiles getFilesFromResources() {
+        return new TemplateFiles(this);
+    }
+
+    public TemplateFiles getFilesFromDisk(Path templateDir) {
+        return new TemplateFiles(this, templateDir);
+    }
 }

@@ -3,7 +3,9 @@
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/dataspray-backend/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-base-lambda/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-base-lambda/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-cli/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-cli/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-common/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-core/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-core/src/main/resources" charset="UTF-8" />

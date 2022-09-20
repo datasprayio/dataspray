@@ -34,6 +34,8 @@ public class CoreImpl implements Core {
     public void install() {
         Project project = codegen.loadProject(".");
 
+        codegen.generateAll(project);
+
         builder.installAll(project);
     }
 

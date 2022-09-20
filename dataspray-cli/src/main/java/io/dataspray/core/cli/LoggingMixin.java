@@ -24,12 +24,15 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.ConsoleAppender;
+import lombok.SneakyThrows;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParseResult;
 import picocli.CommandLine.Spec;
+
+import java.util.Arrays;
 
 import static picocli.CommandLine.Spec.Target.MIXEE;
 
@@ -86,35 +89,47 @@ public class LoggingMixin {
         return new CommandLine.RunLast().execute(parseResult);
     }
 
+    @SneakyThrows
     public void configureLoggers() {
         int verbosity = getTopLevelCommandLoggingMixin(mixee).getVerbosity().length;
         Level level;
-        boolean enableVerbosePattern = true;
         switch (verbosity) {
             case 0:
-                level = Level.INFO;
-                enableVerbosePattern = false;
-                break;
+                return;
             case 1:
                 level = Level.DEBUG;
                 break;
-            case 2:
             default:
                 level = Level.TRACE;
                 break;
         }
 
-        Logger root = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+        Logger root;
+        try {
+            root = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+        } catch (ClassCastException ex) {
+            return; // May throw if Logger class is in QuarkusClassLoader, ignore this case
+        }
+
+        // Change default level
         root.setLevel(level);
 
-        if (enableVerbosePattern) {
-            LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-            ConsoleAppender<ILoggingEvent> consoleAppender = (ConsoleAppender<ILoggingEvent>) root.getAppender("CONSOLE");
-            PatternLayoutEncoder ple = new PatternLayoutEncoder();
-            ple.setPattern("%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger{36} - %msg%n");
-            ple.setContext(loggerContext);
-            ple.start();
-            consoleAppender.setEncoder(ple);
-        }
+        // Enable verbose log line pattern
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        ConsoleAppender<ILoggingEvent> consoleAppender = (ConsoleAppender<ILoggingEvent>) root.getAppender("CONSOLE");
+        PatternLayoutEncoder ple = new PatternLayoutEncoder();
+        ple.setPattern("%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger{36} - %msg%n");
+        ple.setContext(loggerContext);
+        ple.start();
+        consoleAppender.setEncoder(ple);
+    }
+
+    @SneakyThrows
+    private Object callMethodReflectively(Object obj, String methodName, Object... params) {
+        return obj.getClass()
+                .getMethod(methodName, Arrays.stream(params)
+                        .map(Object::getClass)
+                        .toArray(Class[]::new))
+                .invoke(obj, params);
     }
 }

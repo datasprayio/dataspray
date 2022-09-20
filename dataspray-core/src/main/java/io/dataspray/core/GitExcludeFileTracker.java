@@ -153,7 +153,7 @@ public class GitExcludeFileTracker implements FileTracker {
     private File getOrCreateExcludeFile(Project project) {
         File excludeFile = project.getPath().resolve(GIT_EXCLUDE_FILE).toFile();
         if (!excludeFile.isFile()) {
-            log.info("Initializing git exclude file {}", excludeFile);
+            log.debug("Initializing git exclude file {}", excludeFile);
             excludeFile.getParentFile().mkdirs();
             excludeFile.createNewFile();
         }

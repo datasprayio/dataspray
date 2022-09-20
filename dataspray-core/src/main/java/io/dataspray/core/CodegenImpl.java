@@ -3,13 +3,12 @@ package io.dataspray.core;
 import com.google.common.base.Ascii;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.io.Resources;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.TemplateLoader;
 import com.samskivert.mustache.MustacheException;
+import io.dataspray.core.TemplateFiles.TemplateFile;
 import io.dataspray.core.definition.model.DataFormat;
 import io.dataspray.core.definition.model.Definition;
 import io.dataspray.core.definition.model.JavaProcessor;
@@ -18,22 +17,23 @@ import io.dataspray.core.sample.SampleProject;
 import lombok.SneakyThrows;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URI;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.List;
@@ -46,12 +46,13 @@ public class CodegenImpl implements Codegen {
     public static final String PROJECT_FILENAME = "ds_project.yml";
     public static final String SCHEMAS_FOLDER = ".schema";
     public static final String TEMPLATES_FOLDER = ".template";
+    public static final String MUSTACHE_FILE_EXTENSION = ".mustache";
     /** Template files, always overwritten unless overriden by user */
-    private static final String MUSTACHE_FILE_EXTENSION_TEMPLATE = ".template.mustache";
+    private static final String MUSTACHE_FILE_EXTENSION_TEMPLATE = ".template" + MUSTACHE_FILE_EXTENSION;
     /** Sample files, only written if they don't already exist, intended to be edited by user */
-    private static final String MUSTACHE_FILE_EXTENSION_SAMPLE = ".sample.mustache";
+    private static final String MUSTACHE_FILE_EXTENSION_SAMPLE = ".sample" + MUSTACHE_FILE_EXTENSION;
     /** Sub-templates intended to be included by other templates/samples. */
-    private static final String MUSTACHE_FILE_EXTENSION_INCLUDE = ".include.mustache";
+    private static final String MUSTACHE_FILE_EXTENSION_INCLUDE = ".include" + MUSTACHE_FILE_EXTENSION;
 
     @Inject
     DefinitionLoader definitionLoader;
@@ -178,7 +179,7 @@ public class CodegenImpl implements Codegen {
             }
 
             // Initialize templates folder
-            applyTemplate(project, getTemplatePathFromResources(Template.SCHEMAS), schemasPath, Optional.of(0L), contextBuilder.createForTemplates(project));
+            applyTemplate(project, Template.SCHEMAS.getFilesFromResources(), schemasPath, Optional.of(0L), contextBuilder.createForTemplates(project));
         }
         return createDir(getDataFormatDir(project, dataFormat));
     }
@@ -199,23 +200,19 @@ public class CodegenImpl implements Codegen {
         }
 
         // Initialize templates folder
-        applyTemplate(project, getTemplatePathFromResources(Template.TEMPLATES), templatesPath, Optional.of(0L), contextBuilder.createForTemplates(project));
+        applyTemplate(project, Template.TEMPLATES.getFilesFromResources(), templatesPath, Optional.of(0L), contextBuilder.createForTemplates(project));
 
         // Copy our template from resources to repo (Skipping over overriden files)
-        Path templateInResourcesPath = getTemplatePathFromResources(template);
         Path templateInRepoDir = templatesPath.resolve(template.getResourceName());
         Set<Path> trackedFiles = Sets.newHashSet(fileTracker.getTrackedFiles(project, Optional.of(templateInRepoDir), Optional.empty()));
         if (templateInRepoDir.toFile().mkdir()) {
             log.info("Created {} template folder {}", template.getResourceName(), templateInRepoDir);
         }
-        log.info("Walking over template in dir {}", templateInResourcesPath);
-        Files.walk(templateInResourcesPath)
-                .filter(Files::isRegularFile)
+        log.info("Walking over template {}", template);
+        template.getFilesFromResources().stream()
                 .forEach(source -> {
-                    String sourceFileName = source.getFileName().toString();
-                    Path destination = templateInRepoDir.resolve(templateInResourcesPath.relativize(source)
-                            // resolve() between UnixPath and ZipPath is not possible which is the reason for toString()
-                            .toString());
+                    String sourceFileName = source.getRelativePath().getFileName().toString();
+                    Path destination = templateInRepoDir.resolve(source.getRelativePath());
                     Path projectRelativePath = project.getPath().relativize(destination);
                     // Check if file was previously tracked
                     if (!trackedFiles.remove(projectRelativePath)) {
@@ -233,8 +230,8 @@ public class CodegenImpl implements Codegen {
                             .ifPresent(File::mkdirs);
 
                     log.info("Copying template file {} to {}", sourceFileName, destination);
-                    try {
-                        Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
+                    try (InputStream sourceInputStream = source.openInputStream()) {
+                        Files.copy(sourceInputStream, destination, StandardCopyOption.REPLACE_EXISTING);
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -243,71 +240,84 @@ public class CodegenImpl implements Codegen {
         fileTracker.unlinkUntrackFiles(project, trackedFiles);
 
         // Finally, apply our template
-        applyTemplate(project, templateInRepoDir, processorPath, Optional.empty(), processorContext);
+        applyTemplate(project, template.getFilesFromDisk(templateInRepoDir), processorPath, Optional.empty(), processorContext);
     }
 
-    private void applyTemplate(Project project, Path templateDir, Path destination, Optional<Long> maxDepthOpt, DatasprayContext context) {
+    @SneakyThrows
+    private void applyTemplate(Project project, TemplateFiles files, Path destination, Optional<Long> maxDepthOpt, DatasprayContext context) {
         Set<Path> trackedFiles = Sets.newHashSet(fileTracker.getTrackedFiles(project, Optional.of(destination), maxDepthOpt));
-        applyTemplate(project, templateDir, destination, trackedFiles, context, true);
+        files.stream().forEach(item -> {
+            if (maxDepthOpt.isPresent() && (item.getRelativePath().getNameCount() - 1) > maxDepthOpt.get()) {
+                return;
+            }
+            String fileName = item.getRelativePath().getFileName().toString();
+            boolean isSample = fileName.endsWith(MUSTACHE_FILE_EXTENSION_SAMPLE);
+            if (isSample || fileName.endsWith(MUSTACHE_FILE_EXTENSION_TEMPLATE)) {
+                Optional<ExpandedFile> expandedFileOpt = expandFile(project, fileName, context);
+
+                // Don't create file if expanding template evaluates to empty filename
+                // Don't replace sample files previously created
+                if (!expandedFileOpt.isPresent()
+                        || (isSample && expandedFileOpt.get().getPath().toFile().exists())) {
+                    return;
+                }
+
+                Path localDestination = destination.resolve(expandedFileOpt.get().getPath());
+                String expandedFileNameWithoutSuffix = expandedFileOpt.get().getFilename()
+                        .substring(0, expandedFileOpt.get().getFilename().length()
+                                - (isSample ? MUSTACHE_FILE_EXTENSION_SAMPLE : MUSTACHE_FILE_EXTENSION_TEMPLATE).length());
+                Path localFile = localDestination.resolve(expandedFileNameWithoutSuffix);
+                if (!isSample) {
+                    Path relativeFilePath = expandedFileOpt.get().getPath().resolve(expandedFileNameWithoutSuffix);
+                    // Check if file was previously tracked
+                    if (!trackedFiles.remove(relativeFilePath)) {
+                        // If not, attempt to track it now
+                        if (!fileTracker.trackFile(project, relativeFilePath)) {
+                            log.debug("Skipping file overriden by user {}", fileName);
+                            return;
+                        } else {
+                            log.debug("Creating generated file {}", fileName);
+                        }
+                    } else {
+                        log.debug("Overwriting generated file {}", fileName);
+                    }
+                } else {
+                    // Sample files are not tracked using Git tracking, they are simply created if they don't exist.
+                    // If they exist, it's assumed the user may have modified it for their own purposes.
+                    if (localFile.toFile().exists()) {
+                        log.debug("Skipping sample file which already exists {}", fileName);
+                        return;
+                    }
+                }
+                runMustache(item, localFile, context);
+            } else if (fileName.endsWith(MUSTACHE_FILE_EXTENSION_INCLUDE)) {
+                // Skip sub-templates
+            } else {
+                log.warn("Skipping non-mustache file {}", fileName);
+            }
+        });
         // Remove files that were not generated this round but previously most likely by older template
         fileTracker.unlinkUntrackFiles(project, trackedFiles);
     }
 
     @SneakyThrows
-    private void applyTemplate(Project project, Path templateDir, Path destination, Set<Path> trackedFiles, DatasprayContext context, boolean isRoot) {
-        Files.walk(templateDir, 1).skip(1).forEach(item -> {
-            String fileName = item.getFileName().toString();
-            if (Files.isDirectory(item)) {
-                applyTemplate(project, item, destination.resolve(fileName), trackedFiles, context, false);
-            } else if (Files.isRegularFile(item)) {
-                boolean isSample = fileName.endsWith(MUSTACHE_FILE_EXTENSION_SAMPLE);
-                if (isSample || fileName.endsWith(MUSTACHE_FILE_EXTENSION_TEMPLATE)) {
-                    Optional<ExpandedFile> expandedFileOpt = expandFile(project, fileName, context);
-                    if (expandedFileOpt.isPresent() && (!isSample || !expandedFileOpt.get().getPath().toFile().exists())) {
-                        Path localDestination = destination.resolve(expandedFileOpt.get().getPath());
-                        String expandedFileNameWithoutSuffix = expandedFileOpt.get().getFilename()
-                                .substring(0, expandedFileOpt.get().getFilename().length()
-                                        - (isSample ? MUSTACHE_FILE_EXTENSION_SAMPLE : MUSTACHE_FILE_EXTENSION_TEMPLATE).length());
-                        Path localFile = localDestination.resolve(expandedFileNameWithoutSuffix);
-                        if (!isSample) {
-                            Path relativeFilePath = expandedFileOpt.get().getPath().resolve(expandedFileNameWithoutSuffix);
-                            // Check if file was previously tracked
-                            if (!trackedFiles.remove(relativeFilePath)) {
-                                // If not, attempt to track it now
-                                if (!fileTracker.trackFile(project, relativeFilePath)) {
-                                    log.debug("Skipping file overriden by user {}", fileName);
-                                    return;
-                                } else {
-                                    log.debug("Creating generated file {}", fileName);
-                                }
-                            } else {
-                                log.debug("Overwriting generated file {}", fileName);
-                            }
-                        } else {
-                            if (localFile.toFile().exists()) {
-                                log.debug("Skipping sample file which already exists {}", fileName);
-                                return;
-                            }
-                        }
-                        runMustache(item, localFile, context);
-                    }
-                } else if (fileName.endsWith(MUSTACHE_FILE_EXTENSION_INCLUDE)) {
-                    // Skip sub-templates
-                } else {
-                    log.info("Skipping non-mustache file {}", fileName);
-                }
-            }
-        });
-    }
-
-    @SneakyThrows
-    private void runMustache(Path mustacheFile, Path destinationFile, DatasprayContext context) {
-        String mustacheStr = Files.readString(mustacheFile, Charsets.UTF_8);
-        String content = runMustache(mustacheStr, context, Optional.of(name ->
-                new FileReader(
-                        mustacheFile.getParent().resolve(name + MUSTACHE_FILE_EXTENSION_INCLUDE).toFile(),
-                        Charsets.UTF_8)));
-        if (Strings.isNullOrEmpty(content)) {
+    private void runMustache(TemplateFile mustacheFile, Path destinationFile, DatasprayContext context) {
+        String mustacheStr;
+        try (InputStream is = mustacheFile.openInputStream()) {
+            mustacheStr = IOUtils.toString(is, Charsets.UTF_8);
+        }
+        String content = runMustache(mustacheStr, context, Optional.of(requestedFilename -> {
+            Path requestedPath = mustacheFile.getRelativePath()
+                    .getParent()
+                    .resolve(requestedFilename + MUSTACHE_FILE_EXTENSION_INCLUDE)
+                    .normalize();
+            return mustacheFile.getTemplateFiles().stream()
+                    .filter(f -> f.getRelativePath().equals(requestedPath))
+                    .map(f -> new InputStreamReader(f.openInputStream(), Charsets.UTF_8))
+                    .findAny()
+                    .orElseThrow(() -> new FileNotFoundException("Template file not found: " + requestedPath));
+        }));
+        if (content.isBlank()) {
             return;
         }
         Optional.ofNullable(destinationFile.getParent())
@@ -331,6 +341,12 @@ public class CodegenImpl implements Codegen {
         }
     }
 
+    /**
+     * Folders and files can have mustache templates within. This expands those templates to generate a final path and
+     * filename of the given file.
+     *
+     * A file may also expand to empty in some mustache conditions which indicates we should not create this file.
+     */
     private Optional<ExpandedFile> expandFile(Project project, String templatePath, DatasprayContext parentContext) {
         // Since a filename cannot contain '/', use underscores '_' instead
         templatePath = templatePath.replaceAll("\\{\\{_", "{{/");
@@ -361,23 +377,4 @@ public class CodegenImpl implements Codegen {
     }
 
     private volatile Optional<FileSystem> templateFilesystemOpt = Optional.empty();
-
-    @SneakyThrows
-    private Path getTemplatePathFromResources(Template template) {
-        URI templateRootUri = Resources.getResource("template").toURI();
-        Path templatePath;
-        if (templateRootUri.getScheme().equals("jar")) {
-            if (templateFilesystemOpt.isEmpty()) {
-                synchronized (this) {
-                    if (templateFilesystemOpt.isEmpty()) {
-                        templateFilesystemOpt = Optional.of(FileSystems.newFileSystem(templateRootUri, ImmutableMap.of()));
-                    }
-                }
-            }
-            templatePath = templateFilesystemOpt.get().getPath("/template", template.getResourceName());
-        } else {
-            templatePath = Paths.get(templateRootUri).resolve(template.getResourceName());
-        }
-        return templatePath;
-    }
 }
