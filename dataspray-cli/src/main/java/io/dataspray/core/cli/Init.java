@@ -3,8 +3,8 @@ package io.dataspray.core.cli;
 import io.dataspray.core.Core;
 import io.dataspray.core.sample.SampleProject;
 import lombok.extern.slf4j.Slf4j;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
@@ -14,7 +14,7 @@ import javax.inject.Inject;
 @Command(name = "init",
         description = "initialize a new project")
 public class Init implements Runnable {
-    @CommandLine.Mixin
+    @Mixin
     LoggingMixin loggingMixin;
 
     @Parameters(paramLabel = "NAME", description = "Project name", arity = "1")

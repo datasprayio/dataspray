@@ -5,7 +5,7 @@ import io.dataspray.stream.ingest.client.IngestApi;
 
 public interface StreamApi {
 
-    IngestApi ingest();
+    IngestApi ingest(String apiKey);
 
-    ControlApi control();
+    ControlApi control(String apiKey);
 }

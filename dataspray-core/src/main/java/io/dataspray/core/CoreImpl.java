@@ -40,24 +40,24 @@ public class CoreImpl implements Core {
     }
 
     @Override
-    public void status() {
+    public void status(String apiKey) {
         Project project = codegen.loadProject(".");
 
-        runtime.statusAll(project);
+        runtime.statusAll(apiKey, project);
     }
 
     @Override
     @SneakyThrows
-    public void deploy() {
-        deploy(Optional.empty());
+    public void deploy(String apiKey) {
+        deploy(apiKey, Optional.empty());
     }
 
     @Override
-    public void deploy(String processorName) throws FileNotFoundException {
-        deploy(Optional.of(processorName));
+    public void deploy(String apiKey, String processorName) throws FileNotFoundException {
+        deploy(apiKey, Optional.of(processorName));
     }
 
-    private void deploy(Optional<String> filterProcessorNameOpt) throws FileNotFoundException {
+    private void deploy(String apiKey, Optional<String> filterProcessorNameOpt) throws FileNotFoundException {
         Project project = codegen.loadProject(".");
 
         long deployCount = project.getDefinition().getJavaProcessors().stream()
@@ -65,7 +65,7 @@ public class CoreImpl implements Core {
                     if (filterProcessorNameOpt.isPresent() && !filterProcessorNameOpt.get().equalsIgnoreCase(processor.getName())) {
                         return false;
                     }
-                    runtime.deploy(project, processor);
+                    runtime.deploy(apiKey, project, processor);
                     return true;
                 })
                 .count();

@@ -16,9 +16,9 @@ public interface Core {
     /**
      * Check status of every resource
      */
-    void status();
+    void status(String apiKey);
 
-    void deploy();
+    void deploy(String apiKey);
 
-    void deploy(String processorName) throws FileNotFoundException;
+    void deploy(String apiKey, String processorName) throws FileNotFoundException;
 }

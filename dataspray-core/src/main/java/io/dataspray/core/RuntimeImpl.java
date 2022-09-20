@@ -3,6 +3,7 @@ package io.dataspray.core;
 import com.google.common.base.Strings;
 import io.dataspray.core.definition.model.JavaProcessor;
 import io.dataspray.stream.client.StreamApi;
+import io.dataspray.stream.control.client.ControlApi;
 import io.dataspray.stream.control.client.model.DeployRequest;
 import io.dataspray.stream.control.client.model.TaskStatus;
 import io.dataspray.stream.control.client.model.UploadCodeRequest;
@@ -37,17 +38,17 @@ public class RuntimeImpl implements Runtime {
 
     @Override
     @SneakyThrows
-    public void statusAll(Project project) {
-        streamApi.control().statusAll()
+    public void statusAll(String apiKey, Project project) {
+        streamApi.control(apiKey).statusAll()
                 .getTasks()
                 .forEach(this::printStatus);
     }
 
     @Override
-    public void deploy(Project project, JavaProcessor processor) {
+    public void deploy(String apiKey, Project project, JavaProcessor processor) {
         switch (processor.getTarget()) {
             case DATASPRAY:
-                deployStream(project, processor);
+                deployStream(apiKey, project, processor);
                 break;
             case SAMZA:
             case FLINK:
@@ -58,12 +59,13 @@ public class RuntimeImpl implements Runtime {
     }
 
     @SneakyThrows
-    private void deployStream(Project project, JavaProcessor processor) {
+    private void deployStream(String apiKey, Project project, JavaProcessor processor) {
         // First get S3 upload presigned url
         Path processorDir = CodegenImpl.getProcessorDir(project, processor.getNameDir());
         File codeZipFile = processorDir.resolve(Path.of("target", processor.getNameDir() + ".zip")).toFile();
         checkState(!codeZipFile.isFile(), "Missing code zip file, forgot to install? Expecting: %s", codeZipFile.getPath());
-        UploadCodeResponse uploadCodeResponse = streamApi.control().uploadCode(new UploadCodeRequest()
+        ControlApi controlApi = streamApi.control(apiKey);
+        UploadCodeResponse uploadCodeResponse = controlApi.uploadCode(new UploadCodeRequest()
                 .taskId(processor.getNameDir())
                 .contentLengthBytes(codeZipFile.length()));
 
@@ -71,7 +73,7 @@ public class RuntimeImpl implements Runtime {
         uploadToS3UsingPresignedUrl(new URL(uploadCodeResponse.getPresignedUrl()), codeZipFile);
 
         // Initiate deployment
-        TaskStatus deployStatus = streamApi.control().deploy(new DeployRequest()
+        TaskStatus deployStatus = controlApi.deploy(new DeployRequest()
                 .taskId(processor.getName())
                 .runtime(DeployRequest.RuntimeEnum.JAVA11)
                 .codeUrl(uploadCodeResponse.getCodeUrl()));

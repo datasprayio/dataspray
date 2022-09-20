@@ -3,7 +3,7 @@ package io.dataspray.core;
 import io.dataspray.core.definition.model.JavaProcessor;
 
 public interface Runtime {
-    void statusAll(Project project);
+    void statusAll(String apiKey, Project project);
 
-    void deploy(Project project, JavaProcessor processor);
+    void deploy(String apiKey, Project project, JavaProcessor processor);
 }

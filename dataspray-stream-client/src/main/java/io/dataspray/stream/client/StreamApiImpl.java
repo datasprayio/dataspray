@@ -7,30 +7,17 @@ import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class StreamApiImpl implements StreamApi {
-    private volatile IngestApi ingestApi;
-    private volatile ControlApi controlApi;
-
     @Override
-    public IngestApi ingest() {
-        if (ingestApi == null) {
-            synchronized (StreamApiImpl.class) {
-                if (ingestApi == null) {
-                    ingestApi = new IngestApi();
-                }
-            }
-        }
-        return ingestApi;
+    public IngestApi ingest(String apiKey) {
+        io.dataspray.stream.ingest.client.ApiClient apiClient = new io.dataspray.stream.ingest.client.ApiClient();
+        apiClient.setApiKey(apiKey);
+        return new IngestApi(apiClient);
     }
 
     @Override
-    public ControlApi control() {
-        if (controlApi == null) {
-            synchronized (StreamApiImpl.class) {
-                if (controlApi == null) {
-                    controlApi = new ControlApi();
-                }
-            }
-        }
-        return controlApi;
+    public ControlApi control(String apiKey) {
+        io.dataspray.stream.control.client.ApiClient apiClient = new io.dataspray.stream.control.client.ApiClient();
+        apiClient.setApiKey(apiKey);
+        return new ControlApi(apiClient);
     }
 }

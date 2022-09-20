@@ -1,8 +1,8 @@
 package io.dataspray.core.cli;
 
 import io.quarkus.picocli.runtime.annotations.TopCommand;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
@@ -12,9 +12,10 @@ import picocli.CommandLine.Spec;
         Install.class,
         Deploy.class,
         Status.class,
+        Login.class,
 })
 public class Cli {
-    @CommandLine.Mixin
+    @Mixin
     LoggingMixin loggingMixin;
 
     @Spec
