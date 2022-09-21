@@ -114,6 +114,9 @@
                         </goals>
                         <configuration>
                             <arguments>run build</arguments>
+                            <environmentVariables>
+                                <SERVERLESS_CI>true</SERVERLESS_CI>
+                            </environmentVariables>
                         </configuration>
                         <phase>prepare-package</phase>
                     </execution>

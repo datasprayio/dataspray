@@ -3,3 +3,6 @@ dataspray:
   inputs:
     domain: "dataspray.io"
     runtime: "nodejs16.x"
+    build:
+      enabled: ${env:SERVERLESS_BUILD_ENABLED, false}
+    deploy: ${env:SERVERLESS_DEPLOY_ENABLED, false}
