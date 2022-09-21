@@ -3,7 +3,7 @@ package io.dataspray.lambda.web;
 import com.google.common.base.Charsets;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
-import io.dataspray.core.common.json.GsonUtil;
+import io.dataspray.common.json.GsonUtil;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;

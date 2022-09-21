@@ -26,6 +26,7 @@
         <awssdk2.version>2.17.145</awssdk2.version>
         <awssdk1.version>1.12.75</awssdk1.version>
         <awscdk.version>2.38.1</awscdk.version>
+        <sqlite4java>1.0.392</sqlite4java>
         <skipTests/>
         <skipITs/>
         <argLine/>
@@ -113,6 +114,11 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>30.1.1-jre</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.rholder</groupId>
+                <artifactId>guava-retrying</artifactId>
+                <version>2.0.0</version>
             </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>
@@ -364,6 +370,71 @@
                 <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
+
+            <dependency>
+                <groupId>io.findify</groupId>
+                <artifactId>s3mock_2.13</artifactId>
+                <version>0.2.6</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>DynamoDBLocal</artifactId>
+                <!-- Find latest version here: https://hub.docker.com/r/amazon/dynamodb-local/tags -->
+                <version>1.20.0</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.almworks.sqlite4java</groupId>
+                <artifactId>sqlite4java</artifactId>
+                <version>${sqlite4java}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.almworks.sqlite4java</groupId>
+                <artifactId>sqlite4java-win32-x86</artifactId>
+                <version>${sqlite4java}</version>
+                <type>dll</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.almworks.sqlite4java</groupId>
+                <artifactId>sqlite4java-win32-x64</artifactId>
+                <version>${sqlite4java}</version>
+                <type>dll</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.almworks.sqlite4java</groupId>
+                <artifactId>libsqlite4java-osx</artifactId>
+                <version>${sqlite4java}</version>
+                <type>dylib</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.almworks.sqlite4java</groupId>
+                <artifactId>libsqlite4java-linux-i386</artifactId>
+                <version>${sqlite4java}</version>
+                <type>so</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.almworks.sqlite4java</groupId>
+                <artifactId>libsqlite4java-linux-amd64</artifactId>
+                <version>${sqlite4java}</version>
+                <type>so</type>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -423,6 +494,11 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
                     <version>3.3.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.1.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

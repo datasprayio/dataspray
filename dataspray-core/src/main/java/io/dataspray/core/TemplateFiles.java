@@ -2,7 +2,7 @@ package io.dataspray.core;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
-import io.dataspray.core.common.json.GsonUtil;
+import io.dataspray.common.json.GsonUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.SneakyThrows;

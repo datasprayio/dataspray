@@ -1,4 +1,4 @@
-package io.dataspray.core.common.json;
+package io.dataspray.common.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;

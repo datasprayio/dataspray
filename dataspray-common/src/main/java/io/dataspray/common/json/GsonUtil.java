@@ -1,4 +1,4 @@
-package io.dataspray.core.common.json;
+package io.dataspray.common.json;
 
 import com.dampcake.gson.immutable.ImmutableAdapterFactory;
 import com.google.gson.FieldNamingPolicy;

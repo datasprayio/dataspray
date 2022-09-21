@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.model.Architecture;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
-import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.DeleteFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.FunctionCode;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
@@ -31,12 +30,12 @@ import software.amazon.awssdk.services.lambda.model.PutFunctionConcurrencyReques
 import software.amazon.awssdk.services.lambda.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.lambda.model.Runtime;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
-import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -51,6 +50,11 @@ public class ControlResource extends AbstractResource implements ControlApi {
     private static final String CODE_KEY_PREFIX = "user/";
     private static final String FUN_NAME_PREFIX = "user-";
 
+    @Inject
+    LambdaClient lambdaClient;
+    @Inject
+    S3Presigner s3Presigner;
+
     // TODO get customer and setup billing
     private final String customerId = "matus";
 
@@ -60,7 +64,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
         Runtime runtime = Enums.getIfPresent(Runtime.class, deployRequest.getRuntime().name()).toJavaUtil()
                 .orElseThrow(() -> new RuntimeException("Unknown runtime"));
         String functionName = getFunctionName(deployRequest.getTaskId());
-        CreateFunctionResponse function = LambdaClient.create().createFunction(CreateFunctionRequest.builder()
+        lambdaClient.createFunction(CreateFunctionRequest.builder()
                 .functionName(functionName)
                 .packageType(PackageType.ZIP)
                 .architectures(Architecture.X86_64)
@@ -71,7 +75,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
                 .runtime(runtime)
                 .memorySize(128)
                 .build());
-        LambdaClient.create().putFunctionConcurrency(PutFunctionConcurrencyRequest.builder()
+        lambdaClient.putFunctionConcurrency(PutFunctionConcurrencyRequest.builder()
                 .functionName(functionName)
                 .reservedConcurrentExecutions(CODE_MAX_CONCURRENCY).build());
         return status(deployRequest.getTaskId());
@@ -82,10 +86,10 @@ public class ControlResource extends AbstractResource implements ControlApi {
         GetFunctionResponse functionResponse;
         GetFunctionConcurrencyResponse concurrencyResponse;
         try {
-            functionResponse = LambdaClient.create().getFunction(GetFunctionRequest.builder()
+            functionResponse = lambdaClient.getFunction(GetFunctionRequest.builder()
                     .functionName(getFunctionName(taskId))
                     .build());
-            concurrencyResponse = LambdaClient.create().getFunctionConcurrency(GetFunctionConcurrencyRequest.builder()
+            concurrencyResponse = lambdaClient.getFunctionConcurrency(GetFunctionConcurrencyRequest.builder()
                     .functionName(getFunctionName(taskId))
                     .build());
         } catch (ResourceNotFoundException ex) {
@@ -101,13 +105,13 @@ public class ControlResource extends AbstractResource implements ControlApi {
         Optional<String> markerOpt = Optional.empty();
         // TODO this doesn't scale well, need to start storing a list of tasks in a database
         do {
-            ListFunctionsResponse response = LambdaClient.create().listFunctions(ListFunctionsRequest.builder()
+            ListFunctionsResponse response = lambdaClient.listFunctions(ListFunctionsRequest.builder()
                     .marker(markerOpt.orElse(null))
                     .maxItems(50)
                     .build());
             for (FunctionConfiguration function : response.functions()) {
                 if (function.functionName().startsWith(functionPrefix)) {
-                    GetFunctionConcurrencyResponse concurrencyResponse = LambdaClient.create().getFunctionConcurrency(GetFunctionConcurrencyRequest.builder()
+                    GetFunctionConcurrencyResponse concurrencyResponse = lambdaClient.getFunctionConcurrency(GetFunctionConcurrencyRequest.builder()
                             .functionName(function.functionName())
                             .build());
                     statusesBuilder.add(getStatus(function, Optional.ofNullable(concurrencyResponse.reservedConcurrentExecutions())));
@@ -120,7 +124,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
 
     @Override
     public TaskStatus pause(String taskId) {
-        LambdaClient.create().putFunctionConcurrency(PutFunctionConcurrencyRequest.builder()
+        lambdaClient.putFunctionConcurrency(PutFunctionConcurrencyRequest.builder()
                 .functionName(getFunctionName(taskId))
                 .reservedConcurrentExecutions(0)
                 .build());
@@ -129,7 +133,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
 
     @Override
     public TaskStatus resume(String taskId) {
-        LambdaClient.create().putFunctionConcurrency(PutFunctionConcurrencyRequest.builder()
+        lambdaClient.putFunctionConcurrency(PutFunctionConcurrencyRequest.builder()
                 .functionName(getFunctionName(taskId))
                 .reservedConcurrentExecutions(CODE_MAX_CONCURRENCY)
                 .build());
@@ -138,7 +142,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
 
     @Override
     public TaskStatus delete(String taskId) {
-        LambdaClient.create().deleteFunction(DeleteFunctionRequest.builder()
+        lambdaClient.deleteFunction(DeleteFunctionRequest.builder()
                 .functionName(getFunctionName(taskId))
                 .build());
         return getStatusMissing(taskId);
@@ -147,7 +151,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
     @Override
     public TaskStatus update(String taskId, UpdateRequest updateRequest) {
         if (!Strings.isNullOrEmpty(updateRequest.getCodeUrl())) {
-            UpdateFunctionCodeResponse response = LambdaClient.create().updateFunctionCode(UpdateFunctionCodeRequest.builder()
+            lambdaClient.updateFunctionCode(UpdateFunctionCodeRequest.builder()
                     .functionName(getFunctionName(taskId))
                     .s3Bucket(CODE_BUCKET)
                     .s3Key(getCodeKeyFromUrl(updateRequest.getCodeUrl()))
@@ -166,7 +170,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
                 + "-"
                 + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(Instant.now()) + ".zip";
         String codeUrl = "s3://" + CODE_BUCKET + "/" + key;
-        String presignedUrl = S3Presigner.create().presignPutObject(PutObjectPresignRequest.builder()
+        String presignedUrl = s3Presigner.presignPutObject(PutObjectPresignRequest.builder()
                         .putObjectRequest(PutObjectRequest.builder()
                                 .bucket(CODE_BUCKET)
                                 .key(key)
@@ -211,10 +215,9 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     private TaskStatus getStatusMissing(String taskId) {
-        return new TaskStatus(
-                taskId,
-                StatusEnum.MISSING,
-                null,
-                null);
+        return TaskStatus.builder()
+                .taskId(taskId)
+                .status(StatusEnum.MISSING)
+                .build();
     }
 }
