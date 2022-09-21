@@ -11,6 +11,6 @@ public class PingResource extends AbstractResource implements PingApi {
 
     @Override
     public void ping() {
-        log.trace("Received ping");
+        log.debug("Received ping");
     }
 }

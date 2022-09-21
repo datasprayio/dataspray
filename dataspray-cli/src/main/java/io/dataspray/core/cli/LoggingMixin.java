@@ -80,8 +80,13 @@ public class LoggingMixin {
         getTopLevelCommandLoggingMixin(mixee).verbosity = verbosity;
     }
 
-    public boolean[] getVerbosity() {
+    public boolean[] getMixeeVerbosity() {
         return getTopLevelCommandLoggingMixin(mixee).verbosity;
+    }
+
+    public static boolean getIsVerbose() {
+        return LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
+                .isDebugEnabled();
     }
 
     public static int executionStrategy(ParseResult parseResult) {
@@ -91,7 +96,7 @@ public class LoggingMixin {
 
     @SneakyThrows
     public void configureLoggers() {
-        int verbosity = getTopLevelCommandLoggingMixin(mixee).getVerbosity().length;
+        int verbosity = getTopLevelCommandLoggingMixin(mixee).getMixeeVerbosity().length;
         Level level;
         switch (verbosity) {
             case 0:

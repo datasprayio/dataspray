@@ -7,6 +7,7 @@ import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 
 import javax.enterprise.context.ApplicationScoped;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -17,10 +18,10 @@ import java.util.Optional;
 @ApplicationScoped
 public class CliConfigImpl implements CliConfig {
     public static final String PROFILE_ENV_NAME = "DST_PROFILE";
-    private static final String CONFIG_FILE = "~/.dst";
+    private static final String CONFIG_FILE = System.getProperty("user.home", "~") + File.separator + ".dst";
     private static final String PROPERTY_DATASPRAY_API_KEY = "api_key";
 
-    private Optional<INIConfiguration> iniCacheOpt;
+    private Optional<INIConfiguration> iniCacheOpt = Optional.empty();
 
     @Override
     public String getDataSprayApiKey() {
@@ -49,7 +50,7 @@ public class CliConfigImpl implements CliConfig {
         try (FileReader reader = new FileReader(CONFIG_FILE)) {
             ini.read(reader);
         } catch (FileNotFoundException ex) {
-            log.debug("Config file not present " + CONFIG_FILE, ex);
+            log.debug("Config file not present " + CONFIG_FILE);
         } catch (ConfigurationException ex) {
             throw new RuntimeException("Failed to parse config file " + CONFIG_FILE, ex);
         } catch (IOException ex) {
@@ -75,7 +76,7 @@ public class CliConfigImpl implements CliConfig {
 
             getProfileConfig(ini).setProperty(key, value);
 
-            try (FileWriter writer = new FileWriter(CONFIG_FILE)) {
+            try (FileWriter writer = new FileWriter(CONFIG_FILE, false)) {
                 ini.write(writer);
             } catch (IOException | ConfigurationException ex) {
                 throw new RuntimeException("Failed to write property " + key + " to config file " + CONFIG_FILE, ex);
