@@ -117,6 +117,19 @@
                         </configuration>
                         <phase>prepare-package</phase>
                     </execution>
+                    <execution>
+                        <id>pnpm deploy</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run deploy</arguments>
+                            <environmentVariables>
+                                <SERVERLESS_CI>true</SERVERLESS_CI>
+                            </environmentVariables>
+                        </configuration>
+                        <phase>deploy</phase>
+                    </execution>
                 </executions>
                 <configuration>
                     <nodeVersion>${node.version}</nodeVersion>

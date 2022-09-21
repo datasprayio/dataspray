@@ -1,0 +1,5 @@
+dataspray:
+  component: "./node_modules/@sls-next/serverless-component"
+  inputs:
+    domain: "dataspray.io"
+    runtime: "nodejs16.x"

@@ -5,9 +5,14 @@ info:
   version: 1.0.0
 
 servers:
-  - url: https://ingest.dataspray.io/api
+  - url: https://ingest.dataspray.io
 
 components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
   responses:
     Ok:
       description: >-
