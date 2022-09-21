@@ -8,7 +8,7 @@
     "dev:ts": "tsc --noEmit --incremental --preserveWatchOutput --pretty",
     "build": "next build && next export",
     "start": "next start",
-    "deploy": "AWS_PROFLE=dataspray serverless --debug",
+    "deploy": "AWS_PROFILE=dataspray serverless --debug",
     "lint": "next lint"
   },
   "dependencies": {
