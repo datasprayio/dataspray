@@ -1,0 +1,28 @@
+diff --git a/src/Context.js b/src/Context.js
+index 4fb9da9b8a10ba8bc4ff82adab17e9605bf6d53e..ea13d974159fc17203d9dfa7dd5930a1dc29c9fb 100644
+--- a/src/Context.js
++++ b/src/Context.js
+@@ -153,7 +153,11 @@ class CLI {
+     process.stdout.write(ansiEscapes.cursorShow)
+     if (!this.isStatusEngineActive()) {
+       console.log() // eslint-disable-line
+-      process.exit(0)
++      if (reason === 'error') {
++        process.exit(1)
++      } else {
++        process.exit(0)
++      }
+       return
+     }
+     return this.statusEngineStop(reason, message)
+@@ -244,6 +248,10 @@ class CLI {
+       this._.entity = entity
+     }
+ 
++    if (!process.stdout.isTTY || !!process.env.SERVERLESS_CI) {
++      return;
++    }
++
+     // Loading dots
+     if (this._.status.loadingDotCount === 0) {
+       this._.status.loadingDots = `.`
