@@ -4,6 +4,9 @@ patchedDependencies:
   '@serverless/cli@1.6.0':
     hash: j74nz5piy6avrnj3ch7xn4llwa
     path: patches/@serverless__cli@1.6.0.patch
+  '@sls-next/serverless-component@3.7.0':
+    hash: 6r45wr4zsvwxq3hkbn6aypt2he
+    path: patches/@sls-next__serverless-component@3.7.0.patch
 
 specifiers:
   '@emotion/react': ^11.9.0
@@ -43,7 +46,7 @@ dependencies:
   vscode-web: 1.69.2
 
 devDependencies:
-  '@sls-next/serverless-component': 3.7.0_typescript@4.6.4
+  '@sls-next/serverless-component': 3.7.0_6r45wr4zsvwxq3hkbn6aypt2he_typescript@4.6.4
   '@sls-next/serverless-patched': 3.4.0
   '@types/node': 17.0.31
   '@types/react': 18.0.15
@@ -2264,7 +2267,7 @@ packages:
       regex-parser: 2.2.11
     dev: true
 
-  /@sls-next/serverless-component/3.7.0_typescript@4.6.4:
+  /@sls-next/serverless-component/3.7.0_6r45wr4zsvwxq3hkbn6aypt2he_typescript@4.6.4:
     resolution: {integrity: sha512-BdtoHc4CPx5CGCpKEO3XhHIioX5b0HLwF/4mLpCkyOIxJE2mwCjFN9phM3J4gu4oc91yTjGQ67c56c39hjl64g==}
     engines: {node: '>=10.11.0'}
     dependencies:
@@ -2296,6 +2299,7 @@ packages:
       - uglify-js
       - webpack-cli
     dev: true
+    patched: true
 
   /@sls-next/serverless-patched/3.4.0:
     resolution: {integrity: sha512-8pbdAPFd3CYMC6a+p6lSL6UipbUuaVPRZfBADCIwxd5C8K2A6UpYeEjCWBYt3ii6pNoRoQ/B+ZNf87JUMduy5Q==}

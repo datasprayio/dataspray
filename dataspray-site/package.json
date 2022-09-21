@@ -39,7 +39,8 @@
   },
   "pnpm": {
     "patchedDependencies": {
-      "@serverless/cli@1.6.0": "patches/@serverless__cli@1.6.0.patch"
+      "@serverless/cli@1.6.0": "patches/@serverless__cli@1.6.0.patch",
+      "@sls-next/serverless-component@3.7.0": "patches/@sls-next__serverless-component@3.7.0.patch"
     }
   }
 }
