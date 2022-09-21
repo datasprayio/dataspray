@@ -6,10 +6,9 @@
     "dev:dev": "next dev",
     "dev": "concurrently -n NX,TS -c cyan,green \"next dev\" \"yarn dev:ts --watch\"",
     "dev:ts": "tsc --noEmit --incremental --preserveWatchOutput --pretty",
-    "build": "SERVERLESS_BUILD_ENABLED=true serverless-patched --debug",
-    "build:standalone": "next build && next export",
+    "build": "next build && next export",
     "start": "next start",
-    "deploy": "AWS_PROFILE=dataspray SERVERLESS_DEPLOY_ENABLED=true serverless-patched --debug",
+    "deploy": "AWS_PROFLE=dataspray serverless-patched --debug",
     "lint": "next lint"
   },
   "dependencies": {
