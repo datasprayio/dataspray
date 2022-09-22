@@ -16,7 +16,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Singleton;
 import java.util.Optional;
 
 /**
@@ -25,7 +25,7 @@ import java.util.Optional;
  * Implements both AWS SDK v1 and v2 credentials provider.
  */
 @Slf4j
-@ApplicationScoped
+@Singleton
 public class ConfigAwsCredentialsProvider extends AWSCredentialsProviderChain implements AwsCredentialsProvider {
 
     ConfigAwsCredentialsProvider(

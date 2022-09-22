@@ -18,7 +18,7 @@ public class ControlTest {
     public void testStatus() {
         RestAssured.when().get("/v1/control/task/{taskId}/status/",
                         "taskid")
-                .then().statusCode(Status.NO_CONTENT.getStatusCode())
+                .then().statusCode(Status.OK.getStatusCode())
                 .body(Matchers.equalToObject(TaskStatus.builder()
                         .taskId("taskid")
                         .status(TaskStatus.StatusEnum.MISSING)

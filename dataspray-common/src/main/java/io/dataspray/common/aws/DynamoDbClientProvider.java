@@ -25,7 +25,7 @@ import java.util.Optional;
 @ApplicationScoped
 public class DynamoDbClientProvider {
 
-    @ConfigProperty(name = "startupWaitUntilDeps")
+    @ConfigProperty(name = "startupWaitUntilDeps", defaultValue = "false")
     boolean startupWaitUntilDeps;
     @ConfigProperty(name = "aws.dynamo.productionRegion")
     Optional<String> productionRegionOpt;

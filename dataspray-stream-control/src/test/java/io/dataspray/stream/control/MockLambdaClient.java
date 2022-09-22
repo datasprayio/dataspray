@@ -1,6 +1,12 @@
-package io.dataspray.common.aws.test;
+package io.dataspray.stream.control;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import io.dataspray.common.aws.test.CombinedTestProfile;
+import io.dataspray.common.aws.test.MockDynamoDbClient;
+import io.dataspray.common.aws.test.MockS3Client;
+import io.quarkus.arc.Priority;
+import io.quarkus.arc.properties.IfBuildProperty;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import org.mockito.Mockito;
 import software.amazon.awssdk.services.lambda.LambdaClient;
@@ -23,20 +29,17 @@ import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeResponse;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Alternative;
 import javax.inject.Singleton;
-import java.util.Set;
+import java.util.Map;
 
 import static org.mockito.Mockito.when;
 
 @ApplicationScoped
-public class LambdaClientTestProfile implements QuarkusTestProfile {
+public class MockLambdaClient {
 
-    @Override
-    public Set<Class<?>> getEnabledAlternatives() {
-        return ImmutableSet.of(LambdaClientTestProfile.class);
-    }
-
-    @Singleton
     @Alternative
+    @Priority(1)
+    @Singleton
+    @IfBuildProperty(name = "aws.lambda.mock.enable", stringValue = "true")
     public LambdaClient getLambdaClient() {
         LambdaClient mock = Mockito.mock(LambdaClient.class);
 
@@ -68,5 +71,20 @@ public class LambdaClientTestProfile implements QuarkusTestProfile {
                 .thenReturn(PutFunctionConcurrencyResponse.builder().build());
 
         return mock;
+    }
+
+    public static class Combined extends CombinedTestProfile {
+        public Combined() {
+            super(MockDynamoDbClient.TestProfile.class,
+                    MockS3Client.TestProfile.class,
+                    TestProfile.class);
+        }
+    }
+
+    public static class TestProfile implements QuarkusTestProfile {
+
+        public Map<String, String> getConfigOverrides() {
+            return ImmutableMap.of("aws.lambda.mock.enable", "true");
+        }
     }
 }

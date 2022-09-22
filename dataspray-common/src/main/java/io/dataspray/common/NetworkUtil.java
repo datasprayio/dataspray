@@ -24,6 +24,10 @@ import java.util.concurrent.TimeUnit;
 @ApplicationScoped
 public class NetworkUtil {
 
+    public static NetworkUtil get() {
+        return new NetworkUtil();
+    }
+
     public int findFreePort() {
         try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();

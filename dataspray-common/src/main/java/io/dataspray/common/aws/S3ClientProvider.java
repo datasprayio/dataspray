@@ -28,7 +28,7 @@ import java.util.Optional;
 @ApplicationScoped
 public class S3ClientProvider {
 
-    @ConfigProperty(name = "startupWaitUntilDeps")
+    @ConfigProperty(name = "startupWaitUntilDeps", defaultValue = "false")
     boolean startupWaitUntilDeps;
     @ConfigProperty(name = "aws.s3.productionRegion")
     Optional<String> productionRegionOpt;
@@ -52,11 +52,8 @@ public class S3ClientProvider {
         S3Presigner.Builder builder = S3Presigner.builder()
                 .credentialsProvider(awsCredentialsProvider);
 
-        if (serviceEndpointOpt.isPresent()) {
-            builder.endpointOverride(URI.create(serviceEndpointOpt.get()));
-        } else if (productionRegionOpt.isPresent()) {
-            builder.region(Region.of(productionRegionOpt.get()));
-        }
+        serviceEndpointOpt.map(URI::create).ifPresent(builder::endpointOverride);
+        productionRegionOpt.map(Region::of).ifPresent(builder::region);
 
         return builder.build();
     }
@@ -71,17 +68,12 @@ public class S3ClientProvider {
                 .credentialsProvider(awsCredentialsProvider)
                 .httpClientBuilder(httpClientBuilder);
 
-        if (serviceEndpointOpt.isPresent()) {
-            builder.endpointOverride(URI.create(serviceEndpointOpt.get()));
-        } else if (productionRegionOpt.isPresent()) {
-            builder.region(Region.of(productionRegionOpt.get()));
-        }
-        if (dnsResolverToOpt.isPresent()) {
-            httpClientBuilder.dnsResolver(host -> {
-                log.trace("Resolving {}", host);
-                return new InetAddress[]{InetAddress.getByName(dnsResolverToOpt.get())};
-            });
-        }
+        serviceEndpointOpt.map(URI::create).ifPresent(builder::endpointOverride);
+        productionRegionOpt.map(Region::of).ifPresent(builder::region);
+        dnsResolverToOpt.ifPresent(dnsResolverTo -> httpClientBuilder.dnsResolver(host -> {
+            log.trace("Resolving {}", host);
+            return new InetAddress[]{InetAddress.getByName(dnsResolverTo)};
+        }));
 
         return builder.build();
     }
@@ -96,16 +88,13 @@ public class S3ClientProvider {
         if (serviceEndpointOpt.isPresent() && signingRegionOpt.isPresent()) {
             amazonS3ClientBuilder.withEndpointConfiguration(
                     new AwsClientBuilder.EndpointConfiguration(serviceEndpointOpt.get(), signingRegionOpt.get()));
-        } else if (productionRegionOpt.isPresent()) {
-            amazonS3ClientBuilder.withRegion(productionRegionOpt.get());
         }
-        if (dnsResolverToOpt.isPresent()) {
-            amazonS3ClientBuilder.withClientConfiguration(new ClientConfiguration()
-                    .withDnsResolver(host -> {
-                        log.trace("Resolving {}", host);
-                        return new InetAddress[]{InetAddress.getByName(dnsResolverToOpt.get())};
-                    }));
-        }
+        productionRegionOpt.ifPresent(amazonS3ClientBuilder::withRegion);
+        dnsResolverToOpt.ifPresent(dnsResolverTo -> amazonS3ClientBuilder.withClientConfiguration(new ClientConfiguration()
+                .withDnsResolver(host -> {
+                    log.trace("Resolving {}", host);
+                    return new InetAddress[]{InetAddress.getByName(dnsResolverTo)};
+                })));
 
         return amazonS3ClientBuilder.build();
     }
