@@ -1,6 +1,5 @@
 package io.dataspray.core;
 
-import com.google.common.base.Strings;
 import io.dataspray.core.definition.model.JavaProcessor;
 import io.dataspray.stream.client.StreamApi;
 import io.dataspray.stream.control.client.ControlApi;
@@ -16,12 +15,6 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.Iterator;
 
@@ -70,7 +63,7 @@ public class RuntimeImpl implements Runtime {
                 .contentLengthBytes(codeZipFile.length()));
 
         // Upload to S3
-        uploadToS3UsingPresignedUrl(new URL(uploadCodeResponse.getPresignedUrl()), codeZipFile);
+        streamApi.uploadCode(uploadCodeResponse.getPresignedUrl(), codeZipFile);
 
         // Initiate deployment
         TaskStatus deployStatus = controlApi.deploy(new DeployRequest()
@@ -79,26 +72,6 @@ public class RuntimeImpl implements Runtime {
                 .codeUrl(uploadCodeResponse.getCodeUrl()));
 
         printStatus(deployStatus);
-    }
-
-    /**
-     * Code from example:
-     * https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html
-     */
-    private void uploadToS3UsingPresignedUrl(URL presignedUrl, File file) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) presignedUrl.openConnection();
-        connection.setDoOutput(true);
-        connection.setRequestProperty("Content-Type", "text/plain");
-        connection.setRequestMethod("PUT");
-
-        try (InputStream in = new FileInputStream(file);
-             OutputStream os = connection.getOutputStream()) {
-            in.transferTo(os);
-        }
-
-        if (connection.getResponseCode() < 200 || connection.getResponseCode() > 299) {
-            throw new IOException("Failed with status " + connection.getResponseCode() + " to upload to S3: " + Strings.nullToEmpty(connection.getResponseMessage()));
-        }
     }
 
     private String getCommitHash(Project project) throws GitAPIException {

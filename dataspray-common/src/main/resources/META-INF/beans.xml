@@ -1,0 +1,1 @@
+<beans><!-- Empty beans to signal Quarkus to create index; https://quarkus.io/guides/cdi-reference#bean_discovery --></beans>

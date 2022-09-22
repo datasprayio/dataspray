@@ -11,6 +11,7 @@
         <option value="$PROJECT_DIR$/dataspray-dev-env-lambda/pom.xml" />
         <option value="$PROJECT_DIR$/dataspray-remote-workspace/pom.xml" />
         <option value="$PROJECT_DIR$/dataspray-backend/pom.xml" />
+        <option value="$PROJECT_DIR$/dataspray-common-test/pom.xml" />
       </list>
     </option>
   </component>

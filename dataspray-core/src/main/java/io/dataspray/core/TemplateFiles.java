@@ -4,8 +4,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import io.dataspray.common.json.GsonUtil;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.SneakyThrows;
+import lombok.Value;
 
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -31,7 +31,7 @@ import java.util.stream.Stream;
  * As a workaround, we generate the file structure for each template and read it during runtime to stream the files
  * as needed.
  */
-@Data
+@Value
 public class TemplateFiles {
     Template template;
     transient Optional<Path> templateDirOpt;
@@ -77,7 +77,7 @@ public class TemplateFiles {
         return new TemplateFile(pathStr);
     }
 
-    @Data
+    @Value
     @AllArgsConstructor
     public class TemplateFile {
         Path relativePath;
@@ -96,7 +96,7 @@ public class TemplateFiles {
         }
     }
 
-    @Data
+    @Value
     @AllArgsConstructor
     public static class Tree {
         List<String> paths;

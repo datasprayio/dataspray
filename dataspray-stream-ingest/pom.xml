@@ -27,10 +27,7 @@
         </dependency>
         <dependency>
             <groupId>io.dataspray</groupId>
-            <artifactId>dataspray-common</artifactId>
-            <type>test-jar</type>
-            <classifier>tests</classifier>
-            <scope>test</scope>
+            <artifactId>dataspray-common-test</artifactId>
         </dependency>
         <dependency>
             <groupId>io.dataspray</groupId>
@@ -69,17 +66,6 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-resteasy-reactive</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.rest-assured</groupId>
-            <artifactId>rest-assured</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
