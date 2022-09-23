@@ -38,6 +38,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
@@ -168,7 +169,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
         String key = getCodeKeyPrefix()
                 + uploadCodeRequest.getTaskId()
                 + "-"
-                + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(Instant.now()) + ".zip";
+                + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").withZone(ZoneOffset.UTC).format(Instant.now()) + ".zip";
         String codeUrl = "s3://" + CODE_BUCKET + "/" + key;
         String presignedUrl = s3Presigner.presignPutObject(PutObjectPresignRequest.builder()
                         .putObjectRequest(PutObjectRequest.builder()
