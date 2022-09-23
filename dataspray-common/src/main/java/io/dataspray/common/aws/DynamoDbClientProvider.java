@@ -2,13 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 package io.dataspray.common.aws;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import io.dataspray.common.NetworkUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -31,11 +34,11 @@ public class DynamoDbClientProvider {
     Optional<String> productionRegionOpt;
     @ConfigProperty(name = "aws.dynamo.serviceEndpoint")
     Optional<String> serviceEndpointOpt;
-    @ConfigProperty(name = "aws.dynamo.signingRegion")
-    Optional<String> signingRegionOpt;
 
     @Inject
-    ConfigAwsCredentialsProvider awsCredentialsProvider;
+    AWSCredentialsProvider awsCredentialsProviderSdk1;
+    @Inject
+    AwsCredentialsProvider awsCredentialsProviderSdk2;
     @Inject
     NetworkUtil networkUtil;
 
@@ -45,14 +48,11 @@ public class DynamoDbClientProvider {
         waitUntilPortOpen();
         ApacheHttpClient.Builder httpClientBuilder = ApacheHttpClient.builder();
         DynamoDbClientBuilder builder = DynamoDbClient.builder()
-                .credentialsProvider(awsCredentialsProvider)
+                .credentialsProvider(awsCredentialsProviderSdk2)
                 .httpClientBuilder(httpClientBuilder);
 
-        if (serviceEndpointOpt.isPresent()) {
-            builder.endpointOverride(URI.create(serviceEndpointOpt.get()));
-        } else if (productionRegionOpt.isPresent()) {
-            builder.region(Region.of(productionRegionOpt.get()));
-        }
+        serviceEndpointOpt.map(URI::create).ifPresent(builder::endpointOverride);
+        productionRegionOpt.map(Region::of).ifPresent(builder::region);
 
         return builder.build();
     }
@@ -63,13 +63,12 @@ public class DynamoDbClientProvider {
         waitUntilPortOpen();
         AmazonDynamoDBClientBuilder amazonDynamoDBClientBuilder = AmazonDynamoDBClientBuilder
                 .standard()
-                .withCredentials(awsCredentialsProvider);
-        if (serviceEndpointOpt.isPresent() && signingRegionOpt.isPresent()) {
+                .withCredentials(awsCredentialsProviderSdk1);
+        if (serviceEndpointOpt.isPresent() && productionRegionOpt.isPresent()) {
             amazonDynamoDBClientBuilder.withEndpointConfiguration(
-                    new AwsClientBuilder.EndpointConfiguration(serviceEndpointOpt.get(), signingRegionOpt.get()));
-        } else if (productionRegionOpt.isPresent()) {
-            amazonDynamoDBClientBuilder.withRegion(productionRegionOpt.get());
+                    new AwsClientBuilder.EndpointConfiguration(serviceEndpointOpt.get(), productionRegionOpt.get()));
         }
+        productionRegionOpt.map(Regions::fromName).ifPresent(amazonDynamoDBClientBuilder::withRegion);
 
         return amazonDynamoDBClientBuilder.build();
     }

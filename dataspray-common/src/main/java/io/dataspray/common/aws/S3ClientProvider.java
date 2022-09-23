@@ -3,12 +3,14 @@
 package io.dataspray.common.aws;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import io.dataspray.common.NetworkUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -34,13 +36,13 @@ public class S3ClientProvider {
     Optional<String> productionRegionOpt;
     @ConfigProperty(name = "aws.s3.serviceEndpoint")
     Optional<String> serviceEndpointOpt;
-    @ConfigProperty(name = "aws.s3.signingRegion")
-    Optional<String> signingRegionOpt;
     @ConfigProperty(name = "aws.s3.dnsResolverTo")
     Optional<String> dnsResolverToOpt;
 
     @Inject
-    ConfigAwsCredentialsProvider awsCredentialsProvider;
+    AWSCredentialsProvider awsCredentialsProviderSdk1;
+    @Inject
+    AwsCredentialsProvider awsCredentialsProviderSdk2;
     @Inject
     NetworkUtil networkUtil;
 
@@ -50,7 +52,7 @@ public class S3ClientProvider {
         waitUntilPortOpen();
 
         S3Presigner.Builder builder = S3Presigner.builder()
-                .credentialsProvider(awsCredentialsProvider);
+                .credentialsProvider(awsCredentialsProviderSdk2);
 
         serviceEndpointOpt.map(URI::create).ifPresent(builder::endpointOverride);
         productionRegionOpt.map(Region::of).ifPresent(builder::region);
@@ -65,7 +67,7 @@ public class S3ClientProvider {
 
         ApacheHttpClient.Builder httpClientBuilder = ApacheHttpClient.builder();
         S3ClientBuilder builder = S3Client.builder()
-                .credentialsProvider(awsCredentialsProvider)
+                .credentialsProvider(awsCredentialsProviderSdk2)
                 .httpClientBuilder(httpClientBuilder);
 
         serviceEndpointOpt.map(URI::create).ifPresent(builder::endpointOverride);
@@ -84,10 +86,12 @@ public class S3ClientProvider {
         waitUntilPortOpen();
         AmazonS3ClientBuilder amazonS3ClientBuilder = AmazonS3ClientBuilder
                 .standard()
-                .withCredentials(awsCredentialsProvider);
-        if (serviceEndpointOpt.isPresent() && signingRegionOpt.isPresent()) {
+                .withClientConfiguration(new ClientConfiguration()
+                        .withSignerOverride("AWSS3V4SignerType"))
+                .withCredentials(awsCredentialsProviderSdk1);
+        if (serviceEndpointOpt.isPresent() && productionRegionOpt.isPresent()) {
             amazonS3ClientBuilder.withEndpointConfiguration(
-                    new AwsClientBuilder.EndpointConfiguration(serviceEndpointOpt.get(), signingRegionOpt.get()));
+                    new AwsClientBuilder.EndpointConfiguration(serviceEndpointOpt.get(), productionRegionOpt.get()));
         }
         productionRegionOpt.ifPresent(amazonS3ClientBuilder::withRegion);
         dnsResolverToOpt.ifPresent(dnsResolverTo -> amazonS3ClientBuilder.withClientConfiguration(new ClientConfiguration()

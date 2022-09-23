@@ -8,6 +8,7 @@ public class AwsTestProfile extends CombinedTestProfile {
     public AwsTestProfile() {
         super(MockDynamoDbClient.TestProfile.class,
                 MockS3Client.TestProfile.class,
-                MockLambdaClient.TestProfile.class);
+                MockLambdaClient.TestProfile.class,
+                TestAwsCredentialsTestProfile.class);
     }
 }

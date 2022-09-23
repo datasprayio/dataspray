@@ -3,6 +3,7 @@
 package io.dataspray.common.aws;
 
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
@@ -16,7 +17,7 @@ import javax.inject.Singleton;
 public class LambdaClientProvider {
 
     @Inject
-    ConfigAwsCredentialsProvider awsCredentialsProvider;
+    AwsCredentialsProvider awsCredentialsProvider;
 
     @Singleton
     public LambdaClient getLambdaClient() {
