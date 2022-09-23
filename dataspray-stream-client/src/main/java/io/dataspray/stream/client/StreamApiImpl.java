@@ -3,6 +3,7 @@ package io.dataspray.stream.client;
 import com.google.common.base.Strings;
 import io.dataspray.stream.control.client.ControlApi;
 import io.dataspray.stream.ingest.client.IngestApi;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.io.File;
@@ -13,6 +14,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+@Slf4j
 @ApplicationScoped
 public class StreamApiImpl implements StreamApi {
     @Override
@@ -35,6 +37,7 @@ public class StreamApiImpl implements StreamApi {
      */
     @Override
     public void uploadCode(String presignedUrlStr, File file) throws IOException {
+        log.trace("Uploading file {} to presigned url {}", file.getPath(), presignedUrlStr);
         URL presignedUrl = new URL(presignedUrlStr);
         HttpURLConnection connection = (HttpURLConnection) presignedUrl.openConnection();
         connection.setDoOutput(true);

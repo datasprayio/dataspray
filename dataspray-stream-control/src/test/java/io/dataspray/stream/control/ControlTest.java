@@ -3,15 +3,18 @@ package io.dataspray.stream.control;
 import com.google.common.collect.ImmutableList;
 import io.dataspray.common.aws.test.AwsTestProfile;
 import io.dataspray.stream.client.StreamApi;
+import io.dataspray.stream.control.deploy.MockControlStack;
 import io.dataspray.stream.control.model.DeployRequest;
 import io.dataspray.stream.control.model.TaskStatus;
 import io.dataspray.stream.control.model.TaskStatuses;
 import io.dataspray.stream.control.model.UpdateRequest;
 import io.dataspray.stream.control.model.UploadCodeRequest;
 import io.dataspray.stream.control.model.UploadCodeResponse;
+import io.findify.s3mock.S3Mock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -28,6 +31,13 @@ public class ControlTest {
     ControlResource resource;
     @Inject
     StreamApi streamApi;
+
+    S3Mock s3Mock;
+
+    @BeforeAll
+    public void beforeAll() {
+        MockControlStack.mock(s3Mock);
+    }
 
     @Test
     public void testStatus() throws Exception {
