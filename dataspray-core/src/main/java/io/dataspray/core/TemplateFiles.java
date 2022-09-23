@@ -108,11 +108,7 @@ public class TemplateFiles {
                 .map(Path::toString)
                 .collect(ImmutableList.toImmutableList()));
         try (FileWriter writer = new FileWriter(outputFolder.resolve(getTreeFileName()).toFile())) {
-            GsonUtil.get()
-                    .newBuilder()
-                    .setPrettyPrinting()
-                    .create()
-                    .toJson(tree, writer);
+            GsonUtil.getPrettyPrint().toJson(tree, writer);
         }
     }
 

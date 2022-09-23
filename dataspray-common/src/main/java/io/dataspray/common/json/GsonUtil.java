@@ -25,20 +25,18 @@ import java.time.LocalDate;
 public class GsonUtil {
     public static final String PRETTY_PRINT = "pretty-print";
     private static volatile Gson gson;
+    private static volatile Gson gsonPrettyPrint;
 
     @ApplicationScoped
     @DefaultBean
     Gson getInstance() {
-        return GsonUtil.get();
+        return get();
     }
 
     @ApplicationScoped
     @Named(PRETTY_PRINT)
     Gson getInstancePrettyPrint() {
-        return get()
-                .newBuilder()
-                .setPrettyPrinting()
-                .create();
+        return getPrettyPrint();
     }
 
     public static Gson get() {
@@ -58,6 +56,20 @@ public class GsonUtil {
             }
         }
         return gson;
+    }
+
+    public static Gson getPrettyPrint() {
+        if (gsonPrettyPrint == null) {
+            synchronized (GsonUtil.class) {
+                if (gsonPrettyPrint == null) {
+                    gsonPrettyPrint = get()
+                            .newBuilder()
+                            .setPrettyPrinting()
+                            .create();
+                }
+            }
+        }
+        return gsonPrettyPrint;
     }
 
     private static class InstantTypeConverter
