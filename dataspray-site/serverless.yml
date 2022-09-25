@@ -2,4 +2,10 @@ dataspray:
   component: "./node_modules/@sls-next/serverless-component"
   inputs:
     domain: "dataspray.io"
+    domainRedirects:
+      www.dataspray.io: https://dataspray.io
     runtime: "nodejs16.x"
+    name: dataspray-site
+    bucketName: dataspray-site
+    description: "DataSpray site"
+    removeOldLambdaVersions: true

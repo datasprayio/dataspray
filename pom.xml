@@ -256,6 +256,16 @@
                 <version>${awscdk.version}-alpha.0</version>
             </dependency>
             <dependency>
+                <groupId>software.amazon.awscdk</groupId>
+                <artifactId>kinesisfirehose-alpha</artifactId>
+                <version>${awscdk.version}-alpha.0</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awscdk</groupId>
+                <artifactId>kinesisfirehose-destinations-alpha</artifactId>
+                <version>${awscdk.version}-alpha.0</version>
+            </dependency>
+            <dependency>
                 <groupId>software.constructs</groupId>
                 <artifactId>constructs</artifactId>
                 <version>10.1.56</version>

@@ -22,11 +22,17 @@ import java.util.function.Predicate;
 @Slf4j
 @ApplicationScoped
 public class IngestResource extends AbstractResource implements IngestApi {
+    public static final String ETL_BUCKET_NAME = "io-dataspray-etl";
+    public static final String ETL_PARTITION_KEY_ACCOUNT = "_ds_acct";
+    public static final String ETL_PARTITION_KEY_TARGET = "_ds_trgt";
+    public static final String ETL_BUCKET_PREFIX = "/account/!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ACCOUNT + "}/target/!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TARGET + "}/YYYY/MM/dd/HH";
+    /** Limited by SQS max message size */
+    public static final int MESSAGE_MAX_BYTES = 256 * 1024;
     /** Can be supplied via header, query param */
-    private static final String API_TOKEN_HEADER_NAME = "x-api-key";
-    private static final String API_TOKEN_QUERY_NAME = "api_key";
-    private static final String API_TOKEN_COOKIE_NAME = "x-api-key";
-    private static final String API_TOKEN_AUTHORIZATION_TYPE = "bearer";
+    public static final String API_TOKEN_HEADER_NAME = "x-api-key";
+    public static final String API_TOKEN_QUERY_NAME = "api_key";
+    public static final String API_TOKEN_COOKIE_NAME = "x-api-key";
+    public static final String API_TOKEN_AUTHORIZATION_TYPE = "bearer";
 
     @Inject
     BillingStore billingStore;
@@ -35,22 +41,32 @@ public class IngestResource extends AbstractResource implements IngestApi {
 
     @Override
     @SneakyThrows
-    public void message(String accountId, String targetId, InputStream body) {
+    public void message(String accountId, String targetId, InputStream messageInputStream) {
         // Billing
-        if (billingStore.recordStreamEvent(
+        if (!billingStore.recordStreamEvent(
                 accountId,
                 targetId,
                 getAuthKey())) {
             throw new ClientErrorException(Response.Status.PAYMENT_REQUIRED);
         }
 
-        // Submit message
+        // Read message
+        byte[] messageBytes = messageInputStream.readNBytes(MESSAGE_MAX_BYTES);
+        if (messageInputStream.readNBytes(1).length > 0) {
+            throw new ClientErrorException(Response.Status.REQUEST_ENTITY_TOO_LARGE);
+        }
+        messageInputStream.close();
+
+        // Submit message to queue for stream processing
         try {
-            queueStore.submit(accountId, targetId, body.readAllBytes());
+            queueStore.submit(accountId, targetId, messageBytes);
         } catch (QueueDoesNotExistException ex) {
             queueStore.createQueue(accountId, targetId);
-            queueStore.submit(accountId, targetId, body.readAllBytes());
+            queueStore.submit(accountId, targetId, messageBytes);
         }
+
+        // Submit message to S3 for distributed processing
+        // TODO
     }
 
     private Optional<String> getAuthKey() {

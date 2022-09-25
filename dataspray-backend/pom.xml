@@ -18,6 +18,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <skipDeployBackend/>
     </properties>
 
     <dependencies>
@@ -50,14 +51,23 @@
                 <artifactId>aws-cdk-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>run-cdk</id>
+                        <id>run-cdk-synth</id>
                         <goals>
                             <goal>synth</goal>
                             <goal>bootstrap</goal>
-                            <goal>deploy</goal>
                         </goals>
                         <configuration>
                             <app>io.dataspray.backend.deploy.BackendDeploy</app>
+                            <profile>dataspray</profile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>run-cdk-deploy</id>
+                        <goals>
+                            <goal>deploy</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipDeployBackend}</skip>
                             <profile>dataspray</profile>
                         </configuration>
                     </execution>

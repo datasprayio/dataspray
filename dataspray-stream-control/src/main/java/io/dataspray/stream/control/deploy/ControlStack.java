@@ -25,7 +25,7 @@ public class ControlStack extends LambdaBaseStack {
                 .build());
 
         bucketCode = Bucket.Builder.create(this, "control-code-upload-bucket")
-                .bucketName(ControlResource.CODE_BUCKET)
+                .bucketName(ControlResource.CODE_BUCKET_NAME)
                 .autoDeleteObjects(true)
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)

@@ -10,7 +10,7 @@ public class MockControlStack {
 
     public static void mock(S3Mock s3Mock) {
         s3Mock.p().createBucket(
-                ControlResource.CODE_BUCKET,
+                ControlResource.CODE_BUCKET_NAME,
                 new CreateBucketConfiguration(Option.apply(MockS3Client.REGION.id())));
     }
 }

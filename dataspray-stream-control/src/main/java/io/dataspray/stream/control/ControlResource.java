@@ -47,7 +47,7 @@ import java.util.Optional;
 public class ControlResource extends AbstractResource implements ControlApi {
     private static final int CODE_MAX_CONCURRENCY = 100;
     private static final long CODE_MAX_SIZE_IN_BYTES = 50 * 1024 * 1024;
-    public static final String CODE_BUCKET = "io-dataspray-code-upload";
+    public static final String CODE_BUCKET_NAME = "io-dataspray-code-upload";
     private static final String CODE_KEY_PREFIX = "user/";
     private static final String FUN_NAME_PREFIX = "user-";
 
@@ -70,7 +70,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
                 .packageType(PackageType.ZIP)
                 .architectures(Architecture.X86_64)
                 .code(FunctionCode.builder()
-                        .s3Bucket(CODE_BUCKET)
+                        .s3Bucket(CODE_BUCKET_NAME)
                         .s3Key(getCodeKeyFromUrl(deployRequest.getCodeUrl()))
                         .build())
                 .runtime(runtime)
@@ -154,7 +154,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
         if (!Strings.isNullOrEmpty(updateRequest.getCodeUrl())) {
             lambdaClient.updateFunctionCode(UpdateFunctionCodeRequest.builder()
                     .functionName(getFunctionName(taskId))
-                    .s3Bucket(CODE_BUCKET)
+                    .s3Bucket(CODE_BUCKET_NAME)
                     .s3Key(getCodeKeyFromUrl(updateRequest.getCodeUrl()))
                     .build());
         }
@@ -170,10 +170,10 @@ public class ControlResource extends AbstractResource implements ControlApi {
                 + uploadCodeRequest.getTaskId()
                 + "-"
                 + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").withZone(ZoneOffset.UTC).format(Instant.now()) + ".zip";
-        String codeUrl = "s3://" + CODE_BUCKET + "/" + key;
+        String codeUrl = "s3://" + CODE_BUCKET_NAME + "/" + key;
         String presignedUrl = s3Presigner.presignPutObject(PutObjectPresignRequest.builder()
                         .putObjectRequest(PutObjectRequest.builder()
-                                .bucket(CODE_BUCKET)
+                                .bucket(CODE_BUCKET_NAME)
                                 .key(key)
                                 .contentLength(uploadCodeRequest.getContentLengthBytes())
                                 .contentType("application/zip")
@@ -198,7 +198,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     private String getCodeKeyFromUrl(String url) {
-        String s3UrlAndBucketPrefix = "s3://" + CODE_BUCKET + "/";
+        String s3UrlAndBucketPrefix = "s3://" + CODE_BUCKET_NAME + "/";
         String s3UrlAndBucketAndKeyPrefix = s3UrlAndBucketPrefix + getCodeKeyPrefix();
         if (!url.startsWith(s3UrlAndBucketAndKeyPrefix)) {
             throw new RuntimeException("Incorrect bucket location");

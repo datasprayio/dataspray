@@ -16,6 +16,10 @@
     <name>DataSpray Site</name>
     <url>https://dataspray.io</url>
 
+    <properties>
+        <skipDeploySite/>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
@@ -123,6 +127,7 @@
                             <goal>pnpm</goal>
                         </goals>
                         <configuration>
+                            <skip>${skipDeploySite}</skip>
                             <arguments>run deploy</arguments>
                             <environmentVariables>
                                 <SERVERLESS_CI>true</SERVERLESS_CI>

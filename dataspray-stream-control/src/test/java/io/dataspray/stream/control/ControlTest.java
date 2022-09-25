@@ -40,7 +40,7 @@ public class ControlTest {
     }
 
     @Test
-    public void testStatus() throws Exception {
+    public void test() throws Exception {
         UploadCodeResponse uploadCodeResponse = resource.uploadCode(UploadCodeRequest.builder()
                 .taskId("task1")
                 .contentLengthBytes(12L).build());
