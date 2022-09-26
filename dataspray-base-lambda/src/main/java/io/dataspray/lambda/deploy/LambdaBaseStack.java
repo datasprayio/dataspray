@@ -99,6 +99,7 @@ public class LambdaBaseStack extends BaseStack {
                 .runtime(Runtime.JAVA_11)
                 .architecture(Architecture.ARM_64)
                 .memorySize(options.getMemorySize())
+                .timeout(Duration.seconds(30))
                 .build();
         function.addPermission(functionName + "-gateway-to-lambda-permisson", Permission.builder()
                 .sourceArn(restApi.arnForExecuteApi())

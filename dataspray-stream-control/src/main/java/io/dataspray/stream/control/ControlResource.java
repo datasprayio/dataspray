@@ -75,6 +75,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
                         .build())
                 .runtime(runtime)
                 .memorySize(128)
+                .timeout(900)
                 .build());
         lambdaClient.putFunctionConcurrency(PutFunctionConcurrencyRequest.builder()
                 .functionName(functionName)

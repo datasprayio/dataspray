@@ -2,6 +2,7 @@ package io.dataspray.devenv;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
+import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
@@ -65,6 +66,7 @@ public class DevEnvRunnerStack extends Stack {
                 .allowAllOutbound(true)
                 .architecture(Architecture.ARM_64)
                 .memorySize(128)
+                .timeout(Duration.minutes(15))
                 .filesystem(software.amazon.awscdk.services.lambda.FileSystem
                         .fromEfsAccessPoint(fileSystem.addAccessPoint(stackId + "-efs-ap"), "/"))
                 .build();

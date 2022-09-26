@@ -19,7 +19,7 @@
       },
       {
         "Effect": "Allow",
-        "Resource": "arn:aws:s3:::5b3zzay-1oov3yw/*",
+        "Resource": "arn:aws:s3:::dataspray-site/*",
         "Action": [
           "s3:GetObject",
           "s3:PutObject"

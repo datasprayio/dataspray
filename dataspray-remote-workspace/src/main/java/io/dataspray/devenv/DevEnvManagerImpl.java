@@ -25,6 +25,7 @@ public class DevEnvManagerImpl implements DevEnvManager {
         //                .architectures(Architecture.ARM64)
         //                .runtime(Runtime.PYTHON3_9)
         //                .memorySize(128)
+        //                .timeout(Duration.seconds(30))
         //                .fileSystemConfigs(FileSystemConfig.builder()
         //                        .arn("")
         //                        .localMountPath("")
