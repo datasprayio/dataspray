@@ -22,7 +22,16 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
     public static final String ETL_PARTITION_KEY_RETENTION = "_ds_retention";
     public static final String ETL_PARTITION_KEY_ACCOUNT = "_ds_account";
     public static final String ETL_PARTITION_KEY_TARGET = "_ds_target";
-    public static final String ETL_BUCKET_RETENTION_PREFIX = "/retention=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}";
+    public static final String ETL_BUCKET_RETENTION_PREFIX_PREFIX = "/retention=";
+    public static final String ETL_BUCKET_RETENTION_PREFIX = ETL_BUCKET_RETENTION_PREFIX_PREFIX + "!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}";
+    public static final String ETL_BUCKET_ERROR_PREFIX = ETL_BUCKET_RETENTION_PREFIX_PREFIX + EtlRetention.DAY.name() +
+            "/error" +
+            "/result=!{firehose:error-output-type}" +
+            "/year=!{timestamp:yyyy}" +
+            "/month=!{timestamp:MM}" +
+            "/day=!{timestamp:dd}" +
+            "/hour=!{timestamp:HH}" +
+            "/";
     public static final String ETL_BUCKET_PREFIX = ETL_BUCKET_RETENTION_PREFIX +
             "/account=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ACCOUNT + "}" +
             "/target=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TARGET + "}" +
