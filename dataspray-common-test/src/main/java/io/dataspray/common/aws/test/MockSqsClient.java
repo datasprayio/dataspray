@@ -28,6 +28,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 import javax.annotation.Nonnull;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Alternative;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.Map;
 import java.util.Optional;
@@ -39,15 +40,23 @@ import static org.mockito.Mockito.when;
 
 @ApplicationScoped
 public class MockSqsClient {
+    public static final String MOCK_SQS_QUEUES = "mock-sqs-queues";
 
     @Alternative
     @Priority(1)
     @Singleton
     @IfBuildProperty(name = "aws.sqs.mock.enable", stringValue = "true")
-    public SqsClient getSqsClient() {
-        SqsClient mock = Mockito.mock(SqsClient.class);
+    @Named(MOCK_SQS_QUEUES)
+    public ConcurrentMap<String, SqsQueue> getMockQueues() {
+        return Maps.newConcurrentMap();
+    }
 
-        ConcurrentMap<String, SqsQueue> queues = Maps.newConcurrentMap();
+    @Alternative
+    @Priority(1)
+    @Singleton
+    @IfBuildProperty(name = "aws.sqs.mock.enable", stringValue = "true")
+    public SqsClient getSqsClient(@Named(MOCK_SQS_QUEUES) ConcurrentMap<String, SqsQueue> queues) {
+        SqsClient mock = Mockito.mock(SqsClient.class);
 
         when(mock.createQueue(Mockito.<CreateQueueRequest>any()))
                 .thenAnswer(invocation -> {
@@ -119,7 +128,7 @@ public class MockSqsClient {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    private static class SqsQueue {
+    public static class SqsQueue {
         @Nonnull
         String name;
         @Nonnull

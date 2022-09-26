@@ -528,6 +528,11 @@
                         <environmentVariables>
                             <PROJECT_VERSION>${project.version}</PROJECT_VERSION>
                         </environmentVariables>
+                        <systemPropertyVariables>
+                            <quarkus.http.test-port>0</quarkus.http.test-port>
+                            <quarkus.lambda.mock-event-server.test-port>0</quarkus.lambda.mock-event-server.test-port>
+                            <quarkus.lambda.mock-event-server.dev-port>0</quarkus.lambda.mock-event-server.dev-port>
+                        </systemPropertyVariables>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -545,6 +550,11 @@
                     <configuration>
                         <trimStackTrace>false</trimStackTrace>
                         <useFile>false</useFile>
+                        <systemPropertyVariables>
+                            <quarkus.http.test-port>0</quarkus.http.test-port>
+                            <quarkus.lambda.mock-event-server.test-port>0</quarkus.lambda.mock-event-server.test-port>
+                            <quarkus.lambda.mock-event-server.dev-port>0</quarkus.lambda.mock-event-server.dev-port>
+                        </systemPropertyVariables>
                     </configuration>
                 </plugin>
                 <plugin>

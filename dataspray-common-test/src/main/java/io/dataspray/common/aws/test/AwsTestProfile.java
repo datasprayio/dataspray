@@ -10,6 +10,7 @@ public class AwsTestProfile extends CombinedTestProfile {
                 MockS3Client.TestProfile.class,
                 MockLambdaClient.TestProfile.class,
                 MockSqsClient.TestProfile.class,
+                MockFirehoseClient.TestProfile.class,
                 TestAwsCredentialsTestProfile.class);
     }
 }

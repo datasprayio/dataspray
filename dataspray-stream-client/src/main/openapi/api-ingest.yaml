@@ -60,6 +60,20 @@ paths:
             schema:
               type: string
               format: binary
+          text/plain:
+            schema:
+              type: string
+          application/json:
+            schema:
+              type: object
+          application/avro:
+            schema:
+              type: string
+              format: binary
+          application/protobuf:
+            schema:
+              type: string
+              format: binary
       responses:
         '200':
           description: Ok

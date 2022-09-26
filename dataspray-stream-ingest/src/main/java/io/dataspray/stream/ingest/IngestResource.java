@@ -3,6 +3,9 @@ package io.dataspray.stream.ingest;
 import com.google.common.base.Strings;
 import io.dataspray.lambda.resource.AbstractResource;
 import io.dataspray.store.BillingStore;
+import io.dataspray.store.BillingStore.StreamMetadata;
+import io.dataspray.store.CustomerLogger;
+import io.dataspray.store.EtlStore;
 import io.dataspray.store.QueueStore;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -19,13 +22,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+
 @Slf4j
 @ApplicationScoped
 public class IngestResource extends AbstractResource implements IngestApi {
     public static final String ETL_BUCKET_NAME = "io-dataspray-etl";
-    public static final String ETL_PARTITION_KEY_ACCOUNT = "_ds_acct";
-    public static final String ETL_PARTITION_KEY_TARGET = "_ds_trgt";
-    public static final String ETL_BUCKET_PREFIX = "/account/!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ACCOUNT + "}/target/!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TARGET + "}/YYYY/MM/dd/HH";
     /** Limited by SQS max message size */
     public static final int MESSAGE_MAX_BYTES = 256 * 1024;
     /** Can be supplied via header, query param */
@@ -38,17 +41,19 @@ public class IngestResource extends AbstractResource implements IngestApi {
     BillingStore billingStore;
     @Inject
     QueueStore queueStore;
+    @Inject
+    EtlStore etlStore;
+    @Inject
+    CustomerLogger customerLog;
 
     @Override
     @SneakyThrows
     public void message(String accountId, String targetId, InputStream messageInputStream) {
         // Billing
-        if (!billingStore.recordStreamEvent(
+        StreamMetadata streamMetadata = billingStore.recordStreamEvent(
                 accountId,
                 targetId,
-                getAuthKey())) {
-            throw new ClientErrorException(Response.Status.PAYMENT_REQUIRED);
-        }
+                getAuthKey());
 
         // Read message
         byte[] messageBytes = messageInputStream.readNBytes(MESSAGE_MAX_BYTES);
@@ -59,14 +64,20 @@ public class IngestResource extends AbstractResource implements IngestApi {
 
         // Submit message to queue for stream processing
         try {
-            queueStore.submit(accountId, targetId, messageBytes);
+            queueStore.submit(accountId, targetId, messageBytes, headers.getMediaType());
         } catch (QueueDoesNotExistException ex) {
             queueStore.createQueue(accountId, targetId);
-            queueStore.submit(accountId, targetId, messageBytes);
+            queueStore.submit(accountId, targetId, messageBytes, headers.getMediaType());
         }
 
         // Submit message to S3 for distributed processing
-        // TODO
+        if (streamMetadata.getRetentionOpt().isPresent()) {
+            if (APPLICATION_JSON_TYPE.equals(headers.getMediaType())) {
+                etlStore.putRecord(accountId, targetId, messageBytes, streamMetadata.getRetentionOpt().get());
+            } else {
+                customerLog.warn("Message for stream " + targetId + " requires " + APPLICATION_JSON + ", skipping ETL", accountId);
+            }
+        }
     }
 
     private Optional<String> getAuthKey() {
