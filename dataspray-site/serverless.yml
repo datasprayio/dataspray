@@ -5,7 +5,10 @@ dataspray:
     domainRedirects:
       www.dataspray.io: https://dataspray.io
     runtime: "nodejs16.x"
-    name: dataspray-site
+    name:
+      defaultLambda: dataspray-site-default
+      apiLambda: dataspray-site-api
+      imageLambda: dataspray-site-image
     bucketName: dataspray-site
     description: "DataSpray site"
     removeOldLambdaVersions: true
