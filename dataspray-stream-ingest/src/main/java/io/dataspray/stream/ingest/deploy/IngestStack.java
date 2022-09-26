@@ -30,8 +30,8 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 public class IngestStack extends LambdaBaseStack {
 
-    private final Bucket bucketEtl;
-    private final DeliveryStream firehose;
+    protected final Bucket bucketEtl;
+    protected final DeliveryStream firehose;
 
     public IngestStack(Construct parent) {
         super(parent, Options.builder()
@@ -49,12 +49,13 @@ public class IngestStack extends LambdaBaseStack {
                         .build()).collect(Collectors.toList()))
                 // Move objects to archive after inactivity to save costs
                 .intelligentTieringConfigurations(Arrays.stream(BillingStore.EtlRetention.values())
-                        .filter(retention -> retention.getExpirationInDays() >= 30)
+                        // Only makes sense for data stored for more than 4 months (migrated after 3)
+                        .filter(retention -> retention.getExpirationInDays() > 120)
                         .map(retention -> IntelligentTieringConfiguration.builder()
                                 .name(retention.name())
                                 .prefix(ETL_BUCKET_RETENTION_PREFIX_PREFIX + retention.name())
-                                .archiveAccessTierTime(Duration.days(30))
-                                .deepArchiveAccessTierTime(Duration.days(90))
+                                .archiveAccessTierTime(Duration.days(90))
+                                .deepArchiveAccessTierTime(Duration.days(180))
                                 .build()).collect(Collectors.toList()))
                 .build();
 
