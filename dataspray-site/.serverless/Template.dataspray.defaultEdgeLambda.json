@@ -1,7 +1,7 @@
 {
-  "name": "5b3zzay-vn1qy3",
-  "hash": "VveskgJu7QQSH1hD6KiNeVZIO/dWPVSRMlGXU4sGxpw=",
-  "description": "Default Lambda@Edge for Next CloudFront distribution",
+  "name": "dataspray-site-default",
+  "hash": "RqL+5BZvgknF4bMBd3SRUwHPV0gz88inEgXNqaE3iFA=",
+  "description": "DataSpray site",
   "memory": 512,
   "timeout": 10,
   "code": "/Users/matus/dev/dataspray/dataspray-site/.serverless_nextjs/default-lambda",
@@ -12,6 +12,6 @@
   "role": {
     "arn": "arn:aws:iam::750984813907:role/5b3zzay-iqghekf"
   },
-  "arn": "arn:aws:lambda:us-east-1:750984813907:function:5b3zzay-vn1qy3",
+  "arn": "arn:aws:lambda:us-east-1:750984813907:function:dataspray-site-default",
   "region": "us-east-1"
 }

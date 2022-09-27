@@ -5,8 +5,8 @@
   "subdomains": [
     {
       "domain": "www.dataspray.io",
-      "distributionId": "EB38YB3U4AO0D",
-      "url": "https://d20v4njhy0667e.cloudfront.net",
+      "distributionId": "E2B3OZ4W5779MU",
+      "url": "https://d2l8xubzfcahv3.cloudfront.net",
       "type": "awsCloudFront"
     }
   ],
