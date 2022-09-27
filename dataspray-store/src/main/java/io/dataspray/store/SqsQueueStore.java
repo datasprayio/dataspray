@@ -19,8 +19,9 @@ import java.util.Base64.Encoder;
 @Slf4j
 @ApplicationScoped
 public class SqsQueueStore implements QueueStore {
+    public static final String CUSTOMER_QUEUE_PREFIX = "customer-";
 
-    @ConfigProperty(name = "queue.region", defaultValue = "us-east-1")
+    @ConfigProperty(name = "queue.region")
     String awsRegion;
     @ConfigProperty(name = "aws.accountId")
     String awsAccountId;
@@ -73,6 +74,6 @@ public class SqsQueueStore implements QueueStore {
     }
 
     private String getFullQueueName(String accountId, String queueName) {
-        return "customer-" + accountId + "-" + queueName;
+        return CUSTOMER_QUEUE_PREFIX + accountId + "-" + queueName;
     }
 }

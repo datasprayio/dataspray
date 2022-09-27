@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Size;
+import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.kinesisfirehose.CfnDeliveryStream;
 import software.amazon.awscdk.services.kinesisfirehose.alpha.DeliveryStream;
 import software.amazon.awscdk.services.kinesisfirehose.destinations.alpha.Compression;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.dataspray.store.FirehoseS3AthenaEtlStore.*;
+import static io.dataspray.store.SqsQueueStore.CUSTOMER_QUEUE_PREFIX;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
@@ -38,12 +41,24 @@ public class IngestStack extends LambdaBaseStack {
                 .openapiYamlPath("target/openapi/api-ingest.yaml")
                 .build());
 
+        function.addToRolePolicy(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "sqs:SendMessage",
+                        "sqs:CreateQueue"))
+                .resources(ImmutableList.of(
+                        // ARN with queue name wildcard is supported:
+                        // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-basic-examples-of-iam-policies.html
+                        "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + CUSTOMER_QUEUE_PREFIX + "*"))
+                .build());
+
         bucketEtl = Bucket.Builder.create(this, "ingest-etl-bucket")
                 .bucketName(IngestResource.ETL_BUCKET_NAME)
                 .autoDeleteObjects(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 // Add different expiry for each retention prefix
                 .lifecycleRules(Arrays.stream(BillingStore.EtlRetention.values()).map(retention -> LifecycleRule.builder()
+                        .id(retention.name())
                         .expiration(Duration.days(retention.getExpirationInDays()))
                         .prefix(ETL_BUCKET_RETENTION_PREFIX + retention.name())
                         .build()).collect(Collectors.toList()))
