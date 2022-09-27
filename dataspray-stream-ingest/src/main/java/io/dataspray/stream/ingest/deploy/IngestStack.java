@@ -82,7 +82,7 @@ public class IngestStack extends LambdaBaseStack {
                         .compression(Compression.ZIP)
                         .dataOutputPrefix(ETL_BUCKET_PREFIX)
                         .errorOutputPrefix(ETL_BUCKET_ERROR_PREFIX)
-                        .logging(false)
+                        .logging(true)
                         .build()))
                 .build();
         // AWS CDK doesn't yet support some configuration properties; adding overrides here
