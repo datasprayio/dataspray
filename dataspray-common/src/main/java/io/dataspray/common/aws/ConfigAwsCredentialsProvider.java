@@ -5,9 +5,11 @@ package io.dataspray.common.aws;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSCredentialsProviderChain;
+import com.amazonaws.auth.AWSSessionCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.auth.SystemPropertiesCredentialsProvider;
@@ -15,8 +17,10 @@ import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Optional;
@@ -64,40 +68,81 @@ public class ConfigAwsCredentialsProvider {
      */
     public static class SdkAgnosticAwsCredentialsProvider implements AWSCredentialsProvider, AwsCredentialsProvider {
 
-        private final AWSCredentialsProvider provider;
+        private final Optional<AwsCredentialsProvider> providerV1Opt;
+        private final Optional<AWSCredentialsProvider> providerV2Opt;
+
+        public SdkAgnosticAwsCredentialsProvider(AwsCredentialsProvider provider) {
+            this.providerV1Opt = Optional.of(provider);
+            this.providerV2Opt = Optional.empty();
+        }
 
         public SdkAgnosticAwsCredentialsProvider(AWSCredentialsProvider provider) {
-
-            this.provider = provider;
+            this.providerV1Opt = Optional.empty();
+            this.providerV2Opt = Optional.of(provider);
         }
 
-        @Override
-        public AWSCredentials getCredentials() {
-            return provider.getCredentials();
-        }
-
-        @Override
-        public void refresh() {
-            provider.refresh();
+        public SdkAgnosticAwsCredentialsProvider(AwsCredentialsProvider providerV1, AWSCredentialsProvider providerV2) {
+            this.providerV1Opt = Optional.of(providerV1);
+            this.providerV2Opt = Optional.of(providerV2);
         }
 
         @Override
         public AwsCredentials resolveCredentials() {
-            AWSCredentials credentials = provider.getCredentials();
+            return providerV1Opt.map(AwsCredentialsProvider::resolveCredentials)
+                    .or(() -> providerV2Opt.map(AWSCredentialsProvider::getCredentials)
+                            .map(credentialsV2 -> {
+                                if (credentialsV2 instanceof AWSSessionCredentials) {
+                                    return AwsSessionCredentials.create(
+                                            credentialsV2.getAWSAccessKeyId(),
+                                            credentialsV2.getAWSSecretKey(),
+                                            ((AWSSessionCredentials) credentialsV2).getSessionToken());
+                                } else {
+                                    return new AwsCredentials() {
+                                        @Override
+                                        public String accessKeyId() {
+                                            return credentialsV2.getAWSAccessKeyId();
+                                        }
 
-            String awsAccessKeyId = credentials.getAWSAccessKeyId();
-            String awsSecretKey = credentials.getAWSSecretKey();
-            return new AwsCredentials() {
-                @Override
-                public String accessKeyId() {
-                    return awsAccessKeyId;
-                }
+                                        @Override
+                                        public String secretAccessKey() {
+                                            return credentialsV2.getAWSSecretKey();
+                                        }
+                                    };
+                                }
+                            }))
+                    .orElseGet(() -> AnonymousCredentialsProvider.create().resolveCredentials());
+        }
 
-                @Override
-                public String secretAccessKey() {
-                    return awsSecretKey;
-                }
-            };
+        @Override
+        public AWSCredentials getCredentials() {
+            return providerV2Opt.map(AWSCredentialsProvider::getCredentials)
+                    .or(() -> providerV1Opt.map(AwsCredentialsProvider::resolveCredentials)
+                            .map(credentialsV1 -> {
+                                if (credentialsV1 instanceof AwsSessionCredentials) {
+                                    return new BasicSessionCredentials(
+                                            credentialsV1.accessKeyId(),
+                                            credentialsV1.secretAccessKey(),
+                                            ((AwsSessionCredentials) credentialsV1).sessionToken());
+                                } else {
+                                    return new AWSCredentials() {
+                                        @Override
+                                        public String getAWSAccessKeyId() {
+                                            return credentialsV1.accessKeyId();
+                                        }
+
+                                        @Override
+                                        public String getAWSSecretKey() {
+                                            return credentialsV1.secretAccessKey();
+                                        }
+                                    };
+                                }
+                            }))
+                    .orElseGet(AnonymousAWSCredentials::new);
+        }
+
+        @Override
+        public void refresh() {
+            providerV2Opt.ifPresent(AWSCredentialsProvider::refresh);
         }
     }
 }

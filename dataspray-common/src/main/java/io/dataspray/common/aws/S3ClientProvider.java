@@ -64,19 +64,15 @@ public class S3ClientProvider {
     public S3Client getS3Client() {
         log.debug("Opening S3 v2 client on {}", serviceEndpointOpt);
         waitUntilPortOpen();
-
-        ApacheHttpClient.Builder httpClientBuilder = ApacheHttpClient.builder();
         S3ClientBuilder builder = S3Client.builder()
-                .credentialsProvider(awsCredentialsProviderSdk2)
-                .httpClientBuilder(httpClientBuilder);
-
+                .credentialsProvider(awsCredentialsProviderSdk2);
         serviceEndpointOpt.map(URI::create).ifPresent(builder::endpointOverride);
         productionRegionOpt.map(Region::of).ifPresent(builder::region);
-        dnsResolverToOpt.ifPresent(dnsResolverTo -> httpClientBuilder.dnsResolver(host -> {
-            log.trace("Resolving {}", host);
-            return new InetAddress[]{InetAddress.getByName(dnsResolverTo)};
-        }));
-
+        dnsResolverToOpt.ifPresent(dnsResolverTo -> builder.httpClientBuilder(ApacheHttpClient.builder()
+                .dnsResolver(host -> {
+                    log.trace("Resolving {}", host);
+                    return new InetAddress[]{InetAddress.getByName(dnsResolverTo)};
+                })));
         return builder.build();
     }
 

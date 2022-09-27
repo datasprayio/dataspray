@@ -4,9 +4,7 @@ package io.dataspray.common.aws;
 
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.SqsClientBuilder;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -22,12 +20,7 @@ public class SqsClientProvider {
     @Singleton
     public SqsClient getLambdaClient() {
         log.debug("Opening SQS v2 client");
-
-        ApacheHttpClient.Builder httpClientBuilder = ApacheHttpClient.builder();
-        SqsClientBuilder builder = SqsClient.builder()
-                .credentialsProvider(awsCredentialsProvider)
-                .httpClientBuilder(httpClientBuilder);
-
-        return builder.build();
+        return SqsClient.builder()
+                .credentialsProvider(awsCredentialsProvider).build();
     }
 }

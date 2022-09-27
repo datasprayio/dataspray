@@ -4,9 +4,7 @@ package io.dataspray.common.aws;
 
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
-import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -22,12 +20,8 @@ public class LambdaClientProvider {
     @Singleton
     public LambdaClient getLambdaClient() {
         log.debug("Opening Lambda v2 client");
-
-        ApacheHttpClient.Builder httpClientBuilder = ApacheHttpClient.builder();
-        LambdaClientBuilder builder = LambdaClient.builder()
+        return LambdaClient.builder()
                 .credentialsProvider(awsCredentialsProvider)
-                .httpClientBuilder(httpClientBuilder);
-
-        return builder.build();
+                .build();
     }
 }

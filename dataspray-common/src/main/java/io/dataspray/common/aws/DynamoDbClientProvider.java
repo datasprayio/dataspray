@@ -12,7 +12,6 @@ import io.dataspray.common.NetworkUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
@@ -46,14 +45,10 @@ public class DynamoDbClientProvider {
     public DynamoDbClient getDynamoDbClient() {
         log.debug("Opening Dynamo v2 client on {}", serviceEndpointOpt);
         waitUntilPortOpen();
-        ApacheHttpClient.Builder httpClientBuilder = ApacheHttpClient.builder();
         DynamoDbClientBuilder builder = DynamoDbClient.builder()
-                .credentialsProvider(awsCredentialsProviderSdk2)
-                .httpClientBuilder(httpClientBuilder);
-
+                .credentialsProvider(awsCredentialsProviderSdk2);
         serviceEndpointOpt.map(URI::create).ifPresent(builder::endpointOverride);
         productionRegionOpt.map(Region::of).ifPresent(builder::region);
-
         return builder.build();
     }
 
