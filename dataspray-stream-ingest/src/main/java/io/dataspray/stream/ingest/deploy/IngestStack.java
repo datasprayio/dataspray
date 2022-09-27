@@ -107,6 +107,13 @@ public class IngestStack extends LambdaBaseStack {
                 "ExtendedS3DestinationConfiguration.DynamicPartitioningConfiguration",
                 Map.of("Enabled", Boolean.TRUE, "RetryOptions", Map.of(
                         "DurationInSeconds", 300L)));
+        function.addToRolePolicy(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "firehose:PutRecord"))
+                .resources(ImmutableList.of(
+                        "arn:aws:firehose:" + getRegion() + ":" + getAccount() + ":deliverystream/" + FIREHOSE_STREAM_NAME))
+                .build());
     }
 
     public static void main(String[] args) {
