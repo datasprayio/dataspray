@@ -13,17 +13,13 @@ import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.auth.SystemPropertiesCredentialsProvider;
 import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import io.quarkus.arc.DefaultBean;
-import io.quarkus.arc.Priority;
-import io.quarkus.arc.properties.IfBuildProperty;
-import io.quarkus.arc.properties.UnlessBuildProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Alternative;
+import java.util.Optional;
 
 /**
  * Extends AWS credentials provider to:
@@ -37,60 +33,30 @@ import javax.enterprise.inject.Alternative;
 public class ConfigAwsCredentialsProvider {
 
     /**
-     * SDK V1 Credentials provider
+     * Underlying version-agnostic credentials provider.
      */
     @ApplicationScoped
-    AWSCredentialsProvider getCredentialsProviderSdk1(SdkAgnosticAwsCredentialsProvider agnosticProvider) {
-        return agnosticProvider;
-    }
+    SdkAgnosticAwsCredentialsProvider getCredentialsProviderAgnostic(
+            @ConfigProperty(name = "aws.credentials.anonymous", defaultValue = "false") boolean isAnonymous,
+            @ConfigProperty(name = "aws.credentials.accessKey") Optional<String> awsAccessKeyOpt,
+            @ConfigProperty(name = "aws.credentials.secretKey") Optional<String> awsSecretKeyOpt) {
 
-    /**
-     * SDK V2 Credentials provider
-     */
-    @ApplicationScoped
-    AwsCredentialsProvider getCredentialsProviderSdk2(SdkAgnosticAwsCredentialsProvider agnosticProvider) {
-        return agnosticProvider;
-    }
-
-    /**
-     * Underlying version-agnostic credentials provider using default chain.
-     */
-    @DefaultBean
-    @ApplicationScoped
-    SdkAgnosticAwsCredentialsProvider getCredentialsProviderAgnosticConfig() {
-        return new SdkAgnosticAwsCredentialsProvider(new AWSCredentialsProviderChain(
-                new EnvironmentVariableCredentialsProvider(),
-                new SystemPropertiesCredentialsProvider(),
-                new ProfileCredentialsProvider(),
-                WebIdentityTokenCredentialsProvider.create(),
-                new EC2ContainerCredentialsProviderWrapper()));
-    }
-
-    /**
-     * Underlying version-agnostic credentials provider using Quarkus supplied access and secret key.
-     */
-    @Alternative
-    @Priority(1)
-    @ApplicationScoped
-    @UnlessBuildProperty(name = "aws.credentials.accessKey", stringValue = "", enableIfMissing = false)
-    @UnlessBuildProperty(name = "aws.credentials.secretKey", stringValue = "", enableIfMissing = false)
-    @UnlessBuildProperty(name = "aws.credentials.anonymous", stringValue = "true", enableIfMissing = true)
-    SdkAgnosticAwsCredentialsProvider getCredentialsProviderAgnosticConfig(
-            @ConfigProperty(name = "aws.credentials.accessKey") String awsAccessKey,
-            @ConfigProperty(name = "aws.credentials.secretKey") String awsSecretKey) {
-        return new SdkAgnosticAwsCredentialsProvider(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                awsAccessKey, awsSecretKey)));
-    }
-
-    /**
-     * Underlying version-agnostic credentials provider using anonymous credentials.
-     */
-    @Alternative
-    @Priority(1)
-    @ApplicationScoped
-    @IfBuildProperty(name = "aws.credentials.anonymous", stringValue = "true", enableIfMissing = false)
-    SdkAgnosticAwsCredentialsProvider getCredentialsProviderAgnosticAnonymous() {
-        return new SdkAgnosticAwsCredentialsProvider(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials()));
+        if (isAnonymous) {
+            log.debug("Using anonymous AWS credentials");
+            return new SdkAgnosticAwsCredentialsProvider(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials()));
+        } else if (awsAccessKeyOpt.isPresent() && awsSecretKeyOpt.isPresent()) {
+            log.debug("Using config provided AWS key pair");
+            return new SdkAgnosticAwsCredentialsProvider(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                    awsAccessKeyOpt.get(), awsSecretKeyOpt.get())));
+        } else {
+            log.debug("Using default chain for AWS Credentials");
+            return new SdkAgnosticAwsCredentialsProvider(new AWSCredentialsProviderChain(
+                    new EnvironmentVariableCredentialsProvider(),
+                    new SystemPropertiesCredentialsProvider(),
+                    new ProfileCredentialsProvider(),
+                    WebIdentityTokenCredentialsProvider.create(),
+                    new EC2ContainerCredentialsProviderWrapper()));
+        }
     }
 
     /**
