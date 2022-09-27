@@ -48,8 +48,8 @@ public class ControlResource extends AbstractResource implements ControlApi {
     private static final int CODE_MAX_CONCURRENCY = 100;
     private static final long CODE_MAX_SIZE_IN_BYTES = 50 * 1024 * 1024;
     public static final String CODE_BUCKET_NAME = "io-dataspray-code-upload";
-    private static final String CODE_KEY_PREFIX = "user/";
-    private static final String FUN_NAME_PREFIX = "user-";
+    private static final String CODE_KEY_PREFIX = "customer/";
+    public static final String FUN_NAME_PREFIX = "customer-";
 
     @Inject
     LambdaClient lambdaClient;

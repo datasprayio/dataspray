@@ -33,11 +33,26 @@ public class ControlStack extends LambdaBaseStack {
                         LifecycleRule.builder()
                                 .expiration(Duration.days(1)).build()))
                 .build();
+        function.addToRolePolicy(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "s3:PutObject",
+                        "s3:GetObject"))
+                .resources(ImmutableList.of(bucketCode.getBucketArn()))
+                .build());
+
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
-                .actions(ImmutableList.of("s3:PutObject"))
-                .resources(ImmutableList.of(bucketCode.getBucketArn()))
+                .actions(ImmutableList.of(
+                        "lambda:CreateFunction",
+                        "lambda:UpdateFunctionCode",
+                        "lambda:GetFunctionConcurrency",
+                        "lambda:GetFunction",
+                        "lambda:DeleteFunction",
+                        "lambda:PutFunctionConcurrency"))
+                .resources(ImmutableList.of(
+                        "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + ControlResource.FUN_NAME_PREFIX + "*"))
                 .build());
     }
 
