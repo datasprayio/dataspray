@@ -17,7 +17,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <junit.version>5.8.2</junit.version>
         <projectlombok.version>1.18.22</projectlombok.version>
-        <quarkus.version>2.12.2.Final</quarkus.version>
+        <quarkus.version>2.13.0.Final</quarkus.version>
         <node.version>v16.15.0</node.version>
         <pnpm.version>v7.5.0</pnpm.version>
         <slf4j.version>1.7.25</slf4j.version>

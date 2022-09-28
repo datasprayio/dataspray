@@ -125,6 +125,33 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-autocompletion-script</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <executable>java</executable>
+                    <arguments>
+                        <argument>-Dpicocli.autocomplete.systemExitOnError</argument>
+                        <argument>-cp</argument>
+                        <classpath/>
+                        <argument>picocli.AutoComplete</argument>
+                        <!-- overwrite if exists -->
+                        <argument>--force</argument>
+                        <argument>--completionScript</argument>
+                        <argument>${project.build.directory}/dst-completion.bash</argument>
+                        <argument>${mainClass}</argument>
+                    </arguments>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.skife.maven</groupId>
                 <artifactId>really-executable-jar-maven-plugin</artifactId>
                 <configuration>
