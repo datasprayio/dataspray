@@ -38,7 +38,7 @@ public class ControlStack extends LambdaBaseStack {
                 .actions(ImmutableList.of(
                         "s3:PutObject",
                         "s3:GetObject"))
-                .resources(ImmutableList.of(bucketCode.getBucketArn()))
+                .resources(ImmutableList.of(bucketCode.getBucketArn() + "/*"))
                 .build());
 
 
@@ -52,6 +52,9 @@ public class ControlStack extends LambdaBaseStack {
                         "lambda:DeleteFunction",
                         "lambda:PutFunctionConcurrency"))
                 .resources(ImmutableList.of(
+
+                        "arn:aws:lambda:us-east-1:750984813907:function:customer-*",
+                        "arn:aws:lambda:us-east-1:750984813907:function:customer-*",
                         "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + ControlResource.FUN_NAME_PREFIX + "*"))
                 .build());
     }
