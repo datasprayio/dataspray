@@ -1,11 +1,11 @@
-import type { AppProps } from 'next/app';
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
-import Head from 'next/head';
-import CssBaseline from '@mui/material/CssBaseline';
 import { createTheme, ThemeProvider, useMediaQuery } from '@mui/material';
+import CssBaseline from '@mui/material/CssBaseline';
+import type { AppProps } from 'next/app';
+import Head from 'next/head';
 import { useMemo } from 'react';
 
 function MyApp({ Component, pageProps }: AppProps) {

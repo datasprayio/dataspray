@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+        Do not modify this file, prefer to modify your pom.xml file instead.
+        If you really need to make modifications, see .gitignore how to exclude
+        this file from being automatically replaced.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -126,6 +131,8 @@
                 </configuration>
             </plugin>
             {{^processor.jsonStreams.empty}}
+
+            <!-- Mapping json schema(s) to Java POJOs -->
             <plugin>
                 <groupId>org.jsonschema2pojo</groupId>
                 <artifactId>jsonschema2pojo-maven-plugin</artifactId>
@@ -171,6 +178,8 @@
             </plugin>
             {{/processor.jsonStreams.empty}}
             {{^processor.protobufStreams.empty}}
+
+            <!-- Mapping Protobuf schema(s) to Java POJOs -->
             <plugin>
                 <groupId>org.xolstice.maven.plugins</groupId>
                 <artifactId>protobuf-maven-plugin</artifactId>
@@ -197,6 +206,8 @@
             </plugin>
             {{/processor.protobufStreams.empty}}
             {{^processor.avroStreams.empty}}
+
+            <!-- Mapping Avro schema(s) to Java POJOs -->
             <plugin>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro-maven-plugin</artifactId>
@@ -225,6 +236,25 @@
                 </executions>
             </plugin>
             {{/processor.avroStreams.empty}}
+
+            <!-- Create final uber jar for upload -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                    <finalName>{{{processor.nameDir}}}</finalName>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

@@ -12,6 +12,8 @@
         </encoder>
     </appender>
 
+    <logger name="org.eclipse.jgit.internal.storage.file.FileSnapshot" level="INFO"/>
+
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
     </root>

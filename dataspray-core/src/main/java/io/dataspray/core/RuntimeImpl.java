@@ -55,8 +55,8 @@ public class RuntimeImpl implements Runtime {
     private void deployStream(String apiKey, Project project, JavaProcessor processor) {
         // First get S3 upload presigned url
         Path processorDir = CodegenImpl.getProcessorDir(project, processor.getNameDir());
-        File codeZipFile = processorDir.resolve(Path.of("target", processor.getNameDir() + ".zip")).toFile();
-        checkState(!codeZipFile.isFile(), "Missing code zip file, forgot to install? Expecting: %s", codeZipFile.getPath());
+        File codeZipFile = processorDir.resolve(Path.of("target", processor.getNameDir() + ".jar")).toFile();
+        checkState(codeZipFile.isFile(), "Missing code zip file, forgot to install? Expecting: %s", codeZipFile.getPath());
         ControlApi controlApi = streamApi.control(apiKey);
         UploadCodeResponse uploadCodeResponse = controlApi.uploadCode(new UploadCodeRequest()
                 .taskId(processor.getNameDir())

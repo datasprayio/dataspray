@@ -31,14 +31,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystem;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 @Slf4j
 @ApplicationScoped
@@ -244,56 +245,69 @@ public class CodegenImpl implements Codegen {
     }
 
     @SneakyThrows
-    private void applyTemplate(Project project, TemplateFiles files, Path destination, Optional<Long> maxDepthOpt, DatasprayContext context) {
-        Set<Path> trackedFiles = Sets.newHashSet(fileTracker.getTrackedFiles(project, Optional.of(destination), maxDepthOpt));
+    private void applyTemplate(Project project, TemplateFiles files, Path absoluteTemplatePath, Optional<Long> maxDepthOpt, DatasprayContext context) {
+        Set<Path> trackedFiles = Sets.newHashSet(fileTracker.getTrackedFiles(project, Optional.of(absoluteTemplatePath), maxDepthOpt));
         files.stream().forEach(item -> {
             if (maxDepthOpt.isPresent() && (item.getRelativePath().getNameCount() - 1) > maxDepthOpt.get()) {
                 return;
             }
-            String fileName = item.getRelativePath().getFileName().toString();
-            boolean isSample = fileName.endsWith(MUSTACHE_FILE_EXTENSION_SAMPLE);
-            if (isSample || fileName.endsWith(MUSTACHE_FILE_EXTENSION_TEMPLATE)) {
-                Optional<ExpandedFile> expandedFileOpt = expandFile(project, fileName, context);
+            String templateFilename = item.getRelativePath().getFileName().toString();
+            boolean isSample = templateFilename.endsWith(MUSTACHE_FILE_EXTENSION_SAMPLE);
+            if (isSample || templateFilename.endsWith(MUSTACHE_FILE_EXTENSION_TEMPLATE)) {
+                Optional<ExpandedFile> expandedFileOpt = expandPath(project, item.getRelativePath(), context);
 
                 // Don't create file if expanding template evaluates to empty filename
-                // Don't replace sample files previously created
-                if (!expandedFileOpt.isPresent()
-                        || (isSample && expandedFileOpt.get().getPath().toFile().exists())) {
+                if (!expandedFileOpt.isPresent()) {
+                    log.trace("Skipping creating template as the template indicated file should not be created {}", item.getRelativePath());
                     return;
                 }
 
-                Path localDestination = destination.resolve(expandedFileOpt.get().getPath());
-                String expandedFileNameWithoutSuffix = expandedFileOpt.get().getFilename()
+                // Retrieve final filename by stripping mustache suffix
+                String filenameWithoutSuffix = expandedFileOpt.get().getFilename()
                         .substring(0, expandedFileOpt.get().getFilename().length()
                                 - (isSample ? MUSTACHE_FILE_EXTENSION_SAMPLE : MUSTACHE_FILE_EXTENSION_TEMPLATE).length());
-                Path localFile = localDestination.resolve(expandedFileNameWithoutSuffix);
+
+                // Retrieve final location of file of project
+                Path absoluteFilePath = absoluteTemplatePath
+                        .resolve(expandedFileOpt.get().getPath())
+                        .resolve(filenameWithoutSuffix);
+                Path projectToFilePath = project.getPath().relativize(absoluteFilePath);
+
+                // Throw if its a link, directory or something else
+                boolean fileExists = Files.exists(absoluteFilePath, LinkOption.NOFOLLOW_LINKS);
+                if (fileExists && !Files.isRegularFile(absoluteFilePath, LinkOption.NOFOLLOW_LINKS)) {
+                    throw new RuntimeException("Cannot create template file, not a regular file in its place: " + projectToFilePath);
+                }
+
                 if (!isSample) {
-                    Path relativeFilePath = expandedFileOpt.get().getPath().resolve(expandedFileNameWithoutSuffix);
+                    // Non-sample files are overwritten every time unless user explicitly excluded the file from gitignore
                     // Check if file was previously tracked
-                    if (!trackedFiles.remove(relativeFilePath)) {
+                    if (!trackedFiles.remove(projectToFilePath)) {
                         // If not, attempt to track it now
-                        if (!fileTracker.trackFile(project, relativeFilePath)) {
-                            log.debug("Skipping file overriden by user {}", fileName);
+                        if (!fileTracker.trackFile(project, projectToFilePath)) {
+                            log.trace("Skipping creating template file overriden by user {}", projectToFilePath);
                             return;
                         } else {
-                            log.debug("Creating generated file {}", fileName);
+                            log.debug("Creating template file {}", projectToFilePath);
                         }
                     } else {
-                        log.debug("Overwriting generated file {}", fileName);
+                        log.debug("Overwriting previously generated file {}", projectToFilePath);
                     }
                 } else {
                     // Sample files are not tracked using Git tracking, they are simply created if they don't exist.
                     // If they exist, it's assumed the user may have modified it for their own purposes.
-                    if (localFile.toFile().exists()) {
-                        log.debug("Skipping sample file which already exists {}", fileName);
+                    if (fileExists) {
+                        log.trace("Skipping creating sample file which already exists {}", projectToFilePath);
                         return;
                     }
                 }
-                runMustache(item, localFile, context);
-            } else if (fileName.endsWith(MUSTACHE_FILE_EXTENSION_INCLUDE)) {
+
+                runMustache(item, absoluteFilePath, context);
+            } else if (templateFilename.endsWith(MUSTACHE_FILE_EXTENSION_INCLUDE)) {
                 // Skip sub-templates
+                log.trace("Skipping sub template files {}", item.getRelativePath());
             } else {
-                log.warn("Skipping non-mustache file {}", fileName);
+                log.warn("Skipping unexpected non-template file {}", item.getRelativePath());
             }
         });
         // Remove files that were not generated this round but previously most likely by older template
@@ -347,27 +361,48 @@ public class CodegenImpl implements Codegen {
      *
      * A file may also expand to empty in some mustache conditions which indicates we should not create this file.
      */
-    private Optional<ExpandedFile> expandFile(Project project, String templatePath, DatasprayContext parentContext) {
+    private Optional<ExpandedFile> expandPath(Project project, Path templatePath, DatasprayContext parentContext) {
+        Path expandedPath = Path.of(".");
+        for (Path pathName : templatePath.normalize()) {
+            Optional<Path> expandedName = expandName(project, pathName, parentContext);
+            if (expandedName.isEmpty()) {
+                return Optional.empty();
+            }
+            expandedPath = expandedPath.resolve(expandedName.get());
+        }
+        return Optional.of(expandedPath)
+                .map(Path::normalize)
+                .filter(Predicate.not(Path.of("")::equals))
+                .map(p -> new ExpandedFile(
+                        Optional.ofNullable(p.getParent()).orElse(Path.of("")),
+                        p.getFileName().toString()));
+    }
+
+    /**
+     * Expand a single file/directory using templates. This may result in a path, filename or nothing.
+     */
+    private Optional<Path> expandName(Project project, Path path, DatasprayContext parentContext) {
         // Since a filename cannot contain '/', use underscores '_' instead
-        templatePath = templatePath.replaceAll("\\{\\{_", "{{/");
-        String generatedPath = runMustache(templatePath, contextBuilder.createForFilename(parentContext, project), Optional.empty());
+        String pathName = path.toString().replaceAll("\\{\\{_", "{{/");
+        String generatedPath = runMustache(pathName, contextBuilder.createForFilename(parentContext, project), Optional.empty());
         if (Strings.isNullOrEmpty(generatedPath)) {
             return Optional.empty();
         }
+        Path expandedPath = Path.of(".");
         List<String> levels = Lists.newArrayList();
         StringBuilder levelBuilder = new StringBuilder();
         for (int i = 0; i < generatedPath.length(); i++) {
             char currentChar = generatedPath.charAt(i);
             if (currentChar == File.separatorChar) {
-                levels.add(levelBuilder.toString());
+                expandedPath = expandedPath.resolve(levelBuilder.toString());
                 levelBuilder = new StringBuilder();
             } else {
                 levelBuilder.append(currentChar);
             }
         }
-        return Optional.of(new ExpandedFile(
-                Path.of(".", levels.toArray(String[]::new)).normalize(),
-                levelBuilder.toString()));
+        expandedPath = expandedPath.resolve(levelBuilder.toString()).normalize();
+        return Optional.of(expandedPath)
+                .filter(Predicate.not(Path.of("")::equals));
     }
 
     @Value
@@ -375,6 +410,4 @@ public class CodegenImpl implements Codegen {
         Path path;
         String filename;
     }
-
-    private volatile Optional<FileSystem> templateFilesystemOpt = Optional.empty();
 }
