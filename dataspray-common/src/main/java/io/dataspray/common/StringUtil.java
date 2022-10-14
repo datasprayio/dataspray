@@ -1,4 +1,4 @@
-package io.dataspray.core.util;
+package io.dataspray.common;
 
 public class StringUtil {
 

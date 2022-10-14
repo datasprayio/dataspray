@@ -2,7 +2,7 @@ package io.dataspray.core.definition.model;
 
 import com.google.common.collect.Sets;
 import com.jcabi.aspects.Cacheable;
-import io.dataspray.core.util.StringUtil;
+import io.dataspray.common.StringUtil;
 import lombok.AllArgsConstructor;
 import lombok.Setter;
 import lombok.Value;

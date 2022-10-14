@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.gson.annotations.SerializedName;
 import com.jcabi.aspects.Cacheable;
-import io.dataspray.core.util.StringUtil;
+import io.dataspray.common.StringUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;

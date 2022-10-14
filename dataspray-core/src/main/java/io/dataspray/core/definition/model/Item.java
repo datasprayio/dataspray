@@ -1,7 +1,7 @@
 package io.dataspray.core.definition.model;
 
 import com.jcabi.aspects.Cacheable;
-import io.dataspray.core.util.StringUtil;
+import io.dataspray.common.StringUtil;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;

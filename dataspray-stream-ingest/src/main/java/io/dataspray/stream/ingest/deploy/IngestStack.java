@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.dataspray.store.FirehoseS3AthenaEtlStore.*;
-import static io.dataspray.store.SqsQueueStore.CUSTOMER_QUEUE_PREFIX;
+import static io.dataspray.store.SqsQueueStore.CUSTOMER_QUEUE_WILDCARD;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
@@ -47,9 +47,7 @@ public class IngestStack extends LambdaBaseStack {
                         "sqs:SendMessage",
                         "sqs:CreateQueue"))
                 .resources(ImmutableList.of(
-                        // ARN with queue name wildcard is supported:
-                        // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-basic-examples-of-iam-policies.html
-                        "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + CUSTOMER_QUEUE_PREFIX + "*"))
+                        "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + CUSTOMER_QUEUE_WILDCARD))
                 .build());
 
         bucketEtl = Bucket.Builder.create(this, "ingest-etl-bucket")

@@ -45,11 +45,16 @@ components:
       required:
         - taskId
         - codeUrl
+        - inputs
       properties:
         taskId:
           type: string
         codeUrl:
           type: string
+        inputQueueNames:
+          type: array
+          items:
+            type: string
         runtime:
           type: string
           # Subset of software.amazon.awssdk.services.lambda.model.Runtime

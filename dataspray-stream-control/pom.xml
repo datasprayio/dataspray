@@ -36,6 +36,10 @@
         </dependency>
         <dependency>
             <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-store</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dataspray</groupId>
             <artifactId>dataspray-stream-client</artifactId>
             <scope>test</scope>
         </dependency>

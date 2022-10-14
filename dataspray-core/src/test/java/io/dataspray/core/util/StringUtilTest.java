@@ -1,5 +1,6 @@
 package io.dataspray.core.util;
 
+import io.dataspray.common.StringUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 

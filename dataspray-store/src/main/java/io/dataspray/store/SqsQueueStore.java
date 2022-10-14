@@ -7,7 +7,9 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
 import software.amazon.awssdk.services.sqs.model.CreateQueueResponse;
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
+import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -15,16 +17,21 @@ import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 import java.util.Base64;
 import java.util.Base64.Encoder;
+import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @ApplicationScoped
 public class SqsQueueStore implements QueueStore {
     public static final String CUSTOMER_QUEUE_PREFIX = "customer-";
+    // ARN with queue name wildcard is supported:
+    // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-basic-examples-of-iam-policies.html
+    public static final String CUSTOMER_QUEUE_WILDCARD = CUSTOMER_QUEUE_PREFIX + "*";
 
-    @ConfigProperty(name = "queue.region")
-    String awsRegion;
     @ConfigProperty(name = "aws.accountId")
     String awsAccountId;
+    @ConfigProperty(name = "aws.region")
+    String awsRegion;
 
     @Inject
     SqsClient sqsClient;
@@ -53,27 +60,40 @@ public class SqsQueueStore implements QueueStore {
         }
 
         sqsClient.sendMessage(SendMessageRequest.builder()
-                .queueUrl(getQueueUrl(accountId, queueName))
+                .queueUrl(getAwsQueueUrl(accountId, queueName))
                 .messageBody(messageStr)
                 .build());
     }
 
     @Override
+    public Optional<Map<QueueAttributeName, String>> queueAttributes(String accountId, String queueName, QueueAttributeName... fetchAttributes) {
+        try {
+            return Optional.of(sqsClient.getQueueAttributes(GetQueueAttributesRequest.builder()
+                    .queueUrl(getAwsQueueUrl(accountId, queueName))
+                    .attributeNames(fetchAttributes)
+                    .build()).attributes());
+        } catch (QueueDoesNotExistException ex) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
     public void createQueue(String accountId, String queueName) {
         CreateQueueResponse queueResponse = sqsClient.createQueue(CreateQueueRequest.builder()
-                .queueName(getFullQueueName(accountId, queueName))
+                .queueName(getAwsQueueName(accountId, queueName))
                 .attributes(ImmutableMap.of(
                         QueueAttributeName.MESSAGE_RETENTION_PERIOD, String.valueOf(14 * 24 * 60 * 60)))
                 .build());
     }
 
-    public String getQueueUrl(String accountId, String queueName) {
+    public String getAwsQueueUrl(String accountId, String queueName) {
         return "https://sqs." + awsRegion + ".amazonaws.com/"
                 + awsAccountId + "/"
-                + getFullQueueName(accountId, queueName);
+                + getAwsQueueName(accountId, queueName);
     }
 
-    private String getFullQueueName(String accountId, String queueName) {
+    @Override
+    public String getAwsQueueName(String accountId, String queueName) {
         return CUSTOMER_QUEUE_PREFIX + accountId + "-" + queueName;
     }
 }

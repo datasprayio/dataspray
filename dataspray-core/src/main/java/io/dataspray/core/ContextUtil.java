@@ -4,7 +4,7 @@ import com.google.common.base.Strings;
 import com.samskivert.mustache.Mustache.CustomContext;
 import com.samskivert.mustache.Mustache.Lambda;
 import com.samskivert.mustache.Template;
-import io.dataspray.core.util.StringUtil;
+import io.dataspray.common.StringUtil;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.io.IOException;

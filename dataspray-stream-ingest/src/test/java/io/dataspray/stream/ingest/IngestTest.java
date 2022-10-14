@@ -83,7 +83,7 @@ public class IngestTest {
 
         // Assert stream processing
         List<Message> messages = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(sqsQueueStore.getQueueUrl(LimitlessBillingStore.ACCOUNT_ID, queueName))
+                .queueUrl(sqsQueueStore.getAwsQueueUrl(LimitlessBillingStore.ACCOUNT_ID, queueName))
                 .maxNumberOfMessages(10).build()).messages();
         assertEquals(1, messages.size());
         assertEquals(bodyJsonPretty, messages.get(0).body());
