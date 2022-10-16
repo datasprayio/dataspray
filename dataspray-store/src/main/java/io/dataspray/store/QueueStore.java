@@ -17,4 +17,6 @@ public interface QueueStore {
 
     /** Converts user supplied queue name to AWS queue name */
     String getAwsQueueName(String accountId, String queueName);
+
+    Optional<String> extractQueueNameFromAwsQueueName(String accountId, String awsQueueName);
 }

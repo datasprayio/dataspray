@@ -1,10 +1,12 @@
 package io.dataspray.core;
 
 import io.dataspray.core.definition.model.JavaProcessor;
+import io.dataspray.core.definition.model.StreamLink;
 import io.dataspray.stream.client.StreamApi;
 import io.dataspray.stream.control.client.ControlApi;
 import io.dataspray.stream.control.client.model.DeployRequest;
 import io.dataspray.stream.control.client.model.TaskStatus;
+import io.dataspray.stream.control.client.model.TaskVersion;
 import io.dataspray.stream.control.client.model.UploadCodeRequest;
 import io.dataspray.stream.control.client.model.UploadCodeResponse;
 import lombok.SneakyThrows;
@@ -17,6 +19,7 @@ import javax.inject.Inject;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Iterator;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -67,12 +70,16 @@ public class RuntimeImpl implements Runtime {
         streamApi.uploadCode(uploadCodeResponse.getPresignedUrl(), codeZipFile);
 
         // Initiate deployment
-        TaskStatus deployStatus = controlApi.deploy(new DeployRequest()
-                .taskId(taskId)
+        TaskVersion deployedVersion = controlApi.deployVersion(taskId, new DeployRequest()
                 .runtime(DeployRequest.RuntimeEnum.JAVA11)
+                .inputQueueNames(processor.getInputStreams().stream()
+                        .map(StreamLink::getStreamName)
+                        .collect(Collectors.toList()))
                 .codeUrl(uploadCodeResponse.getCodeUrl()));
 
-        printStatus(deployStatus);
+        TaskStatus taskStatus = controlApi.activateVersion(taskId, deployedVersion.getVersion());
+
+        printStatus(taskStatus);
     }
 
     private String getCommitHash(Project project) throws GitAPIException {

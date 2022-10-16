@@ -96,4 +96,12 @@ public class SqsQueueStore implements QueueStore {
     public String getAwsQueueName(String accountId, String queueName) {
         return CUSTOMER_QUEUE_PREFIX + accountId + "-" + queueName;
     }
+
+    @Override
+    public Optional<String> extractQueueNameFromAwsQueueName(String accountId, String awsQueueName) {
+        String prefix = CUSTOMER_QUEUE_PREFIX + accountId + "-";
+        return awsQueueName.startsWith(prefix)
+                ? Optional.of(awsQueueName.substring(prefix.length()))
+                : Optional.empty();
+    }
 }

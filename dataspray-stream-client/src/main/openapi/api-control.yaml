@@ -43,12 +43,9 @@ components:
     DeployRequest:
       type: object
       required:
-        - taskId
         - codeUrl
-        - inputs
+        - inputQueueNames
       properties:
-        taskId:
-          type: string
         codeUrl:
           type: string
         inputQueueNames:
@@ -65,11 +62,35 @@ components:
             - PYTHON3_9
             - GO1_X
             - RUBY2_7
-    UpdateRequest:
+    TaskVersions:
       type: object
+      required:
+        - versions
       properties:
-        codeUrl:
+        activeVersion:
           type: string
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskVersion'
+    TaskVersion:
+      type: object
+      required:
+        - taskId
+        - version
+        - description
+        - inputQueueNames
+      properties:
+        taskId:
+          type: string
+        version:
+          type: string
+        description:
+          type: string
+        inputQueueNames:
+          type: array
+          items:
+            type: string
     TaskStatuses:
       type: object
       required:
@@ -129,23 +150,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/UploadCodeResponse'
 
-  /v1/control/deploy:
-    post:
-      operationId: deploy
-      tags: [ Control ]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DeployRequest'
-      responses:
-        '200':
-          description: Ok
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TaskStatus'
   /v1/control/status:
     get:
       operationId: statusAll
@@ -174,9 +178,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskStatus'
-  /v1/control/task/{taskId}/update/:
+  /v1/control/task/{taskId}/deploy:
     patch:
-      operationId: update
+      operationId: deployVersion
       tags: [ Control ]
       parameters:
         - name: taskId
@@ -189,7 +193,46 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateRequest'
+              $ref: '#/components/schemas/DeployRequest'
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskVersion'
+  /v1/control/task/{taskId}/versions:
+    get:
+      operationId: getVersions
+      tags: [ Control ]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskVersions'
+  /v1/control/task/{taskId}/activate:
+    patch:
+      operationId: activateVersion
+      tags: [ Control ]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Ok
@@ -197,7 +240,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskStatus'
-  /v1/control/task/{taskId}/pause/:
+  /v1/control/task/{taskId}/pause:
     delete:
       operationId: pause
       tags: [ Control ]
@@ -214,7 +257,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskStatus'
-  /v1/control/task/{taskId}/resume/:
+  /v1/control/task/{taskId}/resume:
     delete:
       operationId: resume
       tags: [ Control ]
@@ -231,7 +274,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskStatus'
-  /v1/control/task/{taskId}/delete/:
+  /v1/control/task/{taskId}/delete:
     delete:
       operationId: delete
       tags: [ Control ]
