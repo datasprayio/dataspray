@@ -98,7 +98,9 @@ public class ControlResource extends AbstractResource implements ControlApi {
 
     @Override
     public TaskStatuses statusAll() {
-        return null;
+        return new TaskStatuses(deployer.statusAll(customerId).stream()
+                .map(status -> toTaskStatus(status.getTaskId(), Optional.of(status)))
+                .collect(Collectors.toList()));
     }
 
     @Override
@@ -108,7 +110,10 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     private TaskStatus getStatus(String customerId, String taskId) {
-        Optional<Status> statusOpt = deployer.status(customerId, taskId);
+        return toTaskStatus(taskId, deployer.status(customerId, taskId));
+    }
+
+    private TaskStatus toTaskStatus(String taskId, Optional<Status> statusOpt) {
         return TaskStatus.builder()
                 .taskId(taskId)
                 .status(statusOpt.map(Status::isActive)

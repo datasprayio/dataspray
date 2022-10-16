@@ -12,20 +12,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.iam.IamClient;
 import software.amazon.awssdk.services.iam.model.AttachRolePolicyRequest;
-import software.amazon.awssdk.services.iam.model.AttachRolePolicyResponse;
 import software.amazon.awssdk.services.iam.model.CreatePolicyRequest;
 import software.amazon.awssdk.services.iam.model.CreatePolicyResponse;
 import software.amazon.awssdk.services.iam.model.CreateRoleRequest;
-import software.amazon.awssdk.services.iam.model.CreateRoleResponse;
 import software.amazon.awssdk.services.iam.model.GetPolicyRequest;
 import software.amazon.awssdk.services.iam.model.GetRolePolicyRequest;
 import software.amazon.awssdk.services.iam.model.GetRoleRequest;
 import software.amazon.awssdk.services.iam.model.NoSuchEntityException;
 import software.amazon.awssdk.services.iam.model.Policy;
-import software.amazon.awssdk.services.iam.model.Role;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.model.AddPermissionRequest;
 import software.amazon.awssdk.services.lambda.model.Architecture;
+import software.amazon.awssdk.services.lambda.model.CreateAliasRequest;
 import software.amazon.awssdk.services.lambda.model.CreateEventSourceMappingRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.DeleteFunctionRequest;
@@ -55,6 +53,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.InternalServerErrorException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -127,14 +126,12 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         if (existingFunctionOpt.isEmpty()) {
 
             // Fetch or create role
-            Role functionRole;
             try {
-                functionRole = iamClient.getRole(GetRoleRequest.builder()
-                                .roleName(functionRoleName)
-                                .build())
-                        .role();
+                iamClient.getRole(GetRoleRequest.builder()
+                        .roleName(functionRoleName)
+                        .build());
             } catch (NoSuchEntityException ex2) {
-                CreateRoleResponse createRoleResponse = iamClient.createRole(CreateRoleRequest.builder()
+                iamClient.createRole(CreateRoleRequest.builder()
                         .roleName(functionRoleName)
                         .description("Auto-created for Lambda " + functionName)
                         .permissionsBoundary("arn:aws:iam::" + awsAccountId + ":policy/" + CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME)
@@ -146,15 +143,14 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                                         "Principal", Map.of(
                                                 "Service", List.of("lambda.amazonaws.com")))))))
                         .build());
-                functionRole = waiterUtil.resolve(iamClient.waiter().waitUntilRoleExists(GetRoleRequest.builder()
-                                .roleName(createRoleResponse.role().roleName())
-                                .build()))
-                        .role();
+                waiterUtil.resolve(iamClient.waiter().waitUntilRoleExists(GetRoleRequest.builder()
+                        .roleName(functionRoleName)
+                        .build()));
             }
 
             // Lambda logging policy: get or create policy, then attach to role if needed
             String customerLoggingPolicyName = CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LOGGING_PREFIX + "Customer" + StringUtil.camelCase(functionName, true);
-            ensurePolicyAttachedToRole(functionRole.roleName(), customerLoggingPolicyName, gson.toJson(Map.of(
+            ensurePolicyAttachedToRole(functionRoleName, customerLoggingPolicyName, gson.toJson(Map.of(
                     "Version", "2012-10-17",
                     "Statement", List.of(Map.of(
                             "Effect", "Allow",
@@ -254,7 +250,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
             // Add the Event Source Mapping but leave disabled to be switched over later
             String sourceUuid = lambdaClient.createEventSourceMapping(CreateEventSourceMappingRequest.builder()
-                            .functionName("arn:aws:lambda:" + awsRegion + ":" + awsAccountId + ":" + functionName + ":" + LAMBDA_ACTIVE_QUALIFIER)
+                            .functionName(functionName + ":" + LAMBDA_ACTIVE_QUALIFIER)
                             .enabled(false)
                             .batchSize(1)
                             .eventSourceArn("arn:aws:sqs:" + awsRegion + ":" + awsAccountId + ":" + queueStore.getAwsQueueName(customerId, queueNameToAdd))
@@ -292,12 +288,21 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .forEach(source -> disableSource(taskId, source, "switchover"));
 
         // Switch active tag
-        log.info("Updating task {} alias {} to version {} part of switchover", taskId, LAMBDA_ACTIVE_QUALIFIER, version);
-        lambdaClient.updateAlias(UpdateAliasRequest.builder()
-                .functionName(functionName)
-                .functionVersion(version)
-                .name(LAMBDA_ACTIVE_QUALIFIER)
-                .build());
+        if (fromOpt.isEmpty()) {
+            log.info("Creating task {} alias {} to version {} part of switchover", taskId, LAMBDA_ACTIVE_QUALIFIER, version);
+            lambdaClient.createAlias(CreateAliasRequest.builder()
+                    .functionName(functionName)
+                    .functionVersion(version)
+                    .name(LAMBDA_ACTIVE_QUALIFIER)
+                    .build());
+        } else {
+            log.info("Updating task {} alias {} to version {} part of switchover", taskId, LAMBDA_ACTIVE_QUALIFIER, version);
+            lambdaClient.updateAlias(UpdateAliasRequest.builder()
+                    .functionName(functionName)
+                    .functionVersion(version)
+                    .name(LAMBDA_ACTIVE_QUALIFIER)
+                    .build());
+        }
 
         //  Enable new sources
         queueSources.stream()
@@ -498,7 +503,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     }
 
     private void enableSource(String taskId, QueueSource source, String reason) {
-        log.info("Disabling task {} source {} uuid {}: {}",
+        log.info("Enabling task {} source {} uuid {}: {}",
                 taskId, source.getQueueName(), source.getUuid(), reason);
         lambdaClient.updateEventSourceMapping(UpdateEventSourceMappingRequest.builder()
                 .uuid(source.getUuid())
@@ -508,7 +513,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     }
 
     private void disableSource(String taskId, QueueSource source, String reason) {
-        log.info("Enabling task {} source {} uuid {}: {}",
+        log.info("Disabling task {} source {} uuid {}: {}",
                 taskId, source.getQueueName(), source.getUuid(), reason);
         lambdaClient.updateEventSourceMapping(UpdateEventSourceMappingRequest.builder()
                 .uuid(source.getUuid())
@@ -544,7 +549,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                         .policy();
             }
             // Now attach the policy to the role
-            AttachRolePolicyResponse attachRolePolicyResponse = iamClient.attachRolePolicy(AttachRolePolicyRequest.builder()
+            iamClient.attachRolePolicy(AttachRolePolicyRequest.builder()
                     .roleName(roleName)
                     .policyArn(customerLoggingPolicy.arn())
                     .build());
@@ -568,7 +573,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     private void addQueuePermissionToFunction(String customerId, String taskId, String qualifier, String queueName) {
         try {
             lambdaClient.addPermission(AddPermissionRequest.builder()
-                    .functionName("arn:aws:lambda:" + awsRegion + ":" + awsAccountId + ":" + getFunctionName(customerId, taskId) + ":" + LAMBDA_ACTIVE_QUALIFIER)
+                    .functionName(getFunctionName(customerId, taskId) + ":" + LAMBDA_ACTIVE_QUALIFIER)
                     .statementId(getQueueStatementId(queueName))
                     .action("lambda:InvokeFunction")
                     .sourceArn("arn:aws:sqs:" + awsRegion + ":" + awsAccountId + ":" + queueStore.getAwsQueueName(customerId, queueName))
@@ -580,10 +585,17 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     }
 
     private ImmutableSet<String> readQueueNamesFromFunctionPermissions(String customerId, String taskId, String version) {
-        return gson.fromJson(lambdaClient.getPolicy(builder -> builder
-                                .functionName(getFunctionName(customerId, taskId))
-                                .qualifier(version))
-                        .policy(), ResourcePolicyDocument.class)
+        ResourcePolicyDocument resourcePolicyDocument = gson.fromJson(lambdaClient.getPolicy(software.amazon.awssdk.services.lambda.model.GetPolicyRequest.builder()
+                        .functionName(getFunctionName(customerId, taskId) + ":" + version)
+                        .qualifier(version)
+                        .build())
+                .policy(), ResourcePolicyDocument.class);
+        if (!"2012-10-17".equals(resourcePolicyDocument.getVersion())) {
+            log.error("Cannot parse resource policy document with unknown version {} for customer {} taskId {} version {}",
+                    resourcePolicyDocument.getVersion(), customerId, taskId, version);
+            throw new InternalServerErrorException("Cannot parse resource, please contact support");
+        }
+        return resourcePolicyDocument
                 .getStatements().stream()
                 .map(ResourcePolicyStatement::getStatementId)
                 .map(this::getQueueNameFromStatementId)
@@ -594,6 +606,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
     private ImmutableSet<QueueSource> getTaskQueueSources(String customerId, String taskId) {
         return lambdaClient.listEventSourceMappingsPaginator(ListEventSourceMappingsRequest.builder()
+                        .functionName(getFunctionName(customerId, taskId) + ":" + LAMBDA_ACTIVE_QUALIFIER)
                         .build())
                 .stream()
                 .map(ListEventSourceMappingsResponse::eventSourceMappings)

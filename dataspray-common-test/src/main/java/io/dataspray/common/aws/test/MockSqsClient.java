@@ -16,9 +16,12 @@ import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
 import software.amazon.awssdk.services.sqs.model.CreateQueueResponse;
 import software.amazon.awssdk.services.sqs.model.DeleteQueueRequest;
 import software.amazon.awssdk.services.sqs.model.DeleteQueueResponse;
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest;
 import software.amazon.awssdk.services.sqs.model.PurgeQueueResponse;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
@@ -35,6 +38,7 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.when;
 
@@ -64,6 +68,17 @@ public class MockSqsClient {
                     SqsQueue queue = new SqsQueue(request.queueName(), Queues.newConcurrentLinkedQueue());
                     queues.put(request.queueName(), queue);
                     return CreateQueueResponse.builder().build();
+                });
+        when(mock.getQueueAttributes(Mockito.<GetQueueAttributesRequest>any()))
+                .thenAnswer(invocation -> {
+                    GetQueueAttributesRequest request = invocation.getArgument(0, GetQueueAttributesRequest.class);
+                    SqsQueue queue = queues.remove(getQueueName(request.queueUrl()));
+                    if (queue == null) {
+                        throw QueueDoesNotExistException.builder().build();
+                    }
+                    return GetQueueAttributesResponse.builder()
+                            .attributes(request.attributeNames().stream()
+                                    .collect(Collectors.toMap(i -> i, QueueAttributeName::toString))).build();
                 });
         when(mock.sendMessage(Mockito.<SendMessageRequest>any()))
                 .thenAnswer(invocation -> {

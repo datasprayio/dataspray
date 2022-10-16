@@ -69,7 +69,7 @@ public class RuntimeImpl implements Runtime {
         // Upload to S3
         streamApi.uploadCode(uploadCodeResponse.getPresignedUrl(), codeZipFile);
 
-        // Initiate deployment
+        // Publish version
         TaskVersion deployedVersion = controlApi.deployVersion(taskId, new DeployRequest()
                 .runtime(DeployRequest.RuntimeEnum.JAVA11)
                 .inputQueueNames(processor.getInputStreams().stream()
@@ -77,6 +77,7 @@ public class RuntimeImpl implements Runtime {
                         .collect(Collectors.toList()))
                 .codeUrl(uploadCodeResponse.getCodeUrl()));
 
+        // Switch to this version
         TaskStatus taskStatus = controlApi.activateVersion(taskId, deployedVersion.getVersion());
 
         printStatus(taskStatus);

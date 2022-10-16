@@ -79,7 +79,6 @@ components:
         - taskId
         - version
         - description
-        - inputQueueNames
       properties:
         taskId:
           type: string
@@ -87,10 +86,6 @@ components:
           type: string
         description:
           type: string
-        inputQueueNames:
-          type: array
-          items:
-            type: string
     TaskStatuses:
       type: object
       required:
