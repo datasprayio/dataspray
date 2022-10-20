@@ -12,6 +12,9 @@
       <option name="JD_KEEP_EMPTY_RETURN" value="false" />
       <option name="JD_PRESERVE_LINE_FEEDS" value="true" />
     </JavaCodeStyleSettings>
+    <JetCodeStyleSettings>
+      <option name="CODE_STYLE_DEFAULTS" value="KOTLIN_OFFICIAL" />
+    </JetCodeStyleSettings>
     <ScalaCodeStyleSettings>
       <option name="MULTILINE_STRING_CLOSING_QUOTES_ON_NEW_LINE" value="true" />
     </ScalaCodeStyleSettings>
@@ -20,6 +23,9 @@
     </codeStyleSettings>
     <codeStyleSettings language="JAVA">
       <option name="WRAP_COMMENTS" value="true" />
+    </codeStyleSettings>
+    <codeStyleSettings language="kotlin">
+      <option name="CODE_STYLE_DEFAULTS" value="KOTLIN_OFFICIAL" />
     </codeStyleSettings>
   </code_scheme>
 </component>

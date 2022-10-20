@@ -71,18 +71,50 @@ public class ControlStack extends LambdaBaseStack {
                 .resources(ImmutableList.of(bucketCode.getBucketArn() + "/*"))
                 .build());
 
-
         function.addToRolePolicy(PolicyStatement.Builder.create()
+                .sid("Customer Lambda management")
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
-                        "lambda:CreateFunction",
-                        "lambda:UpdateFunctionCode",
-                        "lambda:GetFunctionConcurrency",
+                        // CRUD
                         "lambda:GetFunction",
+                        "lambda:ListFunctions",
+                        "lambda:ListVersionsByFunction",
+                        "lambda:CreateFunction",
                         "lambda:DeleteFunction",
-                        "lambda:PutFunctionConcurrency"))
+                        "lambda:UpdateFunctionCode",
+                        "lambda:UpdateFunctionConfiguration",
+                        // Concurrency
+                        "lambda:GetFunctionConcurrency",
+                        "lambda:PutFunctionConcurrency",
+                        // Event sources
+                        "lambda:CreateEventSourceMapping",
+                        "lambda:UpdateEventSourceMapping",
+                        "lambda:GetEventSourceMapping",
+                        "lambda:ListEventSourceMappings",
+                        // Aliases
+                        "lambda:CreateAlias",
+                        "lambda:UpdateAlias",
+                        "lambda:GetAlias",
+                        // Permissions
+                        "lambda:AddPermission",
+                        "lambda:GetPolicy"))
                 .resources(ImmutableList.of(
                         "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + FUN_NAME_WILDCARD))
+                .build());
+
+        function.addToRolePolicy(PolicyStatement.Builder.create()
+                .sid("Customer Lambda IAM permissions")
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "iam:GetRole",
+                        "iam:GetRolePolicy",
+                        "iam:GetPolicy",
+                        "iam:CreateRole",
+                        "iam:CreatePolicy",
+                        "iam:AttachRolePolicy"))
+                .resources(ImmutableList.of(
+                        "arn:aws:iam::" + getAccount() + ":policy/" + CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "*",
+                        "arn:aws:iam::" + getAccount() + ":role/" + CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "*"))
                 .build());
     }
 
