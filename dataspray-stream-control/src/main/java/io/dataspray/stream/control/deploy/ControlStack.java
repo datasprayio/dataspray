@@ -119,6 +119,7 @@ public class ControlStack extends LambdaBaseStack {
                         "iam:GetRole",
                         "iam:GetRolePolicy",
                         "iam:GetPolicy",
+                        "iam:PassRole",
                         "iam:CreateRole",
                         "iam:CreatePolicy",
                         "iam:AttachRolePolicy"))

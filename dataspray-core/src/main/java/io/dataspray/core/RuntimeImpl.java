@@ -60,7 +60,7 @@ public class RuntimeImpl implements Runtime {
         String taskId = processor.getNameDir();
         Path processorDir = CodegenImpl.getProcessorDir(project, taskId);
         File codeZipFile = processorDir.resolve(Path.of("target", taskId + ".jar")).toFile();
-        log.info("Preparing upload of {}", codeZipFile);
+        log.info("Requesting permission to upload {}", codeZipFile);
         checkState(codeZipFile.isFile(), "Missing code zip file, forgot to install? Expecting: %s", codeZipFile.getPath());
         ControlApi controlApi = streamApi.control(apiKey);
         UploadCodeResponse uploadCodeResponse = controlApi.uploadCode(new UploadCodeRequest()
