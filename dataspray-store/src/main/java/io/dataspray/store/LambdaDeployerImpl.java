@@ -76,9 +76,9 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     /** Lambda version alias pointing to the active version in use */
     public static final String LAMBDA_ACTIVE_QUALIFIER = "ACTIVE";
     public static final String CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME = "customer-function-permission-boundary";
-    public static final String CUSTOMER_FUNCTION_POLICY_PATH_PREFIX = "customer/";
-    public static final String CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LOGGING_PREFIX = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "CustomerLambdaLogging";
-    public static final String CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "CustomerLambdaSqs";
+    public static final String CUSTOMER_FUNCTION_POLICY_PATH_PREFIX = "Customer";
+    public static final String CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LOGGING_PREFIX = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "LambdaLogging";
+    public static final String CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "LambdaSqs";
     private static final long CODE_MAX_SIZE_IN_BYTES = 50 * 1024 * 1024;
     public static final String CODE_BUCKET_NAME = "io-dataspray-code-upload";
     private static final String CODE_KEY_PREFIX = "customer/";
