@@ -72,7 +72,7 @@ public class ControlStack extends LambdaBaseStack {
                 .build());
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
-                .sid("Customer Lambda management")
+                .sid("CustomerManagementLambda")
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         // CRUD
@@ -103,7 +103,7 @@ public class ControlStack extends LambdaBaseStack {
                 .build());
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
-                .sid("Customer Lambda IAM permissions")
+                .sid("CustomerManagementIam")
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "iam:GetRole",
