@@ -122,6 +122,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
         // Setup function IAM role
         String functionRoleName = getFunctionRoleName(customerId, taskId);
+        String functionRoleArn = "arn:aws:iam::" + awsAccountId + ":role/" + functionRoleName;
         if (existingFunctionOpt.isEmpty()) {
 
             // Fetch or create role
@@ -171,7 +172,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .publish(true)
                             .functionName(functionName)
                             .description(generateVersionDescription(taskId, inputQueueNames))
-                            .role(functionRoleName)
+                            .role(functionRoleArn)
                             .packageType(PackageType.ZIP)
                             .architectures(Architecture.ARM64)
                             .code(FunctionCode.builder()
@@ -189,7 +190,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .functionName(functionName)
                             // Description always changes with latest timestamp
                             .description(generateVersionDescription(taskId, inputQueueNames))
-                            .role(functionRoleName)
+                            .role(functionRoleArn)
                             .runtime(runtime)
                             .revisionId(existingFunctionOpt.get().revisionId())
                             .build())
