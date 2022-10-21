@@ -60,6 +60,7 @@ public class RuntimeImpl implements Runtime {
         String taskId = processor.getNameDir();
         Path processorDir = CodegenImpl.getProcessorDir(project, taskId);
         File codeZipFile = processorDir.resolve(Path.of("target", taskId + ".jar")).toFile();
+        log.info("Preparing upload of {}", codeZipFile);
         checkState(codeZipFile.isFile(), "Missing code zip file, forgot to install? Expecting: %s", codeZipFile.getPath());
         ControlApi controlApi = streamApi.control(apiKey);
         UploadCodeResponse uploadCodeResponse = controlApi.uploadCode(new UploadCodeRequest()
@@ -67,9 +68,11 @@ public class RuntimeImpl implements Runtime {
                 .contentLengthBytes(codeZipFile.length()));
 
         // Upload to S3
+        log.info("Uploading to {}", uploadCodeResponse.getCodeUrl());
         streamApi.uploadCode(uploadCodeResponse.getPresignedUrl(), codeZipFile);
 
         // Publish version
+        log.info("Publishing new version");
         TaskVersion deployedVersion = controlApi.deployVersion(taskId, new DeployRequest()
                 .runtime(DeployRequest.RuntimeEnum.JAVA11)
                 .inputQueueNames(processor.getInputStreams().stream()
@@ -78,8 +81,10 @@ public class RuntimeImpl implements Runtime {
                 .codeUrl(uploadCodeResponse.getCodeUrl()));
 
         // Switch to this version
+        log.info("Switching code to new version {}", deployedVersion.getVersion());
         TaskStatus taskStatus = controlApi.activateVersion(taskId, deployedVersion.getVersion());
 
+        log.info("Deployed task {}", taskStatus.getTaskId());
         printStatus(taskStatus);
     }
 

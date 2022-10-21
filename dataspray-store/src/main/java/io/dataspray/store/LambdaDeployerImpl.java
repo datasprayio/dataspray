@@ -82,8 +82,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     private static final long CODE_MAX_SIZE_IN_BYTES = 50 * 1024 * 1024;
     public static final String CODE_BUCKET_NAME = "io-dataspray-code-upload";
     private static final String CODE_KEY_PREFIX = "customer/";
-    public static final String FUN_NAME_PREFIX = "customer-";
-    public static final String FUN_NAME_WILDCARD = FUN_NAME_PREFIX + "*";
+    public static final String CUSTOMER_FUN_AND_ROLE_NAME_PREFIX = "customer-";
+    public static final String FUN_NAME_WILDCARD = CUSTOMER_FUN_AND_ROLE_NAME_PREFIX + "*";
     private static final String QUEUE_STATEMENT_ID_PREFIX = "customer-queue-statement-for-name-";
 
     @ConfigProperty(name = "aws.accountId")
@@ -148,7 +148,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             }
 
             // Lambda logging policy: get or create policy, then attach to role if needed
-            String customerLoggingPolicyName = CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LOGGING_PREFIX + "Customer" + StringUtil.camelCase(functionName, true);
+            String customerLoggingPolicyName = CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LOGGING_PREFIX + StringUtil.camelCase(functionName, true);
             ensurePolicyAttachedToRole(functionRoleName, customerLoggingPolicyName, gson.toJson(Map.of(
                     "Version", "2012-10-17",
                     "Statement", List.of(Map.of(
@@ -474,7 +474,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     }
 
     private String getFunctionPrefix(String customerId) {
-        return FUN_NAME_PREFIX + customerId + "-";
+        return CUSTOMER_FUN_AND_ROLE_NAME_PREFIX + customerId + "-";
     }
 
     private Optional<String> getTaskIdFromFunctionName(String customerId, String functionName) {

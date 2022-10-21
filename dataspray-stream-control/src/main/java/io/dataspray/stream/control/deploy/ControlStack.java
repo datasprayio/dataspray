@@ -77,7 +77,6 @@ public class ControlStack extends LambdaBaseStack {
                 .actions(ImmutableList.of(
                         // CRUD
                         "lambda:GetFunction",
-                        "lambda:ListFunctions",
                         "lambda:ListVersionsByFunction",
                         "lambda:CreateFunction",
                         "lambda:DeleteFunction",
@@ -87,10 +86,8 @@ public class ControlStack extends LambdaBaseStack {
                         "lambda:GetFunctionConcurrency",
                         "lambda:PutFunctionConcurrency",
                         // Event sources
-                        "lambda:CreateEventSourceMapping",
                         "lambda:UpdateEventSourceMapping",
                         "lambda:GetEventSourceMapping",
-                        "lambda:ListEventSourceMappings",
                         // Aliases
                         "lambda:CreateAlias",
                         "lambda:UpdateAlias",
@@ -99,7 +96,20 @@ public class ControlStack extends LambdaBaseStack {
                         "lambda:AddPermission",
                         "lambda:GetPolicy"))
                 .resources(ImmutableList.of(
-                        "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + FUN_NAME_WILDCARD))
+                        "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + FUN_NAME_WILDCARD,
+                        // Event source mappings are referred to by UUID, since there is no way to restrict this,
+                        // we use a wildcard here
+                        "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":event-source-mapping:*"))
+                .build());
+        // Unfortunately not all permissions allow for resource-specific restrictions.
+        function.addToRolePolicy(PolicyStatement.Builder.create()
+                .sid("CustomerManagementLambdaResourceWildcardActions")
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "lambda:ListFunctions",
+                        "lambda:ListEventSourceMappings",
+                        "lambda:CreateEventSourceMapping"))
+                .resources(ImmutableList.of("*"))
                 .build());
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
@@ -114,7 +124,7 @@ public class ControlStack extends LambdaBaseStack {
                         "iam:AttachRolePolicy"))
                 .resources(ImmutableList.of(
                         "arn:aws:iam::" + getAccount() + ":policy/" + CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "*",
-                        "arn:aws:iam::" + getAccount() + ":role/" + CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "*"))
+                        "arn:aws:iam::" + getAccount() + ":role/" + CUSTOMER_FUN_AND_ROLE_NAME_PREFIX + "*"))
                 .build());
     }
 
