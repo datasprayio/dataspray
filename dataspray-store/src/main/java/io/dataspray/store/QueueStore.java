@@ -8,15 +8,18 @@ import java.util.Optional;
 
 public interface QueueStore {
 
-    void submit(String accountId, String queueName, byte[] messageBytes, MediaType contentType);
+    void submit(String customerId, String queueName, byte[] messageBytes, MediaType contentType);
 
-    /** Check whether queue exists and optionally return attributes */
-    Optional<Map<QueueAttributeName, String>> queueAttributes(String accountId, String queueName, QueueAttributeName... fetchAttributes);
+    /** Check whether queue exists */
+    boolean queueExists(String customerId, String queueName);
 
-    void createQueue(String accountId, String queueName);
+    /** Check queue attributes */
+    Optional<Map<QueueAttributeName, String>> queueAttributes(String customerId, String queueName, QueueAttributeName... fetchAttributes);
+
+    void createQueue(String customerId, String queueName);
 
     /** Converts user supplied queue name to AWS queue name */
-    String getAwsQueueName(String accountId, String queueName);
+    String getAwsQueueName(String customerId, String queueName);
 
-    Optional<String> extractQueueNameFromAwsQueueName(String accountId, String awsQueueName);
+    Optional<String> extractQueueNameFromAwsQueueName(String customerId, String awsQueueName);
 }

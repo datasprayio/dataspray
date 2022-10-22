@@ -8,6 +8,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
 import software.amazon.awssdk.services.sqs.model.CreateQueueResponse;
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
+import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
@@ -39,7 +40,7 @@ public class SqsQueueStore implements QueueStore {
     private final Encoder base64Encoder = Base64.getEncoder();
 
     @Override
-    public void submit(String accountId, String queueName, byte[] messageBytes, MediaType contentType) {
+    public void submit(String customerId, String queueName, byte[] messageBytes, MediaType contentType) {
         // Since SQS accepts messages as String, convert each message appropriately
         final String messageStr;
         switch (contentType.toString()) {
@@ -51,7 +52,7 @@ public class SqsQueueStore implements QueueStore {
             // Binary messages send as base64
             default:
                 log.warn("Unknown content type {} received from accountId {} queue {}, sending as base64",
-                        contentType, accountId, queueName);
+                        contentType, customerId, queueName);
             case "application/octet-stream":
             case "application/avro":
             case "application/protobuf":
@@ -60,16 +61,28 @@ public class SqsQueueStore implements QueueStore {
         }
 
         sqsClient.sendMessage(SendMessageRequest.builder()
-                .queueUrl(getAwsQueueUrl(accountId, queueName))
+                .queueUrl(getAwsQueueUrl(customerId, queueName))
                 .messageBody(messageStr)
                 .build());
     }
 
     @Override
-    public Optional<Map<QueueAttributeName, String>> queueAttributes(String accountId, String queueName, QueueAttributeName... fetchAttributes) {
+    public boolean queueExists(String customerId, String queueName) {
+        try {
+            sqsClient.getQueueUrl(GetQueueUrlRequest.builder()
+                    .queueName(getAwsQueueName(customerId, queueName))
+                    .build());
+            return true;
+        } catch (QueueDoesNotExistException ex) {
+            return false;
+        }
+    }
+
+    @Override
+    public Optional<Map<QueueAttributeName, String>> queueAttributes(String customerId, String queueName, QueueAttributeName... fetchAttributes) {
         try {
             return Optional.of(sqsClient.getQueueAttributes(GetQueueAttributesRequest.builder()
-                    .queueUrl(getAwsQueueUrl(accountId, queueName))
+                    .queueUrl(getAwsQueueUrl(customerId, queueName))
                     .attributeNames(fetchAttributes)
                     .build()).attributes());
         } catch (QueueDoesNotExistException ex) {
@@ -78,9 +91,9 @@ public class SqsQueueStore implements QueueStore {
     }
 
     @Override
-    public void createQueue(String accountId, String queueName) {
+    public void createQueue(String customerId, String queueName) {
         CreateQueueResponse queueResponse = sqsClient.createQueue(CreateQueueRequest.builder()
-                .queueName(getAwsQueueName(accountId, queueName))
+                .queueName(getAwsQueueName(customerId, queueName))
                 .attributes(ImmutableMap.of(
                         QueueAttributeName.MESSAGE_RETENTION_PERIOD, String.valueOf(14 * 24 * 60 * 60)))
                 .build());
@@ -98,8 +111,8 @@ public class SqsQueueStore implements QueueStore {
     }
 
     @Override
-    public Optional<String> extractQueueNameFromAwsQueueName(String accountId, String awsQueueName) {
-        String prefix = CUSTOMER_QUEUE_PREFIX + accountId + "-";
+    public Optional<String> extractQueueNameFromAwsQueueName(String customerId, String awsQueueName) {
+        String prefix = CUSTOMER_QUEUE_PREFIX + customerId + "-";
         return awsQueueName.startsWith(prefix)
                 ? Optional.of(awsQueueName.substring(prefix.length()))
                 : Optional.empty();

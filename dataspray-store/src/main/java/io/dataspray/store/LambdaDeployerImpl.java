@@ -68,7 +68,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_API_KEY_ENV;
 import static io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_CUSTOMER_ID_ENV;
 import static io.dataspray.store.LimitlessBillingStore.ACCOUNT_API_KEY;
@@ -238,6 +237,17 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .build()));
         }
 
+        // Create active alias if doesn't exist
+        try {
+            lambdaClient.createAlias(CreateAliasRequest.builder()
+                    .functionName(functionName)
+                    .functionVersion(publishedVersion)
+                    .name(LAMBDA_ACTIVE_QUALIFIER)
+                    .build());
+        } catch (ResourceConflictException ex) {
+            log.trace("Lambda active tag already exists", ex);
+        }
+
         // Add queue permissions on the deployed function version
         // Although this is not necessary, as the versioned function is never invoked directly,
         // rather the ACTIVE alias is invoked. However, this is a somewhat elegant way to keep
@@ -252,7 +262,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         for (String queueNameToAdd : missingQueueSources) {
 
             // Create queue if doesn't exist
-            if (queueStore.queueAttributes(customerId, queueNameToAdd).isEmpty()) {
+            if (!queueStore.queueExists(customerId, queueNameToAdd)) {
                 queueStore.createQueue(customerId, queueNameToAdd);
             }
 
@@ -291,9 +301,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     @Override
     public void switchVersion(String customerId, String taskId, String version) {
         // Gather info about the source and destination versions
-        Versions versions = getVersions(customerId, taskId);
-        Optional<DeployedVersion> fromOpt = versions.getActive().map(versions.getTaskByVersion()::get);
-        DeployedVersion to = checkNotNull(versions.getTaskByVersion().get(version));
         String functionName = getFunctionName(customerId, taskId);
         ImmutableSet<String> queueNames = readQueueNamesFromFunctionPermissions(customerId, taskId, version);
         ImmutableSet<QueueSource> queueSources = getTaskQueueSources(customerId, taskId);
@@ -312,21 +319,12 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .forEach(source -> disableSource(taskId, source, "switchover"));
 
         // Switch active tag
-        if (fromOpt.isEmpty()) {
-            log.info("Creating task {} alias {} to version {} part of switchover", taskId, LAMBDA_ACTIVE_QUALIFIER, version);
-            lambdaClient.createAlias(CreateAliasRequest.builder()
-                    .functionName(functionName)
-                    .functionVersion(version)
-                    .name(LAMBDA_ACTIVE_QUALIFIER)
-                    .build());
-        } else {
-            log.info("Updating task {} alias {} to version {} part of switchover", taskId, LAMBDA_ACTIVE_QUALIFIER, version);
-            lambdaClient.updateAlias(UpdateAliasRequest.builder()
-                    .functionName(functionName)
-                    .functionVersion(version)
-                    .name(LAMBDA_ACTIVE_QUALIFIER)
-                    .build());
-        }
+        log.info("Updating task {} alias {} to version {} part of switchover", taskId, LAMBDA_ACTIVE_QUALIFIER, version);
+        lambdaClient.updateAlias(UpdateAliasRequest.builder()
+                .functionName(functionName)
+                .functionVersion(version)
+                .name(LAMBDA_ACTIVE_QUALIFIER)
+                .build());
 
         //  Enable new sources
         queueSources.stream()
@@ -579,7 +577,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .build());
         }
     }
-
 
     private Optional<String> fetchActiveVersion(String customerId, String taskId) {
         // Find active version via alias

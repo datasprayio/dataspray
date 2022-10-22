@@ -117,7 +117,8 @@ public class ControlStack extends LambdaBaseStack {
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "sqs:CreateQueue",
-                        "sqs:GetQueueAttributes"))
+                        "sqs:GetQueueAttributes",
+                        "sqs:GetQueueUrl"))
                 .resources(ImmutableList.of(
                         "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + CUSTOMER_QUEUE_WILDCARD))
                 .build());
