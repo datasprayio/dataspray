@@ -3,6 +3,7 @@ package {{{definition.javaPackage}}};
 {{#util.javaImportsFormat}}
 import lombok.SneakyThrows;
 import io.dataspray.runner.RawCoordinator;
+import io.dataspray.runner.StoreType;
 {{^processor.stringOutputStreams.empty}}
 import java.nio.charset.StandardCharsets;
 {{/processor.stringOutputStreams.empty}}
@@ -50,7 +51,7 @@ public class CoordinatorImpl implements Coordinator {
             {{#dataFormat.isSerdeAvro}}
             {{{dataFormat.nameCamelLower}}}Bytes,
             {{/dataFormat.isSerdeAvro}}
-            RawCoordinator.StoreType.KAFKA,
+            StoreType.{{{storeType.name}}},
             "{{{storeName}}}",
             "{{{streamName}}}");
     }

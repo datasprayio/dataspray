@@ -42,6 +42,7 @@ public class IngestStack extends LambdaBaseStack {
                 .build());
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
+                .sid("CustomerIngestSqs")
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "sqs:SendMessage",

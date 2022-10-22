@@ -18,6 +18,7 @@ public interface LambdaDeployer {
             String customerId,
             String taskId,
             String codeUrl,
+            String handler,
             ImmutableSet<String> inputQueueNames,
             Runtime runtime);
 

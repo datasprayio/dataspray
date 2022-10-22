@@ -5,8 +5,4 @@ package io.dataspray.runner;
 public interface RawCoordinator {
 
     void send(byte[] data, StoreType storeType, String storeName, String streamName);
-
-    enum StoreType {
-        KAFKA
-    }
 }

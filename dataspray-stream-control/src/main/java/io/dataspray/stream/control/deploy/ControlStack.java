@@ -113,6 +113,16 @@ public class ControlStack extends LambdaBaseStack {
                 .build());
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
+                .sid("CustomerManagementSqs")
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "sqs:CreateQueue",
+                        "sqs:GetQueueAttributes"))
+                .resources(ImmutableList.of(
+                        "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + CUSTOMER_QUEUE_WILDCARD))
+                .build());
+
+        function.addToRolePolicy(PolicyStatement.Builder.create()
                 .sid("CustomerManagementIam")
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(

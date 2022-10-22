@@ -1,5 +1,6 @@
 package io.dataspray.core;
 
+import com.google.common.base.Strings;
 import io.dataspray.core.definition.model.JavaProcessor;
 import io.dataspray.core.definition.model.StreamLink;
 import io.dataspray.stream.client.StreamApi;
@@ -19,6 +20,7 @@ import javax.inject.Inject;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -56,6 +58,14 @@ public class RuntimeImpl implements Runtime {
 
     @SneakyThrows
     private void deployStream(String apiKey, Project project, JavaProcessor processor) {
+        String handler = Optional.ofNullable(Strings.emptyToNull(processor.getHandler()))
+                .orElseGet(() -> project.getDefinition().getJavaPackage() + ".Runner");
+        log.info("Deploying task {} with inputs {} outputs {} handler {}",
+                processor.getName(),
+                processor.getInputStreams().stream().map(StreamLink::getStreamName).collect(Collectors.toSet()),
+                processor.getOutputStreams().stream().map(StreamLink::getStreamName).collect(Collectors.toSet()),
+                handler);
+
         // First get S3 upload presigned url
         String taskId = processor.getNameDir();
         Path processorDir = CodegenImpl.getProcessorDir(project, taskId);
@@ -75,6 +85,7 @@ public class RuntimeImpl implements Runtime {
         log.info("Publishing new version");
         TaskVersion deployedVersion = controlApi.deployVersion(taskId, new DeployRequest()
                 .runtime(DeployRequest.RuntimeEnum.JAVA11)
+                .handler(handler)
                 .inputQueueNames(processor.getInputStreams().stream()
                         .map(StreamLink::getStreamName)
                         .collect(Collectors.toList()))

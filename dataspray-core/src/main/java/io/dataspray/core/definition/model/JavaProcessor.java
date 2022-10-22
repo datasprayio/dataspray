@@ -7,6 +7,7 @@ import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 @Value
 @SuperBuilder(toBuilder = true)
@@ -15,6 +16,9 @@ public class JavaProcessor extends Processor {
 
     @Nonnull
     Target target;
+
+    @Nullable
+    String handler;
 
     @Getter
     @AllArgsConstructor

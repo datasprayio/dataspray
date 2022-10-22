@@ -149,7 +149,7 @@
                                 ${project.basedir}/src/main/openapi/template/java/.openapi-generator-ignore
                             </ignoreFileOverride>
                             <templateDirectory>${project.basedir}/src/main/openapi/template/java</templateDirectory>
-                            <typeMappings>OffsetDateTime=Instant</typeMappings>
+                            <typeMappings>OffsetDateTime=Instant,File=byte[]</typeMappings>
                             <additionalProperties>java8=true
                                 ,modelPackage=io.dataspray.stream.ingest.client.model
                                 ,apiPackage=io.dataspray.stream.ingest.client

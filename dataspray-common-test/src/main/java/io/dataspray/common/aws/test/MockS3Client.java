@@ -3,13 +3,13 @@ package io.dataspray.common.aws.test;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.dataspray.common.NetworkUtil;
+import io.dataspray.common.TestResourceUtil;
 import io.findify.s3mock.S3Mock;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import lombok.SneakyThrows;
 import software.amazon.awssdk.regions.Region;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
@@ -37,17 +37,7 @@ public class MockS3Client implements QuarkusTestResourceLifecycleManager {
     @Override
     @SneakyThrows
     public void inject(Object testInstance) {
-        Class<?> c = testInstance.getClass();
-        while (c != Object.class) {
-            for (Field f : c.getDeclaredFields()) {
-                if (S3Mock.class.isAssignableFrom(f.getType())) {
-                    f.setAccessible(true);
-                    f.set(testInstance, s3Mock);
-                    return;
-                }
-            }
-            c = c.getSuperclass();
-        }
+        TestResourceUtil.injectSelf(testInstance, s3Mock);
     }
 
     public static class TestProfile implements QuarkusTestProfile {

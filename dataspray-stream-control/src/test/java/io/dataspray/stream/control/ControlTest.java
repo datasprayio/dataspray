@@ -33,6 +33,7 @@ public class ControlTest {
     @Inject
     StreamApi streamApi;
 
+    /** Injected via MockS3Client */
     S3Mock s3Mock;
 
     @BeforeEach
@@ -60,6 +61,7 @@ public class ControlTest {
         String queueName = "queue1";
         TaskVersion deployedVersion = resource.deployVersion(taskId, DeployRequest.builder()
                 .codeUrl(uploadCodeResponse.getCodeUrl())
+                .handler("io.dataspray.Runner")
                 .inputQueueNames(List.of(queueName))
                 .runtime(DeployRequest.RuntimeEnum.JAVA11).build());
         log.info("Deployed version {}", deployedVersion);
@@ -85,6 +87,7 @@ public class ControlTest {
         String queueName2 = "queue2";
         TaskVersion deployedVersion2 = resource.deployVersion(taskId, DeployRequest.builder()
                 .codeUrl(uploadCodeResponse.getCodeUrl())
+                .handler("io.dataspray.Runner")
                 .inputQueueNames(List.of(queueName2))
                 .runtime(DeployRequest.RuntimeEnum.NODEJS14_X).build());
         log.info("Deployed another version {}", deployedVersion);

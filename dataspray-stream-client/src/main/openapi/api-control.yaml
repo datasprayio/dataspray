@@ -44,9 +44,12 @@ components:
       type: object
       required:
         - codeUrl
+        - handler
         - inputQueueNames
       properties:
         codeUrl:
+          type: string
+        handler:
           type: string
         inputQueueNames:
           type: array

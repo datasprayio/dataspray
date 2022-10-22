@@ -32,6 +32,10 @@
             <groupId>io.dataspray</groupId>
             <artifactId>dataspray-stream-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-runner</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.eclipse.jgit</groupId>

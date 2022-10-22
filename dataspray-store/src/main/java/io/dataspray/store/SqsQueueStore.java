@@ -86,15 +86,15 @@ public class SqsQueueStore implements QueueStore {
                 .build());
     }
 
-    public String getAwsQueueUrl(String accountId, String queueName) {
+    public String getAwsQueueUrl(String customerId, String queueName) {
         return "https://sqs." + awsRegion + ".amazonaws.com/"
                 + awsAccountId + "/"
-                + getAwsQueueName(accountId, queueName);
+                + getAwsQueueName(customerId, queueName);
     }
 
     @Override
-    public String getAwsQueueName(String accountId, String queueName) {
-        return CUSTOMER_QUEUE_PREFIX + accountId + "-" + queueName;
+    public String getAwsQueueName(String customerId, String queueName) {
+        return CUSTOMER_QUEUE_PREFIX + customerId + "-" + queueName;
     }
 
     @Override

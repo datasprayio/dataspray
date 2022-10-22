@@ -55,6 +55,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
                 customerId,
                 taskId,
                 deployRequest.getCodeUrl(),
+                deployRequest.getHandler(),
                 deployRequest.getInputQueueNames().stream()
                         .distinct()
                         .collect(ImmutableSet.toImmutableSet()),

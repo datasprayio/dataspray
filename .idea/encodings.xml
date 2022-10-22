@@ -15,11 +15,14 @@
     <file url="file://$PROJECT_DIR$/dataspray-remote-workspace/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-remote-workspace/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-runner/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-runner/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-store/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-store/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-stream-client/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-stream-client/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-stream-control/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-stream-control/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-stream-ingest/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-stream-ingest/src/main/resources" charset="UTF-8" />
   </component>
 </project>

@@ -16,14 +16,14 @@ import java.nio.file.Path;
 
 @Slf4j
 @QuarkusTest
-@TestProfile(MockInOutErr.class)
+@TestProfile(MockProcessIo.TestProfile.class)
 public class CodegenBuilderTest {
     @Inject
     Codegen codegen;
     @Inject
     Builder builder;
-    @Inject
-    MockInOutErr mockInOutErr;
+    /** Injected via MockInOutErr */
+    MockProcessIo mockProcessIo;
 
     private Path workingDir;
 

@@ -29,6 +29,10 @@
             <groupId>io.dataspray</groupId>
             <artifactId>dataspray-common-test</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-runner</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.dataspray</groupId>

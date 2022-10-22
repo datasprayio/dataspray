@@ -6,17 +6,11 @@ import lombok.Value;
 @Value
 public class TestMessage<T> implements Message<T> {
     @NonNull
+    StoreType storeType;
+    @NonNull
     String storeName;
     @NonNull
     String streamName;
     @NonNull
     T data;
-
-    @Override
-    public <N> Message<N> swapData(N newData) {
-        return new TestMessage<N>(
-                getStoreName(),
-                getStreamName(),
-                newData);
-    }
 }

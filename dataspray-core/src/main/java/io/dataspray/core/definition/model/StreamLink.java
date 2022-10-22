@@ -3,6 +3,7 @@ package io.dataspray.core.definition.model;
 import com.google.common.collect.Sets;
 import com.jcabi.aspects.Cacheable;
 import io.dataspray.common.StringUtil;
+import io.dataspray.runner.StoreType;
 import lombok.AllArgsConstructor;
 import lombok.Setter;
 import lombok.Value;
@@ -30,6 +31,9 @@ public class StreamLink {
         String uniqueNameCamelLower = getUniqueNameCamelLower();
         return Character.toUpperCase(uniqueNameCamelLower.charAt(0)) + uniqueNameCamelLower.substring(1);
     }
+
+    @Nonnull
+    StoreType storeType;
 
     @Nonnull
     String storeName;

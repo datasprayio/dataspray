@@ -59,11 +59,15 @@ public class Definition extends Item {
     ImmutableSet<DataFormat> dataFormats;
 
     @Builder.Default
+    ImmutableSet<DataSprayStore> dataSprayStores = ImmutableSet.of();
+
+    @Builder.Default
     ImmutableSet<KafkaStore> kafkaStores = ImmutableSet.of();
 
     @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public ImmutableSet<Store> getStores() {
         return ImmutableSet.<Store>builder()
+                .addAll(dataSprayStores)
                 .addAll(kafkaStores)
                 .build();
     }

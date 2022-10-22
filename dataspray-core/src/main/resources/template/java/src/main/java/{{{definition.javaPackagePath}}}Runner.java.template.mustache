@@ -11,16 +11,17 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.nio.charset.StandardCharsets;
 {{/processor.jsonInputStreams.empty}}
-import io.dataspray.runner.RawCoordinator;
-import io.dataspray.runner.Message;
 import io.dataspray.runner.Entrypoint;
+import io.dataspray.runner.MessageImpl;
+import io.dataspray.runner.MessageMetadata;
 import io.dataspray.runner.RawCoordinator;
+import io.dataspray.runner.StoreType;
 {{^processor.stringInputStreams.empty}}
 import java.nio.charset.StandardCharsets;
 {{/processor.stringInputStreams.empty}}
 {{/util.javaImportsFormat}}
 
-public class Runner implements Entrypoint {
+public class Runner extends Entrypoint {
 
     private final Processor processor = new {{{processor.nameCamelUpper}}}();
     {{^processor.jsonInputStreams.empty}}
@@ -31,23 +32,19 @@ public class Runner implements Entrypoint {
     {{/processor.jsonInputStreams.empty}}
 
     @Override
-    public void process(Message<byte[]> message, String sourceName, RawCoordinator rawCoordinator) {
+    public void process(MessageMetadata metadata, byte[] data, RawCoordinator rawCoordinator) {
         Coordinator coordinator = new CoordinatorImpl(rawCoordinator);
-        switch(sourceName) {
-            {{#processor.inputStreams}}
+        {{#processor.inputStreams}}if (StoreType.{{{storeType.name}}}.equals(metadata.getStoreType())
+                && "{{{storeName}}}".equals(metadata.getStoreName())
+                && "{{{streamName}}}".equals(metadata.getStreamName())) {
             {{#dataFormat.isSerdeBinary}}
-            case "{{{dataFormat.name}}}":
-                processor.process{{{uniqueNameCamelUpper}}}(message, coordinator);
-                break;
+            processor.process{{{uniqueNameCamelUpper}}}(new MessageImpl(metadata, data), coordinator);
             {{/dataFormat.isSerdeBinary}}
             {{^dataFormat.isSerdeBinary}}
-            case "{{{dataFormat.name}}}":
-                processor.process{{{uniqueNameCamelUpper}}}(message.swapData(to{{{dataFormat.nameCamelUpper}}}(message.getData())), coordinator);
-                break;
+            processor.process{{{uniqueNameCamelUpper}}}(new MessageImpl(metadata, to{{{dataFormat.nameCamelUpper}}}(data)), coordinator);
             {{/dataFormat.isSerdeBinary}}
-            {{/processor.inputStreams}}
-            default:
-                throw new RuntimeException("Received message from unexpected source: " + sourceName);
+        } else {{/processor.inputStreams}}{
+            throw new RuntimeException("Received unexpected message from " + metadata.getStoreType() + " source " + metadata.getStoreName() + " stream " + metadata.getStreamName());
         }
     }
     {{#processor.inputStreams}}

@@ -27,6 +27,7 @@ import software.amazon.awssdk.services.lambda.model.CreateAliasRequest;
 import software.amazon.awssdk.services.lambda.model.CreateEventSourceMappingRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.DeleteFunctionRequest;
+import software.amazon.awssdk.services.lambda.model.Environment;
 import software.amazon.awssdk.services.lambda.model.FunctionCode;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
 import software.amazon.awssdk.services.lambda.model.GetAliasRequest;
@@ -68,6 +69,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_API_KEY_ENV;
+import static io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_CUSTOMER_ID_ENV;
+import static io.dataspray.store.LimitlessBillingStore.ACCOUNT_API_KEY;
 import static java.util.function.Predicate.not;
 
 @Slf4j
@@ -106,7 +110,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
 
     @Override
-    public DeployedVersion deployVersion(String customerId, String taskId, String codeUrl, ImmutableSet<String> inputQueueNames, Runtime runtime) {
+    public DeployedVersion deployVersion(String customerId, String taskId, String codeUrl, String handler, ImmutableSet<String> inputQueueNames, Runtime runtime) {
         String functionName = getFunctionName(customerId, taskId);
 
         // Check whether function exists
@@ -166,12 +170,17 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
         // Create or update function configuration and code
         final String publishedVersion;
+        final String publishedDescription = generateVersionDescription(taskId, inputQueueNames);
+        Environment env = Environment.builder()
+                .variables(Map.of(
+                        DATASPRAY_API_KEY_ENV, ACCOUNT_API_KEY,
+                        DATASPRAY_CUSTOMER_ID_ENV, customerId)).build();
         if (existingFunctionOpt.isEmpty()) {
             // Create a new function with configuration and code all in one go
             publishedVersion = lambdaClient.createFunction(CreateFunctionRequest.builder()
                             .publish(true)
                             .functionName(functionName)
-                            .description(generateVersionDescription(taskId, inputQueueNames))
+                            .description(publishedDescription)
                             .role(functionRoleArn)
                             .packageType(PackageType.ZIP)
                             .architectures(Architecture.ARM64)
@@ -180,21 +189,35 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                                     .s3Key(getCodeKeyFromUrl(customerId, codeUrl))
                                     .build())
                             .runtime(runtime)
+                            .handler(handler)
+                            .environment(env)
                             .memorySize(128)
                             .timeout(900)
                             .build())
                     .version();
+
+            // Wait until function version publishes
+            waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionExists(GetFunctionRequest.builder()
+                    .functionName(functionName)
+                    .qualifier(publishedVersion)
+                    .build()));
         } else {
             // Update function configuration
-            String updateFunctionRevisionId = lambdaClient.updateFunctionConfiguration(UpdateFunctionConfigurationRequest.builder()
+            lambdaClient.updateFunctionConfiguration(UpdateFunctionConfigurationRequest.builder()
+                    .functionName(functionName)
+                    // Description always changes with the latest timestamp
+                    .description(publishedDescription)
+                    .role(functionRoleArn)
+                    .runtime(runtime)
+                    .handler(handler)
+                    .environment(env)
+                    .revisionId(existingFunctionOpt.get().revisionId())
+                    .build());
+            // Wait until updated
+            FunctionConfiguration a = waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionUpdatedV2(GetFunctionRequest.builder()
                             .functionName(functionName)
-                            // Description always changes with latest timestamp
-                            .description(generateVersionDescription(taskId, inputQueueNames))
-                            .role(functionRoleArn)
-                            .runtime(runtime)
-                            .revisionId(existingFunctionOpt.get().revisionId())
-                            .build())
-                    .revisionId();
+                            .build()))
+                    .configuration();
 
             // Update function code
             publishedVersion = lambdaClient.updateFunctionCode(UpdateFunctionCodeRequest.builder()
@@ -203,16 +226,17 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .architectures(Architecture.ARM64)
                             .s3Bucket(CODE_BUCKET_NAME)
                             .s3Key(getCodeKeyFromUrl(customerId, codeUrl))
-                            .revisionId(updateFunctionRevisionId)
+                            // updateFunctionConfiguration returns invalid revisionId
+                            // https://github.com/aws/aws-sdk/issues/377
+                            // .revisionId(updateFunctionRevisionId)
                             .build())
                     .version();
+            // Wait until updated
+            waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionUpdatedV2(GetFunctionRequest.builder()
+                    .functionName(functionName)
+                    .qualifier(publishedVersion)
+                    .build()));
         }
-        // Wait until function version publishes
-        FunctionConfiguration publishedConfiguration = waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionExists(GetFunctionRequest.builder()
-                        .functionName(functionName)
-                        .qualifier(publishedVersion)
-                        .build()))
-                .configuration();
 
         // Add queue permissions on the deployed function version
         // Although this is not necessary, as the versioned function is never invoked directly,
@@ -260,8 +284,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         }
 
         return new DeployedVersion(
-                publishedConfiguration.version(),
-                publishedConfiguration.description());
+                publishedVersion,
+                publishedDescription);
     }
 
     @Override
@@ -573,8 +597,9 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     private void addQueuePermissionToFunction(String customerId, String taskId, String qualifier, String queueName) {
         try {
             lambdaClient.addPermission(AddPermissionRequest.builder()
-                    .functionName(getFunctionName(customerId, taskId) + ":" + LAMBDA_ACTIVE_QUALIFIER)
+                    .functionName(getFunctionName(customerId, taskId) + ":" + qualifier)
                     .statementId(getQueueStatementId(queueName))
+                    .principal("sqs.amazonaws.com")
                     .action("lambda:InvokeFunction")
                     .sourceArn("arn:aws:sqs:" + awsRegion + ":" + awsAccountId + ":" + queueStore.getAwsQueueName(customerId, queueName))
                     .qualifier(qualifier)

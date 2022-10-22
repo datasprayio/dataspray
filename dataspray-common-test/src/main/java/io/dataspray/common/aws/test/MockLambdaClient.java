@@ -41,6 +41,7 @@ import software.amazon.awssdk.services.lambda.model.GetFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.GetPolicyRequest;
 import software.amazon.awssdk.services.lambda.model.GetPolicyResponse;
+import software.amazon.awssdk.services.lambda.model.LastUpdateStatus;
 import software.amazon.awssdk.services.lambda.model.ListEventSourceMappingsRequest;
 import software.amazon.awssdk.services.lambda.model.ListEventSourceMappingsResponse;
 import software.amazon.awssdk.services.lambda.model.ListFunctionsRequest;
@@ -188,6 +189,7 @@ public class MockLambdaClient {
                     return GetFunctionResponse.builder()
                             .configuration(FunctionConfiguration.builder()
                                     .functionName(function.getName())
+                                    .lastUpdateStatus(LastUpdateStatus.SUCCESSFUL)
                                     .description("Function version " + version)
                                     .version(version).build())
                             .sdkHttpResponse(SDK_200)
@@ -198,6 +200,7 @@ public class MockLambdaClient {
                         .functions(functions.values().stream()
                                 .map(function -> FunctionConfiguration.builder()
                                         .functionName(function.getName())
+                                        .lastUpdateStatus(LastUpdateStatus.SUCCESSFUL)
                                         .description("Function version $LATEST")
                                         .version("$LATEST").build())
                                 .collect(ImmutableList.toImmutableList()))
@@ -217,6 +220,7 @@ public class MockLambdaClient {
                             .versions(Stream.concat(Stream.of("$LATEST"), function.publishedVersions.stream().map(Object::toString))
                                     .map(version -> FunctionConfiguration.builder()
                                             .functionName(function.getName())
+                                            .lastUpdateStatus(LastUpdateStatus.SUCCESSFUL)
                                             .version(version)
                                             .description("Function version " + version)
                                             .build())
