@@ -270,7 +270,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             addQueuePermissionToFunction(customerId, taskId, LAMBDA_ACTIVE_QUALIFIER, queueNameToAdd);
 
             // Lambda logging policy: get or create policy, then attach to role if needed
-            String lambdaSqsPolicyName = CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS + "Customer" + StringUtil.camelCase(functionName, true);
+            String lambdaSqsPolicyName = CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS + StringUtil.camelCase(functionName, true) + "Queue" + StringUtil.camelCase(queueNameToAdd, true);
             ensurePolicyAttachedToRole(functionRoleName, lambdaSqsPolicyName, gson.toJson(Map.of(
                     "Version", "2012-10-17",
                     "Statement", List.of(Map.of(
@@ -285,6 +285,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             // Add the Event Source Mapping but leave disabled to be switched over later
             String sourceUuid = lambdaClient.createEventSourceMapping(CreateEventSourceMappingRequest.builder()
                             .functionName(functionName + ":" + LAMBDA_ACTIVE_QUALIFIER)
+
                             .enabled(false)
                             .batchSize(1)
                             .eventSourceArn("arn:aws:sqs:" + awsRegion + ":" + awsAccountId + ":" + queueStore.getAwsQueueName(customerId, queueNameToAdd))

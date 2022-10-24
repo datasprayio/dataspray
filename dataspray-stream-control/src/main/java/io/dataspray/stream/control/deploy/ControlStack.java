@@ -50,7 +50,7 @@ public class ControlStack extends LambdaBaseStack {
                                         "sqs:DeleteMessage",
                                         "sqs:GetQueueAttributes"))
                                 .resources(ImmutableList.of(
-                                        "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + CUSTOMER_QUEUE_WILDCARD + ":" + LAMBDA_ACTIVE_QUALIFIER))
+                                        "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + CUSTOMER_QUEUE_WILDCARD))
                                 .build()))
                 .build();
 
