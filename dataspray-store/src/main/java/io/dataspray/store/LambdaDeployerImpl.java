@@ -576,6 +576,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .roleName(roleName)
                     .policyArn(customerLoggingPolicy.arn())
                     .build());
+            waiterUtil.resolve(waiterUtil.waitUntilPolicyAttachedToRole(roleName, policyName));
         }
     }
 
