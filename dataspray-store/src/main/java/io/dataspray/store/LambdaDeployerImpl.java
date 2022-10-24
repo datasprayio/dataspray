@@ -76,6 +76,7 @@ import static java.util.function.Predicate.not;
 @Slf4j
 @ApplicationScoped
 public class LambdaDeployerImpl implements LambdaDeployer {
+    public static final int LAMBDA_DEFAULT_TIMEOUT = 900;
     /** Lambda version alias pointing to the active version in use */
     public static final String LAMBDA_ACTIVE_QUALIFIER = "ACTIVE";
     public static final String CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME = "customer-function-permission-boundary";
@@ -191,7 +192,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .handler(handler)
                             .environment(env)
                             .memorySize(128)
-                            .timeout(900)
+                            .timeout(LAMBDA_DEFAULT_TIMEOUT)
                             .build())
                     .version();
 
@@ -285,7 +286,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             // Add the Event Source Mapping but leave disabled to be switched over later
             String sourceUuid = lambdaClient.createEventSourceMapping(CreateEventSourceMappingRequest.builder()
                             .functionName(functionName + ":" + LAMBDA_ACTIVE_QUALIFIER)
-
                             .enabled(false)
                             .batchSize(1)
                             .eventSourceArn("arn:aws:sqs:" + awsRegion + ":" + awsAccountId + ":" + queueStore.getAwsQueueName(customerId, queueNameToAdd))

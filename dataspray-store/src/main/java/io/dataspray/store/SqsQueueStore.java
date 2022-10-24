@@ -21,6 +21,8 @@ import java.util.Base64.Encoder;
 import java.util.Map;
 import java.util.Optional;
 
+import static io.dataspray.store.LambdaDeployerImpl.LAMBDA_DEFAULT_TIMEOUT;
+
 @Slf4j
 @ApplicationScoped
 public class SqsQueueStore implements QueueStore {
@@ -94,6 +96,9 @@ public class SqsQueueStore implements QueueStore {
     public void createQueue(String customerId, String queueName) {
         CreateQueueResponse queueResponse = sqsClient.createQueue(CreateQueueRequest.builder()
                 .queueName(getAwsQueueName(customerId, queueName))
+                .attributes(Map.of(
+                        // Queue visibility timeout cannot be less than function timeout
+                        QueueAttributeName.VISIBILITY_TIMEOUT, Integer.toString(LAMBDA_DEFAULT_TIMEOUT)))
                 .attributes(ImmutableMap.of(
                         QueueAttributeName.MESSAGE_RETENTION_PERIOD, String.valueOf(14 * 24 * 60 * 60)))
                 .build());
