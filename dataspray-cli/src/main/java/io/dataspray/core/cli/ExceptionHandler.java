@@ -1,7 +1,6 @@
 package io.dataspray.core.cli;
 
 import com.google.gson.Gson;
-import io.dataspray.stream.ingest.client.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine;
 
@@ -25,7 +24,7 @@ public class ExceptionHandler implements CommandLine.IExecutionExceptionHandler 
         } else {
             Optional<String> webMessageOpt = Optional.empty();
             if (ex instanceof io.dataspray.stream.ingest.client.ApiException) {
-                webMessageOpt = Optional.of(((ApiException) ex).getResponseBody());
+                webMessageOpt = Optional.of(((io.dataspray.stream.ingest.client.ApiException) ex).getResponseBody());
             } else if (ex instanceof io.dataspray.stream.control.client.ApiException) {
                 webMessageOpt = Optional.of(((io.dataspray.stream.control.client.ApiException) ex).getResponseBody());
             }

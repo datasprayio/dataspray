@@ -1,7 +1,6 @@
 package io.dataspray.lambda.web;
 
 import com.google.common.base.Strings;
-import io.dataspray.common.json.GsonUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.ErrorBody;
@@ -27,9 +26,9 @@ public class WebApplicationExceptionMapper implements ExceptionMapper<Throwable>
             // Put exception message to response body if possible
             if (!ex.getResponse().hasEntity()) {
                 return Response.fromResponse(ex.getResponse())
-                        .entity(GsonUtil.get().toJson(ErrorBody.get(
+                        .entity(ErrorBody.get(
                                 ex.getResponse().getStatus(),
-                                Strings.nullToEmpty(ex.getMessage())))).build();
+                                Strings.nullToEmpty(ex.getMessage()))).build();
             }
 
             return ex.getResponse();
