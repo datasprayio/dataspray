@@ -1,6 +1,7 @@
 package io.dataspray.core.cli;
 
-import io.dataspray.core.Core;
+import io.dataspray.core.Codegen;
+import io.dataspray.core.Project;
 import io.dataspray.core.sample.SampleProject;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
@@ -24,10 +25,11 @@ public class Init implements Runnable {
     private SampleProject sample = SampleProject.EMPTY;
 
     @Inject
-    Core core;
+    Codegen codegen;
 
     @Override
     public void run() {
-        core.init(name, sample);
+        Project project = codegen.initProject(".", name, sample);
+        codegen.generateAll(project);
     }
 }

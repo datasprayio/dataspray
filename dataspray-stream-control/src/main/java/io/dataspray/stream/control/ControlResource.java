@@ -5,10 +5,12 @@ import com.google.common.collect.ImmutableSet;
 import io.dataspray.lambda.resource.AbstractResource;
 import io.dataspray.store.LambdaDeployer;
 import io.dataspray.store.LambdaDeployer.DeployedVersion;
+import io.dataspray.store.LambdaDeployer.State;
 import io.dataspray.store.LambdaDeployer.Status;
 import io.dataspray.store.LambdaDeployer.Versions;
 import io.dataspray.stream.control.model.DeployRequest;
 import io.dataspray.stream.control.model.TaskStatus;
+import io.dataspray.stream.control.model.TaskStatus.StatusEnum;
 import io.dataspray.stream.control.model.TaskStatuses;
 import io.dataspray.stream.control.model.TaskVersion;
 import io.dataspray.stream.control.model.TaskVersions;
@@ -21,11 +23,12 @@ import software.amazon.awssdk.services.lambda.model.Runtime;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.InternalServerErrorException;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static io.dataspray.store.LambdaDeployer.UploadCodeClaim;
-import static io.dataspray.stream.control.model.TaskStatus.StatusEnum.*;
+import static io.dataspray.stream.control.model.TaskStatus.StatusEnum.NOTFOUND;
 
 @Slf4j
 @ApplicationScoped
@@ -60,7 +63,8 @@ public class ControlResource extends AbstractResource implements ControlApi {
                         .distinct()
                         .collect(ImmutableSet.toImmutableSet()),
                 Enums.getIfPresent(Runtime.class, deployRequest.getRuntime().name()).toJavaUtil()
-                        .orElseThrow(() -> new BadRequestException("Unknown runtime: " + deployRequest.getRuntime())));
+                        .orElseThrow(() -> new BadRequestException("Unknown runtime: " + deployRequest.getRuntime())),
+                deployRequest.getSwitchToNow());
         return new TaskVersion(
                 taskId,
                 deployedVersion.getVersion(),
@@ -71,7 +75,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
     public TaskVersions getVersions(String taskId) {
         Versions versions = deployer.getVersions(customerId, taskId);
         return new TaskVersions(
-                versions.getActive().orElse(null),
+                toTaskStatus(taskId, Optional.of(versions.getStatus())),
                 versions.getTaskByVersion().values().stream()
                         .map(v -> new TaskVersion(
                                 taskId,
@@ -117,9 +121,10 @@ public class ControlResource extends AbstractResource implements ControlApi {
     private TaskStatus toTaskStatus(String taskId, Optional<Status> statusOpt) {
         return TaskStatus.builder()
                 .taskId(taskId)
-                .status(statusOpt.map(Status::isActive)
-                        .map(isActive -> isActive ? RUNNING : PAUSED)
-                        .orElse(MISSING))
+                .version(statusOpt.map(Status::getFunction).map(FunctionConfiguration::version).orElse(null))
+                .status(statusOpt.map(Status::getState)
+                        .map(this::stateToTaskStatusEnum)
+                        .orElse(NOTFOUND))
                 .lastUpdateStatusReason(statusOpt
                         .map(Status::getFunction)
                         .map(FunctionConfiguration::lastUpdateStatusReason)
@@ -131,5 +136,25 @@ public class ControlResource extends AbstractResource implements ControlApi {
                         .flatMap(lastUpdateStatus -> Enums.getIfPresent(TaskStatus.LastUpdateStatusEnum.class, lastUpdateStatus).toJavaUtil())
                         .orElse(null))
                 .build();
+    }
+
+    private StatusEnum stateToTaskStatusEnum(State state) {
+        switch (state) {
+            case STARTING:
+                return StatusEnum.STARTING;
+            case RUNNING:
+                return StatusEnum.RUNNING;
+            case PAUSING:
+                return StatusEnum.PAUSING;
+            case PAUSED:
+                return StatusEnum.PAUSED;
+            case UPDATING:
+                return StatusEnum.UPDATING;
+            case CREATING:
+                return StatusEnum.CREATING;
+            default:
+                log.error("Unknown state {}", state);
+                throw new InternalServerErrorException("Unknown state: " + state);
+        }
     }
 }

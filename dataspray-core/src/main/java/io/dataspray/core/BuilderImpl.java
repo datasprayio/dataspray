@@ -33,12 +33,12 @@ public class BuilderImpl implements Builder {
                 .stream()
                 .flatMap(Collection::stream)
                 .map(Processor::getName)
-                .forEach(processorName -> installJava(project, processorName));
+                .forEach(processorName -> install(project, processorName));
     }
 
     @SneakyThrows
     @Override
-    public void installJava(Project project, String processorName) {
+    public void install(Project project, String processorName) {
         JavaProcessor processor = Optional.ofNullable(project.getDefinition()
                         .getJavaProcessors())
                 .stream()

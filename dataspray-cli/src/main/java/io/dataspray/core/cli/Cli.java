@@ -7,17 +7,22 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
 @TopCommand
-@Command(name = "dst", subcommands = {
-        Init.class,
-        Install.class,
-        Deploy.class,
-        Status.class,
-        Login.class,
-})
+@Command(name = "dst",
+        mixinStandardHelpOptions = true,
+        versionProvider = VersionProvider.class,
+        subcommandsRepeatable = true,
+        subcommands = {
+                Init.class,
+                Install.class,
+                Run.class,
+                Login.class,
+        }
+)
 public class Cli {
     @Mixin
     LoggingMixin loggingMixin;
 
     @Spec
     CommandSpec spec;
+
 }

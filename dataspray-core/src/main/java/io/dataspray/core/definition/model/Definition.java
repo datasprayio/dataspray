@@ -72,6 +72,14 @@ public class Definition extends Item {
                 .build();
     }
 
+    @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public ImmutableSet<Processor> getProcessors() {
+        initialize();
+        return ImmutableSet.<Processor>builder()
+                .addAll(javaProcessors)
+                .build();
+    }
+
     @Builder.Default
     ImmutableSet<JavaProcessor> javaProcessors = ImmutableSet.of();
 

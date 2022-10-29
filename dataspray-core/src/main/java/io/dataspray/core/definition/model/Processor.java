@@ -4,13 +4,16 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.jcabi.aspects.Cacheable;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 
@@ -19,6 +22,20 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @NonFinal
 public class Processor extends Item {
+    @Nonnull
+    Target target;
+
+    @Getter
+    @AllArgsConstructor
+    public enum Target {
+        DATASPRAY
+        // TODO SAMZA
+        // TODO FLINK
+    }
+
+    @Nullable
+    String handler;
+
     @Nonnull
     ImmutableSet<StreamLink> inputStreams;
 

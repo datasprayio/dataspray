@@ -26,6 +26,8 @@ import software.amazon.awssdk.services.iam.model.GetRoleRequest;
 import software.amazon.awssdk.services.iam.model.GetRoleResponse;
 import software.amazon.awssdk.services.iam.model.NoSuchEntityException;
 import software.amazon.awssdk.services.iam.model.Policy;
+import software.amazon.awssdk.services.iam.model.PutRolePolicyRequest;
+import software.amazon.awssdk.services.iam.model.PutRolePolicyResponse;
 import software.amazon.awssdk.services.iam.waiters.IamWaiter;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -51,13 +53,19 @@ public class MockIamClient {
     public IamClient getIamClient() {
         IamClient mock = Mockito.mock(IamClient.class);
 
+        // Managed
         Map<String, Set<String>> roleNameToAttachedPolicyNames = Maps.newConcurrentMap();
         Set<String> policyNames = Sets.newConcurrentHashSet();
+        // Inline
+        Map<String, Set<String>> roleNameToAttachedInlinePolicyNames = Maps.newConcurrentMap();
 
         when(mock.createRole(Mockito.<CreateRoleRequest>any()))
                 .thenAnswer(invocation -> {
                     CreateRoleRequest request = invocation.getArgument(0, CreateRoleRequest.class);
                     if (roleNameToAttachedPolicyNames.putIfAbsent(request.roleName(), Sets.newConcurrentHashSet()) != null) {
+                        throw alreadyExistsEntity();
+                    }
+                    if (roleNameToAttachedInlinePolicyNames.putIfAbsent(request.roleName(), Sets.newConcurrentHashSet()) != null) {
                         throw alreadyExistsEntity();
                     }
                     return CreateRoleResponse.builder()
@@ -77,12 +85,27 @@ public class MockIamClient {
         when(mock.getRolePolicy(Mockito.<GetRolePolicyRequest>any()))
                 .thenAnswer(invocation -> {
                     GetRolePolicyRequest request = invocation.getArgument(0, GetRolePolicyRequest.class);
-                    Set<String> rolePolicyNames = roleNameToAttachedPolicyNames.get(request.roleName());
-                    if (rolePolicyNames == null
-                            || !rolePolicyNames.contains(request.policyName())) {
+                    Set<String> roleInlinePolicyNames = roleNameToAttachedInlinePolicyNames.get(request.roleName());
+                    if (roleInlinePolicyNames == null
+                            || !roleInlinePolicyNames.contains(request.policyName())) {
                         throw noSuchEntity();
                     }
-                    return GetRolePolicyResponse.builder().build();
+                    return GetRolePolicyResponse.builder()
+                            .sdkHttpResponse(SDK_200).build();
+                });
+
+        when(mock.putRolePolicy(Mockito.<PutRolePolicyRequest>any()))
+                .thenAnswer(invocation -> {
+                    PutRolePolicyRequest request = invocation.getArgument(0, PutRolePolicyRequest.class);
+                    Set<String> roleInlinePolicyNames = roleNameToAttachedInlinePolicyNames.get(request.roleName());
+                    if (roleInlinePolicyNames == null) {
+                        throw noSuchEntity();
+                    }
+                    if (!roleInlinePolicyNames.add(request.policyName())) {
+                        throw alreadyExistsEntity();
+                    }
+                    return PutRolePolicyResponse.builder()
+                            .sdkHttpResponse(SDK_200).build();
                 });
 
         when(mock.getPolicy(Mockito.<GetPolicyRequest>any()))

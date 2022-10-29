@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.Value;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
 import software.amazon.awssdk.services.lambda.model.Runtime;
@@ -20,7 +22,8 @@ public interface LambdaDeployer {
             String codeUrl,
             String handler,
             ImmutableSet<String> inputQueueNames,
-            Runtime runtime);
+            Runtime runtime,
+            boolean switchToImmediately);
 
     void switchVersion(String customerId, String taskId, String version);
 
@@ -42,19 +45,38 @@ public interface LambdaDeployer {
     class Status {
         String taskId;
         FunctionConfiguration function;
-        boolean active;
+        State state;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    enum State {
+        RUNNING(0, false, Optional.of(true)),
+        STARTING(1, true, Optional.of(true)),
+        PAUSED(2, false, Optional.of(false)),
+        PAUSING(3, true, Optional.of(false)),
+        UPDATING(4, true, Optional.empty()),
+        CREATING(5, true, Optional.empty());
+        /**
+         * When determining the state of a group of items,
+         * the state with the highest weight should be assigned to the whole group.
+         */
+        private final int weight;
+        private final boolean isUpdating;
+        /** Empty indicates we don't know, it's either Updating or Creating without knowing the final state */
+        private final Optional<Boolean> isFinalStateRunningOpt;
     }
 
     @Value
     class QueueSource {
         String queueName;
         String uuid;
-        boolean enabled;
+        State state;
     }
 
     @Value
     class Versions {
-        Optional<String> active;
+        Status status;
         ImmutableMap<String, DeployedVersion> taskByVersion;
     }
 

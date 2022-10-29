@@ -1,8 +1,8 @@
 package io.dataspray.core.cli;
 
-import io.dataspray.core.Builder;
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
+import io.dataspray.core.Runtime;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -10,9 +10,9 @@ import picocli.CommandLine.Option;
 import javax.inject.Inject;
 import java.util.Optional;
 
-@Command(name = "install",
-        description = "compile and install task(s)")
-public class Install implements Runnable {
+@Command(name = "status",
+        description = "check status of all tasks")
+public class RunStatus implements Runnable {
     @Mixin
     LoggingMixin loggingMixin;
     @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id to deploy; otherwise all tasks are used if ran from root directory or specific task if ran from within a task directory")
@@ -21,18 +21,18 @@ public class Install implements Runnable {
     @Inject
     Codegen codegen;
     @Inject
-    Builder builder;
+    Runtime runtime;
+    @Inject
+    CliConfig cliConfig;
 
     @Override
     public void run() {
         Project project = codegen.loadProject();
         Optional<String> activeProcessor = Optional.ofNullable(taskId).or(project::getActiveProcessor);
         if (activeProcessor.isEmpty()) {
-            codegen.generateAll(project);
-            builder.installAll(project);
+            runtime.statusAll(cliConfig.getDataSprayApiKey(), project);
         } else {
-            codegen.generate(project, activeProcessor.get());
-            builder.install(project, activeProcessor.get());
+            runtime.status(cliConfig.getDataSprayApiKey(), project, activeProcessor.get());
         }
     }
 }

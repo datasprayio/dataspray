@@ -49,7 +49,7 @@ class GitExcludeFileTrackerTest {
     @Test
     void test() throws Exception {
         Git.init().setDirectory(workingDir.toFile()).call();
-        Project project = new Project(workingDir, Git.open(workingDir.toFile()), SampleProject.EMPTY.getDefinitionForName("test"));
+        Project project = new Project(workingDir, Git.open(workingDir.toFile()), SampleProject.EMPTY.getDefinitionForName("test"), Optional.empty());
 
         File file1 = createFile("file1");
         File file2 = createFile("file2");

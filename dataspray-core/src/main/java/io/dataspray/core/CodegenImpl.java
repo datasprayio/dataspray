@@ -11,6 +11,7 @@ import com.samskivert.mustache.MustacheException;
 import io.dataspray.core.TemplateFiles.TemplateFile;
 import io.dataspray.core.definition.model.DataFormat;
 import io.dataspray.core.definition.model.Definition;
+import io.dataspray.core.definition.model.Item;
 import io.dataspray.core.definition.model.JavaProcessor;
 import io.dataspray.core.definition.parser.DefinitionLoader;
 import io.dataspray.core.sample.SampleProject;
@@ -41,6 +42,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 @Slf4j
 @ApplicationScoped
 public class CodegenImpl implements Codegen {
@@ -67,6 +70,7 @@ public class CodegenImpl implements Codegen {
     @Override
     @SneakyThrows
     public Project initProject(String basePath, String projectName, SampleProject sample) {
+        checkArgument(projectName.matches("^[a-zA-Z0-9-_. ]+$"), "Project name can only contain alphanumeric, spaces and - _ .");
         Definition definition = sample.getDefinitionForName(projectName);
         Path projectPath = Path.of(basePath, definition.getNameDir());
         File projectDir = projectPath.toFile();
@@ -94,19 +98,41 @@ public class CodegenImpl implements Codegen {
             fos.write(definitionLoader.toYaml(definition).getBytes(StandardCharsets.UTF_8));
         }
 
-        return new Project(projectPath, git, definition);
+        return new Project(projectPath, git, definition, Optional.empty());
     }
 
     @Override
-    @SneakyThrows
+    public Project loadProject() {
+        Path cwd = Path.of("").toAbsolutePath();
+        Optional<String> activeSubDirNameOpt = Optional.empty();
+        do {
+            if (cwd.resolve(PROJECT_FILENAME).toFile().exists()) {
+                return loadProject(cwd, activeSubDirNameOpt);
+            }
+
+            activeSubDirNameOpt = Optional.ofNullable(cwd.getFileName()).map(Path::toString);
+            cwd = cwd.getParent();
+        } while (cwd != null);
+        throw new RuntimeException("No project found in current working directory or any parent directories");
+    }
+
+    @Override
     public Project loadProject(String projectPathStr) {
-        Path projectPath = Path.of(projectPathStr);
+        return loadProject(Path.of(projectPathStr), Optional.empty());
+    }
+
+    @SneakyThrows
+    private Project loadProject(Path projectPath, Optional<String> activeSubDirNameOpt) {
         Definition definition;
         try (FileReader reader = new FileReader(projectPath.resolve(PROJECT_FILENAME).toFile())) {
             definition = definitionLoader.fromYaml(reader);
         }
         Git git = Git.open(projectPath.toFile());
-        return new Project(projectPath, git, definition);
+        Optional<String> activeProcessorNameOpt = activeSubDirNameOpt.flatMap(activeSubDirName -> definition.getProcessors().stream()
+                .filter(p -> activeSubDirName.equals(p.getNameDir()))
+                .findAny()
+                .map(Item::getName));
+        return new Project(projectPath, git, definition, activeProcessorNameOpt);
     }
 
     @Override
@@ -144,7 +170,7 @@ public class CodegenImpl implements Codegen {
     }
 
     @Override
-    public void generateJava(Project project, String processorName) {
+    public void generate(Project project, String processorName) {
         generateJava(project, Optional.ofNullable(project.getDefinition().getJavaProcessors()).stream()
                 .flatMap(Collection::stream)
                 .filter(p -> p.getName().equals(processorName))

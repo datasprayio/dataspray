@@ -1,7 +1,6 @@
 package io.dataspray.store;
 
 import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -98,8 +97,7 @@ public class SqsQueueStore implements QueueStore {
                 .queueName(getAwsQueueName(customerId, queueName))
                 .attributes(Map.of(
                         // Queue visibility timeout cannot be less than function timeout
-                        QueueAttributeName.VISIBILITY_TIMEOUT, Integer.toString(LAMBDA_DEFAULT_TIMEOUT)))
-                .attributes(ImmutableMap.of(
+                        QueueAttributeName.VISIBILITY_TIMEOUT, Integer.toString(LAMBDA_DEFAULT_TIMEOUT),
                         QueueAttributeName.MESSAGE_RETENTION_PERIOD, String.valueOf(14 * 24 * 60 * 60)))
                 .build());
     }

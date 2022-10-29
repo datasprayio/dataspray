@@ -5,18 +5,22 @@ import com.samskivert.mustache.Mustache.CustomContext;
 import com.samskivert.mustache.Mustache.Lambda;
 import com.samskivert.mustache.Template;
 import io.dataspray.common.StringUtil;
+import io.dataspray.common.VersionUtil;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class ContextUtil implements CustomContext {
+
+    @Inject
+    VersionUtil versionUtil;
 
     @Override
     public Object get(String name) throws Exception {
@@ -26,9 +30,7 @@ public class ContextUtil implements CustomContext {
             case "dataFormatsFolder":
                 return CodegenImpl.SCHEMAS_FOLDER;
             case "runnerVersion":
-                return Optional.ofNullable(Strings.emptyToNull(getClass().getPackage().getImplementationVersion()))
-                        .or(() -> Optional.ofNullable(Strings.emptyToNull(System.getenv("PROJECT_VERSION"))))
-                        .orElseThrow(() -> new RuntimeException("Cannot determine runner version"));
+                return versionUtil.getVersion();
             case "lowerCamelCase":
                 return (Lambda) (frag, out) -> out.write(StringUtil.camelCase(frag.execute(), false));
             case "upperCamelCase":

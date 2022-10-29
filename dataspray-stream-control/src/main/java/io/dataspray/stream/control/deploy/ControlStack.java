@@ -129,11 +129,9 @@ public class ControlStack extends LambdaBaseStack {
                 .actions(ImmutableList.of(
                         "iam:GetRole",
                         "iam:GetRolePolicy",
-                        "iam:GetPolicy",
                         "iam:PassRole",
                         "iam:CreateRole",
-                        "iam:CreatePolicy",
-                        "iam:AttachRolePolicy"))
+                        "iam:PutRolePolicy"))
                 .resources(ImmutableList.of(
                         "arn:aws:iam::" + getAccount() + ":policy/" + CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "*",
                         "arn:aws:iam::" + getAccount() + ":role/" + CUSTOMER_FUN_AND_ROLE_NAME_PREFIX + "*"))

@@ -55,7 +55,7 @@ public class ControlTest {
         assertEquals(
                 TaskStatus.builder()
                         .taskId(taskId)
-                        .status(TaskStatus.StatusEnum.MISSING).build(),
+                        .status(TaskStatus.StatusEnum.NOTFOUND).build(),
                 resource.status(taskId));
 
         String queueName = "queue1";
@@ -63,25 +63,32 @@ public class ControlTest {
                 .codeUrl(uploadCodeResponse.getCodeUrl())
                 .handler("io.dataspray.Runner")
                 .inputQueueNames(List.of(queueName))
-                .runtime(DeployRequest.RuntimeEnum.JAVA11).build());
+                .runtime(DeployRequest.RuntimeEnum.JAVA11)
+                .switchToNow(false).build());
         log.info("Deployed version {}", deployedVersion);
 
         assertEquals(
                 TaskStatus.builder()
                         .taskId(taskId)
-                        .status(TaskStatus.StatusEnum.RUNNING).build(),
+                        .version("1")
+                        .status(TaskStatus.StatusEnum.RUNNING)
+                        .lastUpdateStatus(TaskStatus.LastUpdateStatusEnum.SUCCESSFUL).build(),
                 resource.activateVersion(taskId, deployedVersion.getVersion()));
 
         assertEquals(
                 TaskStatus.builder()
                         .taskId(taskId)
-                        .status(TaskStatus.StatusEnum.PAUSED).build(),
+                        .version("1")
+                        .status(TaskStatus.StatusEnum.PAUSED)
+                        .lastUpdateStatus(TaskStatus.LastUpdateStatusEnum.SUCCESSFUL).build(),
                 resource.pause(taskId));
 
         assertEquals(
                 TaskStatus.builder()
                         .taskId(taskId)
-                        .status(TaskStatus.StatusEnum.RUNNING).build(),
+                        .version("1")
+                        .status(TaskStatus.StatusEnum.RUNNING)
+                        .lastUpdateStatus(TaskStatus.LastUpdateStatusEnum.SUCCESSFUL).build(),
                 resource.resume(taskId));
 
         String queueName2 = "queue2";
@@ -89,21 +96,24 @@ public class ControlTest {
                 .codeUrl(uploadCodeResponse.getCodeUrl())
                 .handler("io.dataspray.Runner")
                 .inputQueueNames(List.of(queueName2))
-                .runtime(DeployRequest.RuntimeEnum.NODEJS14_X).build());
-        log.info("Deployed another version {}", deployedVersion);
+                .runtime(DeployRequest.RuntimeEnum.NODEJS14_X)
+                .switchToNow(true).build());
+        log.info("Deployed another version {}", deployedVersion2);
 
         assertEquals(
                 TaskStatuses.builder()
                         .tasks(ImmutableList.of(
                                 TaskStatus.builder()
                                         .taskId(taskId)
-                                        .status(TaskStatus.StatusEnum.RUNNING).build())).build(),
+                                        .version("2")
+                                        .status(TaskStatus.StatusEnum.RUNNING)
+                                        .lastUpdateStatus(TaskStatus.LastUpdateStatusEnum.SUCCESSFUL).build())).build(),
                 resource.statusAll());
 
         assertEquals(
                 TaskStatus.builder()
                         .taskId(taskId)
-                        .status(TaskStatus.StatusEnum.MISSING).build(),
+                        .status(TaskStatus.StatusEnum.NOTFOUND).build(),
                 resource.delete(taskId));
     }
 }

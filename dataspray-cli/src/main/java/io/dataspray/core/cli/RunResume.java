@@ -1,38 +1,36 @@
 package io.dataspray.core.cli;
 
-import io.dataspray.core.Builder;
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
+import io.dataspray.core.Runtime;
+import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 
 import javax.inject.Inject;
-import java.util.Optional;
 
-@Command(name = "install",
-        description = "compile and install task(s)")
-public class Install implements Runnable {
+@Slf4j
+@Command(name = "resume", description = "Resume previously-paused active version for task(s)")
+public class RunResume implements Runnable {
     @Mixin
     LoggingMixin loggingMixin;
     @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id to deploy; otherwise all tasks are used if ran from root directory or specific task if ran from within a task directory")
     private String taskId;
 
     @Inject
+    CommandUtil commandUtil;
+    @Inject
+    Runtime runtime;
+    @Inject
     Codegen codegen;
     @Inject
-    Builder builder;
+    CliConfig cliConfig;
 
     @Override
     public void run() {
         Project project = codegen.loadProject();
-        Optional<String> activeProcessor = Optional.ofNullable(taskId).or(project::getActiveProcessor);
-        if (activeProcessor.isEmpty()) {
-            codegen.generateAll(project);
-            builder.installAll(project);
-        } else {
-            codegen.generate(project, activeProcessor.get());
-            builder.install(project, activeProcessor.get());
-        }
+        commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
+                runtime.resume(cliConfig.getDataSprayApiKey(), project, selectedTaskId));
     }
 }
