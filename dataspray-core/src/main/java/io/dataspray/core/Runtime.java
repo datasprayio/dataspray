@@ -24,4 +24,6 @@ public interface Runtime {
     TaskStatus resume(String apiKey, Project project, String processorName);
 
     TaskVersions listVersions(String apiKey, Project project, String processorName);
+
+    TaskStatus delete(String apiKey, Project project, String processorName);
 }

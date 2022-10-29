@@ -157,7 +157,7 @@ public class RuntimeImpl implements Runtime {
 
         log.info("Pausing {}", processor.getTaskId());
         TaskStatus taskStatus = streamApi.control(apiKey).pause(processor.getTaskId());
-        log.info("Task paused!");
+        log.info("Task set to be paused");
         printStatus(taskStatus);
 
         return taskStatus;
@@ -172,7 +172,7 @@ public class RuntimeImpl implements Runtime {
 
         log.info("Resuming {}", processor.getTaskId());
         TaskStatus taskStatus = streamApi.control(apiKey).resume(processor.getTaskId());
-        log.info("Task resumed!");
+        log.info("Task set to be resumed");
         printStatus(taskStatus);
 
         return taskStatus;
@@ -186,11 +186,23 @@ public class RuntimeImpl implements Runtime {
                 "Not yet implemented: %s", processor.getTarget());
 
         TaskVersions versions = streamApi.control(apiKey).getVersions(processor.getTaskId());
-        log.trace("Task versions: {}", versions);
-
         printVersions(versions);
 
         return versions;
+    }
+
+    @Override
+    @SneakyThrows
+    public TaskStatus delete(String apiKey, Project project, String processorName) {
+        Processor processor = project.getProcessorByName(processorName);
+        checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
+                "Not yet implemented: %s", processor.getTarget());
+
+        TaskStatus status = streamApi.control(apiKey).delete(processor.getTaskId());
+
+        printStatus(status);
+
+        return status;
     }
 
     private String getCommitHash(Project project) throws GitAPIException {

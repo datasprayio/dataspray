@@ -12,6 +12,7 @@ import picocli.CommandLine.Mixin;
         RunActivate.class,
         RunPause.class,
         RunResume.class,
+        RunDelete.class,
         RunList.class,
         RunStatus.class
 })
