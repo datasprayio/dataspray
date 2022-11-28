@@ -7,7 +7,7 @@ const Block = (props: {
   mirror?: boolean;
 }) => {
   const titleCmpt = (
-    <Grid item xs={12} sm={5}>
+    <Grid key='title' item xs={12} sm={5}>
       <Typography variant='h5' component='h2'>
         {props.title}
       </Typography>
@@ -17,7 +17,7 @@ const Block = (props: {
     </Grid>
   );
   const previewCmpt = (
-    <Grid item xs={12} sm={7}>
+    <Grid key='preview' item xs={12} sm={7}>
       {props.preview}
     </Grid>
   );

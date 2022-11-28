@@ -24,7 +24,8 @@ const GradientTypography: OverridableComponent<TypographyTypeMap> = (props: Reac
       {...props}
       sx={{
         ...props.sx,
-        background: `linear-gradient(to right, ${from}, ${to}) text`,
+        background: `linear-gradient(to right, ${from}, ${to})`,
+        '-webkit-background-clip': 'text',
         WebkitTextFillColor: 'transparent',
       }}
     />

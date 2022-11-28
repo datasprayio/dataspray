@@ -1,7 +1,7 @@
-import { Box, Container, Grid, Typography, useTheme } from '@mui/material';
+import ConstructionIcon from '@mui/icons-material/Construction';
+import { Box, Container, Link, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import Head from 'next/head';
-import Block from '../landing/Block';
 import GradientTypography from '../landing/GradientTypography';
 
 const Home: NextPage = () => {
@@ -13,23 +13,24 @@ const Home: NextPage = () => {
       </Head>
       <main>
         <Container maxWidth='md'>
-          <Box margin={theme.spacing(8, 0)}>
-            <GradientTypography variant='h2' component='h1'>
+          <Box textAlign='center' margin={theme.spacing(8, 0)} component='h1'>
+            <GradientTypography variant='h2'>
               Stream processing
             </GradientTypography>
-            <Typography variant='h2' component='h1'>
+            <Typography variant='h2'>
               developer toolkit
             </Typography>
           </Box>
 
-          <Block mirror title={(<>
-            Write the <GradientTypography variant='h5' component='h2'>logic</GradientTypography> not boilerplate
-          </>)} description={(<>
-            Ideal for deploymet
-          </>)} />
+          <Box textAlign='center' margin={theme.spacing(8, 0)}>
+            <ConstructionIcon fontSize='inherit' sx={{ fontSize: 70 }} />
+            <Typography variant='h5'>
+              Check out the development on <Link href='https://github.com/datasprayio/dataspray' color='secondary'>GitHub</Link>
+            </Typography>
+          </Box>
 
-          <Block mirror title={(<>
-            <GradientTypography variant='h5' component='h2'>Visualize</GradientTypography> your dataflow
+          {/* <Block mirror title={(<>
+            <GradientTypography variant='h5'>Visualize</GradientTypography> your dataflow
           </>)} description={(<>
             <ul>
               <li>See your streaming queues with your processors</li>
@@ -38,7 +39,7 @@ const Home: NextPage = () => {
           </>)} />
 
           <Block title={(<>
-            Re-process <GradientTypography variant='h5' component='h2'>historical data</GradientTypography> to inform your decisions
+            Re-process <GradientTypography variant='h5'>historical data</GradientTypography> to inform your decisions
           </>)} description={(<>
             <ul>
               <li>Run periodic jobs over the entire history</li>
@@ -48,7 +49,7 @@ const Home: NextPage = () => {
           </>)} />
 
           <Block mirror title={(<>
-            Bring your own <GradientTypography variant='h5' component='h2'>code</GradientTypography>
+            Bring your own <GradientTypography variant='h5'>code</GradientTypography>
           </>)} description={(<>
             <ul>
               <li>Own and manage your Git repo with entire pipeline</li>
@@ -56,19 +57,19 @@ const Home: NextPage = () => {
               <li>Use your own IDE or use our online editor</li>
               <li>No vendor lock-in, eject generated boilerplate code and run on your own cluster</li>
             </ul>
-          </>)} />
+          </>)} /> */}
 
-          <Block mirror title={(<>
-            Affordable <GradientTypography variant='h5' component='h2'>pay-for-use</GradientTypography> cloud
+          {/* <Block mirror title={(<>
+            Affordable <GradientTypography variant='h5'>pay-for-use</GradientTypography> cloud
           </>)} description={(<>
             Ideal for deploymet
           </>)} />
 
           <Block mirror title={(<>
-            Affordable <GradientTypography variant='h5' component='h2'>pay-for-use</GradientTypography> cloud
+            Affordable <GradientTypography variant='h5'>pay-for-use</GradientTypography> cloud
           </>)} description={(<>
             Ideal for deploymet
-          </>)} />
+          </>)} /> */}
         </Container>
       </main>
     </>
