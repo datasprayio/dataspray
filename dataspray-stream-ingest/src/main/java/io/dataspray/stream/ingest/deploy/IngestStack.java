@@ -3,7 +3,6 @@ package io.dataspray.stream.ingest.deploy;
 import com.google.common.collect.ImmutableList;
 import io.dataspray.lambda.deploy.LambdaBaseStack;
 import io.dataspray.store.BillingStore;
-import io.dataspray.stream.ingest.IngestResource;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Duration;
@@ -52,7 +51,7 @@ public class IngestStack extends LambdaBaseStack {
                 .build());
 
         bucketEtl = Bucket.Builder.create(this, "ingest-etl-bucket")
-                .bucketName(IngestResource.ETL_BUCKET_NAME)
+                .bucketName(ETL_BUCKET_NAME)
                 .autoDeleteObjects(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 // Add different expiry for each retention prefix

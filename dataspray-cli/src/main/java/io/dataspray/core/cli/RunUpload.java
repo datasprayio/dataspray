@@ -2,7 +2,7 @@ package io.dataspray.core.cli;
 
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
-import io.dataspray.core.Runtime;
+import io.dataspray.core.StreamRuntime;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -27,7 +27,7 @@ public class RunUpload implements Runnable {
     @Inject
     CommandUtil commandUtil;
     @Inject
-    Runtime runtime;
+    StreamRuntime streamRuntime;
     @Inject
     Codegen codegen;
     @Inject
@@ -40,6 +40,6 @@ public class RunUpload implements Runnable {
         checkState(codeFile.exists(), "Path %s doesn't exist", file);
         checkState(codeFile.isFile(), "Path %s is not a file", file);
         commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                runtime.upload(cliConfig.getDataSprayApiKey(), project, selectedTaskId, codeFile));
+                streamRuntime.upload(cliConfig.getDataSprayApiKey(), project, selectedTaskId, codeFile));
     }
 }

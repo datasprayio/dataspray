@@ -2,7 +2,7 @@ package io.dataspray.core.cli;
 
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
-import io.dataspray.core.Runtime;
+import io.dataspray.core.StreamRuntime;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -21,7 +21,7 @@ public class RunStatus implements Runnable {
     @Inject
     Codegen codegen;
     @Inject
-    Runtime runtime;
+    StreamRuntime streamRuntime;
     @Inject
     CliConfig cliConfig;
 
@@ -30,9 +30,9 @@ public class RunStatus implements Runnable {
         Project project = codegen.loadProject();
         Optional<String> activeProcessor = Optional.ofNullable(taskId).or(project::getActiveProcessor);
         if (activeProcessor.isEmpty()) {
-            runtime.statusAll(cliConfig.getDataSprayApiKey(), project);
+            streamRuntime.statusAll(cliConfig.getDataSprayApiKey(), project);
         } else {
-            runtime.status(cliConfig.getDataSprayApiKey(), project, activeProcessor.get());
+            streamRuntime.status(cliConfig.getDataSprayApiKey(), project, activeProcessor.get());
         }
     }
 }

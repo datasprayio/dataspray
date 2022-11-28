@@ -28,7 +28,6 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 @Slf4j
 @ApplicationScoped
 public class IngestResource extends AbstractResource implements IngestApi {
-    public static final String ETL_BUCKET_NAME = "io-dataspray-etl";
     /** Limited by SQS max message size */
     public static final int MESSAGE_MAX_BYTES = 256 * 1024;
     /** Can be supplied via header, query param */
@@ -70,8 +69,9 @@ public class IngestResource extends AbstractResource implements IngestApi {
             queueStore.submit(accountId, targetId, messageBytes, headers.getMediaType());
         }
 
-        // Submit message to S3 for distributed processing
+        // Submit message to S3 for later batch processing
         if (streamMetadata.getRetentionOpt().isPresent()) {
+            // Only JSON supported for now
             if (APPLICATION_JSON_TYPE.equals(headers.getMediaType())) {
                 etlStore.putRecord(accountId, targetId, messageBytes, streamMetadata.getRetentionOpt().get());
             } else {

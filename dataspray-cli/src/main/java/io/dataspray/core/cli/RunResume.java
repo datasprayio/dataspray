@@ -2,7 +2,7 @@ package io.dataspray.core.cli;
 
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
-import io.dataspray.core.Runtime;
+import io.dataspray.core.StreamRuntime;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -21,7 +21,7 @@ public class RunResume implements Runnable {
     @Inject
     CommandUtil commandUtil;
     @Inject
-    Runtime runtime;
+    StreamRuntime streamRuntime;
     @Inject
     Codegen codegen;
     @Inject
@@ -31,6 +31,6 @@ public class RunResume implements Runnable {
     public void run() {
         Project project = codegen.loadProject();
         commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                runtime.resume(cliConfig.getDataSprayApiKey(), project, selectedTaskId));
+                streamRuntime.resume(cliConfig.getDataSprayApiKey(), project, selectedTaskId));
     }
 }

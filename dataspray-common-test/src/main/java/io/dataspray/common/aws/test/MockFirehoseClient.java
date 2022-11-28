@@ -37,7 +37,7 @@ public class MockFirehoseClient {
     @Alternative
     @Priority(1)
     @Singleton
-    @IfBuildProperty(name = "aws.sqs.mock.enable", stringValue = "true")
+    @IfBuildProperty(name = "aws.firehose.mock.enable", stringValue = "true")
     @Named(MOCK_FIREHOSE_QUEUES)
     public Function<String, FirehoseQueue> getMockQueues() {
         ConcurrentMap<String, FirehoseQueue> queues = Maps.newConcurrentMap();

@@ -29,7 +29,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
 @ApplicationScoped
-public class RuntimeImpl implements Runtime {
+public class StreamRuntimeImpl implements StreamRuntime {
 
     @Inject
     ContextBuilder contextBuilder;

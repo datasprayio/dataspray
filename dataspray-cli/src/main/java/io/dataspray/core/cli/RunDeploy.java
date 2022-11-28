@@ -2,7 +2,7 @@ package io.dataspray.core.cli;
 
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
-import io.dataspray.core.Runtime;
+import io.dataspray.core.StreamRuntime;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -23,7 +23,7 @@ public class RunDeploy implements Runnable {
     @Inject
     CommandUtil commandUtil;
     @Inject
-    Runtime runtime;
+    StreamRuntime streamRuntime;
     @Inject
     Codegen codegen;
     @Inject
@@ -33,6 +33,6 @@ public class RunDeploy implements Runnable {
     public void run() {
         Project project = codegen.loadProject();
         commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                runtime.deploy(cliConfig.getDataSprayApiKey(), project, selectedTaskId, !skipActivate));
+                streamRuntime.deploy(cliConfig.getDataSprayApiKey(), project, selectedTaskId, !skipActivate));
     }
 }

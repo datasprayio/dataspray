@@ -5,7 +5,7 @@ import io.dataspray.stream.control.client.model.TaskVersions;
 
 import java.io.File;
 
-public interface Runtime {
+public interface StreamRuntime {
 
     void statusAll(String apiKey, Project project);
 
