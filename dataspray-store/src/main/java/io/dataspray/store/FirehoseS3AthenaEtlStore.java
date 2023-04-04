@@ -4,15 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dataspray.store.BillingStore.EtlRetention;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ConflictException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.function.TriFunction;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.athena.AthenaClient;
-import software.amazon.awssdk.services.athena.model.CreatePreparedStatementRequest;
-import software.amazon.awssdk.services.athena.model.GetQueryExecutionRequest;
-import software.amazon.awssdk.services.athena.model.ListQueryExecutionsRequest;
-import software.amazon.awssdk.services.athena.model.QueryExecutionContext;
-import software.amazon.awssdk.services.athena.model.StartQueryExecutionRequest;
 import software.amazon.awssdk.services.firehose.FirehoseClient;
 import software.amazon.awssdk.services.firehose.model.PutRecordRequest;
 import software.amazon.awssdk.services.firehose.model.Record;
@@ -42,10 +42,6 @@ import software.amazon.awssdk.services.glue.model.Table;
 import software.amazon.awssdk.services.glue.model.TableInput;
 import software.amazon.awssdk.services.glue.model.UpdateTableRequest;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.ConflictException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
@@ -78,6 +74,10 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
             "/day=!{timestamp:dd}" +
             "/hour=!{timestamp:HH}" +
             "/";
+    public static final TriFunction<EtlRetention, String, String, String> ETL_BUCKET_TARGET_PREFIX = (etlRetention, customerId, targetId) -> ETL_BUCKET_PREFIX
+            .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}", etlRetention.name())
+            .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ACCOUNT + "}", customerId)
+            .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TARGET + "}", targetId);
 
     @ConfigProperty(name = "aws.accountId")
     String awsAccountId;
@@ -95,7 +95,7 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
 
     @Override
     public void putRecord(String customerId, String targetId, byte[] jsonBytes, EtlRetention retention) {
-        // Parse customer mesage as JSON
+        // Parse customer message as JSON
         final Map<String, Object> json;
         try {
             json = jsonSerde.readValue(jsonBytes, new TypeReference<Map<String, Object>>() {
@@ -125,7 +125,12 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
     }
 
     @Override
-    public void setTableDefinition(String customerId, String targetId, DataFormat dataFormat, String schemaDefinition) {
+    public void setTableDefinition(
+            String customerId,
+            String targetId,
+            DataFormat dataFormat,
+            String schemaDefinition,
+            EtlRetention retention) {
         GetRegistryResponse registry = getOrCreateRegistry(customerId);
 
         String schemaName = getSchemaNameForQueue(targetId);
@@ -165,8 +170,7 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
 
         Database database = getOrCreateDatabase(customerId);
 
-        upsertTableAndSchema(customerId, targetId, registry.registryName(), schemaName, schemaVersionId)
-        // TODO
+        upsertTableAndSchema(customerId, targetId, registry.registryName(), schemaName, schemaVersionId, retention);
     }
 
     private String getSchemaNameForQueue(String targetId) {
@@ -195,34 +199,43 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
         return GLUE_CUSTOMER_PREFIX + customerId;
     }
 
-    private void upsertTableAndSchema(String customerId, String targetId, String registryName, String schemaName, String schemaVersionId) {
-            String tableName = getTableName(customerId, targetId);
+    private void upsertTableAndSchema(
+            String customerId,
+            String targetId,
+            String registryName,
+            String schemaName,
+            String schemaVersionId,
+            EtlRetention retention) {
+        String tableName = getTableName(customerId, targetId);
         Optional<Table> tablePreviousOpt;
         try {
             tablePreviousOpt = Optional.of(glueClient.getTable(GetTableRequest.builder()
                             .catalogId(awsAccountId)
                             .databaseName(getDatabaseName(customerId))
-                    .name(tableName).build())
+                            .name(tableName).build())
                     .table());
         } catch (EntityNotFoundException ex) {
             tablePreviousOpt = Optional.empty();
         }
 
-        if(tablePreviousOpt.isEmpty()) {
+        if (tablePreviousOpt.isEmpty()) {
             glueClient.createTable(CreateTableRequest.builder()
                     .catalogId(awsAccountId)
                     .databaseName(getDatabaseName(customerId))
                     .tableInput(TableInput.builder()
                             .name(tableName)
                             .storageDescriptor(StorageDescriptor.builder()
-                                    .location("s3://" + )
+                                    .location("s3://" + ETL_BUCKET_NAME + "/" + ETL_BUCKET_TARGET_PREFIX.apply(
+                                            retention,
+                                            customerId,
+                                            targetId))
                                     .schemaReference(SchemaReference.builder()
                                             .schemaId(SchemaId.builder()
                                                     .registryName(registryName)
                                                     .schemaName(schemaName).build())
                                             .schemaVersionId(schemaVersionId).build()).build()).build())
                     .build());
-        } else if(schemaVersionId.equals(tablePreviousOpt.get()
+        } else if (schemaVersionId.equals(tablePreviousOpt.get()
                 .storageDescriptor()
                 .schemaReference()
                 .schemaVersionId())) {

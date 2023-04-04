@@ -1,12 +1,12 @@
 package io.dataspray.core.cli;
 
 import com.google.common.base.Strings;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 
-import javax.inject.Inject;
 import java.util.Optional;
 import java.util.function.Predicate;
 

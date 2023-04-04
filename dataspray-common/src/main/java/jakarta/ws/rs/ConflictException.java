@@ -14,12 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  */
 
-package javax.ws.rs;
+package jakarta.ws.rs;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
- * A runtime exception indicating that server has a {@link javax.ws.rs.core.Response.Status#CONFLICT conflict} with the
+ * A runtime exception indicating that server has a {@link jakarta.ws.rs.core.Response.Status#CONFLICT conflict} with
+ * the
  * requested resource.
  */
 public class ConflictException extends ClientErrorException {

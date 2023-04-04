@@ -2,9 +2,13 @@ package io.dataspray.common.aws.test;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import io.quarkus.arc.Priority;
 import io.quarkus.arc.properties.IfBuildProperty;
 import io.quarkus.test.junit.QuarkusTestProfile;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
@@ -21,10 +25,6 @@ import software.amazon.awssdk.services.glue.model.GetDatabaseResponse;
 import software.amazon.awssdk.services.glue.model.InvalidInputException;
 
 import javax.annotation.Nonnull;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Alternative;
-import javax.inject.Named;
-import javax.inject.Singleton;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 

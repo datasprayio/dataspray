@@ -7,12 +7,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import io.dataspray.common.json.GsonUtil;
 import io.dataspray.core.definition.model.Definition;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import lombok.extern.slf4j.Slf4j;
 import org.yaml.snakeyaml.Yaml;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.inject.Named;
 import java.io.InputStream;
 import java.io.Reader;
 

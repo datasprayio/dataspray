@@ -1,8 +1,7 @@
 package io.dataspray.store;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
-
-import javax.enterprise.context.ApplicationScoped;
 
 @Slf4j
 @ApplicationScoped

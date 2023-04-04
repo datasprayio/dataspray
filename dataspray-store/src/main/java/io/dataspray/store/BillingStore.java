@@ -1,12 +1,12 @@
 package io.dataspray.store;
 
 
+import jakarta.ws.rs.ClientErrorException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 
-import javax.ws.rs.ClientErrorException;
 import java.util.Optional;
 
 public interface BillingStore {
@@ -15,6 +15,10 @@ public interface BillingStore {
             String accountId,
             String targetId,
             Optional<String> authKeyOpt) throws ClientErrorException;
+
+    StreamMetadata getStream(
+            String accountId,
+            String targetId) throws ClientErrorException;
 
     @Value
     class StreamMetadata {

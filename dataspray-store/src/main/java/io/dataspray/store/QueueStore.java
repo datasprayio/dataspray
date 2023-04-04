@@ -1,8 +1,8 @@
 package io.dataspray.store;
 
+import jakarta.ws.rs.core.MediaType;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
-import javax.ws.rs.core.MediaType;
 import java.util.Map;
 import java.util.Optional;
 

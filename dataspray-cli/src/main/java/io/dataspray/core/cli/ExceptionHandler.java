@@ -1,12 +1,12 @@
 package io.dataspray.core.cli;
 
 import com.google.gson.Gson;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.ErrorBody;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.ws.rs.ErrorBody;
 import java.util.Optional;
 import java.util.function.Predicate;
 

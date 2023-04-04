@@ -3,14 +3,15 @@ package io.dataspray.core;
 import io.dataspray.core.sample.SampleProject;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
-import javax.inject.Inject;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -51,6 +52,7 @@ public class CodegenBuilderTest {
     }
 
     @Test
+    @Timeout(value = 300)
     public void test() throws Exception {
         Project project = codegen.initProject(workingDir.toString(), "Test Project", SampleProject.CLOUD);
         codegen.generateAll(project);

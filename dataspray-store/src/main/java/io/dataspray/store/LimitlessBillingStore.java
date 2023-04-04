@@ -1,8 +1,9 @@
 package io.dataspray.store;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.core.Response;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response;
+
 import java.util.Optional;
 
 @ApplicationScoped
@@ -17,6 +18,11 @@ public class LimitlessBillingStore implements BillingStore {
             throw new ClientErrorException(Response.Status.PAYMENT_REQUIRED);
         }
 
+        return getStream(accountId, targetId);
+    }
+
+    @Override
+    public StreamMetadata getStream(String accountId, String targetId) throws ClientErrorException {
         return new StreamMetadata(Optional.of(EtlRetention.DEFAULT));
     }
 }

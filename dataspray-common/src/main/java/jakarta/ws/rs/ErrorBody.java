@@ -1,4 +1,4 @@
-package javax.ws.rs;
+package jakarta.ws.rs;
 
 import lombok.AllArgsConstructor;
 import lombok.NonNull;

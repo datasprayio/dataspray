@@ -3,9 +3,8 @@ package io.dataspray.core;
 import com.google.common.collect.ImmutableMap;
 import io.dataspray.core.definition.model.DataFormat;
 import io.dataspray.core.definition.model.Processor;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class ContextBuilder {

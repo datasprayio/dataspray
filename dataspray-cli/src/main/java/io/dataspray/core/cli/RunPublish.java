@@ -3,13 +3,12 @@ package io.dataspray.core.cli;
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
 import io.dataspray.core.StreamRuntime;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
-
-import javax.inject.Inject;
 
 @Slf4j
 @Command(/* Debugging use only */ hidden = true, name = "publish", description = "second step of deploy command; prefer to use deploy instead; publish new version of task with previously uploaded code")

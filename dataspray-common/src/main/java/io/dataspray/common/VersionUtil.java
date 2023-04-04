@@ -1,8 +1,8 @@
 package io.dataspray.common;
 
 import com.google.common.base.Strings;
+import jakarta.enterprise.context.ApplicationScoped;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.util.Optional;
 
 @ApplicationScoped

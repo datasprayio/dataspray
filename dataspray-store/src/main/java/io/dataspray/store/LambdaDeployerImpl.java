@@ -8,6 +8,12 @@ import com.google.common.primitives.Longs;
 import com.google.gson.Gson;
 import io.dataspray.common.StringUtil;
 import io.dataspray.store.util.WaiterUtil;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ConflictException;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.iam.IamClient;
@@ -46,12 +52,6 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.ConflictException;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotFoundException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -375,7 +375,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .stream()
                 .map(ListVersionsByFunctionResponse::versions)
                 .flatMap(Collection::stream)
-                .filter(f -> !"$LATEST" .equals(f.version()))
+                .filter(f -> !"$LATEST".equals(f.version()))
                 .map(functionConfiguration -> new DeployedVersion(
                         functionConfiguration.version(),
                         functionConfiguration.description()))
@@ -640,7 +640,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                         .qualifier(version)
                         .build())
                 .policy(), ResourcePolicyDocument.class);
-        if (!"2012-10-17" .equals(resourcePolicyDocument.getVersion())) {
+        if (!"2012-10-17".equals(resourcePolicyDocument.getVersion())) {
             log.error("Cannot parse resource policy document with unknown version {} for customer {} taskId {} version {}",
                     resourcePolicyDocument.getVersion(), customerId, taskId, version);
             throw new InternalServerErrorException("Cannot parse resource, please contact support");

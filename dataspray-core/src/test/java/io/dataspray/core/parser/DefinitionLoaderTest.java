@@ -4,11 +4,10 @@ import io.dataspray.core.definition.model.Definition;
 import io.dataspray.core.definition.parser.DefinitionLoader;
 import io.dataspray.core.sample.SampleProject;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import javax.inject.Inject;
 
 @Slf4j
 @QuarkusTest

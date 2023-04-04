@@ -6,6 +6,7 @@ import io.dataspray.stream.ingest.client.ApiCallback;
 import io.dataspray.stream.ingest.client.ApiException;
 import io.dataspray.stream.ingest.client.IngestApi;
 import io.dataspray.stream.ingest.client.ProgressResponseBody;
+import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -13,7 +14,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
@@ -110,7 +110,8 @@ public class StreamApiImpl implements StreamApi {
     }
 
     /**
-     * Code from example: <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html">AWS
+     * Code from example: <a
+     * href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html">AWS
      * example</a>
      */
     @Override

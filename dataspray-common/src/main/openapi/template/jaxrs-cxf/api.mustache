@@ -4,14 +4,14 @@ package {{package}};
 {{/imports}}
 
 import java.util.List;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 {{#useBeanValidation}}
-import javax.validation.constraints.*;
-import javax.validation.Valid;
-import javax.annotation.Nullable;
+import jakarta.validation.constraints.*;
+import jakarta.validation.Valid;
+import jakarta.annotation.Nullable;
 {{/useBeanValidation}}
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.io.InputStream;
 
 

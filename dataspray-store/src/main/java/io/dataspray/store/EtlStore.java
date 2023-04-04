@@ -13,5 +13,6 @@ public interface EtlStore {
     void setTableDefinition(String customerId,
                             String targetId,
                             DataFormat dataFormat,
-                            String schemaDefinition);
+                            String schemaDefinition,
+                            EtlRetention retention);
 }

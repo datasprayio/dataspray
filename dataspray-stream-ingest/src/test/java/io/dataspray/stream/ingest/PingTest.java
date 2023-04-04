@@ -4,9 +4,8 @@ import io.dataspray.common.aws.test.AwsTestProfile;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.RestAssured;
+import jakarta.ws.rs.core.Response.Status;
 import org.junit.jupiter.api.Test;
-
-import javax.ws.rs.core.Response.Status;
 
 @QuarkusTest
 @TestProfile(AwsTestProfile.class)

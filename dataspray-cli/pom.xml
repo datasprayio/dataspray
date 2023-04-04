@@ -157,7 +157,6 @@
                 <configuration>
                     <programFile>dst</programFile>
                     <scriptFile>${project.build.scriptSourceDirectory}/executable-jar-bootstrap.sh</scriptFile>
-                    <classifier>runner</classifier>
                 </configuration>
                 <executions>
                     <execution>
@@ -244,7 +243,7 @@
             <!--                            <generateInstaller>true</generateInstaller>-->
             <!--                            <administratorRequired>false</administratorRequired>-->
             <!--                            <platform>auto</platform>-->
-            <!--                            <runnableJar>${project.build.directory}/${project.artifactId}-${project.version}-runner.jar-->
+            <!--                            <runnableJar>${project.build.directory}/${project.artifactId}-${project.version}.jar-->
             <!--                            </runnableJar>-->
             <!--                            <modules>-->
             <!--                                <module>java.base</module>-->
@@ -368,7 +367,7 @@
             <!--                <configuration>-->
             <!--                    <name>dst</name>-->
             <!--                    <input>${project.build.directory}/slimjre</input>-->
-            <!--                    <mainjar>${project.build.directory}/dataspray-cli-0.0.1-SNAPSHOT-runner.jar</mainjar>-->
+            <!--                    <mainjar>${project.build.directory}/dataspray-cli-0.0.1-SNAPSHOT.jar</mainjar>-->
             <!--                    <runtimeimage>${project.build.directory}/slimjre</runtimeimage>-->
             <!--                    <toolhome>/Library/Java/JavaVirtualMachines/openjdk-14.0.1.jdk/Contents/Home</toolhome>-->
             <!--                    <type>PKG</type>-->

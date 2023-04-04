@@ -13,11 +13,11 @@ import io.dataspray.stream.control.model.UploadCodeResponse;
 import io.findify.s3mock.S3Mock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.inject.Inject;
 import java.nio.file.Files;
 import java.util.List;
 

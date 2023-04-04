@@ -3,11 +3,11 @@ package io.dataspray.core.cli;
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
 import io.dataspray.core.StreamRuntime;
+import jakarta.inject.Inject;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 
-import javax.inject.Inject;
 import java.util.Optional;
 
 @Command(name = "status",

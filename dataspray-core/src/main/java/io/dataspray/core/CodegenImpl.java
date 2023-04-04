@@ -15,6 +15,8 @@ import io.dataspray.core.definition.model.Item;
 import io.dataspray.core.definition.model.JavaProcessor;
 import io.dataspray.core.definition.parser.DefinitionLoader;
 import io.dataspray.core.sample.SampleProject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +24,6 @@ import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;

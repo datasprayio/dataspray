@@ -1,11 +1,10 @@
 package io.dataspray.core.cli;
 
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 import picocli.CommandLine;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
 
 @ApplicationScoped
 class CommandConfiguration {

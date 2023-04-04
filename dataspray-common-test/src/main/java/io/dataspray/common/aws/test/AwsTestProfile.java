@@ -1,6 +1,6 @@
 package io.dataspray.common.aws.test;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class AwsTestProfile extends CombinedTestProfile {

@@ -3,9 +3,9 @@ package io.dataspray.core.cli;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.core.Project;
 import io.dataspray.core.definition.model.Item;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import javax.annotation.Nullable;
-import javax.enterprise.context.ApplicationScoped;
 import java.util.Optional;
 
 @ApplicationScoped

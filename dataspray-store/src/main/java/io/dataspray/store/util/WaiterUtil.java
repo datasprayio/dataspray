@@ -1,6 +1,8 @@
 package io.dataspray.store.util;
 
 import com.google.common.collect.ImmutableSet;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.internal.waiters.DefaultWaiter;
@@ -18,8 +20,6 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.model.GetEventSourceMappingRequest;
 import software.amazon.awssdk.services.lambda.model.GetEventSourceMappingResponse;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.time.Duration;
 import java.util.Objects;
 

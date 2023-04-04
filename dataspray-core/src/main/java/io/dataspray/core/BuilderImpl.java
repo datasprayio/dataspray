@@ -2,11 +2,11 @@ package io.dataspray.core;
 
 import io.dataspray.core.definition.model.JavaProcessor;
 import io.dataspray.core.definition.model.Processor;
+import jakarta.enterprise.context.ApplicationScoped;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.Collection;

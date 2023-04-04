@@ -1,10 +1,10 @@
 package io.dataspray.core;
 
 import com.google.common.collect.ImmutableSet;
+import jakarta.enterprise.context.ApplicationScoped;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Files;

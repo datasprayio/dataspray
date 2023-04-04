@@ -2,8 +2,8 @@ package io.dataspray.common.aws.test;
 
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTestProfile;
+import jakarta.enterprise.context.ApplicationScoped;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.util.Map;
 
 @ApplicationScoped
