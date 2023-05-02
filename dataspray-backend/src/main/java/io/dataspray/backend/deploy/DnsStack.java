@@ -1,8 +1,6 @@
 package io.dataspray.backend.deploy;
 
-import io.dataspray.lambda.deploy.BaseStack;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awscdk.App;
 import software.amazon.awscdk.services.route53.HostedZone;
 import software.constructs.Construct;
 
@@ -19,11 +17,5 @@ public class DnsStack extends BaseStack {
         dnsZone = HostedZone.Builder.create(this, DOMAIN + "-zone")
                 .zoneName(DOMAIN)
                 .build();
-    }
-
-    public static void main(String[] args) {
-        App app = new App();
-        new DnsStack(app);
-        app.synth();
     }
 }

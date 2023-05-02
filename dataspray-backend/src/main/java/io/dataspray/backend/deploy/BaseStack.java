@@ -1,4 +1,4 @@
-package io.dataspray.lambda.deploy;
+package io.dataspray.backend.deploy;
 
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;

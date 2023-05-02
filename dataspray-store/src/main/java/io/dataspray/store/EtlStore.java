@@ -1,6 +1,6 @@
 package io.dataspray.store;
 
-import io.dataspray.store.BillingStore.EtlRetention;
+import io.dataspray.store.AccountStore.EtlRetention;
 import software.amazon.awssdk.services.glue.model.DataFormat;
 
 public interface EtlStore {

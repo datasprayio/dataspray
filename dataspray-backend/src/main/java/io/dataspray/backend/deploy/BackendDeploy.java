@@ -1,7 +1,6 @@
 package io.dataspray.backend.deploy;
 
 import lombok.extern.slf4j.Slf4j;
-import org.yaml.snakeyaml.constructor.Construct;
 import software.amazon.awscdk.App;
 
 @Slf4j
@@ -12,7 +11,7 @@ public class BackendDeploy {
         app.synth();
     }
 
-    private BackendDeploy(Construct parent) {
+    private BackendDeploy() {
         // disalow ctor
     }
 }

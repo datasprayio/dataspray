@@ -8,9 +8,8 @@ import com.google.gson.reflect.TypeToken;
 import io.dataspray.common.aws.test.AwsTestProfile;
 import io.dataspray.common.aws.test.MockFirehoseClient.FirehoseQueue;
 import io.dataspray.common.json.GsonUtil;
-import io.dataspray.store.BillingStore;
+import io.dataspray.store.AccountStore;
 import io.dataspray.store.FirehoseS3AthenaEtlStore;
-import io.dataspray.store.LimitlessBillingStore;
 import io.dataspray.store.SqsQueueStore;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -64,7 +63,7 @@ public class IngestTest {
     @BeforeEach
     public void setup() {
         Mockito.when(httpHeaders.getRequestHeader(IngestResource.API_TOKEN_HEADER_NAME))
-                .thenReturn(ImmutableList.of(LimitlessBillingStore.ACCOUNT_API_KEY));
+                .thenReturn(ImmutableList.of(LimitlessAccountStore.ACCOUNT_API_KEY));
         Mockito.when(httpHeaders.getMediaType())
                 .thenReturn(MediaType.APPLICATION_JSON_TYPE);
     }
@@ -76,14 +75,14 @@ public class IngestTest {
         String bodyJsonPretty = gsonPrettyPrint.toJson(bodyMap);
         String bodyJson = gson.toJson(bodyMap);
         try (StringInputStream bodyInputStream = new StringInputStream(bodyJsonPretty)) {
-            resource.message(LimitlessBillingStore.ACCOUNT_ID,
+            resource.message(LimitlessAccountStore.ACCOUNT_ID,
                     queueName,
                     bodyInputStream);
         }
 
         // Assert stream processing
         List<Message> messages = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(sqsQueueStore.getAwsQueueUrl(LimitlessBillingStore.ACCOUNT_ID, queueName))
+                .queueUrl(sqsQueueStore.getAwsQueueUrl(LimitlessAccountStore.ACCOUNT_ID, queueName))
                 .maxNumberOfMessages(10).build()).messages();
         assertEquals(1, messages.size());
         assertEquals(bodyJsonPretty, messages.get(0).body());
@@ -95,8 +94,8 @@ public class IngestTest {
         }.getType());
         assertEquals(ImmutableMap.builder()
                         .putAll(bodyMap)
-                        .put(ETL_PARTITION_KEY_RETENTION, BillingStore.EtlRetention.DEFAULT.name())
-                        .put(ETL_PARTITION_KEY_ACCOUNT, LimitlessBillingStore.ACCOUNT_ID)
+                        .put(ETL_PARTITION_KEY_RETENTION, AccountStore.EtlRetention.DEFAULT.name())
+                        .put(ETL_PARTITION_KEY_ACCOUNT, LimitlessAccountStore.ACCOUNT_ID)
                         .put(ETL_PARTITION_KEY_TARGET, queueName)
                         .build(),
                 bodyActualRecordMap);

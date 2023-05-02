@@ -1,25 +1,42 @@
 package io.dataspray.store;
 
+
 import io.dataspray.singletable.DynamoTable;
+import jakarta.ws.rs.ClientErrorException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NonNull;
-import lombok.ToString;
 import lombok.Value;
 
-import java.time.Instant;
+import java.util.Optional;
+import java.util.Set;
 
 import static io.dataspray.singletable.TableType.Gsi;
 import static io.dataspray.singletable.TableType.Primary;
 
-// TODO
 public interface AccountStore {
 
+    StreamMetadata recordStreamEvent(
+            String accountId,
+            String targetId,
+            Optional<String> authKeyOpt) throws ClientErrorException;
+
+    StreamMetadata getStream(
+            String accountId,
+            String targetId) throws ClientErrorException;
+
     @Value
-    @AllArgsConstructor
+    class StreamMetadata {
+        @NonNull Optional<EtlRetention> retentionOpt;
+    }
+
+    @Value
     @Builder(toBuilder = true)
+    @AllArgsConstructor
     @DynamoTable(type = Primary, partitionKeys = "accountId", rangePrefix = "account")
-    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = {"email"}, rangePrefix = "accountByEmail")
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = {"apiKey"}, rangePrefix = "accountByApiKey")
+    @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"oauthGuid"}, rangePrefix = "accountByOauthGuid")
     class Account {
         @NonNull
         String accountId;
@@ -28,13 +45,18 @@ public interface AccountStore {
         String email;
 
         @NonNull
-        String planid;
+        Set<String> enabledStreamNames;
+    }
 
-        @NonNull
-        Instant created;
-
-        @ToString.Exclude
-        @NonNull
-        String password;
+    @Getter
+    @AllArgsConstructor
+    enum EtlRetention {
+        DAY(1),
+        WEEK(7),
+        THREE_MONTHS(3 * 30),
+        YEAR(366),
+        THREE_YEARS(3 * 366);
+        public static EtlRetention DEFAULT = THREE_MONTHS;
+        int expirationInDays;
     }
 }

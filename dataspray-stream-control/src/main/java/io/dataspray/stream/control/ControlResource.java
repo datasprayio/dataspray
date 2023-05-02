@@ -37,9 +37,6 @@ public class ControlResource extends AbstractResource implements ControlApi {
     @Inject
     LambdaDeployer deployer;
 
-    // TODO get customer and setup billing
-    private final String customerId = "matus";
-
     @Override
     public TaskStatus activateVersion(String taskId, String version) {
         deployer.switchVersion(customerId, taskId, version);

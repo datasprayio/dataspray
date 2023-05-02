@@ -2,8 +2,8 @@ package io.dataspray.stream.ingest;
 
 import com.google.common.base.Strings;
 import io.dataspray.lambda.resource.AbstractResource;
-import io.dataspray.store.BillingStore;
-import io.dataspray.store.BillingStore.StreamMetadata;
+import io.dataspray.store.AccountStore;
+import io.dataspray.store.AccountStore.StreamMetadata;
 import io.dataspray.store.CustomerLogger;
 import io.dataspray.store.EtlStore;
 import io.dataspray.store.QueueStore;
@@ -37,7 +37,7 @@ public class IngestResource extends AbstractResource implements IngestApi {
     public static final String API_TOKEN_AUTHORIZATION_TYPE = "bearer";
 
     @Inject
-    BillingStore billingStore;
+    AccountStore accountStore;
     @Inject
     QueueStore queueStore;
     @Inject
@@ -49,7 +49,7 @@ public class IngestResource extends AbstractResource implements IngestApi {
     @SneakyThrows
     public void message(String accountId, String targetId, InputStream messageInputStream) {
         // Billing
-        StreamMetadata streamMetadata = billingStore.recordStreamEvent(
+        StreamMetadata streamMetadata = accountStore.recordStreamEvent(
                 accountId,
                 targetId,
                 getAuthKey());

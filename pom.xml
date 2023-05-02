@@ -17,15 +17,15 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <junit.version>5.8.2</junit.version>
         <projectlombok.version>1.18.22</projectlombok.version>
-        <quarkus.version>3.0.0.CR1</quarkus.version>
+        <quarkus.version>3.0.1.Final</quarkus.version>
         <node.version>v16.15.0</node.version>
         <pnpm.version>v7.5.0</pnpm.version>
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.2.9</logback.version>
         <jackson.version>2.13.3</jackson.version>
-        <awssdk2.version>2.17.145</awssdk2.version>
-        <awssdk1.version>1.12.75</awssdk1.version>
-        <awscdk.version>2.38.1</awscdk.version>
+        <awssdk2.version>2.20.56</awssdk2.version>
+        <awssdk1.version>1.12.459</awssdk1.version>
+        <awscdk.version>2.77.0</awscdk.version>
         <sqlite4java>1.0.392</sqlite4java>
         <skipTests/>
         <skipITs/>
@@ -35,6 +35,7 @@
     <modules>
         <module>dataspray-common</module>
         <module>dataspray-common-test</module>
+        <module>dataspray-backend</module>
         <module>dataspray-base-lambda</module>
         <module>dataspray-stream-client</module>
         <!-- Remote dev env coming soon... -->
@@ -43,7 +44,6 @@
         <module>dataspray-core</module>
         <module>dataspray-cli</module>
         <module>dataspray-store</module>
-        <module>dataspray-backend</module>
         <module>dataspray-stream-control</module>
         <module>dataspray-stream-ingest</module>
         <module>dataspray-site</module>
@@ -85,6 +85,11 @@
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
+                <artifactId>dataspray-backend</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-stream-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -112,7 +117,7 @@
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>single-table</artifactId>
-                <version>0.0.4</version>
+                <version>0.0.11</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -468,7 +473,7 @@
                 <plugin>
                     <groupId>io.dataspray</groupId>
                     <artifactId>aws-cdk-maven-plugin</artifactId>
-                    <version>1.2.3</version>
+                    <version>1.3.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
@@ -503,11 +508,6 @@
                     <groupId>org.graalvm.buildtools</groupId>
                     <artifactId>native-maven-plugin</artifactId>
                     <version>0.9.11</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-resources-plugin</artifactId>
-                    <version>3.1.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

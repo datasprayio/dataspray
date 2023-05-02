@@ -2,7 +2,7 @@ package io.dataspray.stream.ingest.deploy;
 
 import com.google.common.collect.ImmutableList;
 import io.dataspray.lambda.deploy.LambdaBaseStack;
-import io.dataspray.store.BillingStore;
+import io.dataspray.store.AccountStore;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Duration;
@@ -55,13 +55,13 @@ public class IngestStack extends LambdaBaseStack {
                 .autoDeleteObjects(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 // Add different expiry for each retention prefix
-                .lifecycleRules(Arrays.stream(BillingStore.EtlRetention.values()).map(retention -> LifecycleRule.builder()
+                .lifecycleRules(Arrays.stream(AccountStore.EtlRetention.values()).map(retention -> LifecycleRule.builder()
                         .id(retention.name())
                         .expiration(Duration.days(retention.getExpirationInDays()))
                         .prefix(ETL_BUCKET_RETENTION_PREFIX + retention.name())
                         .build()).collect(Collectors.toList()))
                 // Move objects to archive after inactivity to save costs
-                .intelligentTieringConfigurations(Arrays.stream(BillingStore.EtlRetention.values())
+                .intelligentTieringConfigurations(Arrays.stream(AccountStore.EtlRetention.values())
                         // Only makes sense for data stored for more than 4 months (migrated after 3)
                         .filter(retention -> retention.getExpirationInDays() > 120)
                         .map(retention -> IntelligentTieringConfiguration.builder()
