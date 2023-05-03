@@ -20,9 +20,6 @@ const Home: NextPage = () => {
                 src="/logo.svg"
                 width={150}
                 height={150}
-                sx={{
-                  margin: 'auto',
-                }}
               />
             </Box>
 
