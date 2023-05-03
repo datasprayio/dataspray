@@ -3,6 +3,7 @@ import { Box, Container, Link, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import GradientTypography from '../landing/GradientTypography';
+import Image from 'next/image'
 
 const Home: NextPage = () => {
   const theme = useTheme();
@@ -13,11 +14,22 @@ const Home: NextPage = () => {
       </Head>
       <main>
         <Container maxWidth='md'>
-          <Box textAlign='center' margin={theme.spacing(8, 0)} component='h1'>
-            <GradientTypography variant='h2'>
+          <Box textAlign='center' margin={theme.spacing(8, 0)} >
+            <Box>
+              <Image
+                src="/logo.svg"
+                width={150}
+                height={150}
+                sx={{
+                  margin: 'auto',
+                }}
+              />
+            </Box>
+
+            <GradientTypography variant='h1'>
               Stream processing
             </GradientTypography>
-            <Typography variant='h2'>
+            <Typography variant='h1'>
               developer toolkit
             </Typography>
           </Box>

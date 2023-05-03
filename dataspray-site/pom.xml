@@ -99,7 +99,7 @@
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.basedir}/src/api/admin/</outputDirectory>
+                                    <outputDirectory>${project.basedir}/public/</outputDirectory>
                                     <includes>**</includes>
                                 </artifactItem>
                             </artifactItems>

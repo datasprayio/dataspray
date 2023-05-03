@@ -9,12 +9,12 @@ patchedDependencies:
     path: patches/@sls-next__serverless-component@3.7.0.patch
 
 specifiers:
-  '@emotion/react': ^11.9.0
-  '@emotion/styled': ^11.8.1
+  '@emotion/react': ^11.9.3
+  '@emotion/styled': ^11.9.3
   '@fontsource/roboto': ^4.5.5
   '@mdx-js/loader': ^2.1.1
-  '@mui/icons-material': ^5.6.2
-  '@mui/material': ^5.6.4
+  '@mui/icons-material': ^5.8.4
+  '@mui/material': ^5.9.0
   '@next/mdx': ^12.1.6
   '@sls-next/serverless-component': ^3.7.0
   '@sls-next/serverless-patched': ^3.4.0
@@ -28,9 +28,9 @@ specifiers:
   next: 12.1.6
   react: 18.2.0
   react-dom: 18.2.0
-  serverless: ^2.72.2
+  serverless: ^2.72.3
   typescript: 4.6.4
-  vscode-web: ^1.69.0
+  vscode-web: ^1.69.2
 
 dependencies:
   '@emotion/react': 11.9.3_3hx2ussxxho4jajbwrd6gq34qe
@@ -3402,7 +3402,7 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001408
+      caniuse-lite: 1.0.30001482
       colorette: 1.4.0
       electron-to-chromium: 1.4.256
       escalade: 3.1.1
@@ -3414,7 +3414,7 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001408
+      caniuse-lite: 1.0.30001482
       electron-to-chromium: 1.4.256
       node-releases: 2.0.6
       update-browserslist-db: 1.0.9_browserslist@4.21.4
@@ -3573,12 +3573,8 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /caniuse-lite/1.0.30001338:
-    resolution: {integrity: sha512-1gLHWyfVoRDsHieO+CaeYe7jSo/MT7D7lhaXUiwwbuR5BwQxORs0f1tAwUSQr3YbxRXJvxHM/PA5FfPQRnsPeQ==}
-
-  /caniuse-lite/1.0.30001408:
-    resolution: {integrity: sha512-DdUCktgMSM+1ndk9EFMZcavsGszV7zxV9O7MtOHniTa/iyAIwJCF0dFVBdU9SijJbfh29hC9bCs07wu8pjnGJQ==}
-    dev: true
+  /caniuse-lite/1.0.30001482:
+    resolution: {integrity: sha512-F1ZInsg53cegyjroxLNW9DmrEQ1SuGRTO1QlpA0o2/6OpQ0gFeDRoq1yFmnr8Sakn9qwwt9DmbxHB6w167OSuQ==}
 
   /ccount/2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
@@ -4137,7 +4133,7 @@ packages:
     peerDependencies:
       postcss: ^8.2.15
     dependencies:
-      caniuse-lite: 1.0.30001408
+      caniuse-lite: 1.0.30001482
       postcss: 8.2.15
     dev: true
 
@@ -7779,7 +7775,7 @@ packages:
       browserify-zlib: 0.2.0
       browserslist: 4.16.6
       buffer: 5.6.0
-      caniuse-lite: 1.0.30001408
+      caniuse-lite: 1.0.30001482
       chalk: 2.4.2
       chokidar: 3.5.1
       constants-browserify: 1.0.0
@@ -7850,7 +7846,7 @@ packages:
         optional: true
     dependencies:
       '@next/env': 12.1.6
-      caniuse-lite: 1.0.30001338
+      caniuse-lite: 1.0.30001482
       postcss: 8.4.5
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -8068,7 +8064,7 @@ packages:
     dev: true
 
   /object-assign/4.1.1:
-    resolution: {integrity: sha1-IQmtx5ZYh8/AXLvUQsrIv7s2CGM=}
+    resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
     engines: {node: '>=0.10.0'}
 
   /object-copy/0.1.0:
