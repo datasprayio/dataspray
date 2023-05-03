@@ -1,3 +1,8 @@
+<p align="center">
+  <a href="https://dataspray.io/" rel="noopener" target="_blank">
+    <img width="200" src="./dataspray-resources/src/main/resources/logo-master.svg" alt="Logo">
+  </a>
+</p>
 <h1 align="center">DataSpray</h1>
 <div align="center">
   <a href="https://github.com/datasprayio/dataspray">
