@@ -35,6 +35,7 @@
     <modules>
         <module>dataspray-common</module>
         <module>dataspray-common-test</module>
+        <module>dataspray-resources</module>
         <module>dataspray-backend</module>
         <module>dataspray-base-lambda</module>
         <module>dataspray-stream-client</module>
