@@ -16,10 +16,10 @@ function MyApp({ Component, pageProps }: AppProps) {
         palette: {
           mode: prefersDarkMode ? 'dark' : 'light',
           primary: {
-            main: '#388e3c',
+            main: '#248c8f',
           },
           secondary: {
-            main: '#f06292',
+            main: '#27248f',
           },
         },
       }),
