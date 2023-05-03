@@ -15,3 +15,9 @@
 <br />
 <br />
 <h3 align="center">Work in progress...</h3>
+
+## Env Setup
+
+```bash
+brew install scour imagemagick
+```
