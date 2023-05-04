@@ -75,6 +75,20 @@
                                     </includes>
                                     <followSymlinks>false</followSymlinks>
                                 </fileset>
+                                <fileset>
+                                    <directory>${project.basedir}/public/logo</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
+                                    <directory>${project.basedir}/public</directory>
+                                    <includes>
+                                        <include>favicon.*</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
                             </filesets>
                         </configuration>
                     </execution>
@@ -100,7 +114,17 @@
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.basedir}/public/</outputDirectory>
-                                    <includes>**</includes>
+                                    <includes>favicon.*</includes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>io.dataspray</groupId>
+                                    <artifactId>dataspray-resources</artifactId>
+                                    <classifier>logo</classifier>
+                                    <version>${project.version}</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.basedir}/public/logo/</outputDirectory>
+                                    <excludes>favicon.*</excludes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>

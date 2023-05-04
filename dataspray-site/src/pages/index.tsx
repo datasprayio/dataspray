@@ -16,17 +16,20 @@ const Home: NextPage = () => {
         <Container maxWidth='md'>
           <Box textAlign='center' margin={theme.spacing(8, 0)} >
             <Box>
-              <Image
-                src="/logo.svg"
-                width={150}
-                height={150}
-              />
+              <picture>
+                <source media="(prefers-color-scheme: dark)" srcSet="/logo/logo-and-title-dark.png" />
+                <img alt='DataSpray' height={150} src="/logo/logo-and-title-light.png" />
+              </picture>
             </Box>
 
-            <GradientTypography variant='h1'>
+            <br />
+            <br />
+            <br />
+
+            <GradientTypography variant='h3'>
               Stream processing
             </GradientTypography>
-            <Typography variant='h1'>
+            <Typography variant='h3'>
               developer toolkit
             </Typography>
           </Box>

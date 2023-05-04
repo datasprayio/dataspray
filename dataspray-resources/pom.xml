@@ -39,6 +39,7 @@
                             <arguments>
                                 <argument>${project.basedir}/src/main/sh/convert.sh</argument>
                                 <argument>${project.basedir}/src/main/resources/logo-master.svg</argument>
+                                <argument>${project.basedir}/src/main/resources/logo-small.svg</argument>
                                 <argument>${project.basedir}/src/main/resources/logo-and-title-dark.svg</argument>
                                 <argument>${project.basedir}/src/main/resources/logo-and-title-light.svg</argument>
                             </arguments>

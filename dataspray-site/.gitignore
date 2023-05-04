@@ -43,10 +43,7 @@ yarn-error.log*
 
 #### CUSTOM
 
-public/favicon.ico
-public/logo.png
-public/logo-and-title-dark.png
-public/logo-and-title-light.png
-public/logo.svg
+public/favicon.*
+public/logo
 public/vscode-web
 
