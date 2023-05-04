@@ -45,6 +45,8 @@ yarn-error.log*
 
 public/favicon.ico
 public/logo.png
+public/logo-and-title-dark.png
+public/logo-and-title-light.png
 public/logo.svg
 public/vscode-web
 
