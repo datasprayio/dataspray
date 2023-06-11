@@ -31,7 +31,7 @@ public class MockAthenaClient {
         return mock;
     }
 
-    public static class TestProfile implements QuarkusTestProfile {
+    public static class Profile implements QuarkusTestProfile {
 
         public Map<String, String> getConfigOverrides() {
             return ImmutableMap.of("aws.athena.mock.enable", "true");

@@ -1,3 +1,25 @@
+/*
+ * Copyright 2023 Matus Faro
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package io.dataspray.lambda.deploy;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -38,6 +60,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -61,7 +84,7 @@ public class LambdaBaseStack extends BaseStack {
 
     private LambdaBaseStack(Construct parent, Options options, Map<String, Object> openApiSpec, String functionName) {
         super(parent, functionName);
-        addApiGatewayExtensionsToOpenapiSpec(openApiSpec, functionName);
+        addApiGatewayExtensionsToOpenapiSpec(openApiSpec, functionName, Optional.empty());
         checkArgument(new File(QUARKUS_FUNCTION_PATH).isFile(), "Asset file doesn't exist: " + QUARKUS_FUNCTION_PATH);
 
         String stackId = functionName;
@@ -130,8 +153,43 @@ public class LambdaBaseStack extends BaseStack {
         return new URL(serverUrlStr);
     }
 
+    /**
+     * <a
+     * href="https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions.html">Documentation
+     * on Amazon OpenAPI extensions</a>
+     */
     @SneakyThrows
-    private void addApiGatewayExtensionsToOpenapiSpec(Map<String, Object> openApiSpec, String functionName) {
+    private void addApiGatewayExtensionsToOpenapiSpec(Map<String, Object> openApiSpec, String functionName, Optional<String> cognitoUserPoolIdOpt) {
+        Map<String, Object> components = (Map<String, Object>) openApiSpec.get("components");
+        if (components != null) {
+            Map<String, Object> securitySchemes = (Map<String, Object>) components.get("securitySchemes");
+            if (securitySchemes != null) {
+                for (String securitySchemeName : ImmutableSet.copyOf(securitySchemes.keySet())) {
+                    Map<String, Object> securityScheme = (Map<String, Object>) securitySchemes.get(securitySchemeName);
+                    if (securityScheme != null
+                        && "apiKey".equals(securityScheme.get("type"))
+                        && "header".equals(securityScheme.get("in"))
+                        && securityScheme.containsKey("name")
+                        && "x-api-key".equalsIgnoreCase((String) securityScheme.get("name"))) {
+                        // API Key scheme
+                        securityScheme.put("x-amazon-apigateway-api-key-source", "header");
+                    } else if (cognitoUserPoolIdOpt.isPresent()
+                               && securityScheme != null
+                               && "apiKey".equals(securityScheme.get("type"))
+                               && "header".equals(securityScheme.get("in"))
+                               && securityScheme.containsKey("name")
+                               && "Authorization".equalsIgnoreCase((String) securityScheme.get("name"))) {
+                        // Cognito Authorization
+                        securityScheme.putAll(Map.of(
+                                "x-amazon-apigateway-authtype", "cognito_user_pools",
+                                "x-amazon-apigateway-authorizer", Map.of(
+                                        "type", "cognito_user_pools",
+                                        "providerARNs", List.of(
+                                                "arn:aws:cognito-idp:" + getRegion() + ":" + getAccount() + ":userpool/" + cognitoUserPoolIdOpt.get()))));
+                    }
+                }
+            }
+        }
         Map<String, Object> paths = (Map<String, Object>) openApiSpec.get("paths");
         if (paths != null) {
             for (String path : ImmutableSet.copyOf(paths.keySet())) {

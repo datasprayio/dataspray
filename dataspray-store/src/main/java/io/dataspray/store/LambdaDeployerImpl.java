@@ -68,7 +68,6 @@ import java.util.stream.Stream;
 
 import static io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_API_KEY_ENV;
 import static io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_CUSTOMER_ID_ENV;
-import static io.dataspray.store.LimitlessAccountStore.ACCOUNT_API_KEY;
 import static java.util.function.Predicate.not;
 
 @Slf4j

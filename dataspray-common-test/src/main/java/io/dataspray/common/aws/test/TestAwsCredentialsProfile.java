@@ -7,7 +7,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.util.Map;
 
 @ApplicationScoped
-public class TestAwsCredentialsTestProfile implements QuarkusTestProfile {
+public class TestAwsCredentialsProfile implements QuarkusTestProfile {
 
     @Override
     public Map<String, String> getConfigOverrides() {

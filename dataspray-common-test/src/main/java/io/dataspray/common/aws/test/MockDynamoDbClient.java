@@ -106,7 +106,7 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
         instances.remove(instanceId).shutdown();
     }
 
-    public static class TestProfile implements QuarkusTestProfile {
+    public static class Profile implements QuarkusTestProfile {
 
         public Map<String, String> getConfigOverrides() {
             return ImmutableMap.of("aws.dynamo.mock.enable", "true");

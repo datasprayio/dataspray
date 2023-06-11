@@ -69,6 +69,14 @@
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-cognitoidentity</artifactId>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>cognitoidentity</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>apigateway</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

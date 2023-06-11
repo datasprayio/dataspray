@@ -29,6 +29,7 @@ import static java.util.Objects.requireNonNull;
 public class AuthNzStack extends BaseStack {
 
     public static final String USER_POOL_NAME = "dataspray-users";
+    public static final String USER_POOL_ID_PROPERTY_NAME = "aws.cognito." + USER_POOL_NAME;
 
     @Getter
     CfnParameter emailWithParam;

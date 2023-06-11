@@ -6,14 +6,16 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class AwsTestProfile extends CombinedTestProfile {
 
     public AwsTestProfile() {
-        super(MockDynamoDbClient.TestProfile.class,
-                MockS3Client.TestProfile.class,
-                MockLambdaClient.TestProfile.class,
-                MockIamClient.TestProfile.class,
-                MockSqsClient.TestProfile.class,
-                MockFirehoseClient.TestProfile.class,
-                MockGlueClient.TestProfile.class,
-                MockAthenaClient.TestProfile.class,
-                TestAwsCredentialsTestProfile.class);
+        super(MockDynamoDbClient.Profile.class,
+                MockS3Client.Profile.class,
+                MockLambdaClient.Profile.class,
+                MockIamClient.Profile.class,
+                MockSqsClient.Profile.class,
+                MockFirehoseClient.Profile.class,
+                MockGlueClient.Profile.class,
+                MockAthenaClient.Profile.class,
+                MockCognitoClient.Profile.class,
+                SingleTenantAccountStoreProfile.class,
+                TestAwsCredentialsProfile.class);
     }
 }

@@ -40,7 +40,7 @@ public class MockS3Client implements QuarkusTestResourceLifecycleManager {
         TestResourceUtil.injectSelf(testInstance, s3Mock);
     }
 
-    public static class TestProfile implements QuarkusTestProfile {
+    public static class Profile implements QuarkusTestProfile {
 
         @Override
         public List<TestResourceEntry> testResources() {

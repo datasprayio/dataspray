@@ -176,7 +176,7 @@ public class MockIamClient {
                         .errorCode("EntityAlreadyExists").build()).build();
     }
 
-    public static class TestProfile implements QuarkusTestProfile {
+    public static class Profile implements QuarkusTestProfile {
 
         public Map<String, String> getConfigOverrides() {
             return ImmutableMap.of("aws.iam.mock.enable", "true");

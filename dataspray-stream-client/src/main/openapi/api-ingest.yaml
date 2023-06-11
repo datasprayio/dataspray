@@ -7,6 +7,10 @@ info:
 servers:
   - url: https://ingest.dataspray.io
 
+security:
+  - ApiKeyAuth: [ ]
+  - sigv4: [ ]
+
 components:
   securitySchemes:
     ApiKeyAuth:
