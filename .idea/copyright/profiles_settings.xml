@@ -1,7 +1,3 @@
 <component name="CopyrightManager">
-  <settings>
-    <module2copyright>
-      <element module="All" copyright="DataSpray" />
-    </module2copyright>
-  </settings>
+  <settings default="DataSpray" />
 </component>

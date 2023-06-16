@@ -26,9 +26,11 @@ import com.google.common.base.Strings;
 import io.quarkus.amazon.lambda.http.model.AwsProxyRequest;
 import io.quarkus.amazon.lambda.http.model.AwsProxyRequestContext;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.ServerErrorException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.Provider;
@@ -65,8 +67,9 @@ public abstract class AbstractResource {
     protected UriInfo uriInfo;
 
     protected Optional<String> getCustomerId() {
-        proxyRequestContext.getIdentity().getApiKey()CognitoIdentityId()
-        lambdaContext.getIdentity().getIdentityId()
+//        proxyRequestContext.getIdentity().getApiKey()CognitoIdentityId()
+//        return Optional.ofNullable(lambdaContext.getIdentity()).getIdentityId()
+        throw new ServerErrorException(Response.Status.NOT_IMPLEMENTED);
     }
 
     protected Optional<String> getAuthKey() {
@@ -77,8 +80,8 @@ public abstract class AbstractResource {
                 .or(() -> {
                     List<String> authorizationHeaderValues = headers.getRequestHeader(HttpHeaders.AUTHORIZATION);
                     if (authorizationHeaderValues.size() != 2
-                            || !API_TOKEN_AUTHORIZATION_TYPE.equalsIgnoreCase(authorizationHeaderValues.get(0))
-                            || Strings.isNullOrEmpty(authorizationHeaderValues.get(1))) {
+                        || !API_TOKEN_AUTHORIZATION_TYPE.equalsIgnoreCase(authorizationHeaderValues.get(0))
+                        || Strings.isNullOrEmpty(authorizationHeaderValues.get(1))) {
                         return Optional.empty();
                     }
                     return Optional.of(authorizationHeaderValues.get(1));
