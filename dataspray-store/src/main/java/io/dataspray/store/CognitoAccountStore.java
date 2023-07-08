@@ -33,6 +33,7 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUse
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AliasAttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ResourceNotFoundException;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -49,11 +50,16 @@ public class CognitoAccountStore implements AccountStore {
     CognitoIdentityProviderClient cognitoClient;
 
     @Override
-    public Account getAccount(String accountId) {
-        AdminGetUserResponse response = cognitoClient.adminGetUser(AdminGetUserRequest.builder()
-                .username(accountId)
-                .userPoolId(userPoolId).build());
-        return Account.builder()
+    public Optional<Account> getAccount(String accountId) {
+        AdminGetUserResponse response;
+        try {
+            response = cognitoClient.adminGetUser(AdminGetUserRequest.builder()
+                    .username(accountId)
+                    .userPoolId(userPoolId).build());
+        } catch (ResourceNotFoundException ex) {
+            return Optional.empty();
+        }
+        return Optional.of(Account.builder()
                 .accountId(response.username())
                 .email(response.userAttributes().stream()
                         .filter(attribute -> AliasAttributeType.EMAIL.toString().equalsIgnoreCase(attribute.name()))
@@ -64,7 +70,7 @@ public class CognitoAccountStore implements AccountStore {
                         .map(AttributeType::value)
                         .flatMap(setStr -> Stream.of(setStr.split(",")))
                         .collect(ImmutableSet.toImmutableSet()))
-                .build();
+                .build());
     }
 
     @Override

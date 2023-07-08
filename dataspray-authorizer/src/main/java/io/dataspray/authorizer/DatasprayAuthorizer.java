@@ -22,58 +22,128 @@
 
 package io.dataspray.authorizer;
 
+import com.amazonaws.arn.Arn;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayCustomAuthorizerEvent;
+import com.google.common.collect.ImmutableSet;
+import com.google.gson.Gson;
 import io.dataspray.authorizer.model.AuthPolicy;
-import io.dataspray.authorizer.model.TokenAuthorizerContext;
+import io.dataspray.authorizer.model.AuthPolicy.HttpMethod;
+import io.dataspray.authorizer.model.AuthPolicy.PolicyDocument;
+import io.dataspray.store.ApiKeyStore;
+import io.dataspray.store.ApiKeyStore.ApiKey;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.core.HttpHeaders;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
 @Slf4j
-public class DatasprayAuthorizer implements RequestHandler<TokenAuthorizerContext, AuthPolicy> {
+public class DatasprayAuthorizer implements RequestHandler<APIGatewayCustomAuthorizerEvent, String> {
+
+    public static final Predicate<String> API_KEY_PREDICATE = Pattern.compile("(^\\w*x[\\w-_]?)api[\\w-_]?key\\w*$", Pattern.CASE_INSENSITIVE).asMatchPredicate();
+
+    @Inject
+    Gson gson;
+    @Inject
+    ApiKeyStore apiKeyStore;
+
+    @Value
+    static class Credentials {
+        String username;
+        String password;
+    }
 
     @Override
-    public AuthPolicy handleRequest(TokenAuthorizerContext input, Context context) {
+    public String handleRequest(APIGatewayCustomAuthorizerEvent event, Context context) {
 
-        String token = input.getAuthorizationToken();
-        // validate the incoming token
-        // and produce the principal user identifier associated with the token
+        String apiKeyStr = extractApiKeyFromAuthorization(event);
 
-        // this could be accomplished in a number of ways:
-        // 1. Call out to OAuth provider
-        // 2. Decode a JWT token in-line
-        // 3. Lookup in a self-managed DB
-        String principalId = "xxxx";
+        ApiKey apiKey = apiKeyStore.getApiKey(apiKeyStr, true)
+                .orElseThrow(ForbiddenException::new);
+        String principalId = apiKey.getAccountId();
 
-        // if the client token is not recognized or invalid
-        // you can send a 401 Unauthorized response to the client by failing like so:
-        // throw new RuntimeException("Unauthorized");
+        // Extract endpoint info
+        Arn methodArn = Arn.fromString(event.getMethodArn());
+        String region = methodArn.getRegion();
+        String awsAccountId = methodArn.getAccountId(); // OR event.getRequestContext().getAccountId()
+        String restApiId = event.getRequestContext().getApiId();
+        String stage = event.getRequestContext().getStage();
+
+        // Create policy
+        PolicyDocument policyDocument = generatePolicyDocument(region, awsAccountId, restApiId, stage, apiKey);
+        AuthPolicy policy = new AuthPolicy(
+                principalId,
+                policyDocument,
+                apiKey.getApiKeyValue(),
+                null);
+        policy.addToContext("apiKey", gson.toJson(apiKey));
+
+        // Serialize and return
+        return gson.toJson(policy);
+    }
+
+    private String extractApiKeyFromAuthorization(APIGatewayCustomAuthorizerEvent event) throws NotAuthorizedException {
+        String authorizationHeaderValue = event.getHeaders().getOrDefault(HttpHeaders.AUTHORIZATION, "");
+        if (authorizationHeaderValue.length() <= 7) {
+            throw new NotAuthorizedException("Bearer");
+        }
+        if (!authorizationHeaderValue.toLowerCase().startsWith("bearer ")) {
+            throw new NotAuthorizedException("Bearer");
+        }
+        return authorizationHeaderValue.substring(7);
+    }
+
+    private PolicyDocument generatePolicyDocument(String region, String awsAccountId, String restApiId, String stage, ApiKey apiKey) {
+
+        PolicyDocument policyDocument = new PolicyDocument(region, awsAccountId, restApiId, stage);
 
         // if the token is valid, a policy should be generated which will allow or deny access to the client
 
         // if access is denied, the client will receive a 403 Access Denied response
         // if access is allowed, API Gateway will proceed with the back-end integration configured on the method that was called
 
-        String methodArn = input.getMethodArn();
-        String[] arnPartials = methodArn.split(":");
-        String region = arnPartials[3];
-        String awsAccountId = arnPartials[4];
-        String[] apiGatewayArnPartials = arnPartials[5].split("/");
-        String restApiId = apiGatewayArnPartials[0];
-        String stage = apiGatewayArnPartials[1];
-        String httpMethod = apiGatewayArnPartials[2];
-        String resource = ""; // root resource
-        if (apiGatewayArnPartials.length == 4) {
-            resource = apiGatewayArnPartials[3];
+        // Keep in mind, the policy is cached for 5 minutes by default (TTL is configurable in the authorizer)
+        // and will apply to subsequent calls to any method/resource in the RestApi made with the same token
+
+        // Allow all by default
+        policyDocument.createStatement(AuthPolicy.Effect.ALLOW, HttpMethod.ALL, "*");
+
+        // For Ingest API, for paths ".../account/{accountId}/target/{targetId}/...", only allow your own account id
+        // and whitelisted targets.
+        // The idea here is to allow all by default and only deny other accounts (except own account). This can also be
+        // accomplished by allowing all except accounts and then allowing own account, having others implicitly denied.
+        AuthPolicy.Statement accountAndTargetStatement = policyDocument.createStatement(AuthPolicy.Effect.DENY, HttpMethod.ALL, "*");
+        String accountId = apiKey.getAccountId()
+                // Sanitize to prevent injection
+                .replaceAll("[^A-Za-z0-9]", "");
+        final ImmutableSet<String> arnMatchers;
+        if (apiKey.getQueueWhitelist().isEmpty()) {
+            // Allow all paths under account
+            arnMatchers = ImmutableSet.of(
+                    "arn:aws:execute-api:*:*:*/account/" + accountId + "/*",
+                    "arn:aws:execute-api:*:*:*/account/" + accountId
+            );
+        } else {
+            // Allow only paths under own account under whitelisted targets
+            // To add a non-target path, need to add an exception here
+            arnMatchers = apiKey.getQueueWhitelist().stream()
+                    // Sanitize to prevent injection
+                    .map(queue -> queue.replaceAll("[^A-Za-z0-9]", ""))
+                    .flatMap(queue -> Stream.of(
+                            "arn:aws:execute-api:*:*:*/account/" + accountId + "/target/" + queue + "/*",
+                            "arn:aws:execute-api:*:*:*/account/" + accountId + "/target/" + queue
+                    ))
+                    .collect(ImmutableSet.toImmutableSet());
         }
+        accountAndTargetStatement.addCondition("StringNotLike", "aws:PrincipalArn", arnMatchers);
 
-        // this function must generate a policy that is associated with the recognized principal user identifier.
-        // depending on your use case, you might store policies in a DB, or generate them on the fly
-
-        // keep in mind, the policy is cached for 5 minutes by default (TTL is configurable in the authorizer)
-        // and will apply to subsequent calls to any method/resource in the RestApi
-        // made with the same token
-
-        // the example policy below denies access to all resources in the RestApi
-        return new AuthPolicy(principalId, AuthPolicy.PolicyDocument.getDenyAllPolicy(region, awsAccountId, restApiId, stage));
+        return policyDocument;
     }
 }

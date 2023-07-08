@@ -58,7 +58,7 @@ import java.util.stream.StreamSupport;
 @ApplicationScoped
 public class DynamoApiGatewayApiKeyStore implements ApiKeyStore {
 
-    private static final int API_KEY_LENGTH = 42;
+    public static final int API_KEY_LENGTH = 42;
 
     @ConfigProperty(name = "apikeystore.key.length")
     String awsAccountId;
@@ -131,17 +131,28 @@ public class DynamoApiGatewayApiKeyStore implements ApiKeyStore {
 
     @Override
     public Optional<ApiKey> getApiKey(String apiKeyValue, boolean useCache) {
+        // Check cache first
         if (useCache) {
             Optional<ApiKey> apiKeyOptFromCache = apiKeyByValueCache.getIfPresent(apiKeyValue);
             //noinspection OptionalAssignedToNull
             if (apiKeyOptFromCache != null) {
-                return apiKeyOptFromCache;
+                if (apiKeyOptFromCache.isPresent()
+                    && apiKeyOptFromCache.get().getTtlInEpochSec() < Instant.now().getEpochSecond()) {
+                    // Api key expired inside the cache, invalidate it
+                    apiKeyByValueCache.invalidate(apiKeyValue);
+                } else {
+                    return apiKeyOptFromCache;
+                }
             }
         }
 
+        // Fetch from DB
         Optional<ApiKey> apiKeyOpt = Optional.ofNullable(apiKeySchema.fromItem(apiKeySchema.table().getItem(new GetItemSpec()
-                .withPrimaryKey(apiKeySchema.primaryKey(Map.of(
-                        "apiKeyValue", apiKeyValue))))));
+                        .withPrimaryKey(apiKeySchema.primaryKey(Map.of(
+                                "apiKeyValue", apiKeyValue))))))
+                .filter(apiKey -> apiKey.getTtlInEpochSec() >= Instant.now().getEpochSecond());
+
+        // Update cache
         apiKeyByValueCache.put(apiKeyValue, apiKeyOpt);
 
         return apiKeyOpt;

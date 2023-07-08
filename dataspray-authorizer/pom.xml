@@ -77,14 +77,10 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>lambda</artifactId>
         </dependency>
-        <!--        <dependency>-->
-        <!--            <groupId>com.amazonaws</groupId>-->
-        <!--            <artifactId>aws-lambda-java-core</artifactId>-->
-        <!--        </dependency>-->
-        <!--        <dependency>-->
-        <!--            <groupId>com.amazonaws</groupId>-->
-        <!--            <artifactId>aws-lambda-java-events</artifactId>-->
-        <!--        </dependency>-->
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-lambda-java-events</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

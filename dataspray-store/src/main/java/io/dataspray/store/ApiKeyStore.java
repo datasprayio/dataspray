@@ -29,6 +29,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
+import lombok.ToString;
 import lombok.Value;
 
 import java.time.Instant;
@@ -66,6 +67,7 @@ public interface ApiKeyStore {
     class ApiKey {
         @NonNull
         @EqualsAndHashCode.Include
+        @ToString.Exclude
         String apiKeyValue;
 
         @NonNull

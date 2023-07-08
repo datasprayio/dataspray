@@ -21,12 +21,17 @@ import java.util.Map;
  * user principal, the AWS account ID of the API owner, and an apiOptions object.
  * The apiOptions can contain an API Gateway RestApi Id, a region for the RestApi, and a
  * stage that calls should be allowed/denied for. For example
- *
+ * <br />
  * new AuthPolicy(principalId, AuthPolicy.PolicyDocument.getDenyAllPolicy(region, awsAccountId, restApiId, stage));
+ * <br />
+ * WARNING: Matus do not try to convert this to GSON serializable.
+ * Number of times I already tried and gave up: 2 (Increment as needed)
  *
  * @author Jack Kohn
  * @see <a
  * href="https://github.com/awslabs/aws-apigateway-lambda-authorizer-blueprints/blob/master/blueprints/java/src/io/AuthPolicy.java">Original</a>
+ * @see <a
+ * href="https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-lambda-authorizer-output.html">Documentation</a>
  */
 public class AuthPolicy {
 
@@ -43,10 +48,14 @@ public class AuthPolicy {
     String principalId;
     transient AuthPolicy.PolicyDocument policyDocumentObject;
     Map<String, Object> policyDocument;
+    String usageIdentifierKey;
+    Map<String, String> context;
 
-    public AuthPolicy(String principalId, AuthPolicy.PolicyDocument policyDocumentObject) {
+    public AuthPolicy(String principalId, AuthPolicy.PolicyDocument policyDocumentObject, String usageIdentifierKey, Map<String, String> context) {
         this.principalId = principalId;
         this.policyDocumentObject = policyDocumentObject;
+        this.usageIdentifierKey = usageIdentifierKey;
+        this.context = context;
     }
 
     public AuthPolicy() {
@@ -90,6 +99,29 @@ public class AuthPolicy {
         this.policyDocumentObject = policyDocumentObject;
     }
 
+    public String getUsageIdentifierKey() {
+        return usageIdentifierKey;
+    }
+
+    public void setUsageIdentifierKey(String usageIdentifierKey) {
+        this.usageIdentifierKey = usageIdentifierKey;
+    }
+
+    public Map<String, String> getContext() {
+        return context;
+    }
+
+    public void addToContext(String key, String value) {
+        if (this.context == null) {
+            this.context = new HashMap<>();
+        }
+        this.context.put(key, value);
+    }
+
+    public void setContext(Map<String, String> context) {
+        this.context = context;
+    }
+
     /**
      * PolicyDocument represents an IAM Policy, specifically for the execute-api:Invoke action
      * in the context of a API Gateway Authorizer
@@ -106,8 +138,6 @@ public class AuthPolicy {
 
         String Version = "2012-10-17"; // override if necessary
 
-        private Statement allowStatement;
-        private Statement denyStatement;
         private List<Statement> statements;
 
         // context metadata
@@ -117,8 +147,7 @@ public class AuthPolicy {
         transient String stage;
 
         /**
-         * Creates a new PolicyDocument with the given context,
-         * and initializes two base Statement objects for allowing and denying access to API Gateway methods
+         * Creates a new PolicyDocument with the given context
          *
          * @param region the region where the RestApi is configured
          * @param awsAccountId the AWS Account ID that owns the RestApi
@@ -130,11 +159,7 @@ public class AuthPolicy {
             this.awsAccountId = awsAccountId;
             this.restApiId = restApiId;
             this.stage = stage;
-            allowStatement = Statement.getEmptyInvokeStatement("Allow");
-            denyStatement = Statement.getEmptyInvokeStatement("Deny");
             this.statements = new ArrayList<>();
-            statements.add(allowStatement);
-            statements.add(denyStatement);
         }
 
         public String getVersion() {
@@ -149,16 +174,10 @@ public class AuthPolicy {
             return statements.toArray(new AuthPolicy.Statement[statements.size()]);
         }
 
-        public void allowMethod(HttpMethod httpMethod, String resourcePath) {
-            addResourceToStatement(allowStatement, httpMethod, resourcePath);
-        }
-
-        public void denyMethod(HttpMethod httpMethod, String resourcePath) {
-            addResourceToStatement(denyStatement, httpMethod, resourcePath);
-        }
-
-        public void addStatement(AuthPolicy.Statement statement) {
+        public Statement createStatement(Effect effect, HttpMethod httpMethod, String resourcePath) {
+            Statement statement = Statement.getEmptyInvokeStatement(effect);
             statements.add(statement);
+            return statement;
         }
 
         private void addResourceToStatement(Statement statement, HttpMethod httpMethod, String resourcePath) {
@@ -224,7 +243,11 @@ public class AuthPolicy {
         GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS, ALL
     }
 
-    static class Statement {
+    public enum Effect {
+        ALLOW, DENY
+    }
+
+    public static class Statement {
 
         String Effect;
         String Action;
@@ -236,14 +259,14 @@ public class AuthPolicy {
 
         }
 
-        public Statement(String effect, String action, List<String> resourceList, Map<String, Map<String, Object>> condition) {
-            this.Effect = effect;
+        public Statement(Effect effect, String action, List<String> resourceList, Map<String, Map<String, Object>> condition) {
+            this.Effect = effect == AuthPolicy.Effect.ALLOW ? "Allow" : "Deny";
             this.Action = action;
             this.resourceList = resourceList;
             this.Condition = condition;
         }
 
-        public static Statement getEmptyInvokeStatement(String effect) {
+        public static Statement getEmptyInvokeStatement(Effect effect) {
             return new Statement(effect, "execute-api:Invoke", new ArrayList<>(), new HashMap<>());
         }
 
@@ -251,8 +274,8 @@ public class AuthPolicy {
             return Effect;
         }
 
-        public void setEffect(String effect) {
-            this.Effect = effect;
+        public void setEffect(Effect effect) {
+            this.Effect = effect == AuthPolicy.Effect.ALLOW ? "Allow" : "Deny";
         }
 
         public String getAction() {
@@ -264,7 +287,7 @@ public class AuthPolicy {
         }
 
         public String[] getResource() {
-            return resourceList.toArray(new String[resourceList.size()]);
+            return resourceList.toArray(String[]::new);
         }
 
         public void addResource(String resource) {
