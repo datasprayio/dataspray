@@ -58,7 +58,6 @@
         <module>dataspray-common</module>
         <module>dataspray-common-test</module>
         <module>dataspray-resources</module>
-        <module>dataspray-backend</module>
         <module>dataspray-base-lambda</module>
         <module>dataspray-stream-client</module>
         <!-- Remote dev env coming soon... -->
@@ -71,6 +70,7 @@
         <module>dataspray-stream-control</module>
         <module>dataspray-stream-ingest</module>
         <module>dataspray-site</module>
+        <module>dataspray-package</module>
     </modules>
 
     <scm>
@@ -119,6 +119,16 @@
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
+                <artifactId>dataspray-stream-control</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
+                <artifactId>dataspray-stream-ingest</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -135,6 +145,11 @@
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-store</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
+                <artifactId>dataspray-authorizer</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

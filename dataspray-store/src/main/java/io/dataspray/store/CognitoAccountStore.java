@@ -23,7 +23,6 @@
 package io.dataspray.store;
 
 import com.google.common.collect.ImmutableSet;
-import io.dataspray.store.deploy.AuthNzStack;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ClientErrorException;
@@ -41,9 +40,10 @@ import java.util.stream.Stream;
 @ApplicationScoped
 public class CognitoAccountStore implements AccountStore {
 
+    public static final String USER_POOL_ID_PROP_NAME = "aws.cognito.user-pool-id";
     private static final String ACCOUNT_STREAM_NAMES_ATTRIBUTE = "streams";
 
-    @ConfigProperty(name = AuthNzStack.USER_POOL_ID_PROPERTY_NAME)
+    @ConfigProperty(name = USER_POOL_ID_PROP_NAME)
     String userPoolId;
 
     @Inject

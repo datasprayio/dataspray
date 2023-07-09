@@ -16,7 +16,7 @@ components:
     ApiKeyAuth:
       type: apiKey
       in: header
-      name: x-api-key
+      name: Authorization
   responses:
     Ok:
       description: >-

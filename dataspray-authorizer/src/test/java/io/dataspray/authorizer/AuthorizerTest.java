@@ -48,10 +48,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 @QuarkusTest
-class DatasprayAuthorizerTest {
+class AuthorizerTest {
 
     @Inject
-    DatasprayAuthorizer authorizer;
+    Authorizer authorizer;
     @Inject
     Gson gson;
     @Inject

@@ -45,8 +45,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 @Slf4j
-public class DatasprayAuthorizer implements RequestHandler<APIGatewayCustomAuthorizerEvent, String> {
-
+public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEvent, String> {
+    public static final String AUTHORIZATION_HEADER = HttpHeaders.AUTHORIZATION;
     public static final Predicate<String> API_KEY_PREDICATE = Pattern.compile("(^\\w*x[\\w-_]?)api[\\w-_]?key\\w*$", Pattern.CASE_INSENSITIVE).asMatchPredicate();
 
     @Inject
@@ -90,7 +90,7 @@ public class DatasprayAuthorizer implements RequestHandler<APIGatewayCustomAutho
     }
 
     private String extractApiKeyFromAuthorization(APIGatewayCustomAuthorizerEvent event) throws NotAuthorizedException {
-        String authorizationHeaderValue = event.getHeaders().getOrDefault(HttpHeaders.AUTHORIZATION, "");
+        String authorizationHeaderValue = event.getHeaders().getOrDefault(AUTHORIZATION_HEADER, "");
         if (authorizationHeaderValue.length() <= 7) {
             throw new NotAuthorizedException("Bearer");
         }

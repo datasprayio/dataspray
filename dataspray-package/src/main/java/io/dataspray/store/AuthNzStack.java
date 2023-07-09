@@ -1,6 +1,28 @@
-package io.dataspray.store.deploy;
+/*
+ * Copyright 2023 Matus Faro
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-import io.dataspray.backend.deploy.BaseStack;
+package io.dataspray.store;
+
+import io.dataspray.backend.BaseStack;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.CfnCondition;
@@ -28,19 +50,16 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 public class AuthNzStack extends BaseStack {
 
-    public static final String USER_POOL_NAME = "dataspray-users";
-    public static final String USER_POOL_ID_PROPERTY_NAME = "aws.cognito." + USER_POOL_NAME;
-
     @Getter
     CfnParameter emailWithParam;
     @Getter
     UserPool userPool;
 
-    public AuthNzStack(Construct parent, String stackName) {
-        super(parent, stackName);
+    public AuthNzStack(Construct parent, String env) {
+        super(parent, "authnz", env);
 
-        userPool = UserPool.Builder.create(this, stackName + "-authnz-userpool")
-                .userPoolName(USER_POOL_NAME)
+        userPool = UserPool.Builder.create(this, getSubConstructId("userpool"))
+                .userPoolName("users-" + env)
                 .selfSignUpEnabled(true)
                 .autoVerify(AutoVerifiedAttrs.builder()
                         .email(true).build())
@@ -68,14 +87,14 @@ public class AuthNzStack extends BaseStack {
                 .build();
         CfnUserPool userPoolCfn = (CfnUserPool) requireNonNull(userPool.getNode().getDefaultChild());
         // Decide to send email from Cognito or SES
-        emailWithParam = CfnParameter.Builder.create(this, stackName + "authnz-sesDomain")
+        emailWithParam = CfnParameter.Builder.create(this, getSubConstructId("sesDomain"))
                 .type("String")
                 .defaultValue("")
                 .description("Domain name of your SES to use. Leave blank to use Cognito Email.")
                 .build();
         // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cognito-userpool-emailconfiguration.html
         userPoolCfn.addPropertyOverride("EmailConfiguration", Fn.conditionIf(
-                CfnCondition.Builder.create(this, stackName + "-authnz-userpool-ses-or-cognito")
+                CfnCondition.Builder.create(this, getSubConstructId("-authnz-userpool-ses-or-cognito"))
                         .expression(Fn.conditionEquals(emailWithParam, ""))
                         .build()
                         .getLogicalId(),

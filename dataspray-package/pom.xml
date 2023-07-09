@@ -31,11 +31,11 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>dataspray-store</artifactId>
+    <artifactId>dataspray-package</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>DataSpray Store</name>
+    <name>DataSpray Package</name>
     <url>https://dataspray.io</url>
 
     <properties>
@@ -51,52 +51,43 @@
             <groupId>io.dataspray</groupId>
             <artifactId>dataspray-common-test</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.dataspray</groupId>
-            <artifactId>dataspray-base-lambda</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.dataspray</groupId>
-            <artifactId>dataspray-runner</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>io.dataspray</groupId>
-            <artifactId>single-table</artifactId>
+            <artifactId>dataspray-backend</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
+            <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-stream-control</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
+            <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-stream-ingest</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
+            <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-store</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-authorizer</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-resteasy-reactive</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-dynamodb</artifactId>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>aws-cdk-lib</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-cognitoidentity</artifactId>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>apigatewayv2-alpha</artifactId>
         </dependency>
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>cognitoidentity</artifactId>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>kinesisfirehose-alpha</artifactId>
         </dependency>
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>apigateway</artifactId>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>kinesisfirehose-destinations-alpha</artifactId>
         </dependency>
     </dependencies>
 
@@ -110,6 +101,35 @@
                         <goals>
                             <goal>build</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.dataspray</groupId>
+                <artifactId>aws-cdk-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>run-cdk-synth</id>
+                        <goals>
+                            <goal>synth</goal>
+                            <goal>bootstrap</goal>
+                        </goals>
+                        <configuration>
+                            <app>io.dataspray.deploy.DatasprayStack</app>
+                            <profile>dataspray</profile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>run-cdk-deploy</id>
+                        <goals>
+                            <goal>deploy</goal>
+                        </goals>
+                        <configuration>
+                            <profile>dataspray</profile>
+                            <parameters>
+                                <store-authnz-userpool-ses-domain>dataspray.io</store-authnz-userpool-ses-domain>
+                            </parameters>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

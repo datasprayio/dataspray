@@ -1,10 +1,33 @@
-package io.dataspray.stream.ingest.deploy;
+/*
+ * Copyright 2023 Matus Faro
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package io.dataspray.stream.ingest;
 
 import com.google.common.collect.ImmutableList;
-import io.dataspray.lambda.deploy.LambdaBaseStack;
+import io.dataspray.lambda.AuthorizerStack;
+import io.dataspray.lambda.LambdaBaseStack;
 import io.dataspray.store.AccountStore;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awscdk.App;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Size;
 import software.amazon.awscdk.services.iam.Effect;
@@ -13,6 +36,7 @@ import software.amazon.awscdk.services.kinesisfirehose.CfnDeliveryStream;
 import software.amazon.awscdk.services.kinesisfirehose.alpha.DeliveryStream;
 import software.amazon.awscdk.services.kinesisfirehose.destinations.alpha.Compression;
 import software.amazon.awscdk.services.kinesisfirehose.destinations.alpha.S3Bucket;
+import software.amazon.awscdk.services.route53.HostedZone;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IntelligentTieringConfiguration;
@@ -32,15 +56,22 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 public class IngestStack extends LambdaBaseStack {
 
-    protected final Bucket bucketEtl;
-    protected final DeliveryStream firehose;
+    @Getter
+    private final Bucket bucketEtl;
+    @Getter
+    private final DeliveryStream firehose;
 
-    public IngestStack(Construct parent) {
+    public IngestStack(Construct parent, String env, String codeDir, HostedZone dnsZone, AuthorizerStack authorizerStack) {
         super(parent, Options.builder()
+                .env(env)
+                .functionName("ingest-" + env)
+                .codePath(codeDir + "/ingest.zip")
                 .openapiYamlPath("target/openapi/api-ingest.yaml")
+                .dnsZone(dnsZone)
+                .authorizerStack(authorizerStack)
                 .build());
 
-        function.addToRolePolicy(PolicyStatement.Builder.create()
+        getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid("CustomerIngestSqs")
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -96,27 +127,21 @@ public class IngestStack extends LambdaBaseStack {
                                         "ParameterValue", "JQ-1.6"),
                                 Map.of("ParameterName", "MetadataExtractionQuery",
                                         "ParameterValue", "{" +
-                                                Stream.of(ETL_PARTITION_KEY_RETENTION, ETL_PARTITION_KEY_ACCOUNT, ETL_PARTITION_KEY_TARGET)
-                                                        .map(key -> key + ":." + key)
-                                                        .collect(Collectors.joining(","))
-                                                + "}"))))));
+                                                          Stream.of(ETL_PARTITION_KEY_RETENTION, ETL_PARTITION_KEY_ACCOUNT, ETL_PARTITION_KEY_TARGET)
+                                                                  .map(key -> key + ":." + key)
+                                                                  .collect(Collectors.joining(","))
+                                                          + "}"))))));
         // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-kinesisfirehose-deliverystream-dynamicpartitioningconfiguration.html
         firehoseCfn.addPropertyOverride(
                 "ExtendedS3DestinationConfiguration.DynamicPartitioningConfiguration",
                 Map.of("Enabled", Boolean.TRUE, "RetryOptions", Map.of(
                         "DurationInSeconds", 300L)));
-        function.addToRolePolicy(PolicyStatement.Builder.create()
+        getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "firehose:PutRecord"))
                 .resources(ImmutableList.of(
                         "arn:aws:firehose:" + getRegion() + ":" + getAccount() + ":deliverystream/" + FIREHOSE_STREAM_NAME))
                 .build());
-    }
-
-    public static void main(String[] args) {
-        App app = new App();
-        new IngestStack(app);
-        app.synth();
     }
 }
