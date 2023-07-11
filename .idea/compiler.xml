@@ -17,9 +17,9 @@
         <module name="dataspray-store" />
         <module name="dataspray-core" />
         <module name="dataspray-runner" />
-        <module name="dataspray-base-lambda" />
         <module name="dataspray-common" />
         <module name="dataspray-common-test" />
+        <module name="dataspray-base-lambda-web-service" />
         <module name="dataspray-cli" />
         <module name="dataspray-authorizer" />
         <module name="dataspray-resources" />

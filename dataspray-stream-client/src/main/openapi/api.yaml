@@ -1,0 +1,46 @@
+openapi: 3.0.0
+info:
+  title: DataSpray API
+  description: DataSpray API documentation for controlling and development.
+  version: 1.0.0
+
+servers:
+  - url: https://api.dataspray.io
+
+security:
+  - Authorizer: [ ]
+
+components:
+  securitySchemes:
+    Authorizer:
+      $ref: 'common.yaml#/components/securitySchemes/Authorizer'
+
+paths:
+  /ping:
+    $ref: 'paths-health.yaml#/~1ping'
+  /apikeys:
+    $ref: 'paths-authnz.yaml#/~1apikeys'
+  /apikey:
+    $ref: 'paths-authnz.yaml#/~1apikey'
+  /apikey/{apiKeyId}:
+    $ref: 'paths-authnz.yaml#/~1apikey~1{apiKeyId}'
+  /code/upload:
+    $ref: 'paths-control.yaml#/~1code~1upload'
+  /control/status:
+    $ref: 'paths-control.yaml#/~1control~1status'
+  /control/task/{taskId}/status/:
+    $ref: 'paths-control.yaml#/~1control~1task~1{taskId}~1status~1'
+  /control/task/{taskId}/deploy:
+    $ref: 'paths-control.yaml#/~1control~1task~1{taskId}~1deploy'
+  /control/task/{taskId}/versions:
+    $ref: 'paths-control.yaml#/~1control~1task~1{taskId}~1versions'
+  /control/task/{taskId}/activate:
+    $ref: 'paths-control.yaml#/~1control~1task~1{taskId}~1activate'
+  /control/task/{taskId}/pause:
+    $ref: 'paths-control.yaml#/~1control~1task~1{taskId}~1pause'
+  /control/task/{taskId}/resume:
+    $ref: 'paths-control.yaml#/~1control~1task~1{taskId}~1resume'
+  /control/task/{taskId}/delete:
+    $ref: 'paths-control.yaml#/~1control~1task~1{taskId}~1delete'
+  /account/{accountId}/target/{targetId}/message:
+    $ref: 'paths-ingest.yaml#/~1account~1{accountId}~1target~1{targetId}~1message'

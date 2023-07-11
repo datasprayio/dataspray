@@ -1,0 +1,82 @@
+components:
+  schemas:
+    ApiKey:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    ApiKeys:
+      type: object
+      required:
+        - keys
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiKey'
+    ApiKeyWithSecret:
+      allOf:
+        - $ref: '#/components/schemas/ApiKey'
+        - type: object
+          required:
+            - value
+          properties:
+            secret:
+              type: string
+
+/apikeys:
+  post:
+    operationId: listApiKeys
+    tags: [ AuthNZ ]
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiKeys'
+/apikey:
+  put:
+    operationId: createApiKey
+    tags: [ AuthNZ ]
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyWithSecret'
+/apikey/{apiKeyId}:
+  post:
+    operationId: getApiKeySecret
+    tags: [ AuthNZ ]
+    parameters:
+      - name: apiKeyId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyWithSecret'
+  delete:
+    operationId: revokeApiKey
+    tags: [ AuthNZ ]
+    parameters:
+      - name: apiKeyId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: 'common.yaml#/components/responses/Ok'

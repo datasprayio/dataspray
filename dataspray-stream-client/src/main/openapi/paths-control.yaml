@@ -1,0 +1,274 @@
+components:
+  schemas:
+    UploadCodeRequest:
+      type: object
+      required:
+        - taskId
+        - contentLengthBytes
+      properties:
+        taskId:
+          type: string
+        contentLengthBytes:
+          type: integer
+          format: int64
+    UploadCodeResponse:
+      type: object
+      required:
+        - presignedUrl
+        - codeUrl
+      properties:
+        presignedUrl:
+          type: string
+        codeUrl:
+          type: string
+    DeployRequest:
+      type: object
+      required:
+        - codeUrl
+        - handler
+        - inputQueueNames
+        - switchToNow
+      properties:
+        codeUrl:
+          type: string
+        handler:
+          type: string
+        inputQueueNames:
+          type: array
+          items:
+            type: string
+        runtime:
+          type: string
+          # Subset of software.amazon.awssdk.services.lambda.model.Runtime
+          enum:
+            - JAVA8
+            - JAVA11
+            - NODEJS14_X
+            - PYTHON3_9
+            - GO1_X
+            - RUBY2_7
+        switchToNow:
+          type: boolean
+    TaskVersions:
+      type: object
+      required:
+        - status
+        - versions
+      properties:
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskVersion'
+    TaskVersion:
+      type: object
+      required:
+        - taskId
+        - version
+        - description
+      properties:
+        taskId:
+          type: string
+        version:
+          type: string
+        description:
+          type: string
+    TaskStatuses:
+      type: object
+      required:
+        - tasks
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskStatus'
+    TaskStatus:
+      type: object
+      required:
+        - taskId
+        - status
+      properties:
+        taskId:
+          type: string
+        version:
+          type: string
+        status:
+          type: string
+          enum:
+            - CREATING
+            - STARTING
+            - UPDATING
+            - RUNNING
+            - PAUSING
+            - PAUSED
+            - NOTFOUND
+        lastUpdateStatus:
+          type: string
+          # Matches software.amazon.awssdk.services.lambda.model.LastUpdateStatus
+          enum:
+            - SUCCESSFUL
+            - FAILED
+            - IN_PROGRESS
+        lastUpdateStatusReason:
+          type: string
+
+/code/upload:
+  put:
+    operationId: uploadCode
+    tags: [ Control ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UploadCodeRequest'
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadCodeResponse'
+
+/control/status:
+  get:
+    operationId: statusAll
+    tags: [ Control ]
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskStatuses'
+/control/task/{taskId}/status/:
+  get:
+    operationId: status
+    tags: [ Control ]
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskStatus'
+/control/task/{taskId}/deploy:
+  patch:
+    operationId: deployVersion
+    tags: [ Control ]
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DeployRequest'
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskVersion'
+/control/task/{taskId}/versions:
+  get:
+    operationId: getVersions
+    tags: [ Control ]
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskVersions'
+/control/task/{taskId}/activate:
+  patch:
+    operationId: activateVersion
+    tags: [ Control ]
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: version
+        in: query
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskStatus'
+/control/task/{taskId}/pause:
+  delete:
+    operationId: pause
+    tags: [ Control ]
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskStatus'
+/control/task/{taskId}/resume:
+  delete:
+    operationId: resume
+    tags: [ Control ]
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskStatus'
+/control/task/{taskId}/delete:
+  delete:
+    operationId: delete
+    tags: [ Control ]
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskStatus'

@@ -1,0 +1,7 @@
+/ping:
+  get:
+    operationId: ping
+    tags: [ Health ]
+    responses:
+      '200':
+        $ref: 'common.yaml#/components/responses/Ok'

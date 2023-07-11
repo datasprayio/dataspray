@@ -1,101 +1,22 @@
 openapi: 3.0.0
 info:
-  title: DataSpray Stream Ingest API
-  description: ClearFlask API documentation.
+  title: DataSpray Ingest API
+  description: DataSpray Ingest API documentation for clients ingesting data.
   version: 1.0.0
 
 servers:
-  - url: https://ingest.dataspray.io
+  - url: https://api.dataspray.io
 
 security:
-  - ApiKeyAuth: [ ]
-  - sigv4: [ ]
+  - Authorizer: [ ]
 
 components:
   securitySchemes:
-    ApiKeyAuth:
+    Authorizer:
       type: apiKey
       in: header
       name: Authorization
-  responses:
-    Ok:
-      description: >-
-        HTTP 200 Ok
-        Request was successful. No response value supplied.
-  schemas:
-    Message:
-      type: object
-    Error:
-      type: object
-      required:
-        - error
-      properties:
-        error:
-          type: string
 
 paths:
-  /v1/ping:
-    get:
-      operationId: ping
-      tags: [ Ping ]
-      responses:
-        '200':
-          $ref: '#/components/responses/Ok'
-
-  /v1/account/{accountId}/target/{targetId}/message:
-    post:
-      operationId: message
-      tags: [ Ingest ]
-      parameters:
-        - name: accountId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: targetId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/octet-stream:
-            schema:
-              type: string
-              format: binary
-          text/plain:
-            schema:
-              type: string
-          application/json:
-            schema:
-              type: object
-          application/avro:
-            schema:
-              type: string
-              format: binary
-          application/protobuf:
-            schema:
-              type: string
-              format: binary
-      responses:
-        '200':
-          description: Ok
-        '402':
-          description: Account requires billing attention
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Account or queue not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '413':
-          description: Payload too large
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+  /account/{accountId}/target/{targetId}/message:
+    $ref: 'paths-ingest.yaml#/~1account~1{accountId}~1target~1{targetId}~1message'

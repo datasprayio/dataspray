@@ -54,10 +54,6 @@
 
         <dependency>
             <groupId>io.dataspray</groupId>
-            <artifactId>dataspray-backend</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.dataspray</groupId>
             <artifactId>dataspray-stream-control</artifactId>
         </dependency>
         <dependency>

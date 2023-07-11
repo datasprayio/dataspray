@@ -27,13 +27,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import io.dataspray.authorizer.model.AuthPolicy;
-import io.dataspray.store.ApiKeyStore;
-import io.dataspray.store.ApiKeyStore.ApiKey;
+import io.dataspray.store.ApiAccessStore;
+import io.dataspray.store.ApiAccessStore.ApiAccess;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.annotation.Priority;
-import jakarta.enterprise.inject.Alternative;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -55,32 +52,25 @@ class AuthorizerTest {
     @Inject
     Gson gson;
     @Inject
-    InMemoryApiKeyStore apiKeyStore;
+    InMemoryApiAccessStore apiAccessStore;
 
     @Test
     void handleRequest() {
-        ApiKey apiKey = apiKeyStore.createApiKey(
+        ApiAccess apiKey = apiAccessStore.createApiAccess(
                 UUID.randomUUID().toString(),
-                UUID.randomUUID().toString(),
+                ApiAccessStore.UsageKeyType.ACCOUNT_WIDE,
                 "Description",
                 Optional.of(ImmutableSet.of("q1", "q2")),
                 Optional.of(Instant.now().plus(Duration.ofDays(3))));
         APIGatewayCustomAuthorizerEvent event = new APIGatewayCustomAuthorizerEvent();
         event.setMethodArn("arn:aws:execute-api:us-east-1:123456789012:abcdef123/default/$connect");
-        event.setHeaders(ImmutableMap.of(HttpHeaders.AUTHORIZATION, "bearer " + apiKey.getApiKeyValue()));
+        event.setHeaders(ImmutableMap.of(HttpHeaders.AUTHORIZATION, "bearer " + apiKey.getApiKey()));
 
         AuthPolicy authPolicy = gson.fromJson(authorizer.handleRequest(event, null), AuthPolicy.class);
 
-        assertEquals(apiKey.getApiKeyValue(), authPolicy.getUsageIdentifierKey());
+        assertEquals(apiKey.getApiKey(), authPolicy.getUsageIdentifierKey());
         assertTrue(authPolicy.getContext().containsKey("apiKey"));
-        assertEquals(apiKey, gson.fromJson(authPolicy.getContext().get("apiKey"), ApiKey.class));
+        assertEquals(apiKey, gson.fromJson(authPolicy.getContext().get("apiKey"), ApiAccess.class));
         assertEquals(apiKey.getAccountId(), authPolicy.getPrincipalId());
-    }
-
-    @Alternative
-    @Priority(1)
-    @Singleton
-    public ApiKeyStore getTestApiKeyStore() {
-        return new InMemoryApiKeyStore();
     }
 }

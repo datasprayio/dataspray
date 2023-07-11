@@ -22,15 +22,18 @@
 
 package io.dataspray;
 
+import com.google.common.collect.ImmutableMap;
 import io.dataspray.dns.DnsStack;
-import io.dataspray.lambda.AuthorizerStack;
 import io.dataspray.site.SiteStack;
 import io.dataspray.store.AuthNzStack;
 import io.dataspray.store.SingleTableStack;
 import io.dataspray.stream.control.ControlStack;
 import io.dataspray.stream.ingest.IngestStack;
+import io.dataspray.web.AuthorizerStack;
+import io.dataspray.web.BaseApiStack;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.App;
+import software.amazon.awscdk.services.lambda.SingletonFunction;
 
 @Slf4j
 public class DatasprayStack {
@@ -51,17 +54,37 @@ public class DatasprayStack {
         AuthNzStack authNzStack = new AuthNzStack(app, env);
         AuthorizerStack authorizerStack = new AuthorizerStack(app, env, codeDir);
 
-        new IngestStack(app, env, codeDir, dnsStack.getDnsZone(), authorizerStack)
-                .withCognitoUserPoolIdRef(authNzStack.getUserPool().getUserPoolId());
-        new ControlStack(app, env, codeDir, dnsStack.getDnsZone(), authorizerStack)
-                .withCognitoUserPoolIdRef(authNzStack.getUserPool().getUserPoolId());
+        IngestStack ingestStack = new IngestStack(app, env, codeDir);
+//        TODO ingestStack.withCognitoUserPoolIdRef(authNzStack.getUserPool().getUserPoolId());
+        ControlStack controlStack = new ControlStack(app, env, codeDir);
+//        TODO controlStack.withCognitoUserPoolIdRef(authNzStack.getUserPool().getUserPoolId());
+
+        BaseApiStack baseApiStack = new BaseApiStack(app, BaseApiStack.Options.builder()
+                .openapiYamlPath("target/openapi/api.yaml")
+                .dnsZone(dnsStack.getDnsZone())
+                .authorizerStack(authorizerStack)
+                .tagToFunction(ImmutableMap.of(
+                        "Ingest", ingestStack.getFunction(),
+                        "AuthNZ", controlStack.getFunction(),
+                        "Control", controlStack.getFunction(),
+                        "Health", controlStack.getFunction()))
+                .build());
+//        TODO baseApiStack.createUsagePlan("asdf");
 
         // TODO authorizer lambda; with cognito user pool id ref
 
         app.synth();
     }
 
+    private void addEnvVars(
+            SingletonFunction function,
+            String cognitoUserPoolIdRef) {
+
+    }
+
+    //<editor-fold desc="disallow ctor" defaultstate="collapsed">
     private DatasprayStack() {
         // disallow ctor
     }
+    //</editor-fold>
 }

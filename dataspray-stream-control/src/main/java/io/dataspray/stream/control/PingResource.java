@@ -1,6 +1,6 @@
 package io.dataspray.stream.control;
 
-import io.dataspray.lambda.resource.AbstractResource;
+import io.dataspray.web.resource.AbstractResource;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 

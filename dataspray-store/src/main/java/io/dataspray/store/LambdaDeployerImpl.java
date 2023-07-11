@@ -1,3 +1,25 @@
+/*
+ * Copyright 2023 Matus Faro
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package io.dataspray.store;
 
 import com.google.common.collect.ImmutableList;
@@ -107,7 +129,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
 
     @Override
-    public DeployedVersion deployVersion(String customerId, String taskId, String codeUrl, String handler, ImmutableSet<String> queueNames, Runtime runtime, boolean switchToImmediately) {
+    public DeployedVersion deployVersion(String customerId, String customerApiKey, String taskId, String codeUrl, String handler, ImmutableSet<String> queueNames, Runtime runtime, boolean switchToImmediately) {
         String functionName = getFunctionName(customerId, taskId);
 
         // Check whether function exists
@@ -167,7 +189,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         final String publishedDescription = generateVersionDescription(taskId, queueNames);
         Environment env = Environment.builder()
                 .variables(Map.of(
-                        DATASPRAY_API_KEY_ENV, ACCOUNT_API_KEY,
+                        DATASPRAY_API_KEY_ENV, customerApiKey,
                         DATASPRAY_CUSTOMER_ID_ENV, customerId)).build();
         if (existingFunctionOpt.isEmpty()) {
             // Create a new function with configuration and code all in one go
@@ -498,9 +520,9 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             throw new BadRequestException("Maximum code size is " + CODE_MAX_SIZE_IN_BYTES / 1024 / 1024 + "MB, please contact support");
         }
         String key = getCodeKeyPrefix(customerId)
-                + taskId
-                + "-"
-                + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").withZone(ZoneOffset.UTC).format(Instant.now()) + ".zip";
+                     + taskId
+                     + "-"
+                     + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").withZone(ZoneOffset.UTC).format(Instant.now()) + ".zip";
         String codeUrl = "s3://" + CODE_BUCKET_NAME + "/" + key;
         String presignedUrl = s3Presigner.presignPutObject(PutObjectPresignRequest.builder()
                         .putObjectRequest(PutObjectRequest.builder()
@@ -554,13 +576,13 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
     private void enableSource(String taskId, QueueSource source, String reason) {
         if (source.getState().getIsFinalStateRunningOpt().isPresent()
-                && source.getState().getIsFinalStateRunningOpt().get()) {
+            && source.getState().getIsFinalStateRunningOpt().get()) {
             return;
         }
         if (source.getState().isUpdating()
-                || !source.getState().getIsFinalStateRunningOpt().isPresent()) {
+            || !source.getState().getIsFinalStateRunningOpt().isPresent()) {
             throw new ConflictException("Another operation is in progress: "
-                    + source.getQueueName() + " is in state " + source.getState());
+                                        + source.getQueueName() + " is in state " + source.getState());
         }
         log.info("Enabling task {} source {} uuid {}: {}",
                 taskId, source.getQueueName(), source.getUuid(), reason);
@@ -572,13 +594,13 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
     private void disableSource(String taskId, QueueSource source, String reason) {
         if (source.getState().getIsFinalStateRunningOpt().isPresent()
-                && !source.getState().getIsFinalStateRunningOpt().get()) {
+            && !source.getState().getIsFinalStateRunningOpt().get()) {
             return;
         }
         if (source.getState().isUpdating()
-                || !source.getState().getIsFinalStateRunningOpt().isPresent()) {
+            || !source.getState().getIsFinalStateRunningOpt().isPresent()) {
             throw new ConflictException("Another operation is in progress: "
-                    + source.getQueueName() + " is in state " + source.getState());
+                                        + source.getQueueName() + " is in state " + source.getState());
         }
         log.info("Disabling task {} source {} uuid {}: {}",
                 taskId, source.getQueueName(), source.getUuid(), reason);

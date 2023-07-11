@@ -23,9 +23,8 @@
 package io.dataspray.stream.ingest;
 
 import com.google.common.collect.ImmutableList;
-import io.dataspray.lambda.AuthorizerStack;
-import io.dataspray.lambda.LambdaBaseStack;
 import io.dataspray.store.AccountStore;
+import io.dataspray.web.BaseLambdaWebServiceStack;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.Duration;
@@ -36,7 +35,6 @@ import software.amazon.awscdk.services.kinesisfirehose.CfnDeliveryStream;
 import software.amazon.awscdk.services.kinesisfirehose.alpha.DeliveryStream;
 import software.amazon.awscdk.services.kinesisfirehose.destinations.alpha.Compression;
 import software.amazon.awscdk.services.kinesisfirehose.destinations.alpha.S3Bucket;
-import software.amazon.awscdk.services.route53.HostedZone;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IntelligentTieringConfiguration;
@@ -54,21 +52,18 @@ import static io.dataspray.store.SqsQueueStore.CUSTOMER_QUEUE_WILDCARD;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
-public class IngestStack extends LambdaBaseStack {
+public class IngestStack extends BaseLambdaWebServiceStack {
 
     @Getter
     private final Bucket bucketEtl;
     @Getter
     private final DeliveryStream firehose;
 
-    public IngestStack(Construct parent, String env, String codeDir, HostedZone dnsZone, AuthorizerStack authorizerStack) {
+    public IngestStack(Construct parent, String env, String codeDir) {
         super(parent, Options.builder()
                 .env(env)
                 .functionName("ingest-" + env)
                 .codePath(codeDir + "/ingest.zip")
-                .openapiYamlPath("target/openapi/api-ingest.yaml")
-                .dnsZone(dnsZone)
-                .authorizerStack(authorizerStack)
                 .build());
 
         getFunction().addToRolePolicy(PolicyStatement.Builder.create()

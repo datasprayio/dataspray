@@ -1,0 +1,21 @@
+# Shared components for all OpenAPI specs
+
+components:
+  securitySchemes:
+    Authorizer:
+      type: apiKey
+      in: header
+      name: Authorization
+  responses:
+    Ok:
+      description: >-
+        HTTP 200 Ok
+        Request was successful. No response value supplied.
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string

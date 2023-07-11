@@ -39,7 +39,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <junit.version>5.8.2</junit.version>
         <projectlombok.version>1.18.22</projectlombok.version>
-        <quarkus.version>3.0.1.Final</quarkus.version>
+        <quarkus.version>3.2.0.Final</quarkus.version>
         <node.version>v16.15.0</node.version>
         <pnpm.version>v7.5.0</pnpm.version>
         <slf4j.version>1.7.25</slf4j.version>
@@ -58,7 +58,7 @@
         <module>dataspray-common</module>
         <module>dataspray-common-test</module>
         <module>dataspray-resources</module>
-        <module>dataspray-base-lambda</module>
+        <module>dataspray-base-lambda-web-service</module>
         <module>dataspray-stream-client</module>
         <!-- Remote dev env coming soon... -->
         <!--<module>dataspray-remote-workspace</module>-->
@@ -106,11 +106,6 @@
                 <artifactId>dataspray-common-test</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.dataspray</groupId>
-                <artifactId>dataspray-backend</artifactId>
-                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
@@ -541,7 +536,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.1.1</version>
+                    <version>3.6.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

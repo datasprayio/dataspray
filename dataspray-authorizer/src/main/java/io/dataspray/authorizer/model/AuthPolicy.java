@@ -9,11 +9,14 @@
  */
 package io.dataspray.authorizer.model;
 
+import jakarta.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * AuthPolicy receives a set of allowed and denied methods and generates a valid
@@ -48,13 +51,14 @@ public class AuthPolicy {
     String principalId;
     transient AuthPolicy.PolicyDocument policyDocumentObject;
     Map<String, Object> policyDocument;
+    @Nullable
     String usageIdentifierKey;
     Map<String, String> context;
 
-    public AuthPolicy(String principalId, AuthPolicy.PolicyDocument policyDocumentObject, String usageIdentifierKey, Map<String, String> context) {
+    public AuthPolicy(String principalId, AuthPolicy.PolicyDocument policyDocumentObject, Optional<String> usageIdentifierKeyOpt, Map<String, String> context) {
         this.principalId = principalId;
         this.policyDocumentObject = policyDocumentObject;
-        this.usageIdentifierKey = usageIdentifierKey;
+        this.usageIdentifierKey = usageIdentifierKeyOpt.orElse(null);
         this.context = context;
     }
 
@@ -99,12 +103,13 @@ public class AuthPolicy {
         this.policyDocumentObject = policyDocumentObject;
     }
 
+    @Nullable
     public String getUsageIdentifierKey() {
         return usageIdentifierKey;
     }
 
-    public void setUsageIdentifierKey(String usageIdentifierKey) {
-        this.usageIdentifierKey = usageIdentifierKey;
+    public void setUsageIdentifierKey(Optional<String> usageIdentifierKeyOpt) {
+        this.usageIdentifierKey = usageIdentifierKeyOpt.orElse(null);
     }
 
     public Map<String, String> getContext() {
@@ -180,63 +185,6 @@ public class AuthPolicy {
             return statement;
         }
 
-        private void addResourceToStatement(Statement statement, HttpMethod httpMethod, String resourcePath) {
-            // resourcePath must start with '/'
-            // to specify the root resource only, resourcePath should be an empty string
-            if (resourcePath.equals("/")) {
-                resourcePath = "";
-            }
-            String resource = resourcePath.startsWith("/") ? resourcePath.substring(1) : resourcePath;
-            String method = httpMethod == HttpMethod.ALL ? "*" : httpMethod.toString();
-            statement.addResource(String.format(EXECUTE_API_ARN_FORMAT, region, awsAccountId, restApiId, stage, method, resource));
-        }
-
-        // Static methods
-
-        /**
-         * Generates a new PolicyDocument with a single statement that allows the requested method/resourcePath
-         *
-         * @param region API Gateway region
-         * @param awsAccountId AWS Account that owns the API Gateway RestApi
-         * @param restApiId RestApi identifier
-         * @param stage Stage name
-         * @param method HttpMethod to allow
-         * @param resourcePath Resource path to allow
-         * @return new PolicyDocument that allows the requested method/resourcePath
-         */
-        public static PolicyDocument getAllowOnePolicy(String region, String awsAccountId, String restApiId, String stage, HttpMethod method, String resourcePath) {
-            AuthPolicy.PolicyDocument policyDocument = new AuthPolicy.PolicyDocument(region, awsAccountId, restApiId, stage);
-            policyDocument.allowMethod(method, resourcePath);
-            return policyDocument;
-
-        }
-
-
-        /**
-         * Generates a new PolicyDocument with a single statement that denies the requested method/resourcePath
-         *
-         * @param region API Gateway region
-         * @param awsAccountId AWS Account that owns the API Gateway RestApi
-         * @param restApiId RestApi identifier
-         * @param stage Stage name
-         * @param method HttpMethod to deny
-         * @param resourcePath Resource path to deny
-         * @return new PolicyDocument that denies the requested method/resourcePath
-         */
-        public static PolicyDocument getDenyOnePolicy(String region, String awsAccountId, String restApiId, String stage, HttpMethod method, String resourcePath) {
-            AuthPolicy.PolicyDocument policyDocument = new AuthPolicy.PolicyDocument(region, awsAccountId, restApiId, stage);
-            policyDocument.denyMethod(method, resourcePath);
-            return policyDocument;
-
-        }
-
-        public static AuthPolicy.PolicyDocument getAllowAllPolicy(String region, String awsAccountId, String restApiId, String stage) {
-            return getAllowOnePolicy(region, awsAccountId, restApiId, stage, HttpMethod.ALL, "*");
-        }
-
-        public static PolicyDocument getDenyAllPolicy(String region, String awsAccountId, String restApiId, String stage) {
-            return getDenyOnePolicy(region, awsAccountId, restApiId, stage, HttpMethod.ALL, "*");
-        }
     }
 
     public enum HttpMethod {

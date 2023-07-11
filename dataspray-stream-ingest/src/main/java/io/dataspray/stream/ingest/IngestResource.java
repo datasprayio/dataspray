@@ -1,6 +1,6 @@
 package io.dataspray.stream.ingest;
 
-import io.dataspray.lambda.resource.AbstractResource;
+import io.dataspray.web.resource.AbstractResource;
 import io.dataspray.store.AccountStore;
 import io.dataspray.store.AccountStore.StreamMetadata;
 import io.dataspray.store.CustomerLogger;

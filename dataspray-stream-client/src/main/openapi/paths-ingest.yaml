@@ -1,0 +1,64 @@
+# Ingestion of data
+
+components:
+  schemas:
+    Message:
+      type: object
+
+/account/{accountId}/target/{targetId}/message:
+  post:
+    operationId: message
+    tags: [ Ingest ]
+    parameters:
+      - name: accountId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: targetId
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary
+        text/plain:
+          schema:
+            type: string
+        application/json:
+          schema:
+            type: object
+        application/avro:
+          schema:
+            type: string
+            format: binary
+        application/protobuf:
+          schema:
+            type: string
+            format: binary
+    responses:
+      '200':
+        description: Ok
+      '402':
+        description: Account requires billing attention
+        content:
+          application/json:
+            schema:
+              $ref: 'common.yaml#/components/schemas/Error'
+      '404':
+        description: Account or queue not found
+        content:
+          application/json:
+            schema:
+              $ref: 'common.yaml#/components/schemas/Error'
+      '413':
+        description: Payload too large
+        content:
+          application/json:
+            schema:
+              $ref: 'common.yaml#/components/schemas/Error'

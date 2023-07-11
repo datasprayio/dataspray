@@ -23,10 +23,9 @@
 package io.dataspray.stream.control;
 
 import com.google.common.collect.ImmutableList;
-import io.dataspray.lambda.AuthorizerStack;
-import io.dataspray.lambda.LambdaBaseStack;
 import io.dataspray.store.LambdaDeployerImpl;
 import io.dataspray.store.SqsQueueStore;
+import io.dataspray.web.BaseLambdaWebServiceStack;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.Duration;
@@ -34,29 +33,26 @@ import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.route53.HostedZone;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
 @Slf4j
-public class ControlStack extends LambdaBaseStack {
+public class ControlStack extends BaseLambdaWebServiceStack {
 
     @Getter
     private final ManagedPolicy customerFunctionPermissionBoundaryManagedPolicy;
     @Getter
     private final Bucket bucketCode;
 
-    public ControlStack(Construct parent, String env, String codeDir, HostedZone dnsZone, AuthorizerStack authorizerStack) {
+    public ControlStack(Construct parent, String env, String codeDir) {
         super(parent, Options.builder()
                 .env(env)
                 .functionName("control-" + env)
                 .codePath(codeDir + "/control.zip")
-                .openapiYamlPath("target/openapi/api-control.yaml")
-                .dnsZone(dnsZone)
-                .authorizerStack(authorizerStack)
                 .build());
+
 
         customerFunctionPermissionBoundaryManagedPolicy = ManagedPolicy.Builder.create(this, LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME)
                 .managedPolicyName(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME)

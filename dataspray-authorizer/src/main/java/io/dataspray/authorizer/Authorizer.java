@@ -31,8 +31,10 @@ import com.google.gson.Gson;
 import io.dataspray.authorizer.model.AuthPolicy;
 import io.dataspray.authorizer.model.AuthPolicy.HttpMethod;
 import io.dataspray.authorizer.model.AuthPolicy.PolicyDocument;
-import io.dataspray.store.ApiKeyStore;
-import io.dataspray.store.ApiKeyStore.ApiKey;
+import io.dataspray.common.authorizer.AuthorizerConstants;
+import io.dataspray.store.ApiAccessStore;
+import io.dataspray.store.ApiAccessStore.ApiAccess;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotAuthorizedException;
@@ -40,11 +42,13 @@ import jakarta.ws.rs.core.HttpHeaders;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 @Slf4j
+@ApplicationScoped
 public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEvent, String> {
     public static final String AUTHORIZATION_HEADER = HttpHeaders.AUTHORIZATION;
     public static final Predicate<String> API_KEY_PREDICATE = Pattern.compile("(^\\w*x[\\w-_]?)api[\\w-_]?key\\w*$", Pattern.CASE_INSENSITIVE).asMatchPredicate();
@@ -52,7 +56,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
     @Inject
     Gson gson;
     @Inject
-    ApiKeyStore apiKeyStore;
+    ApiAccessStore apiAccessStore;
 
     @Value
     static class Credentials {
@@ -65,9 +69,9 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
 
         String apiKeyStr = extractApiKeyFromAuthorization(event);
 
-        ApiKey apiKey = apiKeyStore.getApiKey(apiKeyStr, true)
+        ApiAccess apiAccess = apiAccessStore.getApiAccessByApiKey(apiKeyStr, true)
                 .orElseThrow(ForbiddenException::new);
-        String principalId = apiKey.getAccountId();
+        String principalId = apiAccess.getAccountId();
 
         // Extract endpoint info
         Arn methodArn = Arn.fromString(event.getMethodArn());
@@ -77,13 +81,13 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
         String stage = event.getRequestContext().getStage();
 
         // Create policy
-        PolicyDocument policyDocument = generatePolicyDocument(region, awsAccountId, restApiId, stage, apiKey);
+        PolicyDocument policyDocument = generatePolicyDocument(region, awsAccountId, restApiId, stage, apiAccess);
         AuthPolicy policy = new AuthPolicy(
                 principalId,
                 policyDocument,
-                apiKey.getApiKeyValue(),
-                null);
-        policy.addToContext("apiKey", gson.toJson(apiKey));
+                apiAccess.getUsageKey(),
+                Map.of(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID, apiAccess.getAccountId(),
+                        AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE, apiAccess.getApiKey()));
 
         // Serialize and return
         return gson.toJson(policy);
@@ -100,7 +104,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
         return authorizationHeaderValue.substring(7);
     }
 
-    private PolicyDocument generatePolicyDocument(String region, String awsAccountId, String restApiId, String stage, ApiKey apiKey) {
+    private PolicyDocument generatePolicyDocument(String region, String awsAccountId, String restApiId, String stage, ApiAccess apiKey) {
 
         PolicyDocument policyDocument = new PolicyDocument(region, awsAccountId, restApiId, stage);
 

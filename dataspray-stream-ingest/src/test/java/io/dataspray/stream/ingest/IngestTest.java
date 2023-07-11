@@ -8,7 +8,7 @@ import com.google.gson.reflect.TypeToken;
 import io.dataspray.common.aws.test.AwsTestProfile;
 import io.dataspray.common.aws.test.MockFirehoseClient.FirehoseQueue;
 import io.dataspray.common.json.GsonUtil;
-import io.dataspray.lambda.resource.AbstractResource;
+import io.dataspray.web.resource.AbstractResource;
 import io.dataspray.store.AccountStore;
 import io.dataspray.store.FirehoseS3AthenaEtlStore;
 import io.dataspray.store.SingleTenantAccountStore;
