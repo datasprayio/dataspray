@@ -1,3 +1,25 @@
+/*
+ * Copyright 2023 Matus Faro
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package io.dataspray.store;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -59,21 +81,21 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
     public static final String ETL_BUCKET_RETENTION_PREFIX_PREFIX = "retention=";
     public static final String ETL_BUCKET_RETENTION_PREFIX = ETL_BUCKET_RETENTION_PREFIX_PREFIX + "!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}";
     public static final String ETL_BUCKET_ERROR_PREFIX = ETL_BUCKET_RETENTION_PREFIX_PREFIX + EtlRetention.DAY.name() +
-            "/error" +
-            "/result=!{firehose:error-output-type}" +
-            "/year=!{timestamp:yyyy}" +
-            "/month=!{timestamp:MM}" +
-            "/day=!{timestamp:dd}" +
-            "/hour=!{timestamp:HH}" +
-            "/";
+                                                         "/error" +
+                                                         "/result=!{firehose:error-output-type}" +
+                                                         "/year=!{timestamp:yyyy}" +
+                                                         "/month=!{timestamp:MM}" +
+                                                         "/day=!{timestamp:dd}" +
+                                                         "/hour=!{timestamp:HH}" +
+                                                         "/";
     public static final String ETL_BUCKET_PREFIX = ETL_BUCKET_RETENTION_PREFIX +
-            "/account=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ACCOUNT + "}" +
-            "/target=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TARGET + "}" +
-            "/year=!{timestamp:yyyy}" +
-            "/month=!{timestamp:MM}" +
-            "/day=!{timestamp:dd}" +
-            "/hour=!{timestamp:HH}" +
-            "/";
+                                                   "/account=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ACCOUNT + "}" +
+                                                   "/target=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TARGET + "}" +
+                                                   "/year=!{timestamp:yyyy}" +
+                                                   "/month=!{timestamp:MM}" +
+                                                   "/day=!{timestamp:dd}" +
+                                                   "/hour=!{timestamp:HH}" +
+                                                   "/";
     public static final TriFunction<EtlRetention, String, String, String> ETL_BUCKET_TARGET_PREFIX = (etlRetention, customerId, targetId) -> ETL_BUCKET_PREFIX
             .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}", etlRetention.name())
             .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ACCOUNT + "}", customerId)
@@ -272,7 +294,7 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
         }
         if (RegistryStatus.DELETING.equals(response.status())) {
             throw new ConflictException("Another operation is in progress: "
-                    + "registry is in state " + response.statusAsString());
+                                        + "registry is in state " + response.statusAsString());
         }
         return response;
     }
