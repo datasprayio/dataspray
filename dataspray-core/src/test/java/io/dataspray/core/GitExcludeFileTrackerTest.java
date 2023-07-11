@@ -96,12 +96,12 @@ class GitExcludeFileTrackerTest {
 
         createFile(".gitignore",
                 "/file6\n"
-                        + "/dir1/file8\n"
-                        + "!/file5\n"
-                        + "!/dir1/file7\n");
+                + "/dir1/file8\n"
+                + "!/file5\n"
+                + "!/dir1/file7\n");
         createFile("dir2/.gitignore",
                 "/file10\n"
-                        + "!/file9\n");
+                + "!/file9\n");
 
         log.info("{}:\n{}", GitExcludeFileTracker.GIT_EXCLUDE_FILE, Files.readString(project.getPath().resolve(GitExcludeFileTracker.GIT_EXCLUDE_FILE), StandardCharsets.UTF_8));
 

@@ -313,7 +313,7 @@ public class CodegenImpl implements Codegen {
                 // Retrieve final filename by stripping mustache suffix
                 String filenameWithoutSuffix = expandedFileOpt.get().getFilename()
                         .substring(0, expandedFileOpt.get().getFilename().length()
-                                - (isSample ? MUSTACHE_FILE_EXTENSION_SAMPLE : MUSTACHE_FILE_EXTENSION_TEMPLATE).length());
+                                      - (isSample ? MUSTACHE_FILE_EXTENSION_SAMPLE : MUSTACHE_FILE_EXTENSION_TEMPLATE).length());
 
                 // Retrieve final location of file of project
                 Path absoluteFilePath = absoluteTemplatePath

@@ -68,7 +68,8 @@ public class GitIgnoreParser {
      * in CGitIgnoreTest.jgitIgnoredAndUntracked method.
      *
      * Bug report: https://bugs.eclipse.org/bugs/show_bug.cgi?id=580381
-     * Simpler impl once bug is fixed: https://git.eclipse.org/c/jgit/jgit.git/tree/org.eclipse.jgit.test/tst/org/eclipse/jgit/ignore/CGitIgnoreTest.java?h=stable-6.2#n106
+     * Simpler impl once bug is fixed:
+     * https://git.eclipse.org/c/jgit/jgit.git/tree/org.eclipse.jgit.test/tst/org/eclipse/jgit/ignore/CGitIgnoreTest.java?h=stable-6.2#n106
      */
     @SneakyThrows
     public Optional<Boolean> isFileIgnoredWithDotGitignore(Path path) {
