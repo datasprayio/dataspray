@@ -23,17 +23,30 @@
 package io.dataspray.site;
 
 import io.dataspray.backend.BaseStack;
+import lombok.NonNull;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import software.constructs.Construct;
 
 @Slf4j
-public class SiteStack extends BaseStack {
+public class OpenNextStack extends BaseStack {
 
-    public SiteStack(Construct parent, String env) {
+    public OpenNextStack(Construct parent, String env, Options options) {
         super(parent, "site", env);
 
         // TODO transform from:
         // - CloudFormation template: https://github.com/serverless-stack/open-next/issues/32
         // - or from TS CDK construct: https://github.com/jetbridge/cdk-nextjs
+
+
+    }
+
+    @Value
+    @lombok.Builder
+    public static class Options {
+        @NonNull
+        String env;
+        @NonNull
+        String domain;
     }
 }

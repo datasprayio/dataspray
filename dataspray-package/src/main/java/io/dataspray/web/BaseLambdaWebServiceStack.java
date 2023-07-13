@@ -24,7 +24,6 @@ package io.dataspray.web;
 
 import com.google.common.base.Charsets;
 import io.dataspray.backend.BaseStack;
-import io.dataspray.store.CognitoAccountStore;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
@@ -45,10 +44,10 @@ public class BaseLambdaWebServiceStack extends BaseStack {
     private final SingletonFunction function;
 
     public BaseLambdaWebServiceStack(Construct parent, Options options) {
-        super(parent, "lambda-" + options.getFunctionName(), options.getEnv());
+        super(parent, "web-service-" + options.getFunctionName(), options.getEnv());
 
         function = SingletonFunction.Builder.create(this, getSubConstructId("lambda"))
-                .uuid(UUID.nameUUIDFromBytes(getConstructId().getBytes(Charsets.UTF_8)).toString())
+                .uuid(UUID.nameUUIDFromBytes(getSubConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
                 .functionName(options.getFunctionName())
                 .code(Code.fromAsset(options.getCodePath()))
                 .handler(QUARKUS_LAMBDA_HANDLER)
@@ -57,10 +56,6 @@ public class BaseLambdaWebServiceStack extends BaseStack {
                 .memorySize(options.getMemorySize())
                 .timeout(Duration.seconds(30))
                 .build();
-    }
-
-    public void withCognitoUserPoolIdRef(String cognitoUserPoolId) {
-        getFunction().addEnvironment(CognitoAccountStore.USER_POOL_ID_PROP_NAME, cognitoUserPoolId);
     }
 
     @Value

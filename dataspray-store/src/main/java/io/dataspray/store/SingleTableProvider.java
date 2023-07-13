@@ -38,11 +38,13 @@ import software.constructs.Construct;
 @ApplicationScoped
 public class SingleTableProvider {
 
-    public static final String TABLE_PREFIX = "dataspray";
+    public static final String TABLE_PREFIX_PROP_NAME = "singletable.tablePrefix";
+
     private static final int LSI_COUNT = 0;
     private static final int GSI_COUNT = 2;
 
-
+    @ConfigProperty(name = TABLE_PREFIX_PROP_NAME, defaultValue = "dataspray")
+    String tablePrefix;
     @ConfigProperty(name = "singletable.createTableOnStartup", defaultValue = "false")
     boolean createTableOnStartup;
 
@@ -55,7 +57,7 @@ public class SingleTableProvider {
     public SingleTable getSingleTable() {
         log.debug("Opening SingleTable");
         return SingleTable.builder()
-                .tablePrefix(TABLE_PREFIX)
+                .tablePrefix(tablePrefix)
                 .overrideDynamo(dynamo)
                 .overrideGson(gson)
                 .build();
@@ -66,7 +68,7 @@ public class SingleTableProvider {
      */
     public static Table createCdkTable(Construct scope, String stackId) {
         return SingleTable.builder()
-                .tablePrefix(TABLE_PREFIX)
+                .tablePrefix(stackId)
                 .build()
                 .createCdkTable(scope, stackId, LSI_COUNT, GSI_COUNT);
     }

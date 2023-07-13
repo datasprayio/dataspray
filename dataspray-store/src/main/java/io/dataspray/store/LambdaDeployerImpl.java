@@ -98,12 +98,12 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     public static final int LAMBDA_DEFAULT_TIMEOUT = 900;
     /** Lambda version alias pointing to the active version in use */
     public static final String LAMBDA_ACTIVE_QUALIFIER = "ACTIVE";
-    public static final String CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME = "customer-function-permission-boundary";
+    public static final String CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME = "deployer.customerPermissionBoundary.name";
     public static final String CUSTOMER_FUNCTION_POLICY_PATH_PREFIX = "Customer";
     public static final String CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LOGGING_PREFIX = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "LambdaLogging";
     public static final String CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "LambdaSqs";
     private static final long CODE_MAX_SIZE_IN_BYTES = 50 * 1024 * 1024;
-    public static final String CODE_BUCKET_NAME = "io-dataspray-code-upload";
+    public static final String CODE_BUCKET_NAME_PROP_NAME = "deployer.codeBucketName";
     private static final String CODE_KEY_PREFIX = "customer/";
     public static final String CUSTOMER_FUN_AND_ROLE_NAME_PREFIX = "customer-";
     public static final String FUN_NAME_WILDCARD = CUSTOMER_FUN_AND_ROLE_NAME_PREFIX + "*";
@@ -113,6 +113,10 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     String awsAccountId;
     @ConfigProperty(name = "aws.region")
     String awsRegion;
+    @ConfigProperty(name = CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME)
+    String customerFunctionPermissionBoundaryName;
+    @ConfigProperty(name = CODE_BUCKET_NAME_PROP_NAME)
+    String codeBucketName;
 
     @Inject
     IamClient iamClient;
@@ -154,7 +158,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             iamClient.createRole(CreateRoleRequest.builder()
                     .roleName(functionRoleName)
                     .description("Auto-created for Lambda " + functionName)
-                    .permissionsBoundary("arn:aws:iam::" + awsAccountId + ":policy/" + CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME)
+                    .permissionsBoundary("arn:aws:iam::" + awsAccountId + ":policy/" + customerFunctionPermissionBoundaryName)
                     .assumeRolePolicyDocument(gson.toJson(Map.of(
                             "Version", "2012-10-17",
                             "Statement", List.of(Map.of(
@@ -201,7 +205,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .packageType(PackageType.ZIP)
                             .architectures(Architecture.ARM64)
                             .code(FunctionCode.builder()
-                                    .s3Bucket(CODE_BUCKET_NAME)
+                                    .s3Bucket(codeBucketName)
                                     .s3Key(getCodeKeyFromUrl(customerId, codeUrl))
                                     .build())
                             .runtime(runtime)
@@ -240,7 +244,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .publish(true)
                             .functionName(functionName)
                             .architectures(Architecture.ARM64)
-                            .s3Bucket(CODE_BUCKET_NAME)
+                            .s3Bucket(codeBucketName)
                             .s3Key(getCodeKeyFromUrl(customerId, codeUrl))
                             // updateFunctionConfiguration returns invalid revisionId
                             // https://github.com/aws/aws-sdk/issues/377
@@ -523,10 +527,10 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                      + taskId
                      + "-"
                      + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").withZone(ZoneOffset.UTC).format(Instant.now()) + ".zip";
-        String codeUrl = "s3://" + CODE_BUCKET_NAME + "/" + key;
+        String codeUrl = "s3://" + codeBucketName + "/" + key;
         String presignedUrl = s3Presigner.presignPutObject(PutObjectPresignRequest.builder()
                         .putObjectRequest(PutObjectRequest.builder()
-                                .bucket(CODE_BUCKET_NAME)
+                                .bucket(codeBucketName)
                                 .key(key)
                                 .contentLength(contentLengthBytes)
                                 .contentType("application/zip")
@@ -566,7 +570,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     }
 
     private String getCodeKeyFromUrl(String customerId, String url) {
-        String s3UrlAndBucketPrefix = "s3://" + CODE_BUCKET_NAME + "/";
+        String s3UrlAndBucketPrefix = "s3://" + codeBucketName + "/";
         String s3UrlAndBucketAndKeyPrefix = s3UrlAndBucketPrefix + getCodeKeyPrefix(customerId);
         if (!url.startsWith(s3UrlAndBucketAndKeyPrefix)) {
             throw new BadRequestException("Incorrect bucket location");

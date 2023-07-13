@@ -55,7 +55,7 @@ public class AuthorizerStack extends BaseStack {
         super(parent, "authorizer", env);
 
         function = SingletonFunction.Builder.create(this, getSubConstructId("lambda"))
-                .uuid(UUID.nameUUIDFromBytes(getConstructId().getBytes(Charsets.UTF_8)).toString())
+                .uuid(UUID.nameUUIDFromBytes(getSubConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
                 .functionName("authorizer-" + env)
                 .code(Code.fromAsset(codeDir + "/authorizer.zip"))
                 .handler(Authorizer.class.getName() + "::handleRequest")

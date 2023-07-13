@@ -71,10 +71,10 @@ import java.util.Optional;
 @Slf4j
 @ApplicationScoped
 public class FirehoseS3AthenaEtlStore implements EtlStore {
-    public static final String ETL_BUCKET_NAME = "io-dataspray-etl";
+    public static final String ETL_BUCKET_PROP_NAME = "etl.bucket.name";
+    public static final String FIREHOSE_STREAM_NAME_PROP_NAME = "etl.firehose.name";
     public static final String GLUE_CUSTOMER_PREFIX = "customer-";
     public static final String GLUE_SCHEMA_FOR_QUEUE_PREFIX = "queue-";
-    public static final String FIREHOSE_STREAM_NAME = "dataspray-ingest-etl";
     public static final String ETL_PARTITION_KEY_RETENTION = "_ds_retention";
     public static final String ETL_PARTITION_KEY_ACCOUNT = "_ds_account";
     public static final String ETL_PARTITION_KEY_TARGET = "_ds_target";
@@ -103,6 +103,10 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
 
     @ConfigProperty(name = "aws.accountId")
     String awsAccountId;
+    @ConfigProperty(name = ETL_BUCKET_PROP_NAME)
+    String etlBucketName;
+    @ConfigProperty(name = FIREHOSE_STREAM_NAME_PROP_NAME)
+    String firehoseStreamName;
 
     @Inject
     FirehoseClient firehoseClient;
@@ -141,7 +145,7 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
         }
 
         firehoseClient.putRecord(PutRecordRequest.builder()
-                .deliveryStreamName(FIREHOSE_STREAM_NAME)
+                .deliveryStreamName(firehoseStreamName)
                 .record(Record.builder()
                         .data(SdkBytes.fromByteArrayUnsafe(jsonWithMetadataBytes)).build()).build());
     }
@@ -247,7 +251,7 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
                     .tableInput(TableInput.builder()
                             .name(tableName)
                             .storageDescriptor(StorageDescriptor.builder()
-                                    .location("s3://" + ETL_BUCKET_NAME + "/" + ETL_BUCKET_TARGET_PREFIX.apply(
+                                    .location("s3://" + etlBucketName + "/" + ETL_BUCKET_TARGET_PREFIX.apply(
                                             retention,
                                             customerId,
                                             targetId))

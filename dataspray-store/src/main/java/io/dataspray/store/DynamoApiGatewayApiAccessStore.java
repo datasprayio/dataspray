@@ -39,6 +39,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.NotImplementedException;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.apigateway.ApiGatewayClient;
 import software.amazon.awssdk.services.apigateway.model.CreateApiKeyRequest;
 import software.amazon.awssdk.services.apigateway.model.CreateApiKeyResponse;
@@ -59,7 +60,11 @@ import java.util.stream.StreamSupport;
 @ApplicationScoped
 public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
 
+    public static final String USAGE_PLAN_ID_PROP_NAME = "apiAccess.usagePlan.id";
     public static final int API_KEY_LENGTH = 42;
+
+    @ConfigProperty(name = USAGE_PLAN_ID_PROP_NAME)
+    String usagePlanId;
 
     @Inject
     SingleTable singleTable;

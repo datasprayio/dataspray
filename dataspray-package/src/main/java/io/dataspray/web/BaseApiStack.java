@@ -25,13 +25,14 @@ package io.dataspray.web;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.common.net.InternetDomainName;
 import io.dataspray.authorizer.Authorizer;
 import io.dataspray.backend.BaseStack;
+import io.dataspray.dns.DnsStack;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -51,7 +52,6 @@ import software.amazon.awscdk.services.certificatemanager.CertificateValidation;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
-import software.amazon.awscdk.services.route53.HostedZone;
 import software.amazon.awscdk.services.route53.RecordSet;
 import software.amazon.awscdk.services.route53.RecordTarget;
 import software.amazon.awscdk.services.route53.RecordType;
@@ -74,56 +74,65 @@ public class BaseApiStack extends BaseStack {
     @Getter
     private final RecordSet recordSet;
     @Getter
-
+    private final UsagePlan activeUsagePlan;
+    @Getter
     private final Options options;
 
     public BaseApiStack(Construct parent, Options options) {
         super(parent, "api", options.getEnv());
         this.options = options;
 
-        Map<String, Object> openApiSpec = constructOpenApiForApiGateway(options);
+        Map<String, Object> openApiSpec = constructOpenApiForApiGateway();
+
+        // Set domain name for API Gateway
+        String rootDomain = getOptions().getDnsStack().getDomainParam().getValueAsString();
+        URL serverUrl = setServerUrlDomain(openApiSpec, rootDomain);
+        String apiDomain = serverUrl.getHost();
+
+        // Add Lambda endpoints to OpenAPI spec
         ImmutableSet<SingletonFunction> usedFunctions = addApiGatewayExtensionsToOpenapiSpec(openApiSpec);
         usedFunctions.forEach(this::addFunctionToApiGatewayPermission);
 
-        URL serverUrl = getServerUrl(openApiSpec);
-        String domain = serverUrl.getHost();
-        String baseDomain = InternetDomainName.from(domain).topPrivateDomain().toString();
-
         certificate = Certificate.Builder.create(this, getSubConstructId("cert"))
-                .domainName(domain)
-                .validation(CertificateValidation.fromDns(options.getDnsZone()))
+                .domainName(apiDomain)
+                .validation(CertificateValidation.fromDns(getOptions().getDnsStack().getDnsZone()))
                 .build();
         restApi = SpecRestApi.Builder.create(this, getSubConstructId("apigateway"))
                 .apiDefinition(ApiDefinition.fromInline(openApiSpec))
                 .domainName(DomainNameOptions.builder()
                         .certificate(certificate)
                         .endpointType(EndpointType.REGIONAL)
-                        .domainName(domain)
+                        .domainName(apiDomain)
                         .build())
                 .build();
         recordSet = RecordSet.Builder.create(this, getSubConstructId("recordset"))
-                .zone(options.getDnsZone())
+                .zone(getOptions().getDnsStack().getDnsZone())
                 .recordType(RecordType.A)
-                .recordName(domain)
+                .recordName(apiDomain)
                 .target(RecordTarget.fromAlias(new ApiGateway(restApi)))
                 .ttl(Duration.seconds(30))
                 .deleteExisting(true)
                 .build();
+
+        // If changing, keep the old one as well as existing accounts may already point to it
+        activeUsagePlan = createUsagePlan(1,
+                QuotaSettings.builder()
+                        .limit(1000)
+                        .offset(0) // TODO What does this mean?? AWS is missing documentation
+                        .period(Period.DAY).build(),
+                ThrottleSettings.builder()
+                        .rateLimit(10)
+                        .burstLimit(10).build());
     }
 
-    public UsagePlan createUsagePlan(String usagePlanName, long usagePlanVersion) {
-        return UsagePlan.Builder.create(this, getSubConstructId("usage-plan-" + usagePlanName + "-" + usagePlanVersion))
-                .name("usage-plan-" + usagePlanName + "-" + usagePlanVersion)
+    public UsagePlan createUsagePlan(long usagePlanVersion, QuotaSettings quota, ThrottleSettings throttle) {
+        return UsagePlan.Builder.create(this, getSubConstructId("usage-plan-" + usagePlanVersion))
+                .name("usage-plan-" + usagePlanVersion)
                 .apiStages(List.of(UsagePlanPerApiStage.builder()
                         .api(restApi)
                         .stage(restApi.getDeploymentStage()).build()))
-                .quota(QuotaSettings.builder()
-                        .limit()
-                        .offset()
-                        .period(Period.DAY).build())
-                .throttle(ThrottleSettings.builder()
-                        .rateLimit()
-                        .burstLimit(23).build())
+                .quota(quota)
+                .throttle(throttle)
                 .build();
     }
 
@@ -144,10 +153,17 @@ public class BaseApiStack extends BaseStack {
 
     @SuppressWarnings("unchecked")
     @SneakyThrows
-    private URL getServerUrl(Map<String, Object> openApiSpec) {
+    private URL setServerUrlDomain(Map<String, Object> openApiSpec, String domain) {
         List<Map<String, Object>> servers = (List<Map<String, Object>>) openApiSpec.get("servers");
-        String serverUrlStr = (String) servers.get(0).get("url");
-        return new URL(serverUrlStr);
+        Preconditions.checkState(servers != null && servers.size() == 1);
+        Map<String, Object> server = servers.get(0);
+        String serverUrlStr = (String) server.get("url");
+
+        // Replace the domain in the server URL
+        String newServerUrlStr = serverUrlStr.replace("dataspray.io", domain);
+
+        server.put("url", newServerUrlStr);
+        return new URL(newServerUrlStr);
     }
 
     /**
@@ -242,7 +258,7 @@ public class BaseApiStack extends BaseStack {
         @NonNull
         ImmutableMap<String, SingletonFunction> tagToFunction;
         @NonNull
-        HostedZone dnsZone;
+        DnsStack dnsStack;
         @NonNull
         AuthorizerStack authorizerStack;
     }

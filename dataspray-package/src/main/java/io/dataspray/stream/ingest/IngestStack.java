@@ -76,8 +76,8 @@ public class IngestStack extends BaseLambdaWebServiceStack {
                         "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + CUSTOMER_QUEUE_WILDCARD))
                 .build());
 
-        bucketEtl = Bucket.Builder.create(this, "ingest-etl-bucket")
-                .bucketName(ETL_BUCKET_NAME)
+        bucketEtl = Bucket.Builder.create(this, getSubConstructId("ingest-etl-bucket"))
+                .bucketName(getSubConstructId("ingest-etl-bucket"))
                 .autoDeleteObjects(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 // Add different expiry for each retention prefix
@@ -98,8 +98,8 @@ public class IngestStack extends BaseLambdaWebServiceStack {
                                 .build()).collect(Collectors.toList()))
                 .build();
 
-        firehose = DeliveryStream.Builder.create(this, "ingest-etl-firehose")
-                .deliveryStreamName(FIREHOSE_STREAM_NAME)
+        firehose = DeliveryStream.Builder.create(this, getSubConstructId("ingest-etl-firehose"))
+                .deliveryStreamName(getSubConstructId("ingest-etl-firehose"))
                 .destinations(ImmutableList.of(S3Bucket.Builder.create(bucketEtl)
                         .bufferingInterval(Duration.seconds(900))
                         .bufferingSize(Size.mebibytes(128))
@@ -136,7 +136,7 @@ public class IngestStack extends BaseLambdaWebServiceStack {
                 .actions(ImmutableList.of(
                         "firehose:PutRecord"))
                 .resources(ImmutableList.of(
-                        "arn:aws:firehose:" + getRegion() + ":" + getAccount() + ":deliverystream/" + FIREHOSE_STREAM_NAME))
+                        firehose.getDeliveryStreamArn()))
                 .build());
     }
 }

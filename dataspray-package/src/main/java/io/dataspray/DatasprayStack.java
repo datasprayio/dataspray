@@ -23,9 +23,15 @@
 package io.dataspray;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import io.dataspray.dns.DnsStack;
-import io.dataspray.site.SiteStack;
+import io.dataspray.site.OpenNextStack;
 import io.dataspray.store.AuthNzStack;
+import io.dataspray.store.CognitoAccountStore;
+import io.dataspray.store.DynamoApiGatewayApiAccessStore;
+import io.dataspray.store.FirehoseS3AthenaEtlStore;
+import io.dataspray.store.LambdaDeployerImpl;
+import io.dataspray.store.SingleTableProvider;
 import io.dataspray.store.SingleTableStack;
 import io.dataspray.stream.control.ControlStack;
 import io.dataspray.stream.ingest.IngestStack;
@@ -35,8 +41,11 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
 
+import java.util.Set;
+
 @Slf4j
 public class DatasprayStack {
+
     public static void main(String[] args) {
         App app = new App();
 
@@ -47,21 +56,29 @@ public class DatasprayStack {
         String env = args[0];
         String codeDir = args[1];
 
-        DnsStack dnsStack = new DnsStack(app, env);
-        new SiteStack(app, env);
+        // Keep track of all Lambdas in order to pass config properties to them
+        Set<SingletonFunction> functions = Sets.newHashSet();
 
-        new SingleTableStack(app, env);
+        DnsStack dnsStack = new DnsStack(app, env);
+        new OpenNextStack(app, env, OpenNextStack.Options.builder()
+                .domain(dnsStack.getDomainParam().getValueAsString())
+                .build());
+
+        SingleTableStack singleTableStack = new SingleTableStack(app, env);
         AuthNzStack authNzStack = new AuthNzStack(app, env);
+
         AuthorizerStack authorizerStack = new AuthorizerStack(app, env, codeDir);
+        functions.add(authorizerStack.getFunction());
 
         IngestStack ingestStack = new IngestStack(app, env, codeDir);
-//        TODO ingestStack.withCognitoUserPoolIdRef(authNzStack.getUserPool().getUserPoolId());
+        functions.add(ingestStack.getFunction());
+
         ControlStack controlStack = new ControlStack(app, env, codeDir);
-//        TODO controlStack.withCognitoUserPoolIdRef(authNzStack.getUserPool().getUserPoolId());
+        functions.add(controlStack.getFunction());
 
         BaseApiStack baseApiStack = new BaseApiStack(app, BaseApiStack.Options.builder()
                 .openapiYamlPath("target/openapi/api.yaml")
-                .dnsZone(dnsStack.getDnsZone())
+                .dnsStack(dnsStack)
                 .authorizerStack(authorizerStack)
                 .tagToFunction(ImmutableMap.of(
                         "Ingest", ingestStack.getFunction(),
@@ -69,22 +86,23 @@ public class DatasprayStack {
                         "Control", controlStack.getFunction(),
                         "Health", controlStack.getFunction()))
                 .build());
-//        TODO baseApiStack.createUsagePlan("asdf");
 
-        // TODO authorizer lambda; with cognito user pool id ref
+        // For dynamically-named resources such as S3 bucket names, pass the name as env vars directly to the lambdas
+        // which will be picked up by Quarkus' @ConfigProperty
+        for (SingletonFunction function : functions) {
+            function.addEnvironment(CognitoAccountStore.USER_POOL_ID_PROP_NAME, authNzStack.getUserPool().getUserPoolId());
+            function.addEnvironment(SingleTableProvider.TABLE_PREFIX_PROP_NAME, singleTableStack.getSingleTableTable().getTableName());
+            function.addEnvironment(FirehoseS3AthenaEtlStore.ETL_BUCKET_PROP_NAME, ingestStack.getBucketEtl().getBucketName());
+            function.addEnvironment(FirehoseS3AthenaEtlStore.FIREHOSE_STREAM_NAME_PROP_NAME, ingestStack.getFirehose().getDeliveryStreamName());
+            function.addEnvironment(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME, controlStack.getCustomerFunctionPermissionBoundaryManagedPolicy().getManagedPolicyName());
+            function.addEnvironment(LambdaDeployerImpl.CODE_BUCKET_NAME_PROP_NAME, controlStack.getBucketCode().getBucketName());
+            function.addEnvironment(DynamoApiGatewayApiAccessStore.USAGE_PLAN_ID_PROP_NAME, baseApiStack.getActiveUsagePlan().getUsagePlanId());
+        }
 
         app.synth();
     }
 
-    private void addEnvVars(
-            SingletonFunction function,
-            String cognitoUserPoolIdRef) {
-
-    }
-
-    //<editor-fold desc="disallow ctor" defaultstate="collapsed">
     private DatasprayStack() {
         // disallow ctor
     }
-    //</editor-fold>
 }

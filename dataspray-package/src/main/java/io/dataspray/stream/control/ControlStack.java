@@ -54,8 +54,8 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                 .build());
 
 
-        customerFunctionPermissionBoundaryManagedPolicy = ManagedPolicy.Builder.create(this, LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME)
-                .managedPolicyName(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME)
+        customerFunctionPermissionBoundaryManagedPolicy = ManagedPolicy.Builder.create(this, getSubConstructId("customer-function-permission-boundary"))
+                .managedPolicyName(getSubConstructId("customer-function-permission-boundary"))
                 .description("Permission boundary for customer lambdas")
                 .statements(ImmutableList.of(PolicyStatement.Builder.create()
                                 .sid(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LOGGING_PREFIX + "PermissionBoundary")
@@ -80,8 +80,8 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                                 .build()))
                 .build();
 
-        bucketCode = Bucket.Builder.create(this, getSubConstructId("control-code-upload-bucket"))
-                .bucketName(LambdaDeployerImpl.CODE_BUCKET_NAME)
+        bucketCode = Bucket.Builder.create(this, getSubConstructId("code-upload-bucket"))
+                .bucketName(getSubConstructId("code-upload-bucket"))
                 .autoDeleteObjects(true)
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
@@ -90,6 +90,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                                 .expiration(Duration.days(1)).build()))
                 .build();
         getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+                .sid(getSubConstructId("CodeUploadBucket"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "s3:PutObject",
@@ -98,7 +99,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                 .build());
 
         getFunction().addToRolePolicy(PolicyStatement.Builder.create()
-                .sid("CustomerManagementLambda")
+                .sid(getSubConstructId("CustomerManagementLambda"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         // CRUD
@@ -129,7 +130,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                 .build());
         // Unfortunately not all permissions allow for resource-specific restrictions.
         getFunction().addToRolePolicy(PolicyStatement.Builder.create()
-                .sid("CustomerManagementLambdaResourceWildcardActions")
+                .sid(getSubConstructId("CustomerManagementLambdaResourceWildcardActions"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "lambda:ListFunctions",
@@ -139,7 +140,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                 .build());
 
         getFunction().addToRolePolicy(PolicyStatement.Builder.create()
-                .sid("CustomerManagementSqs")
+                .sid(getSubConstructId("CustomerManagementSqs"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "sqs:CreateQueue",
@@ -150,7 +151,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                 .build());
 
         getFunction().addToRolePolicy(PolicyStatement.Builder.create()
-                .sid("CustomerManagementIam")
+                .sid(getSubConstructId("CustomerManagementIam"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "iam:GetRole",

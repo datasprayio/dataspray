@@ -37,6 +37,6 @@ public class SingleTableStack extends BaseStack {
     public SingleTableStack(Construct parent, String env) {
         super(parent, "singletable", env);
 
-        singleTableTable = SingleTableProvider.createCdkTable(this, getConstructId());
+        singleTableTable = SingleTableProvider.createCdkTable(this, getSubConstructId("dataspray"));
     }
 }
