@@ -136,10 +136,7 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
 
         @Override
         public List<TestResourceEntry> testResources() {
-            return ImmutableList.of(new TestResourceEntry(
-                    MockProcessIo.class,
-                    ImmutableMap.of(),
-                    true));
+            return ImmutableList.of(new TestResourceEntry(MockProcessIo.class));
         }
     }
 }

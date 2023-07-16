@@ -20,22 +20,41 @@
  * SOFTWARE.
  */
 
-package io.dataspray.stream.ingest;
+package io.dataspray.stream.control;
 
-import io.dataspray.common.aws.test.AwsTestProfile;
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
-import io.restassured.RestAssured;
-import jakarta.ws.rs.core.Response.Status;
-import org.junit.jupiter.api.Test;
+import io.dataspray.store.ApiAccessStore;
+import io.dataspray.stream.control.model.ApiKeyWithSecret;
+import io.dataspray.stream.control.model.ApiKeys;
+import io.dataspray.web.resource.AbstractResource;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.NotImplementedException;
 
-@QuarkusTest
-@TestProfile(AwsTestProfile.class)
-public class PingTest {
+@Slf4j
+@ApplicationScoped
+public class AuthNzResource extends AbstractResource implements AuthNzApi {
 
-    @Test
-    public void testPing() {
-        RestAssured.when().get("/ping")
-                .then().statusCode(Status.NO_CONTENT.getStatusCode());
+    @Inject
+    ApiAccessStore apiAccessStore;
+
+    @Override
+    public ApiKeyWithSecret createApiKey() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public ApiKeyWithSecret getApiKeySecret(String apiKeyId) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public ApiKeys listApiKeys() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public void revokeApiKey(String apiKeyId) {
+        throw new NotImplementedException();
     }
 }

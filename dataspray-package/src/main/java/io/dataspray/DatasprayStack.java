@@ -49,12 +49,15 @@ public class DatasprayStack {
     public static void main(String[] args) {
         App app = new App();
 
-        if (args.length != 2) {
-            log.error("Usage: DatasprayStack <env> <codeDir>");
+        if (args.length != 5) {
+            log.error("Usage: DatasprayStack <env> <authorizerCodeZip> <controlCodeZip> <ingestCodeZip> <openNextDir>");
             System.exit(1);
         }
         String env = args[0];
-        String codeDir = args[1];
+        String authorizerCodeZip = args[1];
+        String controlCodeZip = args[2];
+        String ingestCodeZip = args[3];
+        String openNextDir = args[4];
 
         // Keep track of all Lambdas in order to pass config properties to them
         Set<SingletonFunction> functions = Sets.newHashSet();
@@ -62,18 +65,19 @@ public class DatasprayStack {
         DnsStack dnsStack = new DnsStack(app, env);
         new OpenNextStack(app, env, OpenNextStack.Options.builder()
                 .domain(dnsStack.getDomainParam().getValueAsString())
+                .openNextDir(openNextDir)
                 .build());
 
         SingleTableStack singleTableStack = new SingleTableStack(app, env);
         AuthNzStack authNzStack = new AuthNzStack(app, env);
 
-        AuthorizerStack authorizerStack = new AuthorizerStack(app, env, codeDir);
+        AuthorizerStack authorizerStack = new AuthorizerStack(app, env, authorizerCodeZip);
         functions.add(authorizerStack.getFunction());
 
-        IngestStack ingestStack = new IngestStack(app, env, codeDir);
+        IngestStack ingestStack = new IngestStack(app, env, ingestCodeZip);
         functions.add(ingestStack.getFunction());
 
-        ControlStack controlStack = new ControlStack(app, env, codeDir);
+        ControlStack controlStack = new ControlStack(app, env, controlCodeZip);
         functions.add(controlStack.getFunction());
 
         BaseApiStack baseApiStack = new BaseApiStack(app, BaseApiStack.Options.builder()
@@ -84,7 +88,7 @@ public class DatasprayStack {
                         "Ingest", ingestStack.getFunction(),
                         "AuthNZ", controlStack.getFunction(),
                         "Control", controlStack.getFunction(),
-                        "Health", controlStack.getFunction()))
+                        "Health", ingestStack.getFunction()))
                 .build());
 
         // For dynamically-named resources such as S3 bucket names, pass the name as env vars directly to the lambdas

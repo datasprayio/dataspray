@@ -53,14 +53,9 @@ public interface ApiAccessStore {
             Optional<ImmutableSet<String>> queueWhitelistOpt,
             Optional<Instant> expiryOpt);
 
-    String getOrCreateDefaultUsagePlanId();
-
     ImmutableSet<ApiAccess> getApiAccessesByAccountId(String accountId);
 
     Optional<ApiAccess> getApiAccessByApiKey(String apiKey, boolean useCache);
-
-    /** Warning: causes API key to temporarily return 403 during operation */
-    void switchUsagePlanId(String apiKeyValue, String usagePlanId);
 
     void revokeApiKey(String apiKeyValue);
 

@@ -46,11 +46,11 @@ public class ControlStack extends BaseLambdaWebServiceStack {
     @Getter
     private final Bucket bucketCode;
 
-    public ControlStack(Construct parent, String env, String codeDir) {
+    public ControlStack(Construct parent, String env, String codeZip) {
         super(parent, Options.builder()
                 .env(env)
                 .functionName("control-" + env)
-                .codePath(codeDir + "/control.zip")
+                .codeZip(codeZip)
                 .build());
 
 

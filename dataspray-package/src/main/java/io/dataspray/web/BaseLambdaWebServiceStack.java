@@ -49,7 +49,7 @@ public class BaseLambdaWebServiceStack extends BaseStack {
         function = SingletonFunction.Builder.create(this, getSubConstructId("lambda"))
                 .uuid(UUID.nameUUIDFromBytes(getSubConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
                 .functionName(options.getFunctionName())
-                .code(Code.fromAsset(options.getCodePath()))
+                .code(Code.fromAsset(options.getCodeZip()))
                 .handler(QUARKUS_LAMBDA_HANDLER)
                 .runtime(Runtime.JAVA_11)
                 .architecture(Architecture.ARM_64)
@@ -66,7 +66,7 @@ public class BaseLambdaWebServiceStack extends BaseStack {
         @NonNull
         String functionName;
         @NonNull
-        String codePath;
+        String codeZip;
         @lombok.Builder.Default
         int memorySize = 512;
     }

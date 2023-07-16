@@ -22,20 +22,16 @@
 
 package io.dataspray.stream.ingest;
 
-import io.dataspray.common.aws.test.AwsTestProfile;
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
-import io.restassured.RestAssured;
-import jakarta.ws.rs.core.Response.Status;
-import org.junit.jupiter.api.Test;
+import io.dataspray.web.resource.AbstractResource;
+import jakarta.enterprise.context.ApplicationScoped;
+import lombok.extern.slf4j.Slf4j;
 
-@QuarkusTest
-@TestProfile(AwsTestProfile.class)
-public class PingTest {
+@Slf4j
+@ApplicationScoped
+public class HealthResource extends AbstractResource implements HealthApi {
 
-    @Test
-    public void testPing() {
-        RestAssured.when().get("/ping")
-                .then().statusCode(Status.NO_CONTENT.getStatusCode());
+    @Override
+    public void ping() {
+        log.debug("Received ping");
     }
 }

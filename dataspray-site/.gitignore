@@ -41,6 +41,9 @@ yarn-error.log*
 # serverless nextjs
 .serverless_nextjs
 
+# opennext
+.open-next
+
 #### CUSTOM
 
 public/favicon.*

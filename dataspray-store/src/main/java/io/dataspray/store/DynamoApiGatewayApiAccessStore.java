@@ -26,7 +26,6 @@ import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
@@ -38,16 +37,13 @@ import io.quarkus.runtime.Startup;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.NotImplementedException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.apigateway.ApiGatewayClient;
 import software.amazon.awssdk.services.apigateway.model.CreateApiKeyRequest;
 import software.amazon.awssdk.services.apigateway.model.CreateApiKeyResponse;
 import software.amazon.awssdk.services.apigateway.model.CreateUsagePlanKeyRequest;
 import software.amazon.awssdk.services.apigateway.model.CreateUsagePlanKeyResponse;
-import software.amazon.awssdk.services.apigateway.model.DeleteApiKeyRequest;
 import software.amazon.awssdk.services.apigateway.model.GetApiKeyRequest;
-import software.amazon.awssdk.services.apigateway.model.GetUsagePlanRequest;
 import software.amazon.awssdk.services.apigateway.model.NotFoundException;
 
 import java.time.Duration;
@@ -112,18 +108,12 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         ApiAccess apiKey = new ApiAccess(
                 apiKeyValue,
                 accountId,
-                apiKeyId,
+                usageKeyType.getId(),
                 description,
                 queueWhitelistOpt.orElseGet(ImmutableSet::of),
                 expiryOpt.map(Instant::getEpochSecond).orElse(null));
         apiKeySchema.table().putItem(apiKeySchema.toItem(apiKey));
         return apiKey;
-    }
-
-    @Override
-    public String getOrCreateDefaultUsagePlanId() {
-        apiGatewayClient.getUsagePlan(GetUsagePlanRequest.builder()
-                .build())
     }
 
     @Override
@@ -170,28 +160,8 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public void switchUsagePlanId(String apiKeyValue, String usagePlanId) {
-        // TODO Need to first find current usagePlanKey (somehow ??), then delete it, then add new one
-        // While usage plan key is deleted, api is non-functional, maybe it's better API key is rotated instead?
-        throw new NotImplementedException();
-    }
-
-    @Override
     public void revokeApiKey(String apiKeyValue) {
-        Optional.ofNullable(apiKeySchema.table().deleteItem(new DeleteItemSpec()
-                                .withReturnValues(ReturnValue.ALL_OLD)
-                                .withPrimaryKey(apiKeySchema.primaryKey(Map.of(
-                                        "apiKeyValue", apiKeyValue))))
-                        .getItem())
-                .map(apiKeySchema::fromItem)
-                .map(ApiAccess::getApiKeyId)
-                .ifPresent(apiKeyId -> {
-                    try {
-                        apiGatewayClient.deleteApiKey(DeleteApiKeyRequest.builder()
-                                .apiKey(apiKeyId).build());
-                    } catch (NotFoundException ex) {
-                        // Do nothing
-                    }
-                });
+        apiKeySchema.table().deleteItem(new DeleteItemSpec().withPrimaryKey(apiKeySchema.primaryKey(Map.of(
+                "apiKeyValue", apiKeyValue))));
     }
 }

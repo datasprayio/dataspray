@@ -10,6 +10,7 @@
 package io.dataspray.authorizer.model;
 
 import jakarta.annotation.Nullable;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,6 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * AuthPolicy receives a set of allowed and denied methods and generates a valid
@@ -36,6 +39,7 @@ import java.util.Optional;
  * @see <a
  * href="https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-lambda-authorizer-output.html">Documentation</a>
  */
+@ToString
 public class AuthPolicy {
 
     // IAM Policy Constants
@@ -56,13 +60,10 @@ public class AuthPolicy {
     Map<String, String> context;
 
     public AuthPolicy(String principalId, AuthPolicy.PolicyDocument policyDocumentObject, Optional<String> usageIdentifierKeyOpt, Map<String, String> context) {
-        this.principalId = principalId;
-        this.policyDocumentObject = policyDocumentObject;
-        this.usageIdentifierKey = usageIdentifierKeyOpt.orElse(null);
-        this.context = context;
-    }
-
-    public AuthPolicy() {
+        this.principalId = checkNotNull(principalId);
+        this.usageIdentifierKey = checkNotNull(usageIdentifierKeyOpt).orElse(null);
+        this.context = checkNotNull(context);
+        this.policyDocumentObject = checkNotNull(policyDocumentObject);
     }
 
     public String getPrincipalId() {
@@ -82,6 +83,13 @@ public class AuthPolicy {
      * @return IAM Policy as a well-formed JSON document
      */
     public Map<String, Object> getPolicyDocument() {
+        // When this object is deserialized using GSON,
+        // policyDocumentObject is null as it's transient.
+        // In this case policyDocument may already be populated
+        // via reflection so return it
+        if (policyDocumentObject == null) {
+            return policyDocument;
+        }
         Map<String, Object> serializablePolicy = new HashMap<>();
         serializablePolicy.put(VERSION, policyDocumentObject.Version);
         Statement[] statements = policyDocumentObject.getStatement();
@@ -100,7 +108,7 @@ public class AuthPolicy {
     }
 
     public void setPolicyDocument(PolicyDocument policyDocumentObject) {
-        this.policyDocumentObject = policyDocumentObject;
+        this.policyDocumentObject = checkNotNull(policyDocumentObject);
     }
 
     @Nullable

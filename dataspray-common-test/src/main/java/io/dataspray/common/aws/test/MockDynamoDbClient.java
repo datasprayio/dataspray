@@ -54,7 +54,7 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
      * and 2/ as a bean. This property is either populated in start method or injected as a config property
      * respectively.
      */
-    @ConfigProperty(name = "aws.dynamo.mock.instanceId")
+    @ConfigProperty(name = "aws.dynamo.mock.instanceId", defaultValue = "n/a")
     String instanceId;
 
     @Alternative
@@ -136,10 +136,7 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
 
         @Override
         public List<TestResourceEntry> testResources() {
-            return ImmutableList.of(new TestResourceEntry(
-                    MockS3Client.class,
-                    ImmutableMap.of(),
-                    true));
+            return ImmutableList.of(new TestResourceEntry(MockS3Client.class));
         }
     }
 }

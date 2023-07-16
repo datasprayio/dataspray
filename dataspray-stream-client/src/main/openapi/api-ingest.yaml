@@ -18,5 +18,7 @@ components:
       name: Authorization
 
 paths:
+  /ping:
+    $ref: 'paths-health.yaml#/~1ping'
   /account/{accountId}/target/{targetId}/message:
     $ref: 'paths-ingest.yaml#/~1account~1{accountId}~1target~1{targetId}~1message'

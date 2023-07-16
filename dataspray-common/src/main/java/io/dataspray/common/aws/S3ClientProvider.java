@@ -18,6 +18,7 @@ import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.io.IOException;
@@ -38,6 +39,8 @@ public class S3ClientProvider {
     Optional<String> serviceEndpointOpt;
     @ConfigProperty(name = "aws.s3.dnsResolverTo")
     Optional<String> dnsResolverToOpt;
+    @ConfigProperty(name = "aws.s3.pathStyleEnabled", defaultValue = "false")
+    boolean pathStyleEnabled;
 
     @Inject
     AWSCredentialsProvider awsCredentialsProviderSdk1;
@@ -54,6 +57,10 @@ public class S3ClientProvider {
         S3Presigner.Builder builder = S3Presigner.builder()
                 .credentialsProvider(awsCredentialsProviderSdk2);
 
+        if (pathStyleEnabled) {
+            builder.serviceConfiguration(S3Configuration.builder()
+                    .pathStyleAccessEnabled(true).build());
+        }
         serviceEndpointOpt.map(URI::create).ifPresent(builder::endpointOverride);
         productionRegionOpt.map(Region::of).ifPresent(builder::region);
 
@@ -66,6 +73,10 @@ public class S3ClientProvider {
         waitUntilPortOpen();
         S3ClientBuilder builder = S3Client.builder()
                 .credentialsProvider(awsCredentialsProviderSdk2);
+        if (pathStyleEnabled) {
+            builder.serviceConfiguration(S3Configuration.builder()
+                    .pathStyleAccessEnabled(true).build());
+        }
         serviceEndpointOpt.map(URI::create).ifPresent(builder::endpointOverride);
         productionRegionOpt.map(Region::of).ifPresent(builder::region);
         dnsResolverToOpt.ifPresent(dnsResolverTo -> builder.httpClientBuilder(ApacheHttpClient.builder()

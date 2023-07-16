@@ -125,7 +125,34 @@ public class PingIT extends PingTest { }
 </plugins>
 ```
 
-### 5. Deploy using CDK
+### 5. Bundle Lambda function zip file
+
+```xml
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>build-helper-maven-plugin</artifactId>
+    <executions>
+        <execution>
+            <id>attach-artifacts</id>
+            <phase>package</phase>
+            <goals>
+                <goal>attach-artifact</goal>
+            </goals>
+            <configuration>
+                <artifacts>
+                    <artifact>
+                        <file>${project.build.directory}/function.zip</file>
+                        <type>zip</type>
+                        <classifier>lambda</classifier>
+                    </artifact>
+                </artifacts>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+```
+
+### 6. Deploy using CDK
 
 Create a CDK endpoint to create Lambda
 

@@ -30,7 +30,6 @@ import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.test.Mock;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.apache.commons.lang.NotImplementedException;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -49,17 +48,12 @@ public class InMemoryApiAccessStore implements ApiAccessStore {
         ApiAccess apiAccess = new ApiAccess(
                 keygenUtil.generateSecureApiKey(DynamoApiGatewayApiAccessStore.API_KEY_LENGTH),
                 accountId,
-                UsageKeyType.UNLIMITED.getId(),
+                usageKeyType.getId(),
                 description,
                 queueWhitelistOpt.orElseGet(ImmutableSet::of),
                 expiryOpt.map(Instant::getEpochSecond).orElse(null));
         apiKeys.add(apiAccess);
         return apiAccess;
-    }
-
-    @Override
-    public String getOrCreateDefaultUsagePlanId() {
-        throw new NotImplementedException();
     }
 
     @Override
@@ -74,11 +68,6 @@ public class InMemoryApiAccessStore implements ApiAccessStore {
         return apiKeys.stream()
                 .filter(apiAccess -> apiAccess.getApiKey().equals(apiKey))
                 .findFirst();
-    }
-
-    @Override
-    public void switchUsagePlanId(String apiKeyValue, String usagePlanId) {
-        throw new NotImplementedException();
     }
 
     @Override

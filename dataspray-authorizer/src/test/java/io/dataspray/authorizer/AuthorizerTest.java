@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import io.dataspray.authorizer.model.AuthPolicy;
+import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.ApiAccessStore.ApiAccess;
 import io.quarkus.test.junit.QuarkusTest;
@@ -56,7 +57,7 @@ class AuthorizerTest {
 
     @Test
     void handleRequest() {
-        ApiAccess apiKey = apiAccessStore.createApiAccess(
+        ApiAccess apiAccess = apiAccessStore.createApiAccess(
                 UUID.randomUUID().toString(),
                 ApiAccessStore.UsageKeyType.ACCOUNT_WIDE,
                 "Description",
@@ -64,13 +65,20 @@ class AuthorizerTest {
                 Optional.of(Instant.now().plus(Duration.ofDays(3))));
         APIGatewayCustomAuthorizerEvent event = new APIGatewayCustomAuthorizerEvent();
         event.setMethodArn("arn:aws:execute-api:us-east-1:123456789012:abcdef123/default/$connect");
-        event.setHeaders(ImmutableMap.of(HttpHeaders.AUTHORIZATION, "bearer " + apiKey.getApiKey()));
+        event.setHeaders(ImmutableMap.of(HttpHeaders.AUTHORIZATION, "bearer " + apiAccess.getApiKey()));
+        event.setRequestContext(APIGatewayCustomAuthorizerEvent.RequestContext.builder()
+                .withAccountId(apiAccess.getAccountId())
+                .withApiId("api-id")
+                .withStage("stage")
+                .build());
 
         AuthPolicy authPolicy = gson.fromJson(authorizer.handleRequest(event, null), AuthPolicy.class);
+        log.info("Returned AuthPolicy {}", authPolicy);
 
-        assertEquals(apiKey.getApiKey(), authPolicy.getUsageIdentifierKey());
+        assertEquals(apiAccess.getAccountId(), authPolicy.getUsageIdentifierKey());
         assertTrue(authPolicy.getContext().containsKey("apiKey"));
-        assertEquals(apiKey, gson.fromJson(authPolicy.getContext().get("apiKey"), ApiAccess.class));
-        assertEquals(apiKey.getAccountId(), authPolicy.getPrincipalId());
+        assertEquals(apiAccess.getAccountId(), authPolicy.getContext().get(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID));
+        assertEquals(apiAccess.getApiKey(), authPolicy.getContext().get(AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE));
+        assertEquals(apiAccess.getAccountId(), authPolicy.getPrincipalId());
     }
 }

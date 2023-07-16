@@ -59,11 +59,11 @@ public class IngestStack extends BaseLambdaWebServiceStack {
     @Getter
     private final DeliveryStream firehose;
 
-    public IngestStack(Construct parent, String env, String codeDir) {
+    public IngestStack(Construct parent, String env, String codeZip) {
         super(parent, Options.builder()
                 .env(env)
                 .functionName("ingest-" + env)
-                .codePath(codeDir + "/ingest.zip")
+                .codeZip(codeZip)
                 .build());
 
         getFunction().addToRolePolicy(PolicyStatement.Builder.create()

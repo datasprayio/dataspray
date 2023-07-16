@@ -91,6 +91,13 @@
                                     <followSymlinks>false</followSymlinks>
                                 </fileset>
                                 <fileset>
+                                    <directory>${project.basedir}/.open-next</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
                                     <directory>${project.basedir}/public/vscode-web</directory>
                                     <includes>
                                         <include>**</include>
@@ -201,20 +208,6 @@
                         </configuration>
                         <phase>prepare-package</phase>
                     </execution>
-                    <execution>
-                        <id>pnpm deploy</id>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skipDeploySite}</skip>
-                            <arguments>run deploy</arguments>
-                            <environmentVariables>
-                                <SERVERLESS_CI>true</SERVERLESS_CI>
-                            </environmentVariables>
-                        </configuration>
-                        <phase>deploy</phase>
-                    </execution>
                 </executions>
                 <configuration>
                     <nodeVersion>${node.version}</nodeVersion>
@@ -225,23 +218,20 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>${project.basedir}/assembly-opennext.xml</descriptor>
+                    </descriptors>
+                    <tarLongFileMode>posix</tarLongFileMode>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>copy-resources</id>
+                        <id>make-assembly</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>copy-resources</goal>
+                            <goal>single</goal>
                         </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/target/classes/ROOT</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${basedir}/dist</directory>
-                                    <filtering>false</filtering>
-                                </resource>
-                            </resources>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

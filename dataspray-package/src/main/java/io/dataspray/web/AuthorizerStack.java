@@ -51,13 +51,13 @@ public class AuthorizerStack extends BaseStack {
     @Getter
     private final Role roleApiGatewayInvoke;
 
-    public AuthorizerStack(Construct parent, String env, String codeDir) {
+    public AuthorizerStack(Construct parent, String env, String codeZip) {
         super(parent, "authorizer", env);
 
         function = SingletonFunction.Builder.create(this, getSubConstructId("lambda"))
                 .uuid(UUID.nameUUIDFromBytes(getSubConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
                 .functionName("authorizer-" + env)
-                .code(Code.fromAsset(codeDir + "/authorizer.zip"))
+                .code(Code.fromAsset(codeZip))
                 .handler(Authorizer.class.getName() + "::handleRequest")
                 .runtime(Runtime.JAVA_11)
                 .architecture(Architecture.ARM_64)

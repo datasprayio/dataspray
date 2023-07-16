@@ -109,6 +109,12 @@
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
+                <artifactId>dataspray-site</artifactId>
+                <classifier>open-next</classifier>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-stream-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -134,7 +140,7 @@
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
-                <artifactId>dataspray-base-lambda</artifactId>
+                <artifactId>dataspray-base-lambda-web-service</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -319,6 +325,11 @@
                 <artifactId>constructs</artifactId>
                 <version>10.1.56</version>
             </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
+                <artifactId>open-next-cdk</artifactId>
+                <version>0.0.3</version>
+            </dependency>
 
             <dependency>
                 <groupId>info.picocli</groupId>
@@ -436,10 +447,15 @@
                 <version>0.2.6</version>
             </dependency>
             <dependency>
+                <groupId>com.adobe.testing</groupId>
+                <artifactId>s3mock-testcontainers</artifactId>
+                <version>2.17.0</version>
+            </dependency>
+            <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>DynamoDBLocal</artifactId>
                 <!-- Find latest version here: https://hub.docker.com/r/amazon/dynamodb-local/tags -->
-                <version>1.20.0</version>
+                <version>2.0.0</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.logging.log4j</groupId>

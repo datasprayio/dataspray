@@ -45,6 +45,7 @@ import java.util.Map;
 @Slf4j
 @ApplicationScoped
 public class StreamApiImpl implements StreamApi {
+
     @Override
     public IngestApi ingest(String apiKey) {
         io.dataspray.stream.ingest.client.ApiClient apiClient = new io.dataspray.stream.ingest.client.ApiClient();

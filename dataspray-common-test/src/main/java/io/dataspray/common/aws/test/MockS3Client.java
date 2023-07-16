@@ -22,11 +22,10 @@
 
 package io.dataspray.common.aws.test;
 
+import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.dataspray.common.NetworkUtil;
 import io.dataspray.common.TestResourceUtil;
-import io.findify.s3mock.S3Mock;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import lombok.SneakyThrows;
@@ -36,24 +35,25 @@ import java.util.List;
 import java.util.Map;
 
 public class MockS3Client implements QuarkusTestResourceLifecycleManager {
-    public static final Region REGION = Region.US_EAST_1;
 
-    private S3Mock s3Mock;
+    private S3MockContainer s3Mock;
 
     @Override
     public Map<String, String> start() {
-        int port = NetworkUtil.get().findFreePort();
-        s3Mock = new S3Mock.Builder().withPort(port).withInMemoryBackend().build();
+        s3Mock = new S3MockContainer("2.17.0");
         s3Mock.start();
         return ImmutableMap.of(
-                "aws.s3.serviceEndpoint", "http://localhost:" + port,
-                "aws.s3.productionRegion", REGION.id(),
+                "aws.s3.serviceEndpoint", s3Mock.getHttpEndpoint(),
+                "aws.s3.productionRegion", Region.US_EAST_1.id(),
+                "aws.s3.pathStyleEnabled", "true",
                 "aws.s3.dnsResolverTo", "localhost");
     }
 
     @Override
     public void stop() {
-        s3Mock.stop();
+        if (s3Mock != null) {
+            s3Mock.stop();
+        }
     }
 
     @Override
@@ -66,10 +66,7 @@ public class MockS3Client implements QuarkusTestResourceLifecycleManager {
 
         @Override
         public List<TestResourceEntry> testResources() {
-            return ImmutableList.of(new TestResourceEntry(
-                    MockS3Client.class,
-                    ImmutableMap.of(),
-                    true));
+            return ImmutableList.of(new TestResourceEntry(MockS3Client.class));
         }
     }
 }

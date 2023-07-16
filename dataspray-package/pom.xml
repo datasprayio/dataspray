@@ -85,10 +85,81 @@
             <groupId>software.amazon.awscdk</groupId>
             <artifactId>kinesisfirehose-destinations-alpha</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.dataspray</groupId>
+            <artifactId>open-next-cdk</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <overWriteSnapshots>true</overWriteSnapshots>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>io.dataspray</groupId>
+                                    <artifactId>dataspray-authorizer</artifactId>
+                                    <classifier>lambda</classifier>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/code-authorizer/</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>io.dataspray</groupId>
+                                    <artifactId>dataspray-control</artifactId>
+                                    <classifier>lambda</classifier>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/code-control/</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>io.dataspray</groupId>
+                                    <artifactId>dataspray-ingest</artifactId>
+                                    <classifier>lambda</classifier>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/code-ingest/</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <overWriteSnapshots>true</overWriteSnapshots>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>io.dataspray</groupId>
+                                    <artifactId>dataspray-site</artifactId>
+                                    <classifier>open-next</classifier>
+                                    <version>${project.version}</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/open-next/</outputDirectory>
+                                    <includes>**</includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
@@ -111,8 +182,15 @@
                             <goal>bootstrap</goal>
                         </goals>
                         <configuration>
-                            <app>io.dataspray.deploy.DatasprayStack</app>
+                            <app>io.dataspray.DatasprayStack</app>
                             <profile>dataspray</profile>
+                            <arguments>
+                                <argument>prod</argument>
+                                <argument>${project.build.directory}/code-authorizer/function.zip</argument>
+                                <argument>${project.build.directory}/code-control/function.zip</argument>
+                                <argument>${project.build.directory}/code-ingest/function.zip</argument>
+                                <argument>${project.build.directory}/open-next/.open-next</argument>
+                            </arguments>
                         </configuration>
                     </execution>
                     <execution>

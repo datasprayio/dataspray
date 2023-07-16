@@ -23,10 +23,13 @@
 package io.dataspray.site;
 
 import io.dataspray.backend.BaseStack;
+import io.dataspray.opennextcdk.Nextjs;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import software.constructs.Construct;
+
+import java.nio.file.Path;
 
 @Slf4j
 public class OpenNextStack extends BaseStack {
@@ -34,19 +37,23 @@ public class OpenNextStack extends BaseStack {
     public OpenNextStack(Construct parent, String env, Options options) {
         super(parent, "site", env);
 
-        // TODO transform from:
-        // - CloudFormation template: https://github.com/serverless-stack/open-next/issues/32
-        // - or from TS CDK construct: https://github.com/jetbridge/cdk-nextjs
+        // Find .open-next path
+        // For now the Nextjs construct actually needs to parent directory
+        Path openNextParentPath = Path.of(options.openNextDir).getParent();
 
-
+        Nextjs.Builder.create(this, getConstructId())
+                .nextjsPath(openNextParentPath.toString())
+                // Don't build it, just use the .open-next directory
+                .isPlaceholder(true)
+                .build();
     }
 
     @Value
     @lombok.Builder
     public static class Options {
         @NonNull
-        String env;
-        @NonNull
         String domain;
+        @NonNull
+        String openNextDir;
     }
 }
