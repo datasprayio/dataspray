@@ -41,13 +41,12 @@ import java.util.Optional;
 public class SingleTenantAccountStore implements AccountStore {
 
     @VisibleForTesting
-    @ConfigProperty(name = "accountstore.singletenant.account.id", defaultValue = "DC1EDCC9-F63C-4766-AF16-C6F3FFC6DC20")
+    @ConfigProperty(name = "accountstore.singletenant.account.id")
     public String accountId;
-    @ConfigProperty(name = "accountstore.singletenant.account.email", defaultValue = "dataspray@example.com")
+    @ConfigProperty(name = "accountstore.singletenant.account.email")
     String accountEmail;
-    @VisibleForTesting
-    @ConfigProperty(name = "accountstore.singletenant.account.apikey", defaultValue = "B41B7CC9-BD31-46E3-8CD1-52B6A2BC203C")
-    public String accountApiKey;
+    @ConfigProperty(name = "accountstore.singletenant.account.apikey")
+    String accountApiKey;
     @ConfigProperty(name = "accountstore.singletenant.account.etlRetention")
     Optional<EtlRetention> accountEtlRetentionOpt;
 

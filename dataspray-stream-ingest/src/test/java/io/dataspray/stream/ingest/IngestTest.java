@@ -68,6 +68,8 @@ public class IngestTest {
 
     @ConfigProperty(name = FIREHOSE_STREAM_NAME_PROP_NAME)
     String firehoseStreamName;
+    @ConfigProperty(name = "accountstore.singletenant.account.apikey")
+    String accountApiKey;
 
     @Inject
     IngestResource resource;
@@ -92,7 +94,7 @@ public class IngestTest {
     @BeforeEach
     public void setup() {
         Mockito.when(httpHeaders.getRequestHeader(AbstractResource.API_TOKEN_HEADER_NAME))
-                .thenReturn(ImmutableList.of(singleTenantAccountStore.accountApiKey));
+                .thenReturn(ImmutableList.of(accountApiKey));
         Mockito.when(httpHeaders.getMediaType())
                 .thenReturn(MediaType.APPLICATION_JSON_TYPE);
     }
