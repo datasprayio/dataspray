@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-package io.dataspray.store;
+package io.dataspray.cdk.store;
 
-import io.dataspray.backend.BaseStack;
+import io.dataspray.cdk.template.BaseStack;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.CfnCondition;

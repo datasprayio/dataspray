@@ -20,23 +20,23 @@
  * SOFTWARE.
  */
 
-package io.dataspray;
+package io.dataspray.cdk;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
-import io.dataspray.dns.DnsStack;
-import io.dataspray.site.OpenNextStack;
-import io.dataspray.store.AuthNzStack;
+import io.dataspray.cdk.dns.DnsStack;
+import io.dataspray.cdk.site.OpenNextStack;
+import io.dataspray.cdk.store.AuthNzStack;
+import io.dataspray.cdk.store.SingleTableStack;
+import io.dataspray.cdk.stream.control.ControlStack;
+import io.dataspray.cdk.stream.ingest.IngestStack;
+import io.dataspray.cdk.web.AuthorizerStack;
+import io.dataspray.cdk.web.BaseApiStack;
 import io.dataspray.store.CognitoAccountStore;
 import io.dataspray.store.DynamoApiGatewayApiAccessStore;
 import io.dataspray.store.FirehoseS3AthenaEtlStore;
 import io.dataspray.store.LambdaDeployerImpl;
 import io.dataspray.store.SingleTableProvider;
-import io.dataspray.store.SingleTableStack;
-import io.dataspray.stream.control.ControlStack;
-import io.dataspray.stream.ingest.IngestStack;
-import io.dataspray.web.AuthorizerStack;
-import io.dataspray.web.BaseApiStack;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.services.lambda.SingletonFunction;

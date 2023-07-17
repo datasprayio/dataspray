@@ -45,8 +45,8 @@ import software.amazon.awssdk.services.firehose.model.Record;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
-import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
@@ -63,7 +63,7 @@ public class MockFirehoseClient {
     @Named(MOCK_FIREHOSE_QUEUES)
     public Function<String, FirehoseQueue> getMockQueues() {
         ConcurrentMap<String, FirehoseQueue> queues = Maps.newConcurrentMap();
-        return name -> queues.computeIfAbsent(name, name2 -> new FirehoseQueue(name2, Queues.newConcurrentLinkedQueue()));
+        return name -> queues.computeIfAbsent(name, name2 -> new FirehoseQueue(name2, Queues.newLinkedBlockingQueue()));
     }
 
     @Alternative
@@ -102,7 +102,7 @@ public class MockFirehoseClient {
         @Nonnull
         String name;
         @Nonnull
-        Queue<Record> queue;
+        BlockingQueue<Record> queue;
     }
 
     public static class Profile implements QuarkusTestProfile {

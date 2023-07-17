@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package io.dataspray.web;
+package io.dataspray.cdk.web;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,8 +31,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.dataspray.authorizer.Authorizer;
-import io.dataspray.backend.BaseStack;
-import io.dataspray.dns.DnsStack;
+import io.dataspray.cdk.dns.DnsStack;
+import io.dataspray.cdk.template.BaseStack;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;

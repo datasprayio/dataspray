@@ -117,7 +117,7 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
-                                    <artifactId>dataspray-control</artifactId>
+                                    <artifactId>dataspray-stream-control</artifactId>
                                     <classifier>lambda</classifier>
                                     <version>${project.version}</version>
                                     <type>zip</type>
@@ -126,7 +126,7 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
-                                    <artifactId>dataspray-ingest</artifactId>
+                                    <artifactId>dataspray-stream-ingest</artifactId>
                                     <classifier>lambda</classifier>
                                     <version>${project.version}</version>
                                     <type>zip</type>

@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-package io.dataspray.site;
+package io.dataspray.cdk.site;
 
-import io.dataspray.backend.BaseStack;
+import io.dataspray.cdk.template.BaseStack;
 import io.dataspray.opennextcdk.Nextjs;
 import lombok.NonNull;
 import lombok.Value;

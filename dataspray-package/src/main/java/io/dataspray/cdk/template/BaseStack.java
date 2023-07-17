@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package io.dataspray.backend;
+package io.dataspray.cdk.template;
 
 import lombok.Getter;
 import software.amazon.awscdk.Environment;

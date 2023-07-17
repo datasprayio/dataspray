@@ -20,10 +20,10 @@
  * SOFTWARE.
  */
 
-package io.dataspray.web;
+package io.dataspray.cdk.web;
 
 import com.google.common.base.Charsets;
-import io.dataspray.backend.BaseStack;
+import io.dataspray.cdk.template.BaseStack;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;

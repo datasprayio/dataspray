@@ -20,12 +20,12 @@
  * SOFTWARE.
  */
 
-package io.dataspray.stream.control;
+package io.dataspray.cdk.stream.control;
 
 import com.google.common.collect.ImmutableList;
+import io.dataspray.cdk.web.BaseLambdaWebServiceStack;
 import io.dataspray.store.LambdaDeployerImpl;
 import io.dataspray.store.SqsQueueStore;
-import io.dataspray.web.BaseLambdaWebServiceStack;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.Duration;

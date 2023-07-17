@@ -31,7 +31,6 @@ import io.dataspray.common.aws.test.AwsTestProfile;
 import io.dataspray.common.aws.test.MockFirehoseClient.FirehoseQueue;
 import io.dataspray.common.json.GsonUtil;
 import io.dataspray.store.AccountStore;
-import io.dataspray.store.SingleTenantAccountStore;
 import io.dataspray.store.SqsQueueStore;
 import io.dataspray.web.resource.AbstractResource;
 import io.quarkus.test.InjectMock;
@@ -54,6 +53,7 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static io.dataspray.common.aws.test.MockFirehoseClient.MOCK_FIREHOSE_QUEUES;
@@ -68,6 +68,8 @@ public class IngestTest {
 
     @ConfigProperty(name = FIREHOSE_STREAM_NAME_PROP_NAME)
     String firehoseStreamName;
+    @ConfigProperty(name = "accountstore.singletenant.account.id")
+    String accountId;
     @ConfigProperty(name = "accountstore.singletenant.account.apikey")
     String accountApiKey;
 
@@ -85,8 +87,6 @@ public class IngestTest {
     @Inject
     @Named(MOCK_FIREHOSE_QUEUES)
     Function<String, FirehoseQueue> firehoseQueueSupplier;
-    @Inject
-    SingleTenantAccountStore singleTenantAccountStore;
 
     @InjectMock
     HttpHeaders httpHeaders;
@@ -106,27 +106,28 @@ public class IngestTest {
         String bodyJsonPretty = gsonPrettyPrint.toJson(bodyMap);
         String bodyJson = gson.toJson(bodyMap);
         try (StringInputStream bodyInputStream = new StringInputStream(bodyJsonPretty)) {
-            resource.message(singleTenantAccountStore.accountId,
-                    queueName,
-                    bodyInputStream);
+            resource.message(accountId, queueName, bodyInputStream);
         }
 
         // Assert stream processing
         List<Message> messages = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(sqsQueueStore.getAwsQueueUrl(singleTenantAccountStore.accountId, queueName))
+                .queueUrl(sqsQueueStore.getAwsQueueUrl(accountId, queueName))
                 .maxNumberOfMessages(10).build()).messages();
         assertEquals(1, messages.size());
         assertEquals(bodyJsonPretty, messages.get(0).body());
 
         // Assert Firehose ETL
-        Record bodyActualRecord = firehoseQueueSupplier.apply(firehoseStreamName).getQueue().poll();
+        Record bodyActualRecord = firehoseQueueSupplier
+                .apply(firehoseStreamName)
+                .getQueue()
+                .poll(30, TimeUnit.SECONDS);
         assertNotNull(bodyActualRecord);
         Map<String, String> bodyActualRecordMap = gson.fromJson(bodyActualRecord.data().asUtf8String(), new TypeToken<Map<String, String>>() {
         }.getType());
         assertEquals(ImmutableMap.builder()
                         .putAll(bodyMap)
                         .put(ETL_PARTITION_KEY_RETENTION, AccountStore.EtlRetention.DEFAULT.name())
-                        .put(ETL_PARTITION_KEY_ACCOUNT, singleTenantAccountStore.accountId)
+                        .put(ETL_PARTITION_KEY_ACCOUNT, accountId)
                         .put(ETL_PARTITION_KEY_TARGET, queueName)
                         .build(),
                 bodyActualRecordMap);

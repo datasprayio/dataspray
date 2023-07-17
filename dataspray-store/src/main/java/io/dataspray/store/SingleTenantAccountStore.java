@@ -22,7 +22,6 @@
 
 package io.dataspray.store;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import io.quarkus.arc.properties.IfBuildProperty;
 import jakarta.annotation.Priority;
@@ -40,9 +39,8 @@ import java.util.Optional;
 @IfBuildProperty(name = "accountstore.singletenant.enable", stringValue = "true")
 public class SingleTenantAccountStore implements AccountStore {
 
-    @VisibleForTesting
     @ConfigProperty(name = "accountstore.singletenant.account.id")
-    public String accountId;
+    String accountId;
     @ConfigProperty(name = "accountstore.singletenant.account.email")
     String accountEmail;
     @ConfigProperty(name = "accountstore.singletenant.account.apikey")

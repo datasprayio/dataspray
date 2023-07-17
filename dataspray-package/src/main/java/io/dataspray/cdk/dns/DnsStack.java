@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-package io.dataspray.dns;
+package io.dataspray.cdk.dns;
 
-import io.dataspray.backend.BaseStack;
+import io.dataspray.cdk.template.BaseStack;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.CfnParameter;

@@ -122,6 +122,7 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
     @Override
     public void putRecord(String customerId, String targetId, byte[] jsonBytes, EtlRetention retention) {
         // Parse customer message as JSON
+        // TODO Optimization: parse only beginning, look for '{', inject metadata, and copy the rest; fallback to this if parsing fails
         final Map<String, Object> json;
         try {
             json = jsonSerde.readValue(jsonBytes, new TypeReference<Map<String, Object>>() {
