@@ -38,10 +38,6 @@
     <name>DataSpray Site</name>
     <url>https://dataspray.io</url>
 
-    <properties>
-        <skipDeploySite/>
-    </properties>
-
     <build>
         <plugins>
             <plugin>

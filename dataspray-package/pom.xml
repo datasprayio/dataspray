@@ -114,6 +114,7 @@
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/code-authorizer/</outputDirectory>
+                                    <destFileName>function.zip</destFileName>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
@@ -123,6 +124,7 @@
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/code-control/</outputDirectory>
+                                    <destFileName>function.zip</destFileName>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
@@ -132,6 +134,7 @@
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/code-ingest/</outputDirectory>
+                                    <destFileName>function.zip</destFileName>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -154,6 +157,16 @@
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/open-next/</outputDirectory>
                                     <includes>**</includes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>io.dataspray</groupId>
+                                    <artifactId>dataspray-stream-client</artifactId>
+                                    <classifier>schema-control</classifier>
+                                    <version>${project.version}</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/openapi/</outputDirectory>
+                                    <includes>api.yaml</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -182,7 +195,7 @@
                             <goal>bootstrap</goal>
                         </goals>
                         <configuration>
-                            <app>io.dataspray.DatasprayStack</app>
+                            <app>io.dataspray.cdk.DatasprayStack</app>
                             <profile>dataspray</profile>
                             <arguments>
                                 <argument>prod</argument>

@@ -41,8 +41,14 @@ import software.constructs.Construct;
 @Slf4j
 public class ControlStack extends BaseLambdaWebServiceStack {
 
+    /** Separated out to remove cyclic dependency */
+    @Getter
+    private final String customerFunctionPermissionBoundaryManagedPolicyName;
     @Getter
     private final ManagedPolicy customerFunctionPermissionBoundaryManagedPolicy;
+    /** Separated out to remove cyclic dependency */
+    @Getter
+    private final String bucketCodeName;
     @Getter
     private final Bucket bucketCode;
 
@@ -53,9 +59,9 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                 .codeZip(codeZip)
                 .build());
 
-
+        customerFunctionPermissionBoundaryManagedPolicyName = getSubConstructId("customer-function-permission-boundary");
         customerFunctionPermissionBoundaryManagedPolicy = ManagedPolicy.Builder.create(this, getSubConstructId("customer-function-permission-boundary"))
-                .managedPolicyName(getSubConstructId("customer-function-permission-boundary"))
+                .managedPolicyName(customerFunctionPermissionBoundaryManagedPolicyName)
                 .description("Permission boundary for customer lambdas")
                 .statements(ImmutableList.of(PolicyStatement.Builder.create()
                                 .sid(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LOGGING_PREFIX + "PermissionBoundary")
@@ -80,8 +86,9 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                                 .build()))
                 .build();
 
+        bucketCodeName = getSubConstructId("code-upload-bucket");
         bucketCode = Bucket.Builder.create(this, getSubConstructId("code-upload-bucket"))
-                .bucketName(getSubConstructId("code-upload-bucket"))
+                .bucketName(bucketCodeName)
                 .autoDeleteObjects(true)
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)

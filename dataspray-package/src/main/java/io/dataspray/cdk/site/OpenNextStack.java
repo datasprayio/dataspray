@@ -29,22 +29,14 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import software.constructs.Construct;
 
-import java.nio.file.Path;
-
 @Slf4j
 public class OpenNextStack extends BaseStack {
 
     public OpenNextStack(Construct parent, String env, Options options) {
         super(parent, "site", env);
 
-        // Find .open-next path
-        // For now the Nextjs construct actually needs to parent directory
-        Path openNextParentPath = Path.of(options.openNextDir).getParent();
-
         Nextjs.Builder.create(this, getConstructId())
-                .nextjsPath(openNextParentPath.toString())
-                // Don't build it, just use the .open-next directory
-                .isPlaceholder(true)
+                .openNextPath(options.openNextDir)
                 .build();
     }
 

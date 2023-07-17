@@ -31,17 +31,14 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import software.amazon.awscdk.services.dynamodb.Table;
-import software.constructs.Construct;
 
 @Slf4j
 @ApplicationScoped
 public class SingleTableProvider {
 
     public static final String TABLE_PREFIX_PROP_NAME = "singletable.tablePrefix";
-
-    private static final int LSI_COUNT = 0;
-    private static final int GSI_COUNT = 2;
+    public static final int LSI_COUNT = 0;
+    public static final int GSI_COUNT = 2;
 
     @ConfigProperty(name = TABLE_PREFIX_PROP_NAME, defaultValue = "dataspray")
     String tablePrefix;
@@ -61,16 +58,6 @@ public class SingleTableProvider {
                 .overrideDynamo(dynamo)
                 .overrideGson(gson)
                 .build();
-    }
-
-    /**
-     * Workaround to provide access to the CDK table within SingleTable without involving Quarkus CDI.
-     */
-    public static Table createCdkTable(Construct scope, String stackId) {
-        return SingleTable.builder()
-                .tablePrefix(stackId)
-                .build()
-                .createCdkTable(scope, stackId, LSI_COUNT, GSI_COUNT);
     }
 
     @Startup

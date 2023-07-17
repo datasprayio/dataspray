@@ -18,14 +18,16 @@ jobs:
         with:
           java-version: '11'
           distribution: 'corretto'
-          architecture: x64
+          architecture: aarch64
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
       - name: Cache local Maven repository
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
-
       - name: Set up Homebrew
         id: set-up-homebrew
         uses: Homebrew/actions/setup-homebrew@master

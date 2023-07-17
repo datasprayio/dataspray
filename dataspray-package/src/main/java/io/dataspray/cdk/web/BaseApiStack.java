@@ -83,15 +83,13 @@ public class BaseApiStack extends BaseStack {
         this.options = options;
 
         Map<String, Object> openApiSpec = constructOpenApiForApiGateway();
+        // Add Lambda endpoints to OpenAPI spec
+        ImmutableSet<SingletonFunction> usedFunctions = addApiGatewayExtensionsToOpenapiSpec(openApiSpec);
 
         // Set domain name for API Gateway
         String rootDomain = getOptions().getDnsStack().getDomainParam().getValueAsString();
         URL serverUrl = setServerUrlDomain(openApiSpec, rootDomain);
         String apiDomain = serverUrl.getHost();
-
-        // Add Lambda endpoints to OpenAPI spec
-        ImmutableSet<SingletonFunction> usedFunctions = addApiGatewayExtensionsToOpenapiSpec(openApiSpec);
-        usedFunctions.forEach(this::addFunctionToApiGatewayPermission);
 
         certificate = Certificate.Builder.create(this, getSubConstructId("cert"))
                 .domainName(apiDomain)
@@ -123,6 +121,8 @@ public class BaseApiStack extends BaseStack {
                 ThrottleSettings.builder()
                         .rateLimit(10)
                         .burstLimit(10).build());
+
+        usedFunctions.forEach(this::addFunctionToApiGatewayPermission);
     }
 
     public UsagePlan createUsagePlan(long usagePlanVersion, QuotaSettings quota, ThrottleSettings throttle) {
@@ -137,7 +137,7 @@ public class BaseApiStack extends BaseStack {
     }
 
     private void addFunctionToApiGatewayPermission(SingletonFunction function) {
-        function.addPermission(function.getFunctionName() + "-gateway-to-lambda-permission", Permission.builder()
+        function.addPermission(getSubConstructId("gateway-to-lambda-permission"), Permission.builder()
                 .sourceArn(restApi.arnForExecuteApi())
                 .principal(ServicePrincipal.Builder
                         .create("apigateway.amazonaws.com").build())
@@ -147,7 +147,7 @@ public class BaseApiStack extends BaseStack {
 
     @SneakyThrows
     private Map<String, Object> constructOpenApiForApiGateway() {
-        return new ObjectMapper(new YAMLFactory()).readValue(new File(getOptions().openapiYamlPath), new TypeReference<Map<String, Object>>() {
+        return new ObjectMapper(new YAMLFactory()).readValue(new File(getOptions().getOpenapiYamlPath()), new TypeReference<Map<String, Object>>() {
         });
     }
 
@@ -226,7 +226,7 @@ public class BaseApiStack extends BaseStack {
                         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-integration.html
                         methodData.put("x-amazon-apigateway-integration", ImmutableMap.builder()
                                 .put("httpMethod", "POST")
-                                .put("uri", function.getFunctionArn() + "/invocations")
+                                .put("uri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + function.getFunctionName() + "/invocations")
                                 .put("responses", ImmutableMap.of(
                                         "default", ImmutableMap.of(
                                                 "statusCode", "200")))

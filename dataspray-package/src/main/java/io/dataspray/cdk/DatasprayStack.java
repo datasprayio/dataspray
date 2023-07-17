@@ -81,6 +81,7 @@ public class DatasprayStack {
         functions.add(controlStack.getFunction());
 
         BaseApiStack baseApiStack = new BaseApiStack(app, BaseApiStack.Options.builder()
+                .env(env)
                 .openapiYamlPath("target/openapi/api.yaml")
                 .dnsStack(dnsStack)
                 .authorizerStack(authorizerStack)
@@ -98,8 +99,8 @@ public class DatasprayStack {
             function.addEnvironment(SingleTableProvider.TABLE_PREFIX_PROP_NAME, singleTableStack.getSingleTableTable().getTableName());
             function.addEnvironment(FirehoseS3AthenaEtlStore.ETL_BUCKET_PROP_NAME, ingestStack.getBucketEtl().getBucketName());
             function.addEnvironment(FirehoseS3AthenaEtlStore.FIREHOSE_STREAM_NAME_PROP_NAME, ingestStack.getFirehose().getDeliveryStreamName());
-            function.addEnvironment(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME, controlStack.getCustomerFunctionPermissionBoundaryManagedPolicy().getManagedPolicyName());
-            function.addEnvironment(LambdaDeployerImpl.CODE_BUCKET_NAME_PROP_NAME, controlStack.getBucketCode().getBucketName());
+            function.addEnvironment(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME, controlStack.getCustomerFunctionPermissionBoundaryManagedPolicyName());
+            function.addEnvironment(LambdaDeployerImpl.CODE_BUCKET_NAME_PROP_NAME, controlStack.getBucketCodeName());
             function.addEnvironment(DynamoApiGatewayApiAccessStore.USAGE_PLAN_ID_PROP_NAME, baseApiStack.getActiveUsagePlan().getUsagePlanId());
         }
 

@@ -1,6 +1,0 @@
-{
-  "name": "dataspray-site",
-  "region": "us-east-1",
-  "accelerated": true,
-  "url": "https://dataspray-site.s3.amazonaws.com"
-}

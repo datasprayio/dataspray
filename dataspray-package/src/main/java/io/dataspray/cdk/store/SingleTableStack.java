@@ -22,12 +22,16 @@
 
 package io.dataspray.cdk.store;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import io.dataspray.cdk.template.BaseStack;
+import io.dataspray.singletable.SingleTable;
 import io.dataspray.store.SingleTableProvider;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.constructs.Construct;
+
+import java.lang.reflect.Proxy;
 
 @Slf4j
 public class SingleTableStack extends BaseStack {
@@ -38,6 +42,17 @@ public class SingleTableStack extends BaseStack {
     public SingleTableStack(Construct parent, String env) {
         super(parent, "singletable", env);
 
-        singleTableTable = SingleTableProvider.createCdkTable(this, getSubConstructId("dataspray"));
+        singleTableTable = SingleTable.builder()
+                // Dummy client to satisfy SingleTable constructor
+                .overrideDynamo((AmazonDynamoDB) Proxy.newProxyInstance(AmazonDynamoDB.class.getClassLoader(), new Class[]{AmazonDynamoDB.class}, (proxy, method, args) -> {
+                    throw new RuntimeException("This client is non functional and shouldn't have been called.");
+                }))
+                .tablePrefix(getSubConstructId("dataspray"))
+                .build()
+                .createCdkTable(
+                        this,
+                        "dataspray",
+                        SingleTableProvider.LSI_COUNT,
+                        SingleTableProvider.GSI_COUNT);
     }
 }
