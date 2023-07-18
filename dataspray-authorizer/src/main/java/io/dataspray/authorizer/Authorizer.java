@@ -36,7 +36,6 @@ import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.ApiAccessStore.ApiAccess;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.HttpHeaders;
 import lombok.Value;
@@ -66,31 +65,34 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
 
     @Override
     public String handleRequest(APIGatewayCustomAuthorizerEvent event, Context context) {
+        try {
+            String apiKeyStr = extractApiKeyFromAuthorization(event);
 
-        String apiKeyStr = extractApiKeyFromAuthorization(event);
+            ApiAccess apiAccess = apiAccessStore.getApiAccessByApiKey(apiKeyStr, true)
+                    .orElseThrow(() -> new NotAuthorizedException("Bearer"));
+            String principalId = apiAccess.getAccountId();
 
-        ApiAccess apiAccess = apiAccessStore.getApiAccessByApiKey(apiKeyStr, true)
-                .orElseThrow(ForbiddenException::new);
-        String principalId = apiAccess.getAccountId();
+            // Extract endpoint info
+            Arn methodArn = Arn.fromString(event.getMethodArn());
+            String region = methodArn.getRegion();
+            String awsAccountId = methodArn.getAccountId(); // OR event.getRequestContext().getAccountId()
+            String restApiId = event.getRequestContext().getApiId();
+            String stage = event.getRequestContext().getStage();
 
-        // Extract endpoint info
-        Arn methodArn = Arn.fromString(event.getMethodArn());
-        String region = methodArn.getRegion();
-        String awsAccountId = methodArn.getAccountId(); // OR event.getRequestContext().getAccountId()
-        String restApiId = event.getRequestContext().getApiId();
-        String stage = event.getRequestContext().getStage();
-
-        // Create policy
-        PolicyDocument policyDocument = generatePolicyDocument(region, awsAccountId, restApiId, stage, apiAccess);
-        AuthPolicy policy = new AuthPolicy(
-                principalId,
-                policyDocument,
-                apiAccess.getUsageKey(),
-                Map.of(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID, apiAccess.getAccountId(),
-                        AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE, apiAccess.getApiKey()));
-
-        // Serialize and return
-        return gson.toJson(policy);
+            // Send back allow policy
+            PolicyDocument policyDocument = generatePolicyDocument(region, awsAccountId, restApiId, stage, apiAccess);
+            return gson.toJson(new AuthPolicy(
+                    principalId,
+                    policyDocument,
+                    apiAccess.getUsageKey(),
+                    Map.of(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID, apiAccess.getAccountId(),
+                            AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE, apiAccess.getApiKey())));
+        } catch (NotAuthorizedException ex) {
+            // if the client token is not recognized or invalid, API Gateway
+            // accepts a 401 Unauthorized response to the client by failing like so.
+            // https://github.com/awslabs/aws-apigateway-lambda-authorizer-blueprints/blob/master/blueprints/java/src/example/APIGatewayAuthorizerHandler.java#L42
+            throw new RuntimeException("Unauthorized");
+        }
     }
 
     private String extractApiKeyFromAuthorization(APIGatewayCustomAuthorizerEvent event) throws NotAuthorizedException {
