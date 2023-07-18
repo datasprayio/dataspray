@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
   title: DataSpray API
   description: DataSpray API documentation for controlling and development.

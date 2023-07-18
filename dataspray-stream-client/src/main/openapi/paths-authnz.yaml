@@ -10,6 +10,19 @@ components:
           type: string
         name:
           type: string
+    ApiKeyWithSecret:
+      type: object
+      required:
+        - id
+        - name
+        - value
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        secret:
+          type: string
     ApiKeys:
       type: object
       required:
@@ -19,15 +32,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ApiKey'
-    ApiKeyWithSecret:
-      allOf:
-        - $ref: '#/components/schemas/ApiKey'
-        - type: object
-          required:
-            - value
-          properties:
-            secret:
-              type: string
 
 /apikeys:
   post:
