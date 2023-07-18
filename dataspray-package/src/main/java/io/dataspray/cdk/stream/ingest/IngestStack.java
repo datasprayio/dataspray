@@ -55,7 +55,11 @@ import static java.util.Objects.requireNonNull;
 public class IngestStack extends BaseLambdaWebServiceStack {
 
     @Getter
+    private final String bucketEtlName;
+    @Getter
     private final Bucket bucketEtl;
+    @Getter
+    private final String firehoseName;
     @Getter
     private final DeliveryStream firehose;
 
@@ -76,8 +80,9 @@ public class IngestStack extends BaseLambdaWebServiceStack {
                         "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + CUSTOMER_QUEUE_WILDCARD))
                 .build());
 
+        bucketEtlName = getSubConstructId("ingest-etl-bucket");
         bucketEtl = Bucket.Builder.create(this, getSubConstructId("ingest-etl-bucket"))
-                .bucketName(getSubConstructId("ingest-etl-bucket"))
+                .bucketName(bucketEtlName)
                 .autoDeleteObjects(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 // Add different expiry for each retention prefix
@@ -98,8 +103,9 @@ public class IngestStack extends BaseLambdaWebServiceStack {
                                 .build()).collect(Collectors.toList()))
                 .build();
 
+        firehoseName = getSubConstructId("ingest-etl-firehose");
         firehose = DeliveryStream.Builder.create(this, getSubConstructId("ingest-etl-firehose"))
-                .deliveryStreamName(getSubConstructId("ingest-etl-firehose"))
+                .deliveryStreamName(firehoseName)
                 .destinations(ImmutableList.of(S3Bucket.Builder.create(bucketEtl)
                         .bufferingInterval(Duration.seconds(900))
                         .bufferingSize(Size.mebibytes(128))

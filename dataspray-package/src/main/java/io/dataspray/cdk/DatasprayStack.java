@@ -30,7 +30,6 @@ import io.dataspray.cdk.store.AuthNzStack;
 import io.dataspray.cdk.store.SingleTableStack;
 import io.dataspray.cdk.stream.control.ControlStack;
 import io.dataspray.cdk.stream.ingest.IngestStack;
-import io.dataspray.cdk.web.AuthorizerStack;
 import io.dataspray.cdk.web.BaseApiStack;
 import io.dataspray.store.CognitoAccountStore;
 import io.dataspray.store.DynamoApiGatewayApiAccessStore;
@@ -71,9 +70,6 @@ public class DatasprayStack {
         SingleTableStack singleTableStack = new SingleTableStack(app, env);
         AuthNzStack authNzStack = new AuthNzStack(app, env);
 
-        AuthorizerStack authorizerStack = new AuthorizerStack(app, env, authorizerCodeZip);
-        functions.add(authorizerStack.getFunction());
-
         IngestStack ingestStack = new IngestStack(app, env, ingestCodeZip);
         functions.add(ingestStack.getFunction());
 
@@ -83,22 +79,23 @@ public class DatasprayStack {
         BaseApiStack baseApiStack = new BaseApiStack(app, BaseApiStack.Options.builder()
                 .env(env)
                 .openapiYamlPath("target/openapi/api.yaml")
+                .tagToWebService(ImmutableMap.of(
+                        "Ingest", ingestStack,
+                        "AuthNZ", controlStack,
+                        "Control", controlStack,
+                        "Health", ingestStack))
+                .authorizerCodeZip(authorizerCodeZip)
                 .dnsStack(dnsStack)
-                .authorizerStack(authorizerStack)
-                .tagToFunction(ImmutableMap.of(
-                        "Ingest", ingestStack.getFunction(),
-                        "AuthNZ", controlStack.getFunction(),
-                        "Control", controlStack.getFunction(),
-                        "Health", ingestStack.getFunction()))
                 .build());
+        functions.add(baseApiStack.getAuthorizerFunction());
 
         // For dynamically-named resources such as S3 bucket names, pass the name as env vars directly to the lambdas
         // which will be picked up by Quarkus' @ConfigProperty
         for (SingletonFunction function : functions) {
             function.addEnvironment(CognitoAccountStore.USER_POOL_ID_PROP_NAME, authNzStack.getUserPool().getUserPoolId());
             function.addEnvironment(SingleTableProvider.TABLE_PREFIX_PROP_NAME, singleTableStack.getSingleTableTable().getTableName());
-            function.addEnvironment(FirehoseS3AthenaEtlStore.ETL_BUCKET_PROP_NAME, ingestStack.getBucketEtl().getBucketName());
-            function.addEnvironment(FirehoseS3AthenaEtlStore.FIREHOSE_STREAM_NAME_PROP_NAME, ingestStack.getFirehose().getDeliveryStreamName());
+            function.addEnvironment(FirehoseS3AthenaEtlStore.ETL_BUCKET_PROP_NAME, ingestStack.getBucketEtlName());
+            function.addEnvironment(FirehoseS3AthenaEtlStore.FIREHOSE_STREAM_NAME_PROP_NAME, ingestStack.getFirehoseName());
             function.addEnvironment(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME, controlStack.getCustomerFunctionPermissionBoundaryManagedPolicyName());
             function.addEnvironment(LambdaDeployerImpl.CODE_BUCKET_NAME_PROP_NAME, controlStack.getBucketCodeName());
             function.addEnvironment(DynamoApiGatewayApiAccessStore.USAGE_PLAN_ID_PROP_NAME, baseApiStack.getActiveUsagePlan().getUsagePlanId());

@@ -25,6 +25,7 @@ package io.dataspray.cdk.web;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -49,8 +50,15 @@ import software.amazon.awscdk.services.apigateway.UsagePlan;
 import software.amazon.awscdk.services.apigateway.UsagePlanPerApiStage;
 import software.amazon.awscdk.services.certificatemanager.Certificate;
 import software.amazon.awscdk.services.certificatemanager.CertificateValidation;
+import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.PolicyDocument;
+import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
+import software.amazon.awscdk.services.lambda.Architecture;
+import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Permission;
+import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
 import software.amazon.awscdk.services.route53.RecordSet;
 import software.amazon.awscdk.services.route53.RecordTarget;
@@ -63,10 +71,17 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class BaseApiStack extends BaseStack {
 
+    @Getter
+    private final String authorizerFunctionName;
+    @Getter
+    private final SingletonFunction authorizerFunction;
+    @Getter
+    private final Role roleApiGatewayInvoke;
     @Getter
     private final Certificate certificate;
     @Getter
@@ -79,12 +94,35 @@ public class BaseApiStack extends BaseStack {
     private final Options options;
 
     public BaseApiStack(Construct parent, Options options) {
-        super(parent, "api", options.getEnv());
+        super(parent, "api-gateway", options.getEnv());
         this.options = options;
+
+        authorizerFunctionName = "authorizer-" + options.getEnv();
+        authorizerFunction = SingletonFunction.Builder.create(this, getSubConstructId("lambda"))
+                .uuid(UUID.nameUUIDFromBytes(getSubConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
+                .functionName(authorizerFunctionName)
+                .code(Code.fromAsset(options.getAuthorizerCodeZip()))
+                .handler(Authorizer.class.getName() + "::handleRequest")
+                .runtime(Runtime.JAVA_11)
+                .architecture(Architecture.ARM_64)
+                .memorySize(512)
+                .timeout(Duration.seconds(30))
+                .build();
+
+        roleApiGatewayInvoke = Role.Builder.create(this, getSubConstructId("role"))
+                .roleName(getSubConstructId("authorizer-role-invoke"))
+                .assumedBy(ServicePrincipal.Builder.create("apigateway.amazonaws.com").build())
+                .inlinePolicies(Map.of("allowInvoke", PolicyDocument.Builder.create().statements(List.of(
+                        PolicyStatement.Builder.create()
+                                .effect(Effect.ALLOW)
+                                .actions(List.of("lambda:InvokeFunction", "lambda:InvokeAsync"))
+                                .resources(List.of(authorizerFunction.getFunctionArn()))
+                                .resources(List.of("arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + authorizerFunctionName))
+                                .build())).build())).build();
 
         Map<String, Object> openApiSpec = constructOpenApiForApiGateway();
         // Add Lambda endpoints to OpenAPI spec
-        ImmutableSet<SingletonFunction> usedFunctions = addApiGatewayExtensionsToOpenapiSpec(openApiSpec);
+        ImmutableSet<BaseLambdaWebServiceStack> usedWebServices = addApiGatewayExtensionsToOpenapiSpec(openApiSpec);
 
         // Set domain name for API Gateway
         String rootDomain = getOptions().getDnsStack().getDomainParam().getValueAsString();
@@ -122,7 +160,7 @@ public class BaseApiStack extends BaseStack {
                         .rateLimit(10)
                         .burstLimit(10).build());
 
-        usedFunctions.forEach(this::addFunctionToApiGatewayPermission);
+        usedWebServices.forEach(this::addFunctionToApiGatewayPermission);
     }
 
     public UsagePlan createUsagePlan(long usagePlanVersion, QuotaSettings quota, ThrottleSettings throttle) {
@@ -136,8 +174,8 @@ public class BaseApiStack extends BaseStack {
                 .build();
     }
 
-    private void addFunctionToApiGatewayPermission(SingletonFunction function) {
-        function.addPermission(getSubConstructId("gateway-to-lambda-permission"), Permission.builder()
+    private void addFunctionToApiGatewayPermission(BaseLambdaWebServiceStack webService) {
+        webService.getFunction().addPermission(getSubConstructId("gateway-to-lambda-permission"), Permission.builder()
                 .sourceArn(restApi.arnForExecuteApi())
                 .principal(ServicePrincipal.Builder
                         .create("apigateway.amazonaws.com").build())
@@ -173,7 +211,7 @@ public class BaseApiStack extends BaseStack {
      */
     @SuppressWarnings("unchecked")
     @SneakyThrows
-    private ImmutableSet<SingletonFunction> addApiGatewayExtensionsToOpenapiSpec(Map<String, Object> openApiSpec) {
+    private ImmutableSet<BaseLambdaWebServiceStack> addApiGatewayExtensionsToOpenapiSpec(Map<String, Object> openApiSpec) {
         Map<String, Object> components = (Map<String, Object>) openApiSpec.get("components");
         if (components != null) {
             Map<String, Object> securitySchemes = (Map<String, Object>) components.get("securitySchemes");
@@ -193,14 +231,15 @@ public class BaseApiStack extends BaseStack {
                                 "x-amazon-apigateway-authorizer", Map.of(
                                         "type", "request",
                                         "identitySource", "method.request.header." + Authorizer.AUTHORIZATION_HEADER.toLowerCase(),
-                                        "authorizerCredentials", options.getAuthorizerStack().getRoleApiGatewayInvoke().getRoleArn(),
-                                        "authorizerUri", options.getAuthorizerStack().getFunction().getFunctionArn() + "/invocations",
+                                        "authorizerCredentials", getRoleApiGatewayInvoke().getRoleArn(),
+                                        "authorizerUri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + getAuthorizerFunctionName() + "/invocations",
+
                                         "authorizerResultTtlInSeconds", TimeUnit.MINUTES.toSeconds(5))));
                     }
                 }
             }
         }
-        Set<SingletonFunction> usedFunctions = Sets.newHashSet();
+        Set<BaseLambdaWebServiceStack> usedWebServices = Sets.newHashSet();
         Map<String, Object> paths = (Map<String, Object>) openApiSpec.get("paths");
         if (paths != null) {
             for (String path : ImmutableSet.copyOf(paths.keySet())) {
@@ -210,23 +249,23 @@ public class BaseApiStack extends BaseStack {
                         Map<String, Object> methodData = (Map<String, Object>) methods.get(method);
 
                         // Find the tag and corresponding function
-                        SingletonFunction function;
+                        BaseLambdaWebServiceStack webService;
                         try {
                             String tag = ((List<String>) methodData.get("tags")).get(0);
-                            function = getOptions().tagToFunction.get(tag);
+                            webService = getOptions().tagToWebService.get(tag);
                         } catch (NullPointerException | ClassCastException ex) {
                             throw new RuntimeException("Endpoint does not have a tag for path " + path + " and method " + method, ex);
                         }
-                        if (function == null) {
+                        if (webService == null) {
                             throw new RuntimeException("No function found for path " + path + " and method " + method);
                         }
-                        usedFunctions.add(function);
+                        usedWebServices.add(webService);
 
                         // Let Api Gateway know to use this particular lambda function
                         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-integration.html
                         methodData.put("x-amazon-apigateway-integration", ImmutableMap.builder()
                                 .put("httpMethod", "POST")
-                                .put("uri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + function.getFunctionName() + "/invocations")
+                                .put("uri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + webService.getFunctionName() + "/invocations")
                                 .put("responses", ImmutableMap.of(
                                         "default", ImmutableMap.of(
                                                 "statusCode", "200")))
@@ -244,7 +283,7 @@ public class BaseApiStack extends BaseStack {
         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-binary-media-types.html
         openApiSpec.put("x-amazon-apigateway-binary-media-types", ImmutableList.of("*/*"));
 
-        return ImmutableSet.copyOf(usedFunctions);
+        return ImmutableSet.copyOf(usedWebServices);
     }
 
     @Value
@@ -256,10 +295,10 @@ public class BaseApiStack extends BaseStack {
         String openapiYamlPath;
         /** Mapping of which function to use for which endpoint (its tag name specifically) */
         @NonNull
-        ImmutableMap<String, SingletonFunction> tagToFunction;
+        ImmutableMap<String, ? extends BaseLambdaWebServiceStack> tagToWebService;
+        @NonNull
+        String authorizerCodeZip;
         @NonNull
         DnsStack dnsStack;
-        @NonNull
-        AuthorizerStack authorizerStack;
     }
 }

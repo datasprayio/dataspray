@@ -41,14 +41,17 @@ public class BaseLambdaWebServiceStack extends BaseStack {
     private static final String QUARKUS_LAMBDA_HANDLER = "io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest";
 
     @Getter
+    private final String functionName;
+    @Getter
     private final SingletonFunction function;
 
     public BaseLambdaWebServiceStack(Construct parent, Options options) {
         super(parent, "web-service-" + options.getFunctionName(), options.getEnv());
 
+        functionName = options.getFunctionName();
         function = SingletonFunction.Builder.create(this, getSubConstructId("lambda"))
                 .uuid(UUID.nameUUIDFromBytes(getSubConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
-                .functionName(options.getFunctionName())
+                .functionName(functionName)
                 .code(Code.fromAsset(options.getCodeZip()))
                 .handler(QUARKUS_LAMBDA_HANDLER)
                 .runtime(Runtime.JAVA_11)
