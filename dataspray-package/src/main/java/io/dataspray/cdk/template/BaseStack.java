@@ -22,6 +22,7 @@
 
 package io.dataspray.cdk.template;
 
+import io.dataspray.common.StringUtil;
 import lombok.Getter;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
@@ -61,5 +62,9 @@ public abstract class BaseStack extends Stack {
 
     protected String getSubConstructId(String subConstructIdSuffix) {
         return getConstructId() + "-" + subConstructIdSuffix;
+    }
+
+    protected String getSubConstructIdCamelCase(String subConstructIdSuffix) {
+        return StringUtil.camelCase(getSubConstructId(subConstructIdSuffix), true);
     }
 }

@@ -233,7 +233,6 @@ public class BaseApiStack extends BaseStack {
                                         "identitySource", "method.request.header." + Authorizer.AUTHORIZATION_HEADER.toLowerCase(),
                                         "authorizerCredentials", getRoleApiGatewayInvoke().getRoleArn(),
                                         "authorizerUri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + getAuthorizerFunctionName() + "/invocations",
-
                                         "authorizerResultTtlInSeconds", TimeUnit.MINUTES.toSeconds(5))));
                     }
                 }

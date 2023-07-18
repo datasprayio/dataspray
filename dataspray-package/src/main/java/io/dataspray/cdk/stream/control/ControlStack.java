@@ -64,7 +64,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                 .managedPolicyName(customerFunctionPermissionBoundaryManagedPolicyName)
                 .description("Permission boundary for customer lambdas")
                 .statements(ImmutableList.of(PolicyStatement.Builder.create()
-                                .sid(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LOGGING_PREFIX + "PermissionBoundary")
+                                .sid(getSubConstructIdCamelCase(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LOGGING_PREFIX + "PermissionBoundary"))
                                 .effect(Effect.ALLOW)
                                 .actions(ImmutableList.of(
                                         "logs:CreateLogGroup",
@@ -75,7 +75,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                                         "arn:aws:logs:" + getRegion() + ":" + getAccount() + ":log-group:/aws/lambda/" + LambdaDeployerImpl.FUN_NAME_WILDCARD + ":" + LambdaDeployerImpl.LAMBDA_ACTIVE_QUALIFIER))
                                 .build(),
                         PolicyStatement.Builder.create()
-                                .sid(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS + "PermissionBoundary")
+                                .sid(getSubConstructIdCamelCase(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS + "PermissionBoundary"))
                                 .effect(Effect.ALLOW)
                                 .actions(ImmutableList.of(
                                         "sqs:ReceiveMessage",
@@ -97,7 +97,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                                 .expiration(Duration.days(1)).build()))
                 .build();
         getFunction().addToRolePolicy(PolicyStatement.Builder.create()
-                .sid(getSubConstructId("CodeUploadBucket"))
+                .sid(getSubConstructIdCamelCase("CodeUploadBucket"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "s3:PutObject",
@@ -106,7 +106,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                 .build());
 
         getFunction().addToRolePolicy(PolicyStatement.Builder.create()
-                .sid(getSubConstructId("CustomerManagementLambda"))
+                .sid(getSubConstructIdCamelCase("CustomerManagementLambda"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         // CRUD
@@ -137,7 +137,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                 .build());
         // Unfortunately not all permissions allow for resource-specific restrictions.
         getFunction().addToRolePolicy(PolicyStatement.Builder.create()
-                .sid(getSubConstructId("CustomerManagementLambdaResourceWildcardActions"))
+                .sid(getSubConstructIdCamelCase("CustomerManagementLambdaResourceWildcardActions"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "lambda:ListFunctions",
@@ -147,7 +147,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                 .build());
 
         getFunction().addToRolePolicy(PolicyStatement.Builder.create()
-                .sid(getSubConstructId("CustomerManagementSqs"))
+                .sid(getSubConstructIdCamelCase("CustomerManagementSqs"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "sqs:CreateQueue",
@@ -158,7 +158,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                 .build());
 
         getFunction().addToRolePolicy(PolicyStatement.Builder.create()
-                .sid(getSubConstructId("CustomerManagementIam"))
+                .sid(getSubConstructIdCamelCase("CustomerManagementIam"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "iam:GetRole",
