@@ -22,21 +22,42 @@
 
 package io.dataspray.cdk.site;
 
+import io.dataspray.cdk.dns.DnsStack;
 import io.dataspray.cdk.template.BaseStack;
 import io.dataspray.opennextcdk.Nextjs;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.services.route53.RecordSet;
+import software.amazon.awscdk.services.route53.RecordTarget;
+import software.amazon.awscdk.services.route53.RecordType;
+import software.amazon.awscdk.services.route53.targets.CloudFrontTarget;
 import software.constructs.Construct;
 
 @Slf4j
 public class OpenNextStack extends BaseStack {
 
+    @Getter
+    private final Nextjs nextjs;
+    @Getter
+    private final RecordSet siteRecordSet;
+
     public OpenNextStack(Construct parent, String env, Options options) {
         super(parent, "site", env);
 
-        Nextjs.Builder.create(this, getConstructId())
+        nextjs = Nextjs.Builder.create(this, getConstructId())
                 .openNextPath(options.openNextDir)
+                .build();
+
+        siteRecordSet = RecordSet.Builder.create(this, getSubConstructId("recordset"))
+                .zone(options.getDnsStack().getDnsZone())
+                .recordType(RecordType.A)
+                .recordName(options.getDnsStack().getDomainParam().getValueAsString())
+                .target(RecordTarget.fromAlias(new CloudFrontTarget(nextjs.getDistribution().getDistribution())))
+                .ttl(Duration.seconds(30))
+                .deleteExisting(true)
                 .build();
     }
 
@@ -44,7 +65,7 @@ public class OpenNextStack extends BaseStack {
     @lombok.Builder
     public static class Options {
         @NonNull
-        String domain;
+        DnsStack dnsStack;
         @NonNull
         String openNextDir;
     }

@@ -63,7 +63,7 @@ public class DatasprayStack {
 
         DnsStack dnsStack = new DnsStack(app, env);
         new OpenNextStack(app, env, OpenNextStack.Options.builder()
-                .domain(dnsStack.getDomainParam().getValueAsString())
+                .dnsStack(dnsStack)
                 .openNextDir(openNextDir)
                 .build());
 
