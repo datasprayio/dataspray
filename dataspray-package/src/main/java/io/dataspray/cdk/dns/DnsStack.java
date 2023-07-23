@@ -81,7 +81,7 @@ public class DnsStack extends BaseStack {
                 .zoneName(dnsParentZoneNameParam.getValueAsString())
                 .build());
         // Delegating subdomain record
-        parentZoneDelegatingSubdomainRecordSet = RecordSet.Builder.create(this, getSubConstructId("recordset"))
+        parentZoneDelegatingSubdomainRecordSet = RecordSet.Builder.create(this, getSubConstructId("recordset-delegating-subdomain"))
                 .zone(parentZone)
                 .recordType(RecordType.NS)
                 .recordName(dnsDomainParam.getValueAsString())
