@@ -43,6 +43,8 @@ public class OpenNextStack extends BaseStack {
     private final Nextjs nextjs;
     @Getter
     private final RecordSet siteRecordSet;
+    @Getter
+    private final RecordSet siteWwwRecordSet;
 
     public OpenNextStack(Construct parent, String env, Options options) {
         super(parent, "site", env);
@@ -54,7 +56,16 @@ public class OpenNextStack extends BaseStack {
         siteRecordSet = RecordSet.Builder.create(this, getSubConstructId("recordset"))
                 .zone(options.getDnsStack().getDnsZone())
                 .recordType(RecordType.A)
-                .recordName(options.getDnsStack().getDomainParam().getValueAsString())
+                .recordName(options.getDnsStack().getDnsDomainParam().getValueAsString())
+                .target(RecordTarget.fromAlias(new CloudFrontTarget(nextjs.getDistribution().getDistribution())))
+                .ttl(Duration.seconds(30))
+                .deleteExisting(true)
+                .build();
+
+        siteWwwRecordSet = RecordSet.Builder.create(this, getSubConstructId("recordset"))
+                .zone(options.getDnsStack().getDnsZone())
+                .recordType(RecordType.A)
+                .recordName("www." + options.getDnsStack().getDnsDomainParam().getValueAsString())
                 .target(RecordTarget.fromAlias(new CloudFrontTarget(nextjs.getDistribution().getDistribution())))
                 .ttl(Duration.seconds(30))
                 .deleteExisting(true)
