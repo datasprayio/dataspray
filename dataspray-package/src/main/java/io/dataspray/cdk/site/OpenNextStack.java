@@ -62,7 +62,7 @@ public class OpenNextStack extends BaseStack {
                 .deleteExisting(true)
                 .build();
 
-        siteWwwRecordSet = RecordSet.Builder.create(this, getSubConstructId("recordset"))
+        siteWwwRecordSet = RecordSet.Builder.create(this, getSubConstructId("recordset-www"))
                 .zone(options.getDnsStack().getDnsZone())
                 .recordType(RecordType.A)
                 .recordName("www." + options.getDnsStack().getDnsDomainParam().getValueAsString())
