@@ -85,7 +85,7 @@ public class DnsStack extends BaseStack {
                 .zone(parentZone)
                 .recordType(RecordType.NS)
                 .recordName(dnsDomainParam.getValueAsString())
-                .target(RecordTarget.fromValues(parentZone
+                .target(RecordTarget.fromValues(dnsZone
                         .getHostedZoneNameServers()
                         .toArray(String[]::new)))
                 .ttl(Duration.days(2))
