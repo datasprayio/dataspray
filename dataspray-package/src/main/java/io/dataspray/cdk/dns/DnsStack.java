@@ -25,29 +25,80 @@ package io.dataspray.cdk.dns;
 import io.dataspray.cdk.template.BaseStack;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awscdk.CfnCondition;
 import software.amazon.awscdk.CfnParameter;
+import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.Fn;
+import software.amazon.awscdk.services.route53.CfnRecordSet;
 import software.amazon.awscdk.services.route53.HostedZone;
+import software.amazon.awscdk.services.route53.HostedZoneAttributes;
+import software.amazon.awscdk.services.route53.IHostedZone;
+import software.amazon.awscdk.services.route53.RecordSet;
+import software.amazon.awscdk.services.route53.RecordTarget;
+import software.amazon.awscdk.services.route53.RecordType;
 import software.constructs.Construct;
 
 @Slf4j
 public class DnsStack extends BaseStack {
 
     @Getter
-    private final CfnParameter domainParam;
+    private final CfnParameter dnsDomainParam;
+    @Getter
+    private final CfnParameter dnsParentZoneNameParam;
+    @Getter
+    private final CfnParameter dnsParentZoneIdParam;
     @Getter
     private final HostedZone dnsZone;
+    @Getter
+    private final RecordSet parentZoneDelegatingSubdomainRecordSet;
 
     public DnsStack(Construct parent, String env) {
         super(parent, "dns", env);
 
-        domainParam = CfnParameter.Builder.create(this, getSubConstructId("param-domain"))
+        dnsDomainParam = CfnParameter.Builder.create(this, "dnsDomain")
+                .description("Fully qualified domain name for your app (e.g. dataspray.example.com)")
                 .type("String")
-                .defaultValue("dataspray.io")
-                .description("Domain name to create DNS zone for")
+                .minLength(3)
                 .build();
 
         dnsZone = HostedZone.Builder.create(this, getSubConstructId("zone"))
-                .zoneName(domainParam.getValueAsString())
+                .zoneName(dnsDomainParam.getValueAsString())
                 .build();
+
+        dnsParentZoneNameParam = CfnParameter.Builder.create(this, "dnsParentZoneName")
+                .description("If using a subdomain (e.g. dataspray.example.com), enter the Route53 Hosted Zone Name for the parent domain (e.g. dataspray.io) if you wish to add a NS delegating record, otherwise leave this blank.")
+                .type("String")
+                .defaultValue("")
+                .build();
+        dnsParentZoneIdParam = CfnParameter.Builder.create(this, "dnsParentZoneId")
+                .description("If using a subdomain (e.g. dataspray.example.com), enter the Route53 Hosted Zone Id for the parent domain (e.g. Z104162015L8HFMCRVJ9Y) if you wish to add a NS delegating record, otherwise leave this blank.")
+                .type("String")
+                .defaultValue("")
+                .build();
+        // Fetch parent zone for creating delegate records. May not end up being used if params are not set
+        IHostedZone parentZone = HostedZone.fromHostedZoneAttributes(this, getSubConstructId("parentZone"), HostedZoneAttributes.builder()
+                .hostedZoneId(dnsParentZoneIdParam.getValueAsString())
+                .zoneName(dnsParentZoneNameParam.getValueAsString())
+                .build());
+        // Delegating subdomain record
+        parentZoneDelegatingSubdomainRecordSet = RecordSet.Builder.create(this, getSubConstructId("recordset"))
+                .zone(parentZone)
+                .recordType(RecordType.NS)
+                .recordName(dnsDomainParam.getValueAsString())
+                .target(RecordTarget.fromValues(parentZone
+                        .getHostedZoneNameServers()
+                        .toArray(String[]::new)))
+                .ttl(Duration.days(2))
+                .deleteExisting(false)
+                .build();
+        // Only create delegating record if params are set
+        CfnCondition createDelegateRecordCondition = CfnCondition.Builder.create(this, getSubConstructId(""))
+                .expression(Fn.conditionAnd(
+                        Fn.conditionNot(Fn.conditionEquals(dnsParentZoneIdParam, "")),
+                        Fn.conditionNot(Fn.conditionEquals(dnsParentZoneNameParam, ""))))
+                .build();
+        ((CfnRecordSet) parentZoneDelegatingSubdomainRecordSet.getNode().getDefaultChild())
+                .getCfnOptions()
+                .setCondition(createDelegateRecordCondition);
     }
 }

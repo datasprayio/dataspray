@@ -40,6 +40,10 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <dnsDomain/>
+        <dnsParentZoneName/>
+        <dnsParentZoneId/>
+        <sesDomain/>
     </properties>
 
     <dependencies>
@@ -214,7 +218,10 @@
                         <configuration>
                             <profile>dataspray</profile>
                             <parameters>
-                                <store-authnz-userpool-ses-domain>dataspray.io</store-authnz-userpool-ses-domain>
+                                <dnsDomain>${dnsDomain}</dnsDomain>
+                                <dnsParentZoneName>${dnsParentZoneName}</dnsParentZoneName>
+                                <dnsParentZoneId>${dnsParentZoneId}</dnsParentZoneId>
+                                <sesDomain>${sesDomain}</sesDomain>
                             </parameters>
                         </configuration>
                     </execution>
@@ -222,4 +229,23 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>production</id>
+            <properties>
+                <dnsDomain>dataspray.io</dnsDomain>
+                <sesDomain>dataspray.io</sesDomain>
+            </properties>
+        </profile>
+        <profile>
+            <id>staging</id>
+            <properties>
+                <dnsDomain>staging.dataspray.io</dnsDomain>
+                <dnsParentZoneName>dataspray.io</dnsParentZoneName>
+                <dnsParentZoneId>Z104172015L8HFMCRVJ9X</dnsParentZoneId>
+                <sesDomain>dataspray.io</sesDomain>
+            </properties>
+        </profile>
+    </profiles>
 </project>

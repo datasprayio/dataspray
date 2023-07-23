@@ -125,7 +125,7 @@ public class BaseApiStack extends BaseStack {
         ImmutableSet<BaseLambdaWebServiceStack> usedWebServices = addApiGatewayExtensionsToOpenapiSpec(openApiSpec);
 
         // Set domain name for API Gateway
-        String rootDomain = getOptions().getDnsStack().getDomainParam().getValueAsString();
+        String rootDomain = getOptions().getDnsStack().getDnsDomainParam().getValueAsString();
         URL serverUrl = setServerUrlDomain(openApiSpec, rootDomain);
         String apiDomain = serverUrl.getHost();
 
