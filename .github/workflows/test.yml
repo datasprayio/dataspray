@@ -30,4 +30,4 @@ jobs:
         run: sudo apt install imagemagick scour
       - name: Maven build
         timeout-minutes: 30
-        run: mvn install
+        run: mvn clean install
