@@ -27,11 +27,11 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Install dependencies
-        run: sudo apt-get install -y imagemagick scour
-      - name: Check ImageMagick dependency
-        run: convert -version
-      - name: Check Scour dependency
-        run: scour --version
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick scour ghostscript
+          convert -version
+          scour --version
       - name: Maven build
         timeout-minutes: 30
         run: mvn clean install
