@@ -55,6 +55,13 @@ public class DnsStack extends BaseStack {
     public DnsStack(Construct parent, String env) {
         super(parent, "dns", env);
 
+        /* TODO Remove me once all other stacks switchover to dnsDomainParam */
+        CfnParameter.Builder.create(this, getSubConstructId("param-domain"))
+                .type("String")
+                .defaultValue("dataspray.io")
+                .description("Domain name to create DNS zone for")
+                .build();
+
         dnsDomainParam = CfnParameter.Builder.create(this, "dnsDomain")
                 .description("Fully qualified domain name for your app (e.g. dataspray.example.com)")
                 .type("String")
