@@ -23,6 +23,7 @@
 package io.dataspray.cdk.store;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.template.BaseStack;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.store.SingleTableProvider;
@@ -39,8 +40,8 @@ public class SingleTableStack extends BaseStack {
     @Getter
     private final Table singleTableTable;
 
-    public SingleTableStack(Construct parent, String env) {
-        super(parent, "singletable", env);
+    public SingleTableStack(Construct parent, DeployEnvironment deployEnv) {
+        super(parent, "singletable", deployEnv);
 
         singleTableTable = SingleTable.builder()
                 // Dummy client to satisfy SingleTable constructor

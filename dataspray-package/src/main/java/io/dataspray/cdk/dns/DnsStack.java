@@ -22,6 +22,7 @@
 
 package io.dataspray.cdk.dns;
 
+import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.template.BaseStack;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -52,11 +53,11 @@ public class DnsStack extends BaseStack {
     @Getter
     private final RecordSet parentZoneDelegatingSubdomainRecordSet;
 
-    public DnsStack(Construct parent, String env) {
-        super(parent, "dns", env);
+    public DnsStack(Construct parent, DeployEnvironment deployEnv) {
+        super(parent, "dns", deployEnv);
 
         /* TODO Remove me once all other stacks switchover to dnsDomainParam */
-        CfnParameter.Builder.create(this, getSubConstructId("param-domain"))
+        CfnParameter.Builder.create(this, "ds-dns-param-domain")
                 .type("String")
                 .defaultValue("dataspray.io")
                 .description("Domain name to create DNS zone for")

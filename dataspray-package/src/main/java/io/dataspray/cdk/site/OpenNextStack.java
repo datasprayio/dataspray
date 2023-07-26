@@ -22,6 +22,7 @@
 
 package io.dataspray.cdk.site;
 
+import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.dns.DnsStack;
 import io.dataspray.cdk.template.BaseStack;
 import io.dataspray.opennextcdk.Nextjs;
@@ -46,8 +47,8 @@ public class OpenNextStack extends BaseStack {
     @Getter
     private final RecordSet siteWwwRecordSet;
 
-    public OpenNextStack(Construct parent, String env, Options options) {
-        super(parent, "site", env);
+    public OpenNextStack(Construct parent, DeployEnvironment deployEnv, Options options) {
+        super(parent, "site", deployEnv);
 
         nextjs = Nextjs.Builder.create(this, getConstructId())
                 .openNextPath(options.openNextDir)

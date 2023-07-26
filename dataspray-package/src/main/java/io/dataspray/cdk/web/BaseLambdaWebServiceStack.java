@@ -23,6 +23,7 @@
 package io.dataspray.cdk.web;
 
 import com.google.common.base.Charsets;
+import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.template.BaseStack;
 import lombok.Getter;
 import lombok.NonNull;
@@ -46,7 +47,7 @@ public class BaseLambdaWebServiceStack extends BaseStack {
     private final SingletonFunction function;
 
     public BaseLambdaWebServiceStack(Construct parent, Options options) {
-        super(parent, "web-service-" + options.getFunctionName(), options.getEnv());
+        super(parent, "web-service-" + options.getFunctionName(), options.getDeployEnv());
 
         functionName = options.getFunctionName();
         function = SingletonFunction.Builder.create(this, getSubConstructId("lambda"))
@@ -65,7 +66,7 @@ public class BaseLambdaWebServiceStack extends BaseStack {
     @lombok.Builder
     public static class Options {
         @NonNull
-        String env;
+        DeployEnvironment deployEnv;
         @NonNull
         String functionName;
         @NonNull

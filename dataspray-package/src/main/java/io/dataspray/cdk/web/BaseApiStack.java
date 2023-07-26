@@ -32,6 +32,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.dataspray.authorizer.Authorizer;
+import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.dns.DnsStack;
 import io.dataspray.cdk.template.BaseStack;
 import lombok.Getter;
@@ -94,10 +95,10 @@ public class BaseApiStack extends BaseStack {
     private final Options options;
 
     public BaseApiStack(Construct parent, Options options) {
-        super(parent, "api-gateway", options.getEnv());
+        super(parent, "api-gateway", options.getDeployEnv());
         this.options = options;
 
-        authorizerFunctionName = "authorizer-" + options.getEnv();
+        authorizerFunctionName = "authorizer-" + options.getDeployEnv();
         authorizerFunction = SingletonFunction.Builder.create(this, getSubConstructId("lambda"))
                 .uuid(UUID.nameUUIDFromBytes(getSubConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
                 .functionName(authorizerFunctionName)
@@ -289,7 +290,7 @@ public class BaseApiStack extends BaseStack {
     @lombok.Builder
     public static class Options {
         @NonNull
-        String env;
+        DeployEnvironment deployEnv;
         @NonNull
         String openapiYamlPath;
         /** Mapping of which function to use for which endpoint (its tag name specifically) */

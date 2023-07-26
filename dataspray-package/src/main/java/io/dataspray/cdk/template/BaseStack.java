@@ -22,6 +22,7 @@
 
 package io.dataspray.cdk.template;
 
+import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.common.StringUtil;
 import lombok.Getter;
 import software.amazon.awscdk.Environment;
@@ -34,21 +35,20 @@ import software.constructs.Construct;
 public abstract class BaseStack extends Stack {
 
     @Getter
-    private final String constructId;
-    @Getter
-    private final String stackId;
+    private final DeployEnvironment deployEnv;
+    private final String baseConstructId;
 
-    public BaseStack(Construct parent, String constructIdSuffix, String stackId) {
+    public BaseStack(Construct parent, String constructIdSuffix, DeployEnvironment deployEnv) {
         super(parent,
-                "ds-" + constructIdSuffix,
+                "ds-" + constructIdSuffix + deployEnv.getSuffix(),
                 StackProps.builder()
                         .env(Environment.builder()
                                 .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
                                 .region(System.getenv("CDK_DEFAULT_REGION"))
                                 .build())
                         .build());
-        this.constructId = "ds-" + constructIdSuffix;
-        this.stackId = stackId;
+        this.deployEnv = deployEnv;
+        this.baseConstructId = "ds-" + constructIdSuffix;
 
         Tags.of(this).add("dataspray-construct-id", getConstructId(), TagProps.builder()
                 .applyToLaunchedInstances(true)
@@ -60,8 +60,12 @@ public abstract class BaseStack extends Stack {
                 .build());
     }
 
+    protected String getConstructId() {
+        return baseConstructId + deployEnv.getSuffix();
+    }
+
     protected String getSubConstructId(String subConstructIdSuffix) {
-        return getConstructId() + "-" + subConstructIdSuffix;
+        return getConstructId() + "-" + subConstructIdSuffix + deployEnv.getSuffix();
     }
 
     protected String getSubConstructIdCamelCase(String subConstructIdSuffix) {

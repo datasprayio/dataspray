@@ -22,6 +22,7 @@
 
 package io.dataspray.cdk.store;
 
+import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.template.BaseStack;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -55,11 +56,11 @@ public class AuthNzStack extends BaseStack {
     @Getter
     UserPool userPool;
 
-    public AuthNzStack(Construct parent, String env) {
-        super(parent, "authnz", env);
+    public AuthNzStack(Construct parent, DeployEnvironment deployEnv) {
+        super(parent, "authnz", deployEnv);
 
         userPool = UserPool.Builder.create(this, getSubConstructId("userpool"))
-                .userPoolName("users-" + env)
+                .userPoolName("users-" + getDeployEnv())
                 .selfSignUpEnabled(true)
                 .autoVerify(AutoVerifiedAttrs.builder()
                         .email(true).build())

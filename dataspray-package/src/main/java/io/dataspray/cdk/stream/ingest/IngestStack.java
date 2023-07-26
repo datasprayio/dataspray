@@ -23,6 +23,7 @@
 package io.dataspray.cdk.stream.ingest;
 
 import com.google.common.collect.ImmutableList;
+import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.web.BaseLambdaWebServiceStack;
 import io.dataspray.store.AccountStore;
 import lombok.Getter;
@@ -63,10 +64,10 @@ public class IngestStack extends BaseLambdaWebServiceStack {
     @Getter
     private final DeliveryStream firehose;
 
-    public IngestStack(Construct parent, String env, String codeZip) {
+    public IngestStack(Construct parent, DeployEnvironment deployEnv, String codeZip) {
         super(parent, Options.builder()
-                .env(env)
-                .functionName("ingest-" + env)
+                .deployEnv(deployEnv)
+                .functionName("ingest-" + deployEnv)
                 .codeZip(codeZip)
                 .build());
 

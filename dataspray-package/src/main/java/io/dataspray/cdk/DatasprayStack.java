@@ -49,10 +49,10 @@ public class DatasprayStack {
         App app = new App();
 
         if (args.length != 5) {
-            log.error("Usage: DatasprayStack <env> <authorizerCodeZip> <controlCodeZip> <ingestCodeZip> <openNextDir>");
+            log.error("Usage: DatasprayStack <deployEnv> <authorizerCodeZip> <controlCodeZip> <ingestCodeZip> <openNextDir>");
             System.exit(1);
         }
-        String env = args[0];
+        DeployEnvironment deployEnv = DeployEnvironment.valueOf(args[0]);
         String authorizerCodeZip = args[1];
         String controlCodeZip = args[2];
         String ingestCodeZip = args[3];
@@ -61,23 +61,23 @@ public class DatasprayStack {
         // Keep track of all Lambdas in order to pass config properties to them
         Set<SingletonFunction> functions = Sets.newHashSet();
 
-        DnsStack dnsStack = new DnsStack(app, env);
-        new OpenNextStack(app, env, OpenNextStack.Options.builder()
+        DnsStack dnsStack = new DnsStack(app, deployEnv);
+        new OpenNextStack(app, deployEnv, OpenNextStack.Options.builder()
                 .dnsStack(dnsStack)
                 .openNextDir(openNextDir)
                 .build());
 
-        SingleTableStack singleTableStack = new SingleTableStack(app, env);
-        AuthNzStack authNzStack = new AuthNzStack(app, env);
+        SingleTableStack singleTableStack = new SingleTableStack(app, deployEnv);
+        AuthNzStack authNzStack = new AuthNzStack(app, deployEnv);
 
-        IngestStack ingestStack = new IngestStack(app, env, ingestCodeZip);
+        IngestStack ingestStack = new IngestStack(app, deployEnv, ingestCodeZip);
         functions.add(ingestStack.getFunction());
 
-        ControlStack controlStack = new ControlStack(app, env, controlCodeZip);
+        ControlStack controlStack = new ControlStack(app, deployEnv, controlCodeZip);
         functions.add(controlStack.getFunction());
 
         BaseApiStack baseApiStack = new BaseApiStack(app, BaseApiStack.Options.builder()
-                .env(env)
+                .deployEnv(deployEnv)
                 .openapiYamlPath("target/openapi/api.yaml")
                 .tagToWebService(ImmutableMap.of(
                         "Ingest", ingestStack,
@@ -89,7 +89,7 @@ public class DatasprayStack {
                 .build());
         functions.add(baseApiStack.getAuthorizerFunction());
 
-        // For dynamically-named resources such as S3 bucket names, pass the name as env vars directly to the lambdas
+        // For dynamically-named resources such as S3 bucket names, pass the name as deployEnv vars directly to the lambdas
         // which will be picked up by Quarkus' @ConfigProperty
         for (SingletonFunction function : functions) {
             setConfigProperty(function, CognitoAccountStore.USER_POOL_ID_PROP_NAME, authNzStack.getUserPool().getUserPoolId());

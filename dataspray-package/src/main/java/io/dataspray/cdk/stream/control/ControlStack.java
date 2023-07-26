@@ -23,6 +23,7 @@
 package io.dataspray.cdk.stream.control;
 
 import com.google.common.collect.ImmutableList;
+import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.web.BaseLambdaWebServiceStack;
 import io.dataspray.store.LambdaDeployerImpl;
 import io.dataspray.store.SqsQueueStore;
@@ -52,10 +53,10 @@ public class ControlStack extends BaseLambdaWebServiceStack {
     @Getter
     private final Bucket bucketCode;
 
-    public ControlStack(Construct parent, String env, String codeZip) {
+    public ControlStack(Construct parent, DeployEnvironment deployEnv, String codeZip) {
         super(parent, Options.builder()
-                .env(env)
-                .functionName("control-" + env)
+                .deployEnv(deployEnv)
+                .functionName("control-" + deployEnv)
                 .codeZip(codeZip)
                 .build());
 
