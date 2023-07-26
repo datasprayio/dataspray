@@ -49,12 +49,12 @@ CONVERT_OPTS=(
 
 # Main logos
 scour -i "$LOGO_MASTER" -o logo.svg "${SCOUR_OPTS[@]}"
-magick convert "${CONVERT_OPTS[@]}" "$LOGO_MASTER" logo.png
-magick convert "${CONVERT_OPTS[@]}" "$LOGO_SMALL" logo-small.png
+convert "${CONVERT_OPTS[@]}" "$LOGO_MASTER" logo.png
+convert "${CONVERT_OPTS[@]}" "$LOGO_SMALL" logo-small.png
 
 # Logos with title
-magick convert "${CONVERT_OPTS[@]}" "$LOGO_AND_TITLE_DARK" logo-and-title-dark.png
-magick convert "${CONVERT_OPTS[@]}" "$LOGO_AND_TITLE_LIGHT" logo-and-title-light.png
+convert "${CONVERT_OPTS[@]}" "$LOGO_AND_TITLE_DARK" logo-and-title-dark.png
+convert "${CONVERT_OPTS[@]}" "$LOGO_AND_TITLE_LIGHT" logo-and-title-light.png
 
 # Web Icon
 
@@ -72,8 +72,8 @@ for SIZE in 16 32 48; do
   else
       SOURCE="$LOGO_MASTER"
   fi;
-  magick convert "${CONVERT_OPTS[@]}" -resize "$SIZE"x"$SIZE" "$SOURCE" "$DEST_SIZE_FILENAME"
+  convert "${CONVERT_OPTS[@]}" -resize "$SIZE"x"$SIZE" "$SOURCE" "$DEST_SIZE_FILENAME"
   SIZES_FILENAMES+=("$DEST_SIZE_FILENAME")
 done
-magick convert "${CONVERT_OPTS[@]}" -compress zip "${SIZES_FILENAMES[@]}" favicon.ico
+convert "${CONVERT_OPTS[@]}" -compress zip "${SIZES_FILENAMES[@]}" favicon.ico
 rm -f "${SIZES_FILENAMES[@]}"
