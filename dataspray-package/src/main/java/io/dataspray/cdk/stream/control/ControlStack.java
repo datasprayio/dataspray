@@ -56,12 +56,12 @@ public class ControlStack extends BaseLambdaWebServiceStack {
     public ControlStack(Construct parent, DeployEnvironment deployEnv, String codeZip) {
         super(parent, Options.builder()
                 .deployEnv(deployEnv)
-                .functionName("control-" + deployEnv)
+                .functionName("control-" + deployEnv.getSuffix())
                 .codeZip(codeZip)
                 .build());
 
-        customerFunctionPermissionBoundaryManagedPolicyName = getSubConstructId("customer-function-permission-boundary");
-        customerFunctionPermissionBoundaryManagedPolicy = ManagedPolicy.Builder.create(this, getSubConstructId("customer-function-permission-boundary"))
+        customerFunctionPermissionBoundaryManagedPolicyName = getConstructId("customer-function-permission-boundary");
+        customerFunctionPermissionBoundaryManagedPolicy = ManagedPolicy.Builder.create(this, getConstructId("customer-function-permission-boundary"))
                 .managedPolicyName(customerFunctionPermissionBoundaryManagedPolicyName)
                 .description("Permission boundary for customer lambdas")
                 .statements(ImmutableList.of(PolicyStatement.Builder.create()
@@ -87,8 +87,8 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                                 .build()))
                 .build();
 
-        bucketCodeName = getSubConstructId("code-upload-bucket");
-        bucketCode = Bucket.Builder.create(this, getSubConstructId("code-upload-bucket"))
+        bucketCodeName = getConstructId("code-upload-bucket");
+        bucketCode = Bucket.Builder.create(this, getConstructId("code-upload-bucket"))
                 .bucketName(bucketCodeName)
                 .autoDeleteObjects(true)
                 .removalPolicy(RemovalPolicy.DESTROY)

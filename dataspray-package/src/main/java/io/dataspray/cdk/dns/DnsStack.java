@@ -69,7 +69,7 @@ public class DnsStack extends BaseStack {
                 .minLength(3)
                 .build();
 
-        dnsZone = HostedZone.Builder.create(this, getSubConstructId("zone"))
+        dnsZone = HostedZone.Builder.create(this, getConstructId("zone"))
                 .zoneName(dnsDomainParam.getValueAsString())
                 .build();
 
@@ -84,12 +84,12 @@ public class DnsStack extends BaseStack {
                 .defaultValue("")
                 .build();
         // Fetch parent zone for creating delegate records. May not end up being used if params are not set
-        IHostedZone parentZone = HostedZone.fromHostedZoneAttributes(this, getSubConstructId("parentZone"), HostedZoneAttributes.builder()
+        IHostedZone parentZone = HostedZone.fromHostedZoneAttributes(this, getConstructId("parentZone"), HostedZoneAttributes.builder()
                 .hostedZoneId(dnsParentZoneIdParam.getValueAsString())
                 .zoneName(dnsParentZoneNameParam.getValueAsString())
                 .build());
         // Delegating subdomain record
-        parentZoneDelegatingSubdomainRecordSet = RecordSet.Builder.create(this, getSubConstructId("recordset-delegating-subdomain"))
+        parentZoneDelegatingSubdomainRecordSet = RecordSet.Builder.create(this, getConstructId("recordset-delegating-subdomain"))
                 .zone(parentZone)
                 .recordType(RecordType.NS)
                 .recordName(dnsDomainParam.getValueAsString())
@@ -100,7 +100,7 @@ public class DnsStack extends BaseStack {
                 .deleteExisting(false)
                 .build();
         // Only create delegating record if params are set
-        CfnCondition createDelegateRecordCondition = CfnCondition.Builder.create(this, getSubConstructId(""))
+        CfnCondition createDelegateRecordCondition = CfnCondition.Builder.create(this, getConstructId(""))
                 .expression(Fn.conditionAnd(
                         Fn.conditionNot(Fn.conditionEquals(dnsParentZoneIdParam, "")),
                         Fn.conditionNot(Fn.conditionEquals(dnsParentZoneNameParam, ""))))

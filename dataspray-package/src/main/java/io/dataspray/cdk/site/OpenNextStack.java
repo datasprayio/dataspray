@@ -50,11 +50,11 @@ public class OpenNextStack extends BaseStack {
     public OpenNextStack(Construct parent, DeployEnvironment deployEnv, Options options) {
         super(parent, "site", deployEnv);
 
-        nextjs = Nextjs.Builder.create(this, getConstructId())
+        nextjs = Nextjs.Builder.create(this, getConstructId("nextjs"))
                 .openNextPath(options.openNextDir)
                 .build();
 
-        siteRecordSet = RecordSet.Builder.create(this, getSubConstructId("recordset"))
+        siteRecordSet = RecordSet.Builder.create(this, getConstructId("recordset"))
                 .zone(options.getDnsStack().getDnsZone())
                 .recordType(RecordType.A)
                 .recordName(options.getDnsStack().getDnsDomainParam().getValueAsString())
@@ -63,7 +63,7 @@ public class OpenNextStack extends BaseStack {
                 .deleteExisting(true)
                 .build();
 
-        siteWwwRecordSet = RecordSet.Builder.create(this, getSubConstructId("recordset-www"))
+        siteWwwRecordSet = RecordSet.Builder.create(this, getConstructId("recordset-www"))
                 .zone(options.getDnsStack().getDnsZone())
                 .recordType(RecordType.A)
                 .recordName("www." + options.getDnsStack().getDnsDomainParam().getValueAsString())

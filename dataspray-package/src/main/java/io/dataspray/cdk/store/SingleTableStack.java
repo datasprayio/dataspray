@@ -48,7 +48,7 @@ public class SingleTableStack extends BaseStack {
                 .overrideDynamo((AmazonDynamoDB) Proxy.newProxyInstance(AmazonDynamoDB.class.getClassLoader(), new Class[]{AmazonDynamoDB.class}, (proxy, method, args) -> {
                     throw new RuntimeException("This client is non functional and shouldn't have been called.");
                 }))
-                .tablePrefix(getSubConstructId("dataspray"))
+                .tablePrefix(getConstructId("dataspray"))
                 .build()
                 .createCdkTable(
                         this,

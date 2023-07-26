@@ -67,7 +67,7 @@ public class IngestStack extends BaseLambdaWebServiceStack {
     public IngestStack(Construct parent, DeployEnvironment deployEnv, String codeZip) {
         super(parent, Options.builder()
                 .deployEnv(deployEnv)
-                .functionName("ingest-" + deployEnv)
+                .functionName("ingest-" + deployEnv.getSuffix())
                 .codeZip(codeZip)
                 .build());
 
@@ -81,8 +81,8 @@ public class IngestStack extends BaseLambdaWebServiceStack {
                         "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + CUSTOMER_QUEUE_WILDCARD))
                 .build());
 
-        bucketEtlName = getSubConstructId("ingest-etl-bucket");
-        bucketEtl = Bucket.Builder.create(this, getSubConstructId("ingest-etl-bucket"))
+        bucketEtlName = getConstructId("ingest-etl-bucket");
+        bucketEtl = Bucket.Builder.create(this, getConstructId("ingest-etl-bucket"))
                 .bucketName(bucketEtlName)
                 .autoDeleteObjects(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
@@ -104,8 +104,8 @@ public class IngestStack extends BaseLambdaWebServiceStack {
                                 .build()).collect(Collectors.toList()))
                 .build();
 
-        firehoseName = getSubConstructId("ingest-etl-firehose");
-        firehose = DeliveryStream.Builder.create(this, getSubConstructId("ingest-etl-firehose"))
+        firehoseName = getConstructId("ingest-etl-firehose");
+        firehose = DeliveryStream.Builder.create(this, getConstructId("ingest-etl-firehose"))
                 .deliveryStreamName(firehoseName)
                 .destinations(ImmutableList.of(S3Bucket.Builder.create(bucketEtl)
                         .bufferingInterval(Duration.seconds(900))

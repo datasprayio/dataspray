@@ -99,8 +99,8 @@ public class BaseApiStack extends BaseStack {
         this.options = options;
 
         authorizerFunctionName = "authorizer-" + options.getDeployEnv();
-        authorizerFunction = SingletonFunction.Builder.create(this, getSubConstructId("lambda"))
-                .uuid(UUID.nameUUIDFromBytes(getSubConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
+        authorizerFunction = SingletonFunction.Builder.create(this, getConstructId("lambda"))
+                .uuid(UUID.nameUUIDFromBytes(getConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
                 .functionName(authorizerFunctionName)
                 .code(Code.fromAsset(options.getAuthorizerCodeZip()))
                 .handler(Authorizer.class.getName() + "::handleRequest")
@@ -110,8 +110,8 @@ public class BaseApiStack extends BaseStack {
                 .timeout(Duration.seconds(30))
                 .build();
 
-        roleApiGatewayInvoke = Role.Builder.create(this, getSubConstructId("role"))
-                .roleName(getSubConstructId("authorizer-role-invoke"))
+        roleApiGatewayInvoke = Role.Builder.create(this, getConstructId("role"))
+                .roleName(getConstructId("authorizer-role-invoke"))
                 .assumedBy(ServicePrincipal.Builder.create("apigateway.amazonaws.com").build())
                 .inlinePolicies(Map.of("allowInvoke", PolicyDocument.Builder.create().statements(List.of(
                         PolicyStatement.Builder.create()
@@ -130,11 +130,11 @@ public class BaseApiStack extends BaseStack {
         URL serverUrl = setServerUrlDomain(openApiSpec, rootDomain);
         String apiDomain = serverUrl.getHost();
 
-        certificate = Certificate.Builder.create(this, getSubConstructId("cert"))
+        certificate = Certificate.Builder.create(this, getConstructId("cert"))
                 .domainName(apiDomain)
                 .validation(CertificateValidation.fromDns(getOptions().getDnsStack().getDnsZone()))
                 .build();
-        restApi = SpecRestApi.Builder.create(this, getSubConstructId("apigateway"))
+        restApi = SpecRestApi.Builder.create(this, getConstructId("apigateway"))
                 .apiDefinition(ApiDefinition.fromInline(openApiSpec))
                 .domainName(DomainNameOptions.builder()
                         .certificate(certificate)
@@ -142,7 +142,7 @@ public class BaseApiStack extends BaseStack {
                         .domainName(apiDomain)
                         .build())
                 .build();
-        recordSet = RecordSet.Builder.create(this, getSubConstructId("recordset"))
+        recordSet = RecordSet.Builder.create(this, getConstructId("recordset"))
                 .zone(getOptions().getDnsStack().getDnsZone())
                 .recordType(RecordType.A)
                 .recordName(apiDomain)
@@ -165,7 +165,7 @@ public class BaseApiStack extends BaseStack {
     }
 
     public UsagePlan createUsagePlan(long usagePlanVersion, QuotaSettings quota, ThrottleSettings throttle) {
-        return UsagePlan.Builder.create(this, getSubConstructId("usage-plan-" + usagePlanVersion))
+        return UsagePlan.Builder.create(this, getConstructId("usage-plan-" + usagePlanVersion))
                 .name("usage-plan-" + usagePlanVersion)
                 .apiStages(List.of(UsagePlanPerApiStage.builder()
                         .api(restApi)
@@ -176,7 +176,7 @@ public class BaseApiStack extends BaseStack {
     }
 
     private void addFunctionToApiGatewayPermission(BaseLambdaWebServiceStack webService) {
-        webService.getFunction().addPermission(getSubConstructId("gateway-to-lambda-permission"), Permission.builder()
+        webService.getFunction().addPermission(getConstructId("gateway-to-lambda-permission"), Permission.builder()
                 .sourceArn(restApi.arnForExecuteApi())
                 .principal(ServicePrincipal.Builder
                         .create("apigateway.amazonaws.com").build())

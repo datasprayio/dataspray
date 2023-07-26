@@ -50,7 +50,7 @@ public abstract class BaseStack extends Stack {
         this.deployEnv = deployEnv;
         this.baseConstructId = "ds-" + constructIdSuffix;
 
-        Tags.of(this).add("dataspray-construct-id", getConstructId(), TagProps.builder()
+        Tags.of(this).add("dataspray-construct-id", this.baseConstructId, TagProps.builder()
                 .applyToLaunchedInstances(true)
                 .priority(1000)
                 .build());
@@ -58,17 +58,17 @@ public abstract class BaseStack extends Stack {
                 .applyToLaunchedInstances(true)
                 .priority(1000)
                 .build());
+        Tags.of(this).add("dataspray-env", getDeployEnv().name(), TagProps.builder()
+                .applyToLaunchedInstances(true)
+                .priority(1000)
+                .build());
     }
 
-    protected String getConstructId() {
-        return baseConstructId + deployEnv.getSuffix();
+    protected String getConstructId(String name) {
+        return baseConstructId + "-" + name + deployEnv.getSuffix();
     }
 
-    protected String getSubConstructId(String subConstructIdSuffix) {
-        return getConstructId() + "-" + subConstructIdSuffix + deployEnv.getSuffix();
-    }
-
-    protected String getSubConstructIdCamelCase(String subConstructIdSuffix) {
-        return StringUtil.camelCase(getSubConstructId(subConstructIdSuffix), true);
+    protected String getSubConstructIdCamelCase(String name) {
+        return StringUtil.camelCase(getConstructId(name), true);
     }
 }

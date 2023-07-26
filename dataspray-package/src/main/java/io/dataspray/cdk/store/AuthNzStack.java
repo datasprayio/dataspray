@@ -59,7 +59,7 @@ public class AuthNzStack extends BaseStack {
     public AuthNzStack(Construct parent, DeployEnvironment deployEnv) {
         super(parent, "authnz", deployEnv);
 
-        userPool = UserPool.Builder.create(this, getSubConstructId("userpool"))
+        userPool = UserPool.Builder.create(this, getConstructId("userpool"))
                 .userPoolName("users-" + getDeployEnv())
                 .selfSignUpEnabled(true)
                 .autoVerify(AutoVerifiedAttrs.builder()
@@ -95,7 +95,7 @@ public class AuthNzStack extends BaseStack {
                 .build();
         // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cognito-userpool-emailconfiguration.html
         userPoolCfn.addPropertyOverride("EmailConfiguration", Fn.conditionIf(
-                CfnCondition.Builder.create(this, getSubConstructId("-authnz-userpool-ses-or-cognito"))
+                CfnCondition.Builder.create(this, getConstructId("-authnz-userpool-ses-or-cognito"))
                         .expression(Fn.conditionEquals(emailWithParam, ""))
                         .build()
                         .getLogicalId(),

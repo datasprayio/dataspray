@@ -50,8 +50,8 @@ public class BaseLambdaWebServiceStack extends BaseStack {
         super(parent, "web-service-" + options.getFunctionName(), options.getDeployEnv());
 
         functionName = options.getFunctionName();
-        function = SingletonFunction.Builder.create(this, getSubConstructId("lambda"))
-                .uuid(UUID.nameUUIDFromBytes(getSubConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
+        function = SingletonFunction.Builder.create(this, getConstructId("lambda"))
+                .uuid(UUID.nameUUIDFromBytes(getConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
                 .functionName(functionName)
                 .code(Code.fromAsset(options.getCodeZip()))
                 .handler(QUARKUS_LAMBDA_HANDLER)
