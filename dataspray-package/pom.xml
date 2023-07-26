@@ -40,7 +40,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <stackEnv>selfhost</stackEnv>
+        <stackEnv>SELFHOST</stackEnv>
         <dnsDomain/>
         <dnsParentZoneName/>
         <dnsParentZoneId/>
@@ -235,7 +235,7 @@
         <profile>
             <id>production</id>
             <properties>
-                <stackEnv>prod</stackEnv>
+                <stackEnv>PRODUCTION</stackEnv>
                 <dnsDomain>dataspray.io</dnsDomain>
                 <sesDomain>dataspray.io</sesDomain>
             </properties>
@@ -243,7 +243,7 @@
         <profile>
             <id>staging</id>
             <properties>
-                <stackEnv>stage</stackEnv>
+                <stackEnv>STAGING</stackEnv>
                 <dnsDomain>staging.dataspray.io</dnsDomain>
                 <dnsParentZoneName>dataspray.io</dnsParentZoneName>
                 <dnsParentZoneId>Z104172015L8HFMCRVJ9X</dnsParentZoneId>

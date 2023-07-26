@@ -121,15 +121,30 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
     }
 
     @Override
-    @SneakyThrows
     public void stop() {
         acceptEof = true;
 
         write(EOF, out);
         write(EOF, err);
 
-        outTailer.join();
-        errTailer.join();
+        attemptJoinThread(outTailer);
+        attemptJoinThread(errTailer);
+    }
+
+    @SneakyThrows
+    private void attemptJoinThread(Thread thread) {
+        thread.join(5_000);
+        if (!thread.isAlive()) {
+            return;
+        }
+        log.trace("Thread {} is not joining, interrupting", thread.getName());
+        thread.interrupt();
+        thread.join(3_000);
+        if (!thread.isAlive()) {
+            return;
+        }
+        log.trace("Thread {} is not interrupting, stopping", thread.getName());
+        thread.stop();
     }
 
     public static class TestProfile implements QuarkusTestProfile {
