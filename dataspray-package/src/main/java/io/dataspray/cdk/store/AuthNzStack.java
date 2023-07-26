@@ -88,8 +88,8 @@ public class AuthNzStack extends BaseStack {
                 .build();
         CfnUserPool userPoolCfn = (CfnUserPool) requireNonNull(userPool.getNode().getDefaultChild());
         // Decide to send email from Cognito or SES
-        emailWithParam = CfnParameter.Builder.create(this, "sesDomain")
-                .description("Domain name of your SES to use. Leave blank to use Cognito Email.")
+        emailWithParam = CfnParameter.Builder.create(this, "sesEmail")
+                .description("Email of your verified SES identity to use for sending and receiving emails. (e.g. support@example.com) Leave blank to use Cognito Email.")
                 .type("String")
                 .defaultValue("")
                 .build();
@@ -104,10 +104,10 @@ public class AuthNzStack extends BaseStack {
                 // Use custom verified SES if provided
                 Map.of("EmailSendingAccount", "DEVELOPER",
                         "SourceArn", Fn.join("", List.of(
-                                "arn:aws:ses:" + getRegion() + ":" + getAccount() + ":identity/no-reply@",
+                                "arn:aws:ses:" + getRegion() + ":" + getAccount() + ":identity/",
                                 emailWithParam.getValueAsString())),
                         "From", Fn.join("", List.of(
-                                "DataSpray <no-reply@",
+                                "DataSpray <",
                                 emailWithParam.getValueAsString(),
                                 ">")))));
 

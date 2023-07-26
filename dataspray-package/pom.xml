@@ -44,7 +44,7 @@
         <dnsDomain/>
         <dnsParentZoneName/>
         <dnsParentZoneId/>
-        <sesDomain/>
+        <sesEmail/>
     </properties>
 
     <dependencies>
@@ -222,7 +222,7 @@
                                 <dnsDomain>${dnsDomain}</dnsDomain>
                                 <dnsParentZoneName>${dnsParentZoneName}</dnsParentZoneName>
                                 <dnsParentZoneId>${dnsParentZoneId}</dnsParentZoneId>
-                                <sesDomain>${sesDomain}</sesDomain>
+                                <sesEmail>${sesEmail}</sesEmail>
                             </parameters>
                         </configuration>
                     </execution>
@@ -237,7 +237,7 @@
             <properties>
                 <stackEnv>PRODUCTION</stackEnv>
                 <dnsDomain>dataspray.io</dnsDomain>
-                <sesDomain>dataspray.io</sesDomain>
+                <sesEmail>support@dataspray.io</sesEmail>
             </properties>
         </profile>
         <profile>
@@ -247,7 +247,7 @@
                 <dnsDomain>staging.dataspray.io</dnsDomain>
                 <dnsParentZoneName>dataspray.io</dnsParentZoneName>
                 <dnsParentZoneId>Z104172015L8HFMCRVJ9X</dnsParentZoneId>
-                <sesDomain>dataspray.io</sesDomain>
+                <sesEmail>support.staging@dataspray.io</sesEmail>
             </properties>
         </profile>
     </profiles>

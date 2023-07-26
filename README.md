@@ -24,10 +24,6 @@
 
 ## Self-host
 
-### From AWS Marketplace
-
-⚠️ Not yet available...
-
 ### From released CloudFormation template
 
 ⚠️ Not yet available...
@@ -39,6 +35,8 @@ Ensure you installed all dependencies and run the following command:
 ```bash
 mvn clean deploy -DdnsDomain="dataspray.example.com"
 ```
+
+### Configuration
 
 <details>
   <summary>Setup DNS</summary>
@@ -60,7 +58,7 @@ your name servers for the records to be publicly accessible in one of three ways
   <summary>Setup Email</summary>
 
 If you wish to receive emails sent by DataSpray, you will need to verify your domain in SES and provide the
-parameter `-DsesDomain=example.com`.
+parameter `-DsesEmail=support@example.com`.
 
 Without it, Cognito will be able to send a limited number of emails and DataSpray will not be able to send any email
 notifications.
