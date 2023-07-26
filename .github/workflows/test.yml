@@ -40,5 +40,5 @@ jobs:
         if: steps.homebrew-cache.outputs.cache-hit != 'true'
         run: brew install scour imagemagick
       - name: Maven build
-        timeout-minutes: 60
+        timeout-minutes: 20
         run: mvn install
