@@ -40,6 +40,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <stackEnv>selfhost</stackEnv>
         <dnsDomain/>
         <dnsParentZoneName/>
         <dnsParentZoneId/>
@@ -202,7 +203,7 @@
                             <app>io.dataspray.cdk.DatasprayStack</app>
                             <profile>dataspray</profile>
                             <arguments>
-                                <argument>prod</argument>
+                                <argument>${stackEnv}</argument>
                                 <argument>${project.build.directory}/code-authorizer/function.zip</argument>
                                 <argument>${project.build.directory}/code-control/function.zip</argument>
                                 <argument>${project.build.directory}/code-ingest/function.zip</argument>
@@ -234,6 +235,7 @@
         <profile>
             <id>production</id>
             <properties>
+                <stackEnv>prod</stackEnv>
                 <dnsDomain>dataspray.io</dnsDomain>
                 <sesDomain>dataspray.io</sesDomain>
             </properties>
@@ -241,6 +243,7 @@
         <profile>
             <id>staging</id>
             <properties>
+                <stackEnv>stage</stackEnv>
                 <dnsDomain>staging.dataspray.io</dnsDomain>
                 <dnsParentZoneName>dataspray.io</dnsParentZoneName>
                 <dnsParentZoneId>Z104172015L8HFMCRVJ9X</dnsParentZoneId>

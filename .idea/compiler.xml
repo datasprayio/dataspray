@@ -24,8 +24,8 @@
         <module name="dataspray-authorizer" />
         <module name="dataspray-resources" />
         <module name="dataspray-stream-control" />
-        <module name="dataspray-site" />
         <module name="dataspray-package" />
+        <module name="dataspray-site" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
