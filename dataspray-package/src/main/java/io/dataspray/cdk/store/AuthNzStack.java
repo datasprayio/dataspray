@@ -60,7 +60,7 @@ public class AuthNzStack extends BaseStack {
         super(parent, "authnz", deployEnv);
 
         userPool = UserPool.Builder.create(this, getConstructId("userpool"))
-                .userPoolName("users-" + getDeployEnv())
+                .userPoolName(getConstructId("userpool"))
                 .selfSignUpEnabled(true)
                 .autoVerify(AutoVerifiedAttrs.builder()
                         .email(true).build())

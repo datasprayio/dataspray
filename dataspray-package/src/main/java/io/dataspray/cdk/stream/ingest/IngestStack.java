@@ -72,7 +72,7 @@ public class IngestStack extends BaseLambdaWebServiceStack {
                 .build());
 
         getFunction().addToRolePolicy(PolicyStatement.Builder.create()
-                .sid(getSubConstructIdCamelCase("CustomerIngestSqs"))
+                .sid(getConstructIdCamelCase("CustomerIngestSqs"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "sqs:SendMessage",

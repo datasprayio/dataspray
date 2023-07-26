@@ -68,7 +68,7 @@ public abstract class BaseStack extends Stack {
         return baseConstructId + "-" + name + deployEnv.getSuffix();
     }
 
-    protected String getSubConstructIdCamelCase(String name) {
+    protected String getConstructIdCamelCase(String name) {
         return StringUtil.camelCase(getConstructId(name), true);
     }
 }
