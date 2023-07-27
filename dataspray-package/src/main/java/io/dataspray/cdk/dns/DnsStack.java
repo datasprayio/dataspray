@@ -59,6 +59,7 @@ public class DnsStack extends BaseStack {
         dnsDomainParam = CfnParameter.Builder.create(this, "dnsDomain")
                 .description("Fully qualified domain name for your app (e.g. dataspray.example.com)")
                 .type("String")
+                .defaultValue(deployEnv.getDnsDomain().orElse(null))
                 .minLength(3)
                 .build();
 
@@ -69,12 +70,12 @@ public class DnsStack extends BaseStack {
         dnsParentZoneNameParam = CfnParameter.Builder.create(this, "dnsParentZoneName")
                 .description("If using a subdomain (e.g. dataspray.example.com), enter the Route53 Hosted Zone Name for the parent domain (e.g. dataspray.io) if you wish to add a NS delegating record, otherwise leave this blank.")
                 .type("String")
-                .defaultValue("")
+                .defaultValue(deployEnv.getDnsParentZoneName())
                 .build();
         dnsParentZoneIdParam = CfnParameter.Builder.create(this, "dnsParentZoneId")
                 .description("If using a subdomain (e.g. dataspray.example.com), enter the Route53 Hosted Zone Id for the parent domain (e.g. Z104162015L8HFMCRVJ9Y) if you wish to add a NS delegating record, otherwise leave this blank.")
                 .type("String")
-                .defaultValue("")
+                .defaultValue(deployEnv.getDnsParentZoneId())
                 .build();
         // Fetch parent zone for creating delegate records. May not end up being used if params are not set
         IHostedZone parentZone = HostedZone.fromHostedZoneAttributes(this, getConstructId("parentZone"), HostedZoneAttributes.builder()

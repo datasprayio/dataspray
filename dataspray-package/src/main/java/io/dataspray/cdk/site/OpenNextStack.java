@@ -26,50 +26,61 @@ import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.dns.DnsStack;
 import io.dataspray.cdk.template.BaseStack;
 import io.dataspray.opennextcdk.Nextjs;
+import io.dataspray.opennextcdk.NextjsDefaultsProps;
+import io.dataspray.opennextcdk.NextjsDistributionPropsDefaults;
+import io.dataspray.opennextcdk.NextjsDomainProps;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.services.route53.RecordSet;
-import software.amazon.awscdk.services.route53.RecordTarget;
-import software.amazon.awscdk.services.route53.RecordType;
-import software.amazon.awscdk.services.route53.targets.CloudFrontTarget;
 import software.constructs.Construct;
+
+import java.util.List;
 
 @Slf4j
 public class OpenNextStack extends BaseStack {
 
     @Getter
     private final Nextjs nextjs;
-    @Getter
-    private final RecordSet siteRecordSet;
-    @Getter
-    private final RecordSet siteWwwRecordSet;
 
     public OpenNextStack(Construct parent, DeployEnvironment deployEnv, Options options) {
         super(parent, "site", deployEnv);
 
+        NextjsDomainProps domainProps;
+        switch (deployEnv) {
+            case PRODUCTION:
+                domainProps = NextjsDomainProps.builder()
+                        .isExternalDomain(false)
+                        .domainName(deployEnv.getDnsDomain().get())
+                        .alternateNames(List.of("www." + deployEnv.getDnsDomain().get()))
+                        .hostedZone(options.getDnsStack().getDnsZone())
+                        .build();
+                break;
+            case STAGING:
+                domainProps = NextjsDomainProps.builder()
+                        .isExternalDomain(false)
+                        .domainName(deployEnv.getDnsDomain().get())
+                        .hostedZone(options.getDnsStack().getDnsZone())
+                        .build();
+                break;
+            case SELFHOST:
+                domainProps = NextjsDomainProps.builder()
+                        .isExternalDomain(false)
+                        .domainName(options.getDnsStack().getDnsDomainParam().getValueAsString())
+                        .hostedZone(options.getDnsStack().getDnsZone())
+                        .build();
+                break;
+            default:
+                throw new RuntimeException("Unknown env: " + deployEnv);
+        }
         nextjs = Nextjs.Builder.create(this, getConstructId("nextjs"))
                 .openNextPath(options.openNextDir)
-                .build();
-
-        siteRecordSet = RecordSet.Builder.create(this, getConstructId("recordset"))
-                .zone(options.getDnsStack().getDnsZone())
-                .recordType(RecordType.A)
-                .recordName(options.getDnsStack().getDnsDomainParam().getValueAsString())
-                .target(RecordTarget.fromAlias(new CloudFrontTarget(nextjs.getDistribution().getDistribution())))
-                .ttl(Duration.seconds(30))
-                .deleteExisting(true)
-                .build();
-
-        siteWwwRecordSet = RecordSet.Builder.create(this, getConstructId("recordset-www"))
-                .zone(options.getDnsStack().getDnsZone())
-                .recordType(RecordType.A)
-                .recordName("www." + options.getDnsStack().getDnsDomainParam().getValueAsString())
-                .target(RecordTarget.fromAlias(new CloudFrontTarget(nextjs.getDistribution().getDistribution())))
-                .ttl(Duration.seconds(30))
-                .deleteExisting(true)
+                .defaults(NextjsDefaultsProps.builder()
+                        .distribution(NextjsDistributionPropsDefaults.builder()
+                                .customDomain(domainProps)
+                                .stackPrefix("ds-")
+                                .build())
+                        .build())
                 .build();
     }
 

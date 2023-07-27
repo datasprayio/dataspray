@@ -41,6 +41,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <stackEnv>SELFHOST</stackEnv>
+        <awsProfile/>
         <dnsDomain/>
         <dnsParentZoneName/>
         <dnsParentZoneId/>
@@ -217,7 +218,7 @@
                             <goal>deploy</goal>
                         </goals>
                         <configuration>
-                            <profile>dataspray</profile>
+                            <profile>${awsProfile}</profile>
                             <parameters>
                                 <dnsDomain>${dnsDomain}</dnsDomain>
                                 <dnsParentZoneName>${dnsParentZoneName}</dnsParentZoneName>
@@ -236,18 +237,14 @@
             <id>production</id>
             <properties>
                 <stackEnv>PRODUCTION</stackEnv>
-                <dnsDomain>dataspray.io</dnsDomain>
-                <sesEmail>support@dataspray.io</sesEmail>
+                <awsProfile>dataspray</awsProfile>
             </properties>
         </profile>
         <profile>
             <id>staging</id>
             <properties>
                 <stackEnv>STAGING</stackEnv>
-                <dnsDomain>staging.dataspray.io</dnsDomain>
-                <dnsParentZoneName>dataspray.io</dnsParentZoneName>
-                <dnsParentZoneId>Z104172015L8HFMCRVJ9X</dnsParentZoneId>
-                <sesEmail>support.staging@dataspray.io</sesEmail>
+                <awsProfile>dataspray</awsProfile>
             </properties>
         </profile>
     </profiles>
