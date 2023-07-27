@@ -35,8 +35,6 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import software.constructs.Construct;
 
-import java.util.List;
-
 @Slf4j
 public class OpenNextStack extends BaseStack {
 
@@ -52,7 +50,7 @@ public class OpenNextStack extends BaseStack {
                 domainProps = NextjsDomainProps.builder()
                         .isExternalDomain(false)
                         .domainName(deployEnv.getDnsDomain().get())
-                        .alternateNames(List.of("www." + deployEnv.getDnsDomain().get()))
+                        .domainAlias("www." + deployEnv.getDnsDomain().get())
                         .hostedZone(options.getDnsStack().getDnsZone())
                         .build();
                 break;

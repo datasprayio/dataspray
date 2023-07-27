@@ -50,5 +50,5 @@ jobs:
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile dataspray
           aws configure set region ${{ secrets.AWS_DEFAULT_REGION }} --profile dataspray
       - name: Maven build
-        timeout-minutes: 30
+        timeout-minutes: 60
         run: AWS_PROFILE=dataspray mvn clean deploy -P${{ github.event.inputs.environment || 'staging' }}
