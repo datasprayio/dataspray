@@ -44,35 +44,26 @@ import java.util.List;
 public class DnsStack extends BaseStack {
 
     @Getter
-    private final CfnParameter dnsDomainParam;
-    @Getter
-    private final CfnParameter dnsSubdomainParam;
-    @Getter
-    private final CfnParameter dnsDomainZoneIdParam;
-    @Getter
     private final HostedZone dnsZone;
     @Getter
     private final RecordSet parentZoneDelegatingSubdomainRecordSet;
 
+    // Private cannot be shared across stacks
+    private final CfnParameter dnsDomainParam;
+    private final CfnParameter dnsSubdomainParam;
+    private final CfnParameter dnsDomainZoneIdParam;
+
     public DnsStack(Construct parent, DeployEnvironment deployEnv) {
         super(parent, "dns", deployEnv);
 
-        dnsDomainParam = CfnParameter.Builder.create(this, "dnsDomain")
-                .description("Domain name for your app (e.g. example.com)")
-                .type("String")
-                .minLength(3)
-                .build();
-        dnsSubdomainParam = CfnParameter.Builder.create(this, "dnsSubdomain")
-                .description("Optional subdomain for your app (defaults to dataspray)")
-                .type("String")
-                .defaultValue("dataspray")
-                .build();
+        dnsDomainParam = createDnsDomainParam(this);
+        dnsSubdomainParam = createDnsSubdomainParam(this);
         dnsDomainZoneIdParam = CfnParameter.Builder.create(this, "dnsDomainZoneId")
                 .description("If using a subdomain (e.g. dataspray.example.com), enter the Route53 Hosted Zone Id for the parent domain (e.g. Z104162015L8HFMCRVJ9Y) if you wish to add a NS delegating record, otherwise leave this blank.")
                 .type("String")
                 .defaultValue("")
                 .build();
-        String dnsFqdn = createFqdn(this);
+        String dnsFqdn = createFqdn(this, dnsDomainParam, dnsSubdomainParam);
 
         dnsZone = HostedZone.Builder.create(this, getConstructId("zone"))
                 .zoneName(dnsFqdn)
@@ -102,6 +93,22 @@ public class DnsStack extends BaseStack {
                 .setCondition(createDelegateRecordCondition);
     }
 
+    private CfnParameter createDnsDomainParam(final software.constructs.Construct scope) {
+        return CfnParameter.Builder.create(scope, "dnsDomain")
+                .description("Domain name for your app (e.g. example.com)")
+                .type("String")
+                .minLength(3)
+                .build();
+    }
+
+    private CfnParameter createDnsSubdomainParam(final software.constructs.Construct scope) {
+        return CfnParameter.Builder.create(scope, "dnsSubdomain")
+                .description("Optional subdomain for your app (defaults to dataspray)")
+                .type("String")
+                .defaultValue("dataspray")
+                .build();
+    }
+
     /**
      * Creates FQDN as a reference made up of other parameters.
      * <p>
@@ -109,8 +116,14 @@ public class DnsStack extends BaseStack {
      * stack. Particularly, the CfnCondition is not propagated
      * across stacks if used from another stack:
      * <pre>Template error: unresolved condition dependency dsdnsconditionemptysubdomainstaging in Fn::If</pre>
+     * In addition, conditions cannot have imported values including stack params so we need to re-create that too.
+     * <pre>Template error: Cannot use Fn::ImportValue in Conditions</pre>
      */
     public String createFqdn(final software.constructs.Construct scope) {
+        return createFqdn(scope, createDnsDomainParam(scope), createDnsSubdomainParam(scope));
+    }
+
+    public String createFqdn(final software.constructs.Construct scope, CfnParameter dnsDomainParam, CfnParameter dnsSubdomainParam) {
         return Fn.join(
                 dnsSubdomainParam.getValueAsString(),
                 List.of(Fn.conditionIf(
