@@ -34,10 +34,11 @@ import software.amazon.awscdk.services.route53.CfnRecordSet;
 import software.amazon.awscdk.services.route53.HostedZone;
 import software.amazon.awscdk.services.route53.HostedZoneAttributes;
 import software.amazon.awscdk.services.route53.IHostedZone;
+import software.amazon.awscdk.services.route53.NsRecord;
 import software.amazon.awscdk.services.route53.RecordSet;
-import software.amazon.awscdk.services.route53.RecordTarget;
-import software.amazon.awscdk.services.route53.RecordType;
 import software.constructs.Construct;
+
+import java.util.List;
 
 @Slf4j
 public class DnsStack extends BaseStack {
@@ -45,9 +46,11 @@ public class DnsStack extends BaseStack {
     @Getter
     private final CfnParameter dnsDomainParam;
     @Getter
-    private final CfnParameter dnsParentZoneNameParam;
+    private final CfnParameter dnsSubdomainParam;
     @Getter
-    private final CfnParameter dnsParentZoneIdParam;
+    private final CfnParameter dnsDomainZoneIdParam;
+    @Getter
+    private final String dnsFqdn;
     @Getter
     private final HostedZone dnsZone;
     @Getter
@@ -57,47 +60,56 @@ public class DnsStack extends BaseStack {
         super(parent, "dns", deployEnv);
 
         dnsDomainParam = CfnParameter.Builder.create(this, "dnsDomain")
-                .description("Fully qualified domain name for your app (e.g. dataspray.example.com)")
+                .description("Domain name for your app (e.g. example.com)")
                 .type("String")
-                .defaultValue(deployEnv.getDnsDomain().orElse(null))
                 .minLength(3)
                 .build();
-
-        dnsZone = HostedZone.Builder.create(this, getConstructId("zone"))
-                .zoneName(dnsDomainParam.getValueAsString())
-                .build();
-
-        dnsParentZoneNameParam = CfnParameter.Builder.create(this, "dnsParentZoneName")
-                .description("If using a subdomain (e.g. dataspray.example.com), enter the Route53 Hosted Zone Name for the parent domain (e.g. dataspray.io) if you wish to add a NS delegating record, otherwise leave this blank.")
+        dnsSubdomainParam = CfnParameter.Builder.create(this, "dnsSubdomain")
+                .description("Optional subdomain for your app (defaults to dataspray)")
                 .type("String")
-                .defaultValue(deployEnv.getDnsParentZoneName())
+                .defaultValue("dataspray")
                 .build();
-        dnsParentZoneIdParam = CfnParameter.Builder.create(this, "dnsParentZoneId")
+        dnsDomainZoneIdParam = CfnParameter.Builder.create(this, "dnsDomainZoneId")
                 .description("If using a subdomain (e.g. dataspray.example.com), enter the Route53 Hosted Zone Id for the parent domain (e.g. Z104162015L8HFMCRVJ9Y) if you wish to add a NS delegating record, otherwise leave this blank.")
                 .type("String")
-                .defaultValue(deployEnv.getDnsParentZoneId())
+                .defaultValue("")
                 .build();
+        dnsFqdn = Fn.join(
+                dnsSubdomainParam.getValueAsString(),
+                List.of(Fn.conditionIf(
+                        // If subdomain is empty
+                        CfnCondition.Builder.create(this, getConstructId("condition-empty-subdomain"))
+                                .expression(Fn.conditionEquals(dnsSubdomainParam.getValueAsString(), ""))
+                                .build()
+                                .getLogicalId(),
+                        // Then supply the domain only
+                        dnsDomainParam.getValueAsString(),
+                        // Else prefix the domain with a dot to separate the subdomain
+                        Fn.join(".", List.of(dnsDomainParam.getValueAsString()))
+                ).toString()));
+
+        dnsZone = HostedZone.Builder.create(this, getConstructId("zone"))
+                .zoneName(dnsFqdn)
+                .build();
+
         // Fetch parent zone for creating delegate records. May not end up being used if params are not set
         IHostedZone parentZone = HostedZone.fromHostedZoneAttributes(this, getConstructId("parentZone"), HostedZoneAttributes.builder()
-                .hostedZoneId(dnsParentZoneIdParam.getValueAsString())
-                .zoneName(dnsParentZoneNameParam.getValueAsString())
+                .hostedZoneId(dnsDomainZoneIdParam.getValueAsString())
+                .zoneName(dnsDomainParam.getValueAsString())
                 .build());
         // Delegating subdomain record
-        parentZoneDelegatingSubdomainRecordSet = RecordSet.Builder.create(this, getConstructId("recordset-delegating-subdomain"))
+        parentZoneDelegatingSubdomainRecordSet = NsRecord.Builder.create(this, getConstructId("recordset-delegating-subdomain"))
                 .zone(parentZone)
-                .recordType(RecordType.NS)
-                .recordName(dnsDomainParam.getValueAsString())
-                .target(RecordTarget.fromValues(dnsZone
-                        .getHostedZoneNameServers()
-                        .toArray(String[]::new)))
+                .recordName(dnsSubdomainParam.getValueAsString())
+                .values(dnsZone.getHostedZoneNameServers())
                 .ttl(Duration.days(2))
                 .deleteExisting(false)
                 .build();
-        // Only create delegating record if params are set
+        // Only create delegating record if subdomain and parent zone id are set
         CfnCondition createDelegateRecordCondition = CfnCondition.Builder.create(this, getConstructId(""))
                 .expression(Fn.conditionAnd(
-                        Fn.conditionNot(Fn.conditionEquals(dnsParentZoneIdParam, "")),
-                        Fn.conditionNot(Fn.conditionEquals(dnsParentZoneNameParam, ""))))
+                        Fn.conditionNot(Fn.conditionEquals(dnsSubdomainParam, "")),
+                        Fn.conditionNot(Fn.conditionEquals(dnsDomainZoneIdParam, ""))))
                 .build();
         ((CfnRecordSet) parentZoneDelegatingSubdomainRecordSet.getNode().getDefaultChild())
                 .getCfnOptions()

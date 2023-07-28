@@ -26,7 +26,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.base.Charsets;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -61,19 +60,20 @@ import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
+import software.amazon.awscdk.services.route53.ARecord;
 import software.amazon.awscdk.services.route53.RecordSet;
 import software.amazon.awscdk.services.route53.RecordTarget;
-import software.amazon.awscdk.services.route53.RecordType;
 import software.amazon.awscdk.services.route53.targets.ApiGateway;
 import software.constructs.Construct;
 
 import java.io.File;
-import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Preconditions.checkState;
 
 public class BaseApiStack extends BaseStack {
 
@@ -126,12 +126,12 @@ public class BaseApiStack extends BaseStack {
         ImmutableSet<BaseLambdaWebServiceStack> usedWebServices = addApiGatewayExtensionsToOpenapiSpec(openApiSpec);
 
         // Set domain name for API Gateway
-        String rootDomain = getOptions().getDnsStack().getDnsDomainParam().getValueAsString();
-        URL serverUrl = setServerUrlDomain(openApiSpec, rootDomain);
-        String apiDomain = serverUrl.getHost();
+        String rootDomain = getOptions().getDnsStack().getDnsFqdn();
+        String apiSubdomain = setServerUrlDomain(openApiSpec, rootDomain);
+        String apiFqdn = apiSubdomain + "." + rootDomain;
 
         certificate = Certificate.Builder.create(this, getConstructId("cert"))
-                .domainName(apiDomain)
+                .domainName(apiFqdn)
                 .validation(CertificateValidation.fromDns(getOptions().getDnsStack().getDnsZone()))
                 .build();
         restApi = SpecRestApi.Builder.create(this, getConstructId("apigateway"))
@@ -139,16 +139,15 @@ public class BaseApiStack extends BaseStack {
                 .domainName(DomainNameOptions.builder()
                         .certificate(certificate)
                         .endpointType(EndpointType.REGIONAL)
-                        .domainName(apiDomain)
+                        .domainName(apiFqdn)
                         .build())
                 .build();
-        recordSet = RecordSet.Builder.create(this, getConstructId("recordset"))
+        recordSet = ARecord.Builder.create(this, getConstructId("recordset"))
                 .zone(getOptions().getDnsStack().getDnsZone())
-                .recordType(RecordType.A)
-                .recordName(apiDomain)
+                .recordName(apiSubdomain)
                 .target(RecordTarget.fromAlias(new ApiGateway(restApi)))
                 .ttl(Duration.seconds(30))
-                .deleteExisting(true)
+                .deleteExisting(false)
                 .build();
 
         // If changing, keep the old one as well as existing accounts may already point to it
@@ -192,17 +191,22 @@ public class BaseApiStack extends BaseStack {
 
     @SuppressWarnings("unchecked")
     @SneakyThrows
-    private URL setServerUrlDomain(Map<String, Object> openApiSpec, String domain) {
+    private String setServerUrlDomain(Map<String, Object> openApiSpec, String domain) {
         List<Map<String, Object>> servers = (List<Map<String, Object>>) openApiSpec.get("servers");
-        Preconditions.checkState(servers != null && servers.size() == 1);
+        checkState(servers != null && servers.size() == 1);
         Map<String, Object> server = servers.get(0);
+
         String serverUrlStr = (String) server.get("url");
+        checkState(serverUrlStr.startsWith("https://"));
+        checkState(serverUrlStr.endsWith(".dataspray.io"));
 
         // Replace the domain in the server URL
         String newServerUrlStr = serverUrlStr.replace("dataspray.io", domain);
 
         server.put("url", newServerUrlStr);
-        return new URL(newServerUrlStr);
+
+        String apiSubdomain = serverUrlStr.substring("https://".length(), serverUrlStr.length() - ".dataspray.io".length());
+        return apiSubdomain;
     }
 
     /**

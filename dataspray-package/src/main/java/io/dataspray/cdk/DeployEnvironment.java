@@ -25,30 +25,12 @@ package io.dataspray.cdk;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.Optional;
-
 @Getter
 @AllArgsConstructor
 public enum DeployEnvironment {
-    PRODUCTION("",
-            Optional.of("dataspray.io"),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.of("support@dataspray.io")),
-    STAGING("-staging",
-            Optional.of("staging.dataspray.io"),
-            Optional.of("dataspray.io"),
-            Optional.of("Z104172015L8HFMCRVJ9X"),
-            Optional.of("support.staging@dataspray.io")),
-    SELFHOST("-selfhost",
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty());
+    PRODUCTION(""),
+    STAGING("-staging"),
+    SELFHOST("-selfhost");
 
     private final String suffix;
-    private final Optional<String> dnsDomain;
-    private final Optional<String> dnsParentZoneName;
-    private final Optional<String> dnsParentZoneId;
-    private final Optional<String> sesEmail;
 }

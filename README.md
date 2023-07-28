@@ -33,23 +33,26 @@
 Ensure you installed all dependencies and run the following command:
 
 ```bash
-mvn clean deploy -DdnsDomain="dataspray.example.com"
+mvn clean deploy -DdnsDomain=example.com [-DdnsParentZoneId=Z104162015L8HFMCRVJ9Y]
 ```
+
+_Note: The Certificate creation step will wait and appear stuck until domain is validated via DNS. See the "Setup DNS"
+section below._
 
 ### Configuration
 
 <details>
   <summary>Setup DNS</summary>
 
-The deployment will create a Route53 hosted zone with appropriate records for running DataSpray. You will need to setup
-your name servers for the records to be publicly accessible in one of three ways:
+The deployment will create a Route53 hosted zone at `dataspray.<dnsDomain>`. You can choose to use a different subdomain
+using the `-DdnsSubdomain=dataspray` property.
 
-1. If using a top-level domain (e.g. example.com), point your domain name servers to the created hosted zone's name
-   servers.
-2. If using a subdomain (e.g. dataspray.example.com), and your parent domain is using a Route53 zone in the same account
-   and wish to create the delegation automatically, provide the parameter `-DdnsParentZoneName=example.com`
-   and `-DdnsParentZoneId=Z104162015L8HFMCRVJ9Y` to create the record automatically.
-3. If using a subdomain (e.g. dataspray.example.com), create a NS record in your top-level domain's hosted zone
+You will need to create a NS record in your parent domain zone pointing to the subdomain zone:
+
+1. Automatically by providing the parameter `-DdnsParentZoneId=Z104162015L8HFMCRVJ9Y` to create an NS record
+   automatically that will delegate your parent zone to the created subdomain zone.
+2. Manually if you're not using Route53 or wish to create the record yourself. If using a subdomain (e.g.
+   dataspray.example.com), create a NS record in your top-level domain's hosted zone
    delegating the subdomain to the created hosted zone's name servers.
 
 </details>

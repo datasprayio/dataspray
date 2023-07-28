@@ -44,27 +44,21 @@ public class OpenNextStack extends BaseStack {
     public OpenNextStack(Construct parent, DeployEnvironment deployEnv, Options options) {
         super(parent, "site", deployEnv);
 
-        NextjsDomainProps domainProps;
+        final NextjsDomainProps domainProps;
         switch (deployEnv) {
             case PRODUCTION:
                 domainProps = NextjsDomainProps.builder()
                         .isExternalDomain(false)
-                        .domainName(deployEnv.getDnsDomain().get())
-                        .domainAlias("www." + deployEnv.getDnsDomain().get())
+                        .domainName(options.getDnsStack().getDnsFqdn())
+                        .domainAlias("www." + options.getDnsStack().getDnsFqdn())
                         .hostedZone(options.getDnsStack().getDnsZone())
                         .build();
                 break;
             case STAGING:
-                domainProps = NextjsDomainProps.builder()
-                        .isExternalDomain(false)
-                        .domainName(deployEnv.getDnsDomain().get())
-                        .hostedZone(options.getDnsStack().getDnsZone())
-                        .build();
-                break;
             case SELFHOST:
                 domainProps = NextjsDomainProps.builder()
                         .isExternalDomain(false)
-                        .domainName(options.getDnsStack().getDnsDomainParam().getValueAsString())
+                        .domainName(options.getDnsStack().getDnsFqdn())
                         .hostedZone(options.getDnsStack().getDnsZone())
                         .build();
                 break;

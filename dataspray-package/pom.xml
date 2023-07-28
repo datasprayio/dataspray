@@ -40,11 +40,10 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <stackEnv>SELFHOST</stackEnv>
         <awsProfile/>
         <dnsDomain/>
-        <dnsParentZoneName/>
-        <dnsParentZoneId/>
+        <dnsSubdomain/>
+        <dnsDomainZoneId/>
         <sesEmail/>
     </properties>
 
@@ -221,8 +220,8 @@
                             <profile>${awsProfile}</profile>
                             <parameters>
                                 <dnsDomain>${dnsDomain}</dnsDomain>
-                                <dnsParentZoneName>${dnsParentZoneName}</dnsParentZoneName>
-                                <dnsParentZoneId>${dnsParentZoneId}</dnsParentZoneId>
+                                <dnsSubdomain>${dnsSubdomain}</dnsSubdomain>
+                                <dnsDomainZoneId>${dnsDomainZoneId}</dnsDomainZoneId>
                                 <sesEmail>${sesEmail}</sesEmail>
                             </parameters>
                         </configuration>
@@ -238,6 +237,8 @@
             <properties>
                 <stackEnv>PRODUCTION</stackEnv>
                 <awsProfile>dataspray</awsProfile>
+                <dnsDomain>dataspray.io</dnsDomain>
+                <sesEmail>support@dataspray.io</sesEmail>
             </properties>
         </profile>
         <profile>
@@ -245,6 +246,20 @@
             <properties>
                 <stackEnv>STAGING</stackEnv>
                 <awsProfile>dataspray</awsProfile>
+                <dnsDomain>dataspray.io</dnsDomain>
+                <dnsSubdomain>staging</dnsSubdomain>
+                <dnsDomainZoneId>Z104172015L8HFMCRVJ9X</dnsDomainZoneId>
+                <sesEmail>support.staging@dataspray.io</sesEmail>
+            </properties>
+        </profile>
+        <profile>
+            <id>selfhost</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <stackEnv>SELFHOST</stackEnv>
+                <dnsSubdomain>dataspray</dnsSubdomain>
             </properties>
         </profile>
     </profiles>

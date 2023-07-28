@@ -38,7 +38,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.HttpHeaders;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -56,12 +55,6 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
     Gson gson;
     @Inject
     ApiAccessStore apiAccessStore;
-
-    @Value
-    static class Credentials {
-        String username;
-        String password;
-    }
 
     @Override
     public String handleRequest(APIGatewayCustomAuthorizerEvent event, Context context) {
