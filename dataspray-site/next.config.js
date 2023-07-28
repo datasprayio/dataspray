@@ -21,7 +21,7 @@ const nextConfig = {
       new CopyWebpackPlugin({
         patterns: [
           {
-            context: 'node_modules/vscode-web/dist/out/',
+            context: 'node_modules/vscode-web/dist/',
             from: '**',
             to: '../public/vscode-web/',
           },

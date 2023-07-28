@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import loadExternal from '../common/loadExternal';
+import { loadExternal, loadExternalCss } from '../common/loadExternal';
 
 var inited = false;
 const Editor = () => {
@@ -42,15 +42,15 @@ const Editor = () => {
           ],
         };
 
-        loadExternal('/vscode-web/vs/workbench/workbench.web.main.css');
-        await loadExternal('/vscode-web/vs/loader.js');
-        await loadExternal('/vscode-web/vs/webPackagePaths.js');
+        loadExternalCss('/vscode-web/out/vs/workbench/workbench.web.main.css');
+        await loadExternal('/vscode-web/out/vs/loader.js');
+        await loadExternal('/vscode-web/out/vs/webPackagePaths.js');
 
-        Object.keys((self as any).webPackagePaths).map(function (key, index) {
-          (self as any).webPackagePaths[key] = `${window.location.origin}/node_modules/vscode-web/dist/node_modules/${key}/${(self as any).webPackagePaths[key]}`;
+        Object.entries((self as any).webPackagePaths).forEach(([key, value]) => {
+          (self as any).webPackagePaths[key] = `${window.location.origin}/vscode-web/node_modules/${key}/${value}`;
         });
         (window as any).require.config({
-          baseUrl: `${window.location.origin}/vscode-web`,
+          baseUrl: `${window.location.origin}/vscode-web/out`,
           recordStats: true,
           trustedTypesPolicy: (window as any).trustedTypes?.createPolicy('amdLoader', {
             createScriptURL(value: any) {
@@ -60,9 +60,9 @@ const Editor = () => {
           paths: (self as any).webPackagePaths
         });
 
-        await loadExternal('/vscode-web/vs/workbench/workbench.web.main.nls.js');
-        await loadExternal('/vscode-web/vs/workbench/workbench.web.main.js');
-        await loadExternal('/vscode-web/vs/code/browser/workbench/workbench.js');
+        await loadExternal('/vscode-web/out/vs/workbench/workbench.web.main.nls.js');
+        await loadExternal('/vscode-web/out/vs/workbench/workbench.web.main.js');
+        await loadExternal('/vscode-web/out/vs/code/browser/workbench/workbench.js');
       } catch (err) {
         console.log('Failed to load editor', err);
       }
@@ -70,7 +70,7 @@ const Editor = () => {
   });
   return (
     <>
-      <div id='vscode-web' style={{ width: 500, height: 200, margin: 15, border: '1px solid black' }} />
+      <div id='vscode-web' style={{ width: 1024, height: 768, margin: 15, border: '1px solid black' }} />
     </>
   )
 }

@@ -14,7 +14,7 @@ const Home: NextPage = () => {
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="Code" />
-        <link rel="apple-touch-icon" href="/code-192.png" />
+        <link rel="apple-touch-icon" href="/vscode-web/code-192.png" />
         {/* Disable pinch zooming */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
       </Head>
