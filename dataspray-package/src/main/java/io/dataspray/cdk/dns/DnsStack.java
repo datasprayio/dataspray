@@ -50,8 +50,6 @@ public class DnsStack extends BaseStack {
     @Getter
     private final CfnParameter dnsDomainZoneIdParam;
     @Getter
-    private final String dnsFqdn;
-    @Getter
     private final HostedZone dnsZone;
     @Getter
     private final RecordSet parentZoneDelegatingSubdomainRecordSet;
@@ -74,19 +72,7 @@ public class DnsStack extends BaseStack {
                 .type("String")
                 .defaultValue("")
                 .build();
-        dnsFqdn = Fn.join(
-                dnsSubdomainParam.getValueAsString(),
-                List.of(Fn.conditionIf(
-                        // If subdomain is empty
-                        CfnCondition.Builder.create(this, getConstructId("condition-empty-subdomain"))
-                                .expression(Fn.conditionEquals(dnsSubdomainParam.getValueAsString(), ""))
-                                .build()
-                                .getLogicalId(),
-                        // Then supply the domain only
-                        dnsDomainParam.getValueAsString(),
-                        // Else prefix the domain with a dot to separate the subdomain
-                        Fn.join(".", List.of(dnsDomainParam.getValueAsString()))
-                ).toString()));
+        String dnsFqdn = createFqdn(this);
 
         dnsZone = HostedZone.Builder.create(this, getConstructId("zone"))
                 .zoneName(dnsFqdn)
@@ -114,5 +100,29 @@ public class DnsStack extends BaseStack {
         ((CfnRecordSet) parentZoneDelegatingSubdomainRecordSet.getNode().getDefaultChild())
                 .getCfnOptions()
                 .setCondition(createDelegateRecordCondition);
+    }
+
+    /**
+     * Creates FQDN as a reference made up of other parameters.
+     * <p>
+     * Due <a href="https://github.com/aws/aws-cdk/issues/26560">to a bug in CDK</a>, we need to create the FQDN in each
+     * stack. Particularly, the CfnCondition is not propagated
+     * across stacks if used from another stack:
+     * <pre>Template error: unresolved condition dependency dsdnsconditionemptysubdomainstaging in Fn::If</pre>
+     */
+    public String createFqdn(final software.constructs.Construct scope) {
+        return Fn.join(
+                dnsSubdomainParam.getValueAsString(),
+                List.of(Fn.conditionIf(
+                        // If subdomain is empty
+                        CfnCondition.Builder.create(scope, getConstructId("condition-empty-subdomain"))
+                                .expression(Fn.conditionEquals(dnsSubdomainParam.getValueAsString(), ""))
+                                .build()
+                                .getLogicalId(),
+                        // Then supply the domain only
+                        dnsDomainParam.getValueAsString(),
+                        // Else prefix the domain with a dot to separate the subdomain
+                        Fn.join(".", List.of(dnsDomainParam.getValueAsString()))
+                ).toString()));
     }
 }
