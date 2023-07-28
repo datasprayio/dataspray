@@ -33,7 +33,10 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awscdk.Fn;
 import software.constructs.Construct;
+
+import java.util.List;
 
 @Slf4j
 public class OpenNextStack extends BaseStack {
@@ -50,7 +53,7 @@ public class OpenNextStack extends BaseStack {
                 domainProps = NextjsDomainProps.builder()
                         .isExternalDomain(false)
                         .domainName(options.getDnsStack().getDnsFqdn())
-                        .domainAlias("www." + options.getDnsStack().getDnsFqdn())
+                        .domainAlias(Fn.join("www.", List.of(options.getDnsStack().getDnsFqdn())))
                         .hostedZone(options.getDnsStack().getDnsZone())
                         .build();
                 break;

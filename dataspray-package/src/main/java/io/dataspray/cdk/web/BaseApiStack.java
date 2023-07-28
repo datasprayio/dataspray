@@ -39,6 +39,7 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.Value;
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.Fn;
 import software.amazon.awscdk.services.apigateway.ApiDefinition;
 import software.amazon.awscdk.services.apigateway.DomainNameOptions;
 import software.amazon.awscdk.services.apigateway.EndpointType;
@@ -61,6 +62,7 @@ import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
 import software.amazon.awscdk.services.route53.ARecord;
+import software.amazon.awscdk.services.route53.AaaaRecord;
 import software.amazon.awscdk.services.route53.RecordSet;
 import software.amazon.awscdk.services.route53.RecordTarget;
 import software.amazon.awscdk.services.route53.targets.ApiGateway;
@@ -88,7 +90,9 @@ public class BaseApiStack extends BaseStack {
     @Getter
     private final SpecRestApi restApi;
     @Getter
-    private final RecordSet recordSet;
+    private final RecordSet recordSetA;
+    @Getter
+    private final RecordSet recordSetAaaa;
     @Getter
     private final UsagePlan activeUsagePlan;
     @Getter
@@ -128,7 +132,7 @@ public class BaseApiStack extends BaseStack {
         // Set domain name for API Gateway
         String rootDomain = getOptions().getDnsStack().getDnsFqdn();
         String apiSubdomain = setServerUrlDomain(openApiSpec, rootDomain);
-        String apiFqdn = apiSubdomain + "." + rootDomain;
+        String apiFqdn = Fn.join(apiSubdomain, List.of(".", rootDomain));
 
         certificate = Certificate.Builder.create(this, getConstructId("cert"))
                 .domainName(apiFqdn)
@@ -142,7 +146,14 @@ public class BaseApiStack extends BaseStack {
                         .domainName(apiFqdn)
                         .build())
                 .build();
-        recordSet = ARecord.Builder.create(this, getConstructId("recordset"))
+        recordSetA = ARecord.Builder.create(this, getConstructId("recordset-a"))
+                .zone(getOptions().getDnsStack().getDnsZone())
+                .recordName(apiSubdomain)
+                .target(RecordTarget.fromAlias(new ApiGateway(restApi)))
+                .ttl(Duration.seconds(30))
+                .deleteExisting(false)
+                .build();
+        recordSetAaaa = AaaaRecord.Builder.create(this, getConstructId("recordset-aaaa"))
                 .zone(getOptions().getDnsStack().getDnsZone())
                 .recordName(apiSubdomain)
                 .target(RecordTarget.fromAlias(new ApiGateway(restApi)))

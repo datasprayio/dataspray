@@ -95,7 +95,7 @@ public class AuthNzStack extends BaseStack {
                 .build();
         // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cognito-userpool-emailconfiguration.html
         userPoolCfn.addPropertyOverride("EmailConfiguration", Fn.conditionIf(
-                CfnCondition.Builder.create(this, getConstructId("-authnz-userpool-ses-or-cognito"))
+                CfnCondition.Builder.create(this, getConstructId("authnz-userpool-ses-or-cognito"))
                         .expression(Fn.conditionEquals(emailWithParam, ""))
                         .build()
                         .getLogicalId(),
