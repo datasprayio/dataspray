@@ -23,8 +23,8 @@
 package io.dataspray.cdk.stream.ingest;
 
 import com.google.common.collect.ImmutableList;
-import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.web.BaseLambdaWebServiceStack;
+import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.AccountStore;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

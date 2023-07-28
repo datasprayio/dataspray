@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Longs;
 import com.google.gson.Gson;
+import io.dataspray.common.DeployEnvironment;
 import io.dataspray.common.StringUtil;
 import io.dataspray.store.util.WaiterUtil;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -85,9 +86,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.dataspray.common.DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME;
 import static io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_API_KEY_ENV;
 import static io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_CUSTOMER_ID_ENV;
 import static java.util.function.Predicate.not;
@@ -105,14 +108,18 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     private static final long CODE_MAX_SIZE_IN_BYTES = 50 * 1024 * 1024;
     public static final String CODE_BUCKET_NAME_PROP_NAME = "deployer.codeBucketName";
     private static final String CODE_KEY_PREFIX = "customer/";
-    public static final String CUSTOMER_FUN_AND_ROLE_NAME_PREFIX = "customer-";
-    public static final String FUN_NAME_WILDCARD = CUSTOMER_FUN_AND_ROLE_NAME_PREFIX + "*";
+    public static final Function<DeployEnvironment, String> CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER = deployEnv ->
+            "ds" + deployEnv.getSuffix() + "-customer-";
+    public static final Function<DeployEnvironment, String> FUN_NAME_WILDCARD_GETTER = deployEnv ->
+            CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + "*";
     private static final String QUEUE_STATEMENT_ID_PREFIX = "customer-queue-statement-for-name-";
 
     @ConfigProperty(name = "aws.accountId")
     String awsAccountId;
     @ConfigProperty(name = "aws.region")
     String awsRegion;
+    @ConfigProperty(name = DEPLOY_ENVIRONMENT_PROP_NAME)
+    DeployEnvironment deployEnv;
     @ConfigProperty(name = CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME)
     String customerFunctionPermissionBoundaryName;
     @ConfigProperty(name = CODE_BUCKET_NAME_PROP_NAME)
@@ -184,8 +191,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                                         "logs:CreateLogStream",
                                         "logs:PutLogEvents"),
                                 "Resource", List.of(
-                                        "arn:aws:logs:" + awsRegion + ":" + awsAccountId + ":log-group:/aws/lambda/" + FUN_NAME_WILDCARD,
-                                        "arn:aws:logs:" + awsRegion + ":" + awsAccountId + ":log-group:/aws/lambda/" + FUN_NAME_WILDCARD + ":*"
+                                        "arn:aws:logs:" + awsRegion + ":" + awsAccountId + ":log-group:/aws/lambda/" + FUN_NAME_WILDCARD_GETTER.apply(deployEnv),
+                                        "arn:aws:logs:" + awsRegion + ":" + awsAccountId + ":log-group:/aws/lambda/" + FUN_NAME_WILDCARD_GETTER.apply(deployEnv) + ":*"
                                 ))))));
 
         // Create or update function configuration and code
@@ -551,7 +558,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     }
 
     private String getFunctionPrefix(String customerId) {
-        return CUSTOMER_FUN_AND_ROLE_NAME_PREFIX + customerId + "-";
+        return CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + customerId + "-";
     }
 
     private Optional<String> getTaskIdFromFunctionName(String customerId, String functionName) {

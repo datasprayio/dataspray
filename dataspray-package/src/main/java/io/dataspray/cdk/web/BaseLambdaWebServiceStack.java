@@ -23,8 +23,8 @@
 package io.dataspray.cdk.web;
 
 import com.google.common.base.Charsets;
-import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.template.BaseStack;
+import io.dataspray.common.DeployEnvironment;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;

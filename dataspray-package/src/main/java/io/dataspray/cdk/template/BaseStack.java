@@ -22,7 +22,7 @@
 
 package io.dataspray.cdk.template;
 
-import io.dataspray.cdk.DeployEnvironment;
+import io.dataspray.common.DeployEnvironment;
 import io.dataspray.common.StringUtil;
 import lombok.Getter;
 import software.amazon.awscdk.Environment;

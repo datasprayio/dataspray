@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package io.dataspray.cdk;
+package io.dataspray.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,7 +30,10 @@ import lombok.Getter;
 public enum DeployEnvironment {
     PRODUCTION(""),
     STAGING("-staging"),
-    SELFHOST("-selfhost");
+    SELFHOST("-selfhost"),
+    TEST("-test");
+
+    public static final String DEPLOY_ENVIRONMENT_PROP_NAME = "deploy-environment";
 
     private final String suffix;
 }

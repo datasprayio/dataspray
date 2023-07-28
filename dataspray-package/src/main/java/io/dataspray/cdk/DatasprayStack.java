@@ -31,6 +31,7 @@ import io.dataspray.cdk.store.SingleTableStack;
 import io.dataspray.cdk.stream.control.ControlStack;
 import io.dataspray.cdk.stream.ingest.IngestStack;
 import io.dataspray.cdk.web.BaseApiStack;
+import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.CognitoAccountStore;
 import io.dataspray.store.DynamoApiGatewayApiAccessStore;
 import io.dataspray.store.FirehoseS3AthenaEtlStore;
@@ -92,6 +93,7 @@ public class DatasprayStack {
         // For dynamically-named resources such as S3 bucket names, pass the name as deployEnv vars directly to the lambdas
         // which will be picked up by Quarkus' @ConfigProperty
         for (SingletonFunction function : functions) {
+            setConfigProperty(function, DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME, deployEnv.name());
             setConfigProperty(function, CognitoAccountStore.USER_POOL_ID_PROP_NAME, authNzStack.getUserPool().getUserPoolId());
             setConfigProperty(function, SingleTableProvider.TABLE_PREFIX_PROP_NAME, singleTableStack.getSingleTableTable().getTableName());
             setConfigProperty(function, FirehoseS3AthenaEtlStore.ETL_BUCKET_PROP_NAME, ingestStack.getBucketEtlName());

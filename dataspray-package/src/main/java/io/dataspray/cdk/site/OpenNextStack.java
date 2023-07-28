@@ -22,9 +22,9 @@
 
 package io.dataspray.cdk.site;
 
-import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.dns.DnsStack;
 import io.dataspray.cdk.template.BaseStack;
+import io.dataspray.common.DeployEnvironment;
 import io.dataspray.opennextcdk.Nextjs;
 import io.dataspray.opennextcdk.NextjsDefaultsProps;
 import io.dataspray.opennextcdk.NextjsDistributionPropsDefaults;
@@ -62,6 +62,8 @@ public class OpenNextStack extends BaseStack {
                         .hostedZone(options.getDnsStack().getDnsZone())
                         .build();
                 break;
+            case TEST:
+                throw new RuntimeException("Cannot synthesize using " + deployEnv.name() + " env");
             default:
                 throw new RuntimeException("Unknown env: " + deployEnv);
         }

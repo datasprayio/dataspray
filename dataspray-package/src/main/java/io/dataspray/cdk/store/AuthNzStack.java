@@ -22,8 +22,8 @@
 
 package io.dataspray.cdk.store;
 
-import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.template.BaseStack;
+import io.dataspray.common.DeployEnvironment;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.CfnCondition;

@@ -23,8 +23,8 @@
 package io.dataspray.cdk.store;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.template.BaseStack;
+import io.dataspray.common.DeployEnvironment;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.store.SingleTableProvider;
 import lombok.Getter;

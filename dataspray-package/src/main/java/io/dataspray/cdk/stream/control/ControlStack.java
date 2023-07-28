@@ -23,8 +23,8 @@
 package io.dataspray.cdk.stream.control;
 
 import com.google.common.collect.ImmutableList;
-import io.dataspray.cdk.DeployEnvironment;
 import io.dataspray.cdk.web.BaseLambdaWebServiceStack;
+import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.LambdaDeployerImpl;
 import io.dataspray.store.SqsQueueStore;
 import lombok.Getter;
@@ -72,8 +72,8 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                                         "logs:CreateLogStream",
                                         "logs:PutLogEvents"))
                                 .resources(ImmutableList.of(
-                                        "arn:aws:logs:" + getRegion() + ":" + getAccount() + ":log-group:/aws/lambda/" + LambdaDeployerImpl.FUN_NAME_WILDCARD,
-                                        "arn:aws:logs:" + getRegion() + ":" + getAccount() + ":log-group:/aws/lambda/" + LambdaDeployerImpl.FUN_NAME_WILDCARD + ":" + LambdaDeployerImpl.LAMBDA_ACTIVE_QUALIFIER))
+                                        "arn:aws:logs:" + getRegion() + ":" + getAccount() + ":log-group:/aws/lambda/" + LambdaDeployerImpl.FUN_NAME_WILDCARD_GETTER.apply(getDeployEnv()),
+                                        "arn:aws:logs:" + getRegion() + ":" + getAccount() + ":log-group:/aws/lambda/" + LambdaDeployerImpl.FUN_NAME_WILDCARD_GETTER.apply(getDeployEnv()) + ":" + LambdaDeployerImpl.LAMBDA_ACTIVE_QUALIFIER))
                                 .build(),
                         PolicyStatement.Builder.create()
                                 .sid(getConstructIdCamelCase(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS + "PermissionBoundary"))
@@ -131,7 +131,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                         "lambda:AddPermission",
                         "lambda:GetPolicy"))
                 .resources(ImmutableList.of(
-                        "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + LambdaDeployerImpl.FUN_NAME_WILDCARD,
+                        "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + LambdaDeployerImpl.FUN_NAME_WILDCARD_GETTER.apply(deployEnv),
                         // Event source mappings are referred to by UUID, since there is no way to restrict this,
                         // we use a wildcard here
                         "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":event-source-mapping:*"))
@@ -169,7 +169,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
                         "iam:PutRolePolicy"))
                 .resources(ImmutableList.of(
                         "arn:aws:iam::" + getAccount() + ":policy/" + LambdaDeployerImpl.CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "*",
-                        "arn:aws:iam::" + getAccount() + ":role/" + LambdaDeployerImpl.CUSTOMER_FUN_AND_ROLE_NAME_PREFIX + "*"))
+                        "arn:aws:iam::" + getAccount() + ":role/" + LambdaDeployerImpl.CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER.apply(getDeployEnv()) + "*"))
                 .build());
     }
 }
