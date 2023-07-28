@@ -44,14 +44,15 @@ import java.util.List;
 public class DnsStack extends BaseStack {
 
     @Getter
+    private final CfnParameter dnsDomainParam;
+    @Getter
+    private final CfnParameter dnsSubdomainParam;
+    @Getter
+    private final CfnParameter dnsDomainZoneIdParam;
+    @Getter
     private final HostedZone dnsZone;
     @Getter
     private final RecordSet parentZoneDelegatingSubdomainRecordSet;
-
-    // Private cannot be shared across stacks
-    private final CfnParameter dnsDomainParam;
-    private final CfnParameter dnsSubdomainParam;
-    private final CfnParameter dnsDomainZoneIdParam;
 
     public DnsStack(Construct parent, DeployEnvironment deployEnv) {
         super(parent, "dns", deployEnv);
@@ -123,7 +124,7 @@ public class DnsStack extends BaseStack {
         return createFqdn(scope, createDnsDomainParam(scope), createDnsSubdomainParam(scope));
     }
 
-    public String createFqdn(final software.constructs.Construct scope, CfnParameter dnsDomainParam, CfnParameter dnsSubdomainParam) {
+    private String createFqdn(final software.constructs.Construct scope, CfnParameter dnsDomainParam, CfnParameter dnsSubdomainParam) {
         return Fn.join(
                 dnsSubdomainParam.getValueAsString(),
                 List.of(Fn.conditionIf(
