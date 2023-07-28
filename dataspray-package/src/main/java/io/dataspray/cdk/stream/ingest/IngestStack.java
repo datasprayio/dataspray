@@ -104,8 +104,8 @@ public class IngestStack extends BaseLambdaWebServiceStack {
                                 .build()).collect(Collectors.toList()))
                 .build();
 
-        firehoseName = getConstructId("ingest-etl-firehose");
-        firehose = DeliveryStream.Builder.create(this, getConstructId("ingest-etl-firehose"))
+        firehoseName = getConstructId("firehose-etl");
+        firehose = DeliveryStream.Builder.create(this, getConstructId("firehose-etl"))
                 .deliveryStreamName(firehoseName)
                 .destinations(ImmutableList.of(S3Bucket.Builder.create(bucketEtl)
                         .bufferingInterval(Duration.seconds(900))
