@@ -67,7 +67,7 @@ public class IngestStack extends BaseLambdaWebServiceStack {
     public IngestStack(Construct parent, DeployEnvironment deployEnv, String codeZip) {
         super(parent, Options.builder()
                 .deployEnv(deployEnv)
-                .functionName("ingest-" + deployEnv.getSuffix())
+                .functionName("ingest" + deployEnv.getSuffix())
                 .codeZip(codeZip)
                 .build());
 

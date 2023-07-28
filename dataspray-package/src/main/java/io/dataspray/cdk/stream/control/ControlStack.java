@@ -56,7 +56,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
     public ControlStack(Construct parent, DeployEnvironment deployEnv, String codeZip) {
         super(parent, Options.builder()
                 .deployEnv(deployEnv)
-                .functionName("control-" + deployEnv.getSuffix())
+                .functionName("control" + deployEnv.getSuffix())
                 .codeZip(codeZip)
                 .build());
 
