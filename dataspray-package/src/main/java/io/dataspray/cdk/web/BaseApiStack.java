@@ -132,7 +132,7 @@ public class BaseApiStack extends BaseStack {
         // Set domain name for API Gateway
         String fqdn = options.getDnsStack().createFqdn(this);
         String apiSubdomain = setServerUrlDomain(openApiSpec, fqdn);
-        String apiFqdn = Fn.join(apiSubdomain, List.of(".", fqdn));
+        String apiFqdn = Fn.join(".", List.of(apiSubdomain, fqdn));
 
         certificate = Certificate.Builder.create(this, getConstructId("cert"))
                 .domainName(apiFqdn)

@@ -55,7 +55,7 @@ public class OpenNextStack extends BaseStack {
                 domainProps = NextjsDomainProps.builder()
                         .isExternalDomain(false)
                         .domainName(fqdn)
-                        .domainAlias(Fn.join("www.", List.of(fqdn)))
+                        .domainAlias(Fn.join(".", List.of("www", fqdn)))
                         .hostedZone(options.getDnsStack().getDnsZone())
                         .build();
                 break;
