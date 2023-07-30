@@ -45,7 +45,7 @@
         <pnpm.version>v8.6.10</pnpm.version>
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.2.9</logback.version>
-        <jackson.version>2.13.3</jackson.version>
+        <jackson.version>2.13.4.2</jackson.version>
         <awssdk2.version>2.20.56</awssdk2.version>
         <awssdk1.version>1.12.459</awssdk1.version>
         <awscdk.version>2.77.0</awscdk.version>
