@@ -125,7 +125,7 @@ public class DnsStack extends BaseStack {
     }
 
     private String createFqdn(final Construct scope, CfnParameter dnsDomainParam, CfnParameter dnsSubdomainParam) {
-        return Fn.conditionIf(
+        return Fn.join("", List.of(Fn.conditionIf(
                         // If subdomain is empty
                         CfnCondition.Builder.create(scope, getConstructId("condition-empty-subdomain"))
                                 .expression(Fn.conditionEquals(dnsSubdomainParam.getValueAsString(), ""))
@@ -136,7 +136,14 @@ public class DnsStack extends BaseStack {
                         // Else combine subdomain with domain
                         Fn.join(".", List.of(
                                 dnsSubdomainParam.getValueAsString(),
-                                dnsDomainParam.getValueAsString())))
-                .toString();
+                                dnsDomainParam.getValueAsString()))).toString(),
+                // Suffix with . to make it a FQDN
+                // It is required for some CDK constructs including RecordSet
+                // that will leave the value as is if ends with .
+                // Source: https://github.com/aws/aws-cdk/blob/main/packages/aws-cdk-lib/aws-route53/lib/util.ts#L41
+                // Otherwise the record will be suffixed with the zone name and will result
+                // in something like: "staging.dataspray.io.staging.dataspray.io."
+                // Bug: https://github.com/aws/aws-cdk/issues/26572
+                "."));
     }
 }
