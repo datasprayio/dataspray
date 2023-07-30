@@ -64,7 +64,7 @@ public class DnsStack extends BaseStack {
                 .type("String")
                 .defaultValue("")
                 .build();
-        String dnsFqdn = createFqdn(this, dnsDomainParam, dnsSubdomainParam);
+        String dnsFqdn = createFqdn(this, dnsDomainParam, dnsSubdomainParam, deployEnv);
 
         dnsZone = HostedZone.Builder.create(this, getConstructId("zone"))
                 .zoneName(dnsFqdn)
@@ -94,7 +94,7 @@ public class DnsStack extends BaseStack {
                 .setCondition(createDelegateRecordCondition);
     }
 
-    private CfnParameter createDnsDomainParam(final Construct scope) {
+    private static CfnParameter createDnsDomainParam(final Construct scope) {
         return CfnParameter.Builder.create(scope, "dnsDomain")
                 .description("Domain name for your app (e.g. example.com)")
                 .type("String")
@@ -102,7 +102,7 @@ public class DnsStack extends BaseStack {
                 .build();
     }
 
-    private CfnParameter createDnsSubdomainParam(final Construct scope) {
+    private static CfnParameter createDnsSubdomainParam(final Construct scope) {
         return CfnParameter.Builder.create(scope, "dnsSubdomain")
                 .description("Optional subdomain for your app (defaults to dataspray)")
                 .type("String")
@@ -120,30 +120,22 @@ public class DnsStack extends BaseStack {
      * In addition, conditions cannot have imported values including stack params so we need to re-create that too.
      * <pre>Template error: Cannot use Fn::ImportValue in Conditions</pre>
      */
-    public String createFqdn(final Construct scope) {
-        return createFqdn(scope, createDnsDomainParam(scope), createDnsSubdomainParam(scope));
+    public static String createFqdn(final Construct scope, DeployEnvironment deployEnv) {
+        return createFqdn(scope, createDnsDomainParam(scope), createDnsSubdomainParam(scope), deployEnv);
     }
 
-    private String createFqdn(final Construct scope, CfnParameter dnsDomainParam, CfnParameter dnsSubdomainParam) {
-        return Fn.join("", List.of(Fn.conditionIf(
-                        // If subdomain is empty
-                        CfnCondition.Builder.create(scope, getConstructId("condition-empty-subdomain"))
-                                .expression(Fn.conditionEquals(dnsSubdomainParam.getValueAsString(), ""))
-                                .build()
-                                .getLogicalId(),
-                        // Then supply the domain only
-                        dnsDomainParam.getValueAsString(),
-                        // Else combine subdomain with domain
-                        Fn.join(".", List.of(
-                                dnsSubdomainParam.getValueAsString(),
-                                dnsDomainParam.getValueAsString()))).toString(),
-                // Suffix with . to make it a FQDN
-                // It is required for some CDK constructs including RecordSet
-                // that will leave the value as is if ends with .
-                // Source: https://github.com/aws/aws-cdk/blob/main/packages/aws-cdk-lib/aws-route53/lib/util.ts#L41
-                // Otherwise the record will be suffixed with the zone name and will result
-                // in something like: "staging.dataspray.io.staging.dataspray.io."
-                // Bug: https://github.com/aws/aws-cdk/issues/26572
-                "."));
+    private static String createFqdn(final Construct scope, CfnParameter dnsDomainParam, CfnParameter dnsSubdomainParam, DeployEnvironment deployEnv) {
+        return Fn.conditionIf(
+                // If subdomain is empty
+                CfnCondition.Builder.create(scope, getGlobalConstructId("condition-empty-subdomain", deployEnv))
+                        .expression(Fn.conditionEquals(dnsSubdomainParam.getValueAsString(), ""))
+                        .build()
+                        .getLogicalId(),
+                // Then supply the domain only
+                dnsDomainParam.getValueAsString(),
+                // Else combine subdomain with domain
+                Fn.join(".", List.of(
+                        dnsSubdomainParam.getValueAsString(),
+                        dnsDomainParam.getValueAsString()))).toString();
     }
 }

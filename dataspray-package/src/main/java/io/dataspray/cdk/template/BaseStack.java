@@ -68,6 +68,10 @@ public abstract class BaseStack extends Stack {
         return baseConstructId + "-" + name + deployEnv.getSuffix();
     }
 
+    public static String getGlobalConstructId(String name, DeployEnvironment deployEnv) {
+        return "ds-global-" + name + deployEnv.getSuffix();
+    }
+
     protected String getConstructIdCamelCase(String name) {
         return StringUtil.camelCase(getConstructId(name), true);
     }

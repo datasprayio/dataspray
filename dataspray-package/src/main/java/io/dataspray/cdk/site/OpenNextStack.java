@@ -47,36 +47,32 @@ public class OpenNextStack extends BaseStack {
     public OpenNextStack(Construct parent, DeployEnvironment deployEnv, Options options) {
         super(parent, "site", deployEnv);
 
-        String fqdn = options.getDnsStack().createFqdn(this);
+        String fqdn = DnsStack.createFqdn(this, deployEnv)
+                      // Suffix with . to make it a FQDN
+                      // It is required for some CDK constructs including RecordSet
+                      // that will leave the value as is if ends with .
+                      // Source: https://github.com/aws/aws-cdk/blob/main/packages/aws-cdk-lib/aws-route53/lib/util.ts#L41
+                      // Otherwise the record will be suffixed with the zone name and will result
+                      // in something like: "staging.dataspray.io.staging.dataspray.io."
+                      // Bug: https://github.com/aws/aws-cdk/issues/26572
+                      + ".";
 
-        final NextjsDomainProps domainProps;
-        switch (deployEnv) {
-            case PRODUCTION:
-                domainProps = NextjsDomainProps.builder()
-                        .isExternalDomain(false)
-                        .domainName(fqdn)
-                        .domainAlias(Fn.join(".", List.of("www", fqdn)))
-                        .hostedZone(options.getDnsStack().getDnsZone())
-                        .build();
-                break;
-            case STAGING:
-            case SELFHOST:
-                domainProps = NextjsDomainProps.builder()
-                        .isExternalDomain(false)
-                        .domainName(fqdn)
-                        .hostedZone(options.getDnsStack().getDnsZone())
-                        .build();
-                break;
-            case TEST:
-                throw new RuntimeException("Cannot synthesize using " + deployEnv.name() + " env");
-            default:
-                throw new RuntimeException("Unknown env: " + deployEnv);
+        NextjsDomainProps.Builder domainPropsBuilder = NextjsDomainProps.builder()
+                .isExternalDomain(false)
+                .domainName(fqdn)
+                .hostedZone(options.getDnsStack().getDnsZone());
+        if (DeployEnvironment.PRODUCTION.equals(deployEnv)) {
+            domainPropsBuilder.domainAlias(Fn.join(
+                    ".", List.of(
+                            "www",
+                            fqdn)));
         }
+
         nextjs = Nextjs.Builder.create(this, getConstructId("nextjs"))
                 .openNextPath(options.openNextDir)
                 .defaults(NextjsDefaultsProps.builder()
                         .distribution(NextjsDistributionPropsDefaults.builder()
-                                .customDomain(domainProps)
+                                .customDomain(domainPropsBuilder.build())
                                 .stackPrefix("ds-")
                                 .build())
                         .build())
