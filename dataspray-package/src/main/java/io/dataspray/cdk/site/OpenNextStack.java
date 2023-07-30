@@ -47,15 +47,7 @@ public class OpenNextStack extends BaseStack {
     public OpenNextStack(Construct parent, DeployEnvironment deployEnv, Options options) {
         super(parent, "site", deployEnv);
 
-        String fqdn = DnsStack.createFqdn(this, deployEnv)
-                      // Suffix with . to make it a FQDN
-                      // It is required for some CDK constructs including RecordSet
-                      // that will leave the value as is if ends with .
-                      // Source: https://github.com/aws/aws-cdk/blob/main/packages/aws-cdk-lib/aws-route53/lib/util.ts#L41
-                      // Otherwise the record will be suffixed with the zone name and will result
-                      // in something like: "staging.dataspray.io.staging.dataspray.io."
-                      // Bug: https://github.com/aws/aws-cdk/issues/26572
-                      + ".";
+        String fqdn = DnsStack.createFqdn(this, deployEnv);
 
         NextjsDomainProps.Builder domainPropsBuilder = NextjsDomainProps.builder()
                 .isExternalDomain(false)
