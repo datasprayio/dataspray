@@ -68,6 +68,7 @@ public class DnsStack extends BaseStack {
 
         dnsZone = HostedZone.Builder.create(this, getConstructId("zone"))
                 .zoneName(dnsFqdn)
+                .addTrailingDot(false)
                 .build();
 
         // Fetch parent zone for creating delegate records. May not end up being used if params are not set
@@ -120,11 +121,17 @@ public class DnsStack extends BaseStack {
      * In addition, conditions cannot have imported values including stack params so we need to re-create that too.
      * <pre>Template error: Cannot use Fn::ImportValue in Conditions</pre>
      */
-    public static String createFqdn(final Construct scope, DeployEnvironment deployEnv) {
+    public static String createFqdn(
+            final Construct scope,
+            DeployEnvironment deployEnv) {
         return createFqdn(scope, createDnsDomainParam(scope), createDnsSubdomainParam(scope), deployEnv);
     }
 
-    private static String createFqdn(final Construct scope, CfnParameter dnsDomainParam, CfnParameter dnsSubdomainParam, DeployEnvironment deployEnv) {
+    private static String createFqdn(
+            final Construct scope,
+            CfnParameter dnsDomainParam,
+            CfnParameter dnsSubdomainParam,
+            DeployEnvironment deployEnv) {
         return Fn.conditionIf(
                 // If subdomain is empty
                 CfnCondition.Builder.create(scope, getGlobalConstructId("condition-empty-subdomain", deployEnv))
