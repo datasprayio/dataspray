@@ -107,7 +107,6 @@ public class DnsStack extends BaseStack {
         return CfnParameter.Builder.create(scope, "dnsSubdomain")
                 .description("Optional subdomain for your app (defaults to dataspray)")
                 .type("String")
-                .defaultValue("dataspray")
                 .build();
     }
 
