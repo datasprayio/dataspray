@@ -39,9 +39,9 @@ import software.constructs.Construct;
 import java.util.List;
 
 @Slf4j
+@Getter
 public class OpenNextStack extends BaseStack {
 
-    @Getter
     private final Nextjs nextjs;
 
     public OpenNextStack(Construct parent, DeployEnvironment deployEnv, Options options) {
@@ -65,7 +65,7 @@ public class OpenNextStack extends BaseStack {
                 .defaults(NextjsDefaultsProps.builder()
                         .distribution(NextjsDistributionPropsDefaults.builder()
                                 .customDomain(domainPropsBuilder.build())
-                                .stackPrefix("ds-")
+                                .stackPrefix(DeployEnvironment.RESOURCE_PREFIX)
                                 .build())
                         .build())
                 .build();

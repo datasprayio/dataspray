@@ -41,9 +41,9 @@ import software.constructs.Construct;
 import java.util.List;
 
 @Slf4j
+@Getter
 public class DnsStack extends BaseStack {
 
-    @Getter
     private final CfnParameter dnsDomainParam;
     @Getter
     private final CfnParameter dnsSubdomainParam;
@@ -68,7 +68,7 @@ public class DnsStack extends BaseStack {
 
         dnsZone = HostedZone.Builder.create(this, getConstructId("zone"))
                 .zoneName(dnsFqdn)
-                .addTrailingDot(false)
+                .addTrailingDot(true)
                 .build();
 
         // Fetch parent zone for creating delegate records. May not end up being used if params are not set
@@ -90,6 +90,7 @@ public class DnsStack extends BaseStack {
                         Fn.conditionNot(Fn.conditionEquals(dnsSubdomainParam, "")),
                         Fn.conditionNot(Fn.conditionEquals(dnsDomainZoneIdParam, ""))))
                 .build();
+        //noinspection DataFlowIssue
         ((CfnRecordSet) parentZoneDelegatingSubdomainRecordSet.getNode().getDefaultChild())
                 .getCfnOptions()
                 .setCondition(createDelegateRecordCondition);

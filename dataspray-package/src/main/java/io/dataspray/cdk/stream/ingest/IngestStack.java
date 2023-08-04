@@ -53,15 +53,12 @@ import static io.dataspray.store.SqsQueueStore.CUSTOMER_QUEUE_WILDCARD;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
+@Getter
 public class IngestStack extends BaseLambdaWebServiceStack {
 
-    @Getter
     private final String bucketEtlName;
-    @Getter
     private final Bucket bucketEtl;
-    @Getter
     private final String firehoseName;
-    @Getter
     private final DeliveryStream firehose;
 
     public IngestStack(Construct parent, DeployEnvironment deployEnv, String codeZip) {

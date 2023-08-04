@@ -49,12 +49,11 @@ import java.util.Map;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
+@Getter
 public class AuthNzStack extends BaseStack {
 
-    @Getter
-    CfnParameter emailWithParam;
-    @Getter
-    UserPool userPool;
+    private final CfnParameter emailWithParam;
+    private final UserPool userPool;
 
     public AuthNzStack(Construct parent, DeployEnvironment deployEnv) {
         super(parent, "authnz", deployEnv);

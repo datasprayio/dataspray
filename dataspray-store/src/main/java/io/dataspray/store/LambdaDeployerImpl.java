@@ -109,7 +109,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     public static final String CODE_BUCKET_NAME_PROP_NAME = "deployer.codeBucketName";
     private static final String CODE_KEY_PREFIX = "customer/";
     public static final Function<DeployEnvironment, String> CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER = deployEnv ->
-            "ds" + deployEnv.getSuffix() + "-customer-";
+            DeployEnvironment.RESOURCE_PREFIX + deployEnv.getSuffix().substring(1 /* Remove duplicate dash */) + "-customer-";
     public static final Function<DeployEnvironment, String> FUN_NAME_WILDCARD_GETTER = deployEnv ->
             CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + "*";
     private static final String QUEUE_STATEMENT_ID_PREFIX = "customer-queue-statement-for-name-";

@@ -40,7 +40,7 @@ public abstract class BaseStack extends Stack {
 
     public BaseStack(Construct parent, String constructIdSuffix, DeployEnvironment deployEnv) {
         super(parent,
-                "ds-" + constructIdSuffix + deployEnv.getSuffix(),
+                DeployEnvironment.RESOURCE_PREFIX + constructIdSuffix + deployEnv.getSuffix(),
                 StackProps.builder()
                         .env(Environment.builder()
                                 .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
@@ -48,7 +48,7 @@ public abstract class BaseStack extends Stack {
                                 .build())
                         .build());
         this.deployEnv = deployEnv;
-        this.baseConstructId = "ds-" + constructIdSuffix;
+        this.baseConstructId = DeployEnvironment.RESOURCE_PREFIX + constructIdSuffix;
 
         Tags.of(this).add("dataspray-construct-id", this.baseConstructId, TagProps.builder()
                 .applyToLaunchedInstances(true)
@@ -69,7 +69,7 @@ public abstract class BaseStack extends Stack {
     }
 
     public static String getGlobalConstructId(String name, DeployEnvironment deployEnv) {
-        return "ds-global-" + name + deployEnv.getSuffix();
+        return DeployEnvironment.RESOURCE_PREFIX + "global-" + name + deployEnv.getSuffix();
     }
 
     protected String getConstructIdCamelCase(String name) {

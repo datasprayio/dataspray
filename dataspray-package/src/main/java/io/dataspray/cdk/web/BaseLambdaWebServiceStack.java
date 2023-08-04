@@ -37,13 +37,12 @@ import software.constructs.Construct;
 
 import java.util.UUID;
 
+@Getter
 public class BaseLambdaWebServiceStack extends BaseStack {
 
     private static final String QUARKUS_LAMBDA_HANDLER = "io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest";
 
-    @Getter
     private final String functionName;
-    @Getter
     private final SingletonFunction function;
 
     public BaseLambdaWebServiceStack(Construct parent, Options options) {

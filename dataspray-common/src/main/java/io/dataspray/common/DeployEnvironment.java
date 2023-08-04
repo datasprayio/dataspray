@@ -28,10 +28,13 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum DeployEnvironment {
+
     PRODUCTION("-production"),
     STAGING("-staging"),
     SELFHOST("-selfhost"),
     TEST("-test");
+
+    public static final String RESOURCE_PREFIX = "dataspray-";
 
     public static final String DEPLOY_ENVIRONMENT_PROP_NAME = "deploy-environment";
 

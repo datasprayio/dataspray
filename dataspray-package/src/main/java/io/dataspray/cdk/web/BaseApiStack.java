@@ -38,6 +38,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Fn;
 import software.amazon.awscdk.services.apigateway.ApiDefinition;
@@ -77,32 +78,25 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkState;
 
+@Slf4j
+@Getter
 public class BaseApiStack extends BaseStack {
 
-    @Getter
     private final String authorizerFunctionName;
-    @Getter
     private final SingletonFunction authorizerFunction;
-    @Getter
     private final Role roleApiGatewayInvoke;
-    @Getter
     private final Certificate certificate;
-    @Getter
     private final SpecRestApi restApi;
-    @Getter
     private final RecordSet recordSetA;
-    @Getter
     private final RecordSet recordSetAaaa;
-    @Getter
     private final UsagePlan activeUsagePlan;
-    @Getter
     private final Options options;
 
     public BaseApiStack(Construct parent, Options options) {
         super(parent, "api-gateway", options.getDeployEnv());
         this.options = options;
 
-        authorizerFunctionName = "authorizer-" + options.getDeployEnv();
+        authorizerFunctionName = "authorizer-" + options.getDeployEnv().getSuffix();
         authorizerFunction = SingletonFunction.Builder.create(this, getConstructId("lambda"))
                 .uuid(UUID.nameUUIDFromBytes(getConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
                 .functionName(authorizerFunctionName)

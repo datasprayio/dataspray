@@ -40,17 +40,14 @@ import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
 @Slf4j
+@Getter
 public class ControlStack extends BaseLambdaWebServiceStack {
 
     /** Separated out to remove cyclic dependency */
-    @Getter
     private final String customerFunctionPermissionBoundaryManagedPolicyName;
-    @Getter
     private final ManagedPolicy customerFunctionPermissionBoundaryManagedPolicy;
     /** Separated out to remove cyclic dependency */
-    @Getter
     private final String bucketCodeName;
-    @Getter
     private final Bucket bucketCode;
 
     public ControlStack(Construct parent, DeployEnvironment deployEnv, String codeZip) {

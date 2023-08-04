@@ -35,9 +35,9 @@ import software.constructs.Construct;
 import java.lang.reflect.Proxy;
 
 @Slf4j
+@Getter
 public class SingleTableStack extends BaseStack {
 
-    @Getter
     private final Table singleTableTable;
 
     public SingleTableStack(Construct parent, DeployEnvironment deployEnv) {
