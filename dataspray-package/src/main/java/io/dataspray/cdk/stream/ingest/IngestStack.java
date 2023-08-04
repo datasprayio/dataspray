@@ -78,8 +78,8 @@ public class IngestStack extends BaseLambdaWebServiceStack {
                         "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + CUSTOMER_QUEUE_WILDCARD))
                 .build());
 
-        bucketEtlName = getConstructId("ingest-etl-bucket");
-        bucketEtl = Bucket.Builder.create(this, getConstructId("ingest-etl-bucket"))
+        bucketEtlName = getConstructId("bucket");
+        bucketEtl = Bucket.Builder.create(this, bucketEtlName)
                 .bucketName(bucketEtlName)
                 .autoDeleteObjects(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
@@ -101,8 +101,8 @@ public class IngestStack extends BaseLambdaWebServiceStack {
                                 .build()).collect(Collectors.toList()))
                 .build();
 
-        firehoseName = getConstructId("firehose-etl");
-        firehose = DeliveryStream.Builder.create(this, getConstructId("firehose-etl"))
+        firehoseName = getConstructId("firehose");
+        firehose = DeliveryStream.Builder.create(this, firehoseName)
                 .deliveryStreamName(firehoseName)
                 .destinations(ImmutableList.of(S3Bucket.Builder.create(bucketEtl)
                         .bufferingInterval(Duration.seconds(900))

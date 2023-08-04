@@ -46,7 +46,7 @@ public class BaseLambdaWebServiceStack extends BaseStack {
     private final SingletonFunction function;
 
     public BaseLambdaWebServiceStack(Construct parent, Options options) {
-        super(parent, "web-service-" + options.getFunctionName(), options.getDeployEnv());
+        super(parent, "web-" + options.getFunctionName(), options.getDeployEnv());
 
         functionName = options.getFunctionName();
         function = SingletonFunction.Builder.create(this, getConstructId("lambda"))
