@@ -28,7 +28,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum DeployEnvironment {
-    PRODUCTION(""),
+    PRODUCTION("-production"),
     STAGING("-staging"),
     SELFHOST("-selfhost"),
     TEST("-test");
