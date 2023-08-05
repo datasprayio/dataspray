@@ -58,7 +58,7 @@ public class DnsStack extends BaseStack {
         super(parent, "dns", deployEnv);
 
         dnsDomainParam = createDnsDomainParam(this);
-        dnsSubdomainParam = createDnsSubdomainParam(this);
+        dnsSubdomainParam = createDnsSubdomainParam(this, deployEnv);
         dnsDomainZoneIdParam = CfnParameter.Builder.create(this, "dnsDomainZoneId")
                 .description("If using a subdomain (e.g. dataspray.example.com), enter the Route53 Hosted Zone Id for the parent domain (e.g. Z104162015L8HFMCRVJ9Y) if you wish to add a NS delegating record, otherwise leave this blank.")
                 .type("String")
@@ -104,10 +104,11 @@ public class DnsStack extends BaseStack {
                 .build();
     }
 
-    private static CfnParameter createDnsSubdomainParam(final Construct scope) {
+    private static CfnParameter createDnsSubdomainParam(final Construct scope, DeployEnvironment deployEnv) {
         return CfnParameter.Builder.create(scope, "dnsSubdomain")
                 .description("Optional subdomain for your app (defaults to dataspray)")
                 .type("String")
+                .defaultValue(DeployEnvironment.SELFHOST.equals(deployEnv) ? "dataspray" : "")
                 .build();
     }
 
@@ -124,7 +125,7 @@ public class DnsStack extends BaseStack {
     public static String createFqdn(
             final Construct scope,
             DeployEnvironment deployEnv) {
-        return createFqdn(scope, createDnsDomainParam(scope), createDnsSubdomainParam(scope), deployEnv);
+        return createFqdn(scope, createDnsDomainParam(scope), createDnsSubdomainParam(scope, deployEnv), deployEnv);
     }
 
     private static String createFqdn(

@@ -23,20 +23,20 @@
 package io.dataspray.common;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 
-@Getter
 @AllArgsConstructor
 public enum DeployEnvironment {
 
-    PRODUCTION("-production"),
-    STAGING("-staging"),
-    SELFHOST("-selfhost"),
-    TEST("-test");
+    PRODUCTION,
+    STAGING,
+    SELFHOST,
+    TEST;
 
     public static final String RESOURCE_PREFIX = "dataspray-";
 
     public static final String DEPLOY_ENVIRONMENT_PROP_NAME = "deploy-environment";
 
-    private final String suffix;
+    public String getSuffix() {
+        return '-' + name().toLowerCase();
+    }
 }
