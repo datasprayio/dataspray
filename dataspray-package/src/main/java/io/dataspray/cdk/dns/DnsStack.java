@@ -44,32 +44,27 @@ import java.util.List;
 @Getter
 public class DnsStack extends BaseStack {
 
-    private final CfnParameter dnsDomainParam;
-    @Getter
-    private final CfnParameter dnsSubdomainParam;
-    @Getter
-    private final CfnParameter dnsDomainZoneIdParam;
-    @Getter
-    private final HostedZone dnsZone;
-    @Getter
     private final RecordSet parentZoneDelegatingSubdomainRecordSet;
+    private final String dnsZoneId;
 
     public DnsStack(Construct parent, DeployEnvironment deployEnv) {
         super(parent, "dns", deployEnv);
 
-        dnsDomainParam = createDnsDomainParam(this);
-        dnsSubdomainParam = createDnsSubdomainParam(this, deployEnv);
-        dnsDomainZoneIdParam = CfnParameter.Builder.create(this, "dnsDomainZoneId")
+        CfnParameter dnsDomainParam = createDnsDomainParam(this);
+        CfnParameter dnsSubdomainParam = createDnsSubdomainParam(this, deployEnv);
+        CfnParameter dnsDomainZoneIdParam = CfnParameter.Builder.create(this, "dnsDomainZoneId")
                 .description("If using a subdomain (e.g. dataspray.example.com), enter the Route53 Hosted Zone Id for the parent domain (e.g. Z104162015L8HFMCRVJ9Y) if you wish to add a NS delegating record, otherwise leave this blank.")
                 .type("String")
                 .defaultValue("")
                 .build();
-        String dnsFqdn = createFqdn(this, dnsDomainParam, dnsSubdomainParam, deployEnv);
+        String fqdn = createFqdn(this, dnsDomainParam, dnsSubdomainParam, deployEnv);
 
-        dnsZone = HostedZone.Builder.create(this, getConstructId("zone"))
-                .zoneName(dnsFqdn)
-                .addTrailingDot(true)
+        // Cannot expose to other stacks, see getDnsZone() notes
+        HostedZone dnsZone = HostedZone.Builder.create(this, getConstructId("zone"))
+                .zoneName(getZoneName(fqdn))
+                .addTrailingDot(false)
                 .build();
+        dnsZoneId = dnsZone.getHostedZoneId();
 
         // Fetch parent zone for creating delegate records. May not end up being used if params are not set
         IHostedZone parentZone = HostedZone.fromHostedZoneAttributes(this, getConstructId("parentZone"), HostedZoneAttributes.builder()
@@ -94,6 +89,24 @@ public class DnsStack extends BaseStack {
         ((CfnRecordSet) parentZoneDelegatingSubdomainRecordSet.getNode().getDefaultChild())
                 .getCfnOptions()
                 .setCondition(createDelegateRecordCondition);
+    }
+
+    private String getZoneName(String dnsFqdn) {
+        return dnsFqdn + ".";
+    }
+
+    /**
+     * Get DNS Zone as a ref.
+     * <p>
+     * We cannot expose the HostedZone directly because it causes an export of the zone name that includes the subdomain
+     * param. This subdomain param may be an empty string which CDK doesn't like. Instead, we use a hostedZone from
+     * attributes including the zoneName constructed from subdomain taken as a stack param, not exported.
+     */
+    public IHostedZone getDnsZone(Construct scope, String fqdn) {
+        return HostedZone.fromHostedZoneAttributes(scope, getConstructId("zone"), HostedZoneAttributes.builder()
+                .hostedZoneId(dnsZoneId)
+                .zoneName(getZoneName(fqdn))
+                .build());
     }
 
     private static CfnParameter createDnsDomainParam(final Construct scope) {

@@ -64,6 +64,7 @@ import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
 import software.amazon.awscdk.services.route53.ARecord;
 import software.amazon.awscdk.services.route53.AaaaRecord;
+import software.amazon.awscdk.services.route53.IHostedZone;
 import software.amazon.awscdk.services.route53.RecordSet;
 import software.amazon.awscdk.services.route53.RecordTarget;
 import software.amazon.awscdk.services.route53.targets.ApiGateway;
@@ -127,10 +128,11 @@ public class BaseApiStack extends BaseStack {
         String fqdn = DnsStack.createFqdn(this, getDeployEnv());
         String apiSubdomain = setServerUrlDomain(openApiSpec, fqdn);
         String apiFqdn = Fn.join(".", List.of(apiSubdomain, fqdn));
+        IHostedZone dnsZone = getOptions().getDnsStack().getDnsZone(this, fqdn);
 
         certificate = Certificate.Builder.create(this, getConstructId("cert"))
                 .domainName(apiFqdn)
-                .validation(CertificateValidation.fromDns(getOptions().getDnsStack().getDnsZone()))
+                .validation(CertificateValidation.fromDns(dnsZone))
                 .build();
         restApi = SpecRestApi.Builder.create(this, getConstructId("apigateway"))
                 .apiDefinition(ApiDefinition.fromInline(openApiSpec))
@@ -141,14 +143,14 @@ public class BaseApiStack extends BaseStack {
                         .build())
                 .build();
         recordSetA = ARecord.Builder.create(this, getConstructId("recordset-a"))
-                .zone(getOptions().getDnsStack().getDnsZone())
+                .zone(dnsZone)
                 .recordName(apiSubdomain)
                 .target(RecordTarget.fromAlias(new ApiGateway(restApi)))
                 .ttl(Duration.seconds(30))
                 .deleteExisting(false)
                 .build();
         recordSetAaaa = AaaaRecord.Builder.create(this, getConstructId("recordset-aaaa"))
-                .zone(getOptions().getDnsStack().getDnsZone())
+                .zone(dnsZone)
                 .recordName(apiSubdomain)
                 .target(RecordTarget.fromAlias(new ApiGateway(restApi)))
                 .ttl(Duration.seconds(30))

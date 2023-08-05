@@ -34,6 +34,7 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.Fn;
+import software.amazon.awscdk.services.route53.IHostedZone;
 import software.constructs.Construct;
 
 import java.util.List;
@@ -48,11 +49,12 @@ public class OpenNextStack extends BaseStack {
         super(parent, "site", deployEnv);
 
         String fqdn = DnsStack.createFqdn(this, deployEnv);
+        IHostedZone dnsZone = options.getDnsStack().getDnsZone(this, fqdn);
 
         NextjsDomainProps.Builder domainPropsBuilder = NextjsDomainProps.builder()
                 .isExternalDomain(false)
                 .domainName(fqdn)
-                .hostedZone(options.getDnsStack().getDnsZone());
+                .hostedZone(dnsZone);
         if (DeployEnvironment.PRODUCTION.equals(deployEnv)) {
             domainPropsBuilder.domainAlias(Fn.join(
                     ".", List.of(
