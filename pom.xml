@@ -46,9 +46,12 @@
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.2.9</logback.version>
         <jackson.version>2.13.3</jackson.version>
-        <awssdk2.version>2.20.56</awssdk2.version>
-        <awssdk1.version>1.12.459</awssdk1.version>
-        <awscdk.version>2.89.0</awscdk.version>
+        <aws.sdk2.version>2.20.115</aws.sdk2.version>
+        <aws.sdk1.version>1.12.459</aws.sdk1.version>
+        <!-- Keep in sync with cdk version used in aws-cdk-maven-pluginn (aws.cdk.4j.version)
+            https://github.com/datasprayio/aws-cdk-4j/blob/master/pom.xml#L54-->
+        <aws.cdk.version>2.89.0</aws.cdk.version>
+        <aws.cdk.4j.version>2.1.2</aws.cdk.4j.version>
         <sqlite4java>1.0.392</sqlite4java>
         <skipTests/>
         <skipITs/>
@@ -290,36 +293,36 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>bom</artifactId>
-                <version>${awssdk2.version}</version>
+                <version>${aws.sdk2.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-bom</artifactId>
-                <version>${awssdk1.version}</version>
+                <version>${aws.sdk1.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>software.amazon.awscdk</groupId>
                 <artifactId>aws-cdk-lib</artifactId>
-                <version>${awscdk.version}</version>
+                <version>${aws.cdk.version}</version>
             </dependency>
             <dependency>
                 <groupId>software.amazon.awscdk</groupId>
                 <artifactId>apigatewayv2-alpha</artifactId>
-                <version>${awscdk.version}-alpha.0</version>
+                <version>${aws.cdk.version}-alpha.0</version>
             </dependency>
             <dependency>
                 <groupId>software.amazon.awscdk</groupId>
                 <artifactId>kinesisfirehose-alpha</artifactId>
-                <version>${awscdk.version}-alpha.0</version>
+                <version>${aws.cdk.version}-alpha.0</version>
             </dependency>
             <dependency>
                 <groupId>software.amazon.awscdk</groupId>
                 <artifactId>kinesisfirehose-destinations-alpha</artifactId>
-                <version>${awscdk.version}-alpha.0</version>
+                <version>${aws.cdk.version}-alpha.0</version>
             </dependency>
             <dependency>
                 <groupId>software.constructs</groupId>
@@ -530,7 +533,7 @@
                 <plugin>
                     <groupId>io.dataspray</groupId>
                     <artifactId>aws-cdk-maven-plugin</artifactId>
-                    <version>2.1.1</version>
+                    <version>${aws.cdk.4j.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
