@@ -87,7 +87,7 @@ public class ControlStack extends BaseLambdaWebServiceStack {
         bucketCodeName = getConstructId("code-upload-bucket");
         bucketCode = Bucket.Builder.create(this, getConstructId("code-upload-bucket"))
                 .bucketName(bucketCodeName)
-                .autoDeleteObjects(true)
+                .autoDeleteObjects(false)
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .lifecycleRules(ImmutableList.of(
