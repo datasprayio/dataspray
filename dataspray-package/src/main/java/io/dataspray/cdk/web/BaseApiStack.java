@@ -97,7 +97,7 @@ public class BaseApiStack extends BaseStack {
         super(parent, "api-gateway", options.getDeployEnv());
         this.options = options;
 
-        authorizerFunctionName = "authorizer-" + options.getDeployEnv().getSuffix();
+        authorizerFunctionName = "authorizer" + options.getDeployEnv().getSuffix();
         authorizerFunction = SingletonFunction.Builder.create(this, getConstructId("lambda"))
                 .uuid(UUID.nameUUIDFromBytes(getConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
                 .functionName(authorizerFunctionName)
