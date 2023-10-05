@@ -20,24 +20,17 @@
  * SOFTWARE.
  */
 
-package io.dataspray.web;
+package io.dataspray.authorizer;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.RestAssured;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Test;
+import com.google.common.collect.ImmutableSet;
+import io.dataspray.common.aws.test.AbstractLocalstackLifecycleManager;
+import org.testcontainers.containers.localstack.LocalStackContainer;
 
-import static org.hamcrest.Matchers.equalTo;
+import static org.testcontainers.containers.localstack.LocalStackContainer.Service.DYNAMODB;
 
-@Slf4j
-@QuarkusTest
-public class ExampleTest {
-
-    @Test
-    public void testPing() {
-        RestAssured.when()
-                .get("/api/ping")
-                .then()
-                .body(equalTo("OK"));
+public class AuthorizerLocalstackLifecycleManager extends AbstractLocalstackLifecycleManager {
+    @Override
+    protected ImmutableSet<LocalStackContainer.Service> enabledServices() {
+        return ImmutableSet.of(DYNAMODB);
     }
 }

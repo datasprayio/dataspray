@@ -1,0 +1,44 @@
+[
+  {
+    "interfaces": [
+      "org.apache.http.conn.HttpClientConnectionManager",
+      "org.apache.http.pool.ConnPoolControl",
+      "com.amazonaws.http.conn.Wrapped"
+    ]
+  },
+  {
+    "interfaces": [
+      "net.bytebuddy.description.method.MethodDescription$InDefinedShape$AbstractBase$Executable"
+    ]
+  },
+  {
+    "interfaces": [
+      "net.bytebuddy.description.method.ParameterDescription$ForLoadedParameter$Parameter"
+    ]
+  },
+  {
+    "interfaces": [
+      "net.bytebuddy.description.method.ParameterList$ForLoadedExecutable$Executable"
+    ]
+  },
+  {
+    "interfaces": [
+      "net.bytebuddy.description.type.TypeDefinition$Sort$AnnotatedType"
+    ]
+  },
+  {
+    "interfaces": [
+      "net.bytebuddy.description.type.TypeDescription$ForLoadedType$Dispatcher"
+    ]
+  },
+  {
+    "interfaces": [
+      "net.bytebuddy.description.type.TypeDescription$Generic$AnnotationReader$Delegator$ForLoadedExecutableParameterType$Dispatcher"
+    ]
+  },
+  {
+    "interfaces": [
+      "net.bytebuddy.description.type.TypeDescription$Generic$AnnotationReader$Delegator$ForLoadedMethodReturnType$Dispatcher"
+    ]
+  }
+]

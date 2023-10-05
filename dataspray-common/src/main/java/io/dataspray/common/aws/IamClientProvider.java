@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.iam.IamClient;
 
@@ -16,6 +17,8 @@ public class IamClientProvider {
 
     @Inject
     AwsCredentialsProvider awsCredentialsProvider;
+    @Inject
+    SdkHttpClient sdkHttpClient;
 
     @Singleton
     public IamClient getIamClient() {
@@ -23,6 +26,7 @@ public class IamClientProvider {
         return IamClient.builder()
                 .credentialsProvider(awsCredentialsProvider)
                 .region(Region.AWS_GLOBAL)
+                .httpClient(sdkHttpClient)
                 .build();
     }
 }

@@ -63,14 +63,7 @@ class AuthorizerTest {
                 "Description",
                 Optional.of(ImmutableSet.of("q1", "q2")),
                 Optional.of(Instant.now().plus(Duration.ofDays(3))));
-        APIGatewayCustomAuthorizerEvent event = new APIGatewayCustomAuthorizerEvent();
-        event.setMethodArn("arn:aws:execute-api:us-east-1:123456789012:abcdef123/default/$connect");
-        event.setHeaders(ImmutableMap.of(HttpHeaders.AUTHORIZATION, "bearer " + apiAccess.getApiKey()));
-        event.setRequestContext(APIGatewayCustomAuthorizerEvent.RequestContext.builder()
-                .withAccountId(apiAccess.getAccountId())
-                .withApiId("api-id")
-                .withStage("stage")
-                .build());
+        APIGatewayCustomAuthorizerEvent event = createEvent(apiAccess.getAccountId(), apiAccess.getApiKey());
 
         AuthPolicy authPolicy = gson.fromJson(authorizer.handleRequest(event, null), AuthPolicy.class);
         log.info("Returned AuthPolicy {}", authPolicy);
@@ -80,5 +73,17 @@ class AuthorizerTest {
         assertEquals(apiAccess.getAccountId(), authPolicy.getContext().get(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID));
         assertEquals(apiAccess.getApiKey(), authPolicy.getContext().get(AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE));
         assertEquals(apiAccess.getAccountId(), authPolicy.getPrincipalId());
+    }
+
+    static APIGatewayCustomAuthorizerEvent createEvent(String accountId, String apiKey) {
+        APIGatewayCustomAuthorizerEvent event = new APIGatewayCustomAuthorizerEvent();
+        event.setMethodArn("arn:aws:execute-api:us-east-1:123456789012:abcdef123/default/$connect");
+        event.setHeaders(ImmutableMap.of(HttpHeaders.AUTHORIZATION, "bearer " + apiKey));
+        event.setRequestContext(APIGatewayCustomAuthorizerEvent.RequestContext.builder()
+                .withAccountId(accountId)
+                .withApiId("api-id")
+                .withStage("stage")
+                .build());
+        return event;
     }
 }

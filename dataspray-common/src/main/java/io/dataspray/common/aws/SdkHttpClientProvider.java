@@ -20,24 +20,37 @@
  * SOFTWARE.
  */
 
-package io.dataspray.web;
+package io.dataspray.common.aws;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.RestAssured;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Test;
+import jakarta.enterprise.context.ApplicationScoped;
+import software.amazon.awssdk.http.SdkHttpClient;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 
-import static org.hamcrest.Matchers.equalTo;
+/**
+ * Explicitly define HTTP Clients to use by AWS SDK.
+ * <br />
+ * This ensures we are using the most suitable client and ensuring the client is in the classpath for Quarkus native
+ * build.
+ */
+@ApplicationScoped
+public class SdkHttpClientProvider {
 
-@Slf4j
-@QuarkusTest
-public class ExampleTest {
+    @ApplicationScoped
+    SdkHttpClient getSdkHttpClient() {
+        return UrlConnectionHttpClient.create();
+    }
 
-    @Test
-    public void testPing() {
-        RestAssured.when()
-                .get("/api/ping")
-                .then()
-                .body(equalTo("OK"));
+    /**
+     * Preferred client for Lambda functions.
+     *
+     * @see <a
+     * href="https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/http-configuration.html">AWS client
+     * Recommendations</a>
+     */
+    @ApplicationScoped
+    SdkAsyncHttpClient getSdkAsyncHttpClient() {
+        return AwsCrtAsyncHttpClient.create();
     }
 }

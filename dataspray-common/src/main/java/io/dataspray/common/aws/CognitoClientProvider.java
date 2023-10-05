@@ -29,6 +29,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 
 @Slf4j
@@ -37,12 +38,15 @@ public class CognitoClientProvider {
 
     @Inject
     AwsCredentialsProvider awsCredentialsProvider;
+    @Inject
+    SdkHttpClient sdkHttpClient;
 
     @Singleton
     public CognitoIdentityProviderClient getCognitoClient() {
         log.debug("Opening Cognito v2 client");
         return CognitoIdentityProviderClient.builder()
                 .credentialsProvider(awsCredentialsProvider)
+                .httpClient(sdkHttpClient)
                 .build();
     }
 }

@@ -37,10 +37,11 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 public class SingleTableProvider {
 
     public static final String TABLE_PREFIX_PROP_NAME = "singletable.tablePrefix";
+    public static final String TABLE_PREFIX_DEFAULT = "dataspray";
     public static final int LSI_COUNT = 0;
     public static final int GSI_COUNT = 2;
 
-    @ConfigProperty(name = TABLE_PREFIX_PROP_NAME, defaultValue = "dataspray")
+    @ConfigProperty(name = TABLE_PREFIX_PROP_NAME, defaultValue = TABLE_PREFIX_DEFAULT)
     String tablePrefix;
     @ConfigProperty(name = "singletable.createTableOnStartup", defaultValue = "false")
     boolean createTableOnStartup;

@@ -18,14 +18,8 @@
  */
 package io.dataspray.core.cli;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.ConsoleAppender;
 import lombok.SneakyThrows;
-import org.slf4j.LoggerFactory;
+import org.jboss.logmanager.LogManager;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
@@ -33,7 +27,10 @@ import picocli.CommandLine.ParseResult;
 import picocli.CommandLine.Spec;
 
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import static org.slf4j.Logger.ROOT_LOGGER_NAME;
 import static picocli.CommandLine.Spec.Target.MIXEE;
 
 /**
@@ -85,7 +82,7 @@ public class LoggingMixin {
     }
 
     public static boolean getIsVerbose() {
-        return LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
+        return org.slf4j.LoggerFactory.getLogger(ROOT_LOGGER_NAME)
                 .isDebugEnabled();
     }
 
@@ -102,31 +99,17 @@ public class LoggingMixin {
             case 0:
                 return;
             case 1:
-                level = Level.DEBUG;
+                level = Level.FINE;
                 break;
             default:
-                level = Level.TRACE;
+                level = Level.ALL;
                 break;
         }
 
-        Logger root;
-        try {
-            root = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
-        } catch (ClassCastException ex) {
-            return; // May throw if Logger class is in QuarkusClassLoader, ignore this case
-        }
+        Logger root = LogManager.getLogManager().getLogger(ROOT_LOGGER_NAME);
 
         // Change default level
         root.setLevel(level);
-
-        // Enable verbose log line pattern
-        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        ConsoleAppender<ILoggingEvent> consoleAppender = (ConsoleAppender<ILoggingEvent>) root.getAppender("CONSOLE");
-        PatternLayoutEncoder ple = new PatternLayoutEncoder();
-        ple.setPattern("%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger{36} - %msg%n");
-        ple.setContext(loggerContext);
-        ple.start();
-        consoleAppender.setEncoder(ple);
     }
 
     @SneakyThrows

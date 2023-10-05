@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 @Slf4j
@@ -15,12 +16,15 @@ public class LambdaClientProvider {
 
     @Inject
     AwsCredentialsProvider awsCredentialsProvider;
+    @Inject
+    SdkHttpClient sdkHttpClient;
 
     @Singleton
     public LambdaClient getLambdaClient() {
         log.debug("Opening Lambda v2 client");
         return LambdaClient.builder()
                 .credentialsProvider(awsCredentialsProvider)
+                .httpClient(sdkHttpClient)
                 .build();
     }
 }

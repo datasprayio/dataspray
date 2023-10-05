@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.services.apigateway.ApiGatewayClient;
 
 @Slf4j
@@ -15,12 +16,15 @@ public class ApiGatewayClientProvider {
 
     @Inject
     AwsCredentialsProvider awsCredentialsProvider;
+    @Inject
+    SdkHttpClient sdkHttpClient;
 
     @Singleton
     public ApiGatewayClient getAthenaClient() {
         log.debug("Opening ApiGateway v2 client");
         return ApiGatewayClient.builder()
                 .credentialsProvider(awsCredentialsProvider)
+                .httpClient(sdkHttpClient)
                 .build();
     }
 }

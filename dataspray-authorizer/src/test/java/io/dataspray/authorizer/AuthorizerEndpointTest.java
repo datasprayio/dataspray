@@ -20,24 +20,31 @@
  * SOFTWARE.
  */
 
-package io.dataspray.web;
+package io.dataspray.authorizer;
 
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.RestAssured;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.Matchers.equalTo;
+import java.util.UUID;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.containsString;
 
 @Slf4j
 @QuarkusTest
-public class ExampleTest {
+class AuthorizerEndpointTest {
 
     @Test
-    public void testPing() {
-        RestAssured.when()
-                .get("/api/ping")
-                .then()
-                .body(equalTo("OK"));
+    void handleRequest() {
+        var rs = given()
+                .contentType("application/json")
+                .accept("application/json")
+                .body(AuthorizerTest.createEvent(UUID.randomUUID().toString(), UUID.randomUUID().toString()));
+        var r = rs.when()
+                .post();
+        r.then()
+                .statusCode(200)
+                .body(containsString("Unauthorized"));
     }
 }

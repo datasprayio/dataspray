@@ -20,24 +20,23 @@
  * SOFTWARE.
  */
 
-package io.dataspray.web;
+package io.dataspray.authorizer;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.RestAssured;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Test;
+import com.fasterxml.jackson.datatype.joda.deser.IntervalDeserializer;
+import io.quarkus.runtime.annotations.RegisterForReflection;
+import org.joda.time.Interval;
 
-import static org.hamcrest.Matchers.equalTo;
-
-@Slf4j
-@QuarkusTest
-public class ExampleTest {
-
-    @Test
-    public void testPing() {
-        RestAssured.when()
-                .get("/api/ping")
-                .then()
-                .body(equalTo("OK"));
-    }
+@RegisterForReflection(targets = {
+        IntervalDeserializer.class,
+        Interval.class,
+        com.amazonaws.partitions.model.Partitions.class,
+        com.amazonaws.partitions.model.Partition.class,
+        com.amazonaws.partitions.model.Endpoint.class,
+        com.amazonaws.partitions.model.Region.class,
+        com.amazonaws.partitions.model.Service.class,
+        com.amazonaws.partitions.model.CredentialScope.class,
+        java.util.HashSet.class,
+        com.amazonaws.auth.AWS4Signer.class
+})
+public class ResourceConfig {
 }

@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 @Slf4j
@@ -15,11 +16,15 @@ public class SqsClientProvider {
 
     @Inject
     AwsCredentialsProvider awsCredentialsProvider;
+    @Inject
+    SdkHttpClient sdkHttpClient;
 
     @Singleton
     public SqsClient getLambdaClient() {
         log.debug("Opening SQS v2 client");
         return SqsClient.builder()
-                .credentialsProvider(awsCredentialsProvider).build();
+                .credentialsProvider(awsCredentialsProvider)
+                .httpClient(sdkHttpClient)
+                .build();
     }
 }

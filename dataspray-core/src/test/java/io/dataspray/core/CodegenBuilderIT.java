@@ -20,24 +20,10 @@
  * SOFTWARE.
  */
 
-package io.dataspray.web;
+package io.dataspray.core;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.RestAssured;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Test;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
 
-import static org.hamcrest.Matchers.equalTo;
-
-@Slf4j
-@QuarkusTest
-public class ExampleTest {
-
-    @Test
-    public void testPing() {
-        RestAssured.when()
-                .get("/api/ping")
-                .then()
-                .body(equalTo("OK"));
-    }
+@QuarkusIntegrationTest
+public class CodegenBuilderIT extends CodegenBuilderTest {
 }

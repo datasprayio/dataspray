@@ -14,6 +14,7 @@ import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -47,6 +48,8 @@ public class S3ClientProvider {
     @Inject
     AwsCredentialsProvider awsCredentialsProviderSdk2;
     @Inject
+    SdkHttpClient sdkHttpClient;
+    @Inject
     NetworkUtil networkUtil;
 
     @Singleton
@@ -72,7 +75,8 @@ public class S3ClientProvider {
         log.debug("Opening S3 v2 client on {}", serviceEndpointOpt);
         waitUntilPortOpen();
         S3ClientBuilder builder = S3Client.builder()
-                .credentialsProvider(awsCredentialsProviderSdk2);
+                .credentialsProvider(awsCredentialsProviderSdk2)
+                .httpClient(sdkHttpClient);
         if (pathStyleEnabled) {
             builder.serviceConfiguration(S3Configuration.builder()
                     .pathStyleAccessEnabled(true).build());

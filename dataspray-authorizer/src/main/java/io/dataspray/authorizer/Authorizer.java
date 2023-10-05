@@ -34,7 +34,6 @@ import io.dataspray.authorizer.model.AuthPolicy.PolicyDocument;
 import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.ApiAccessStore.ApiAccess;
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -46,7 +45,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 @Slf4j
-@ApplicationScoped
 public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEvent, String> {
     public static final String AUTHORIZATION_HEADER = HttpHeaders.AUTHORIZATION;
     public static final Predicate<String> API_KEY_PREDICATE = Pattern.compile("(^\\w*x[\\w-_]?)api[\\w-_]?key\\w*$", Pattern.CASE_INSENSITIVE).asMatchPredicate();
@@ -73,6 +71,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             String stage = event.getRequestContext().getStage();
 
             // Send back allow policy
+            log.info("Client authorized for account id {}", apiAccess.getAccountId());
             PolicyDocument policyDocument = generatePolicyDocument(region, awsAccountId, restApiId, stage, apiAccess);
             return gson.toJson(new AuthPolicy(
                     principalId,
@@ -81,10 +80,14 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                     Map.of(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID, apiAccess.getAccountId(),
                             AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE, apiAccess.getApiKey())));
         } catch (NotAuthorizedException ex) {
+            log.info("Client unauthorized {}", ex.getChallenges());
             // if the client token is not recognized or invalid, API Gateway
             // accepts a 401 Unauthorized response to the client by failing like so.
             // https://github.com/awslabs/aws-apigateway-lambda-authorizer-blueprints/blob/master/blueprints/java/src/example/APIGatewayAuthorizerHandler.java#L42
-            throw new RuntimeException("Unauthorized");
+            // throw new RuntimeException("Unauthorized");
+            // However, it also accepts a return string of "Unauthorized" which is a bit more elegant
+            // https://stackoverflow.com/questions/64909861/how-to-return-401-from-aws-lambda-authorizer-without-raising-an-exception#comment132887021_66788544
+            return "Unauthorized";
         }
     }
 

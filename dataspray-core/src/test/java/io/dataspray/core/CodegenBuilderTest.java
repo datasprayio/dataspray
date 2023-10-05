@@ -45,7 +45,7 @@ public class CodegenBuilderTest {
     Codegen codegen;
     @Inject
     Builder builder;
-    /** Injected via MockInOutErr */
+    /** Injected via {@link MockProcessIo#inject(Object)} */
     MockProcessIo mockProcessIo;
 
     private Path workingDir;

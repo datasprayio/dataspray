@@ -59,7 +59,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     public static final String USAGE_PLAN_ID_PROP_NAME = "apiAccess.usagePlan.id";
     public static final int API_KEY_LENGTH = 42;
 
-    @ConfigProperty(name = USAGE_PLAN_ID_PROP_NAME)
+    @ConfigProperty(name = USAGE_PLAN_ID_PROP_NAME, defaultValue = "unset")
     String usagePlanId;
 
     @Inject

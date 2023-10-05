@@ -15,6 +15,7 @@ import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
@@ -39,6 +40,8 @@ public class DynamoDbClientProvider {
     @Inject
     AwsCredentialsProvider awsCredentialsProviderSdk2;
     @Inject
+    SdkHttpClient sdkHttpClient;
+    @Inject
     NetworkUtil networkUtil;
 
     @Singleton
@@ -46,7 +49,8 @@ public class DynamoDbClientProvider {
         log.debug("Opening Dynamo v2 client on {}", serviceEndpointOpt);
         waitUntilPortOpen();
         DynamoDbClientBuilder builder = DynamoDbClient.builder()
-                .credentialsProvider(awsCredentialsProviderSdk2);
+                .credentialsProvider(awsCredentialsProviderSdk2)
+                .httpClient(sdkHttpClient);
         serviceEndpointOpt.map(URI::create).ifPresent(builder::endpointOverride);
         productionRegionOpt.map(Region::of).ifPresent(builder::region);
         return builder.build();
@@ -62,8 +66,9 @@ public class DynamoDbClientProvider {
         if (serviceEndpointOpt.isPresent() && productionRegionOpt.isPresent()) {
             amazonDynamoDBClientBuilder.withEndpointConfiguration(
                     new AwsClientBuilder.EndpointConfiguration(serviceEndpointOpt.get(), productionRegionOpt.get()));
+        } else if (productionRegionOpt.isPresent()) {
+            amazonDynamoDBClientBuilder.withRegion(Regions.fromName(productionRegionOpt.get()));
         }
-        productionRegionOpt.map(Regions::fromName).ifPresent(amazonDynamoDBClientBuilder::withRegion);
 
         return amazonDynamoDBClientBuilder.build();
     }
