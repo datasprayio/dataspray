@@ -2,7 +2,13 @@
   "resources": {
     "includes": [
       {
-        "pattern": "com/amazonaws/partitions/endpoints.json"
+        "pattern": "\\Qlogback.xml\\E"
+      },
+      {
+        "pattern": "\\Qapplication.yml\\E"
+      },
+      {
+        "pattern": "\\Qcom/amazonaws/partitions/endpoints.json\\E"
       },
       {
         "pattern": "\\QMETA-INF/dgminfo\\E"

@@ -22,29 +22,35 @@
 
 package io.dataspray.authorizer;
 
+import com.google.common.collect.ImmutableSet;
+import io.dataspray.store.ApiAccessStore;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Test;
 
-import java.util.UUID;
-
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.containsString;
+import java.time.Instant;
+import java.util.Optional;
 
 @Slf4j
 @QuarkusTest
-class AuthorizerEndpointTest {
+class AuthorizerEndpointTest extends AuthorizerEndpointBase {
 
-    @Test
-    void handleRequest() {
-        var rs = given()
-                .contentType("application/json")
-                .accept("application/json")
-                .body(AuthorizerTest.createEvent(UUID.randomUUID().toString(), UUID.randomUUID().toString()));
-        var r = rs.when()
-                .post();
-        r.then()
-                .statusCode(200)
-                .body(containsString("Unauthorized"));
+    @Inject
+    ApiAccessStore apiAccessStore;
+
+    @Override
+    ApiAccessStore.ApiAccess createApiAccess(
+            String accountId,
+            ApiAccessStore.UsageKeyType usageKeyType,
+            String description,
+            Optional<ImmutableSet<String>> queueWhitelistOpt,
+            Optional<Instant> expiryOpt) {
+
+        return apiAccessStore.createApiAccess(
+                accountId,
+                usageKeyType,
+                description,
+                queueWhitelistOpt,
+                expiryOpt);
     }
 }

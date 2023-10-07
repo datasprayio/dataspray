@@ -26,6 +26,7 @@ import com.amazonaws.arn.Arn;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayCustomAuthorizerEvent;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import io.dataspray.authorizer.model.AuthPolicy;
@@ -35,7 +36,6 @@ import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.ApiAccessStore.ApiAccess;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,7 +60,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             String apiKeyStr = extractApiKeyFromAuthorization(event);
 
             ApiAccess apiAccess = apiAccessStore.getApiAccessByApiKey(apiKeyStr, true)
-                    .orElseThrow(() -> new NotAuthorizedException("Bearer"));
+                    .orElseThrow(ApiGatewayUnauthorized::new);
             String principalId = apiAccess.getAccountId();
 
             // Extract endpoint info
@@ -79,8 +79,8 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                     apiAccess.getUsageKey(),
                     Map.of(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID, apiAccess.getAccountId(),
                             AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE, apiAccess.getApiKey())));
-        } catch (NotAuthorizedException ex) {
-            log.info("Client unauthorized {}", ex.getChallenges());
+        } catch (ApiGatewayUnauthorized ex) {
+            log.info("Client unauthorized");
             // if the client token is not recognized or invalid, API Gateway
             // accepts a 401 Unauthorized response to the client by failing like so.
             // https://github.com/awslabs/aws-apigateway-lambda-authorizer-blueprints/blob/master/blueprints/java/src/example/APIGatewayAuthorizerHandler.java#L42
@@ -91,18 +91,19 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
         }
     }
 
-    private String extractApiKeyFromAuthorization(APIGatewayCustomAuthorizerEvent event) throws NotAuthorizedException {
+    private String extractApiKeyFromAuthorization(APIGatewayCustomAuthorizerEvent event) throws ApiGatewayUnauthorized {
         String authorizationHeaderValue = event.getHeaders().getOrDefault(AUTHORIZATION_HEADER, "");
         if (authorizationHeaderValue.length() <= 7) {
-            throw new NotAuthorizedException("Bearer");
+            throw new ApiGatewayUnauthorized();
         }
         if (!authorizationHeaderValue.toLowerCase().startsWith("bearer ")) {
-            throw new NotAuthorizedException("Bearer");
+            throw new ApiGatewayUnauthorized();
         }
         return authorizationHeaderValue.substring(7);
     }
 
-    private PolicyDocument generatePolicyDocument(String region, String awsAccountId, String restApiId, String stage, ApiAccess apiKey) {
+    @VisibleForTesting
+    public static PolicyDocument generatePolicyDocument(String region, String awsAccountId, String restApiId, String stage, ApiAccess apiKey) {
 
         PolicyDocument policyDocument = new PolicyDocument(region, awsAccountId, restApiId, stage);
 

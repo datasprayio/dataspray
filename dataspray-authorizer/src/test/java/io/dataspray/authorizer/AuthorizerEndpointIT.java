@@ -52,43 +52,57 @@ import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.UUID;
+import java.util.Optional;
 import java.util.stream.LongStream;
 
 import static io.dataspray.singletable.TableType.*;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.containsString;
 
 @Slf4j
 @QuarkusIntegrationTest
 @QuarkusTestResource(AuthorizerLocalstackLifecycleManager.class)
-class AuthorizerEndpointIT {
+class AuthorizerEndpointIT extends AuthorizerEndpointBase {
     ApiAccess apiKey;
 
     /** Injected via {@link io.dataspray.common.aws.test.AbstractLocalstackLifecycleManager#inject(Object)} */
     LocalStackContainer localStackContainer;
 
+    Optional<SingleTable> singleTableCache = Optional.empty();
+
     /**
      * Since an integration test cannot inject resources even for test setup, this method re-implements
      * {@link io.dataspray.store.DynamoApiGatewayApiAccessStore#createApiAccess} to add an API key entry in Dynamo.
      */
-    @BeforeEach
-    public void beforeEach() {
-        // Generate an API access token
-        apiKey = new ApiAccess(
-                new KeygenUtil().generateSecureApiKey(DynamoApiGatewayApiAccessStore.API_KEY_LENGTH),
-                UUID.randomUUID().toString(),
-                ApiAccessStore.UsageKeyType.UNLIMITED.getId(),
-                "test key",
-                ImmutableSet.of(),
-                null);
+    @Override
+    ApiAccessStore.ApiAccess createApiAccess(
+            String accountId,
+            ApiAccessStore.UsageKeyType usageKeyType,
+            String description,
+            Optional<ImmutableSet<String>> queueWhitelistOpt,
+            Optional<Instant> expiryOpt) {
 
-        // Store the token in Dynamo
+        ApiAccess apiAccess = new ApiAccess(
+                new KeygenUtil().generateSecureApiKey(DynamoApiGatewayApiAccessStore.API_KEY_LENGTH),
+                accountId,
+                usageKeyType.getId(),
+                description,
+                queueWhitelistOpt.orElse(ImmutableSet.of()),
+                expiryOpt.map(Instant::toEpochMilli).orElse(null));
+        SingleTable singleTable = getSingleTable();
+        singleTable.createTableIfNotExists(SingleTableProvider.LSI_COUNT, SingleTableProvider.GSI_COUNT);
+        TableSchema<ApiAccess> apiKeySchema = singleTable.parseTableSchema(ApiAccess.class);
+        apiKeySchema.table().putItem(apiKeySchema.toItem(apiAccess));
+        return apiAccess;
+    }
+
+    private SingleTable getSingleTable() {
+        if (singleTableCache.isPresent()) {
+            return singleTableCache.get();
+        }
+
         AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder
                 .standard()
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
@@ -103,8 +117,6 @@ class AuthorizerEndpointIT {
                 .tablePrefix(SingleTableProvider.TABLE_PREFIX_DEFAULT)
                 .build();
 
-
-        singleTable.createTableIfNotExists(SingleTableProvider.LSI_COUNT, SingleTableProvider.GSI_COUNT);
         /*
          * TODO Remove this call once the bug is fixed in SingleTable.
          * LocalStack version <=2.2.0 has a bug that prevents SingleTable to detect DynamoDB table does not exist and fails to
@@ -112,8 +124,8 @@ class AuthorizerEndpointIT {
          */
         createSingleTableTable(amazonDynamoDB);
 
-        TableSchema<ApiAccess> apiKeySchema = singleTable.parseTableSchema(ApiAccess.class);
-        apiKeySchema.table().putItem(apiKeySchema.toItem(apiKey));
+        singleTableCache = Optional.of(singleTable);
+        return singleTableCache.get();
     }
 
     private void createSingleTableTable(AmazonDynamoDB amazonDynamoDB) {
@@ -180,18 +192,5 @@ class AuthorizerEndpointIT {
         return tablePrefix + (type == Primary
                 ? type.name().toLowerCase()
                 : type.name().toLowerCase() + indexNumber);
-    }
-
-    @Test
-    void handleRequest() {
-        var rs = given()
-                .contentType("application/json")
-                .accept("application/json")
-                .body(AuthorizerTest.createEvent(UUID.randomUUID().toString(), UUID.randomUUID().toString()));
-        var r = rs.when()
-                .post();
-        r.then()
-                .statusCode(200)
-                .body(containsString("Unauthorized"));
     }
 }

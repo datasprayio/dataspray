@@ -26,6 +26,7 @@ package io.dataspray.store;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.singletable.DynamoTable;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -64,7 +65,8 @@ public interface ApiAccessStore {
     @EqualsAndHashCode(onlyExplicitlyIncluded = true)
     @Builder(toBuilder = true)
     @DynamoTable(type = Primary, partitionKeys = "apiKey", rangePrefix = "apiKey")
-    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = {"accountId"}, rangePrefix = "apiKeyByAccountId")
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = "accountId", rangePrefix = "apiKeyByAccountId")
+    @RegisterForReflection
     class ApiAccess {
         @NonNull
         @EqualsAndHashCode.Include

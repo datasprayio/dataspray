@@ -28,6 +28,7 @@ import io.dataspray.singletable.SingleTable;
 import io.quarkus.runtime.Startup;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -50,6 +51,8 @@ public class SingleTableProvider {
     Gson gson;
     @Inject
     AmazonDynamoDB dynamo;
+    @Inject
+    Provider<SingleTable> singleTableProvider;
 
     @Singleton
     public SingleTable getSingleTable() {
@@ -62,9 +65,9 @@ public class SingleTableProvider {
     }
 
     @Startup
-    void init(SingleTable singleTable) {
+    void init() {
         if (createTableOnStartup) {
-            singleTable.createTableIfNotExists(LSI_COUNT, GSI_COUNT);
+            singleTableProvider.get().createTableIfNotExists(LSI_COUNT, GSI_COUNT);
         }
     }
 }

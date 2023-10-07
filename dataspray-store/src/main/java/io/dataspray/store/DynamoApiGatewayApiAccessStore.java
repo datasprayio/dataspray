@@ -74,7 +74,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     private Cache<String, Optional<ApiAccess>> apiAccessByApiKeyCache;
 
     @Startup
-    void init(SingleTable singleTable) {
+    void init() {
         apiAccessByApiKeyCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(Duration.ofMinutes(1))
                 .build();
@@ -150,7 +150,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         // Fetch from DB
         Optional<ApiAccess> apiAccessOpt = Optional.ofNullable(apiKeySchema.fromItem(apiKeySchema.table().getItem(new GetItemSpec()
                         .withPrimaryKey(apiKeySchema.primaryKey(Map.of(
-                                "apiKeyValue", apiKey))))))
+                                "apiKey", apiKey))))))
                 .filter(apiAccess -> apiAccess.getTtlInEpochSec() >= Instant.now().getEpochSecond());
 
         // Update cache

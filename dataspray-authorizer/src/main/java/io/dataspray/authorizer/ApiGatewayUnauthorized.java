@@ -22,21 +22,5 @@
 
 package io.dataspray.authorizer;
 
-import com.fasterxml.jackson.datatype.joda.deser.IntervalDeserializer;
-import io.quarkus.runtime.annotations.RegisterForReflection;
-import org.joda.time.Interval;
-
-@RegisterForReflection(targets = {
-        IntervalDeserializer.class,
-        Interval.class,
-        com.amazonaws.partitions.model.Partitions.class,
-        com.amazonaws.partitions.model.Partition.class,
-        com.amazonaws.partitions.model.Endpoint.class,
-        com.amazonaws.partitions.model.Region.class,
-        com.amazonaws.partitions.model.Service.class,
-        com.amazonaws.partitions.model.CredentialScope.class,
-        java.util.HashSet.class,
-        com.amazonaws.auth.AWS4Signer.class
-})
-public class ResourceConfig {
+public class ApiGatewayUnauthorized extends RuntimeException {
 }
