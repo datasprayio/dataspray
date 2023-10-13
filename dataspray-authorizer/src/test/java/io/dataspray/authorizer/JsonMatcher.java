@@ -51,7 +51,11 @@ public class JsonMatcher extends TypeSafeMatcher<Object> {
         }
         String actualStrPretty = objToStr(strToObj(actualStr));
 
-        return expectedStr.equals(actualStrPretty);
+        boolean matches = expectedStr.equals(actualStrPretty);
+        log.error("JSON Does not match\n\texpected:\n{}\n\tactual:\n ",
+                expectedStr, actualStrPretty);
+
+        return matches;
     }
 
     @Override

@@ -36,6 +36,7 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 import jakarta.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -46,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @ApplicationScoped
 public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
 
@@ -62,6 +64,7 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
     @Singleton
     @IfBuildProperty(name = "aws.dynamo.mock.enable", stringValue = "true")
     public DynamoDbClient getDynamoDbClient() {
+        log.info("Fetching mock DynamoDbClient with instance ID {}", instanceId);
         return instances.get(instanceId).dynamoDbClient();
     }
 
@@ -70,6 +73,7 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
     @Singleton
     @IfBuildProperty(name = "aws.dynamo.mock.enable", stringValue = "true")
     public DynamoDbAsyncClient getDynamoDbAsyncClient() {
+        log.info("Fetching mock DynamoDbAsyncClient with instance ID {}", instanceId);
         return instances.get(instanceId).dynamoDbAsyncClient();
     }
 
@@ -78,6 +82,7 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
     @Singleton
     @IfBuildProperty(name = "aws.dynamo.mock.enable", stringValue = "true")
     public DynamoDbStreamsClient getDynamoDbStreamsClient() {
+        log.info("Fetching mock DynamoDbStreamsClient with instance ID {}", instanceId);
         return instances.get(instanceId).dynamoDbStreamsClient();
     }
 
@@ -86,6 +91,7 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
     @Singleton
     @IfBuildProperty(name = "aws.dynamo.mock.enable", stringValue = "true")
     public DynamoDbStreamsAsyncClient getDynamoDbStreamsAsyncClient() {
+        log.info("Fetching mock DynamoDbStreamsAsyncClient with instance ID {}", instanceId);
         return instances.get(instanceId).dynamoDbStreamsAsyncClient();
     }
 
@@ -94,6 +100,7 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
     @Singleton
     @IfBuildProperty(name = "aws.dynamo.mock.enable", stringValue = "true")
     public AmazonDynamoDB getAmazonDynamoDB() {
+        log.info("Fetching mock AmazonDynamoDB with instance ID {}", instanceId);
         return instances.get(instanceId).amazonDynamoDB();
     }
 
@@ -102,11 +109,13 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
     @Singleton
     @IfBuildProperty(name = "aws.dynamo.mock.enable", stringValue = "true")
     public AmazonDynamoDBStreams getAmazonDynamoDBStreams() {
+        log.info("Fetching mock AmazonDynamoDBStreams with instance ID {}", instanceId);
         return instances.get(instanceId).amazonDynamoDBStreams();
     }
 
     @Singleton
     public AmazonDynamoDBLocal getAmazonDynamoDBLocal() {
+        log.info("Fetching mock AmazonDynamoDBLocal");
         System.setProperty("sqlite4java.library.path", "target/native-lib");
         return DynamoDBEmbedded.create();
     }
@@ -118,6 +127,7 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
         System.setProperty("sqlite4java.library.path", "target/native-lib");
 
         instanceId = UUID.randomUUID().toString();
+        log.info("Starting mock DynamoDb instance with ID {}", instanceId);
         AmazonDynamoDBLocal amazonDynamoDBLocal = DynamoDBEmbedded.create();
 
         return ImmutableMap.of("aws.dynamo.mock.instanceId", instanceId);
@@ -125,6 +135,7 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
 
     @Override
     public void stop() {
+        log.info("Shutting down mock DynamoDb instance with ID {}", instanceId);
         instances.remove(instanceId).shutdown();
     }
 

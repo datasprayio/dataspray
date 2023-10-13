@@ -35,11 +35,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import static io.dataspray.authorizer.JsonMatcher.jsonObjectEqualTo;
 import static io.dataspray.authorizer.JsonMatcher.jsonStringEqualTo;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -113,9 +111,8 @@ abstract class AuthorizerBase {
                     response.statusCode(200)
                             .body("principalId", equalTo(apiAccess.getAccountId()))
                             .body("usageIdentifierKey", equalTo(apiAccessOpt.flatMap(ApiAccess::getUsageKey).orElse(null)))
-                            .body("context", jsonObjectEqualTo(Map.of(
-                                    AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID, apiAccess.getAccountId(),
-                                    AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE, apiAccess.getApiKey())))
+                            .body("context." + AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID, equalTo(apiAccess.getAccountId()))
+                            .body("context." + AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE, equalTo(apiAccess.getApiKey()))
                             .body("policyDocument", jsonStringEqualTo(ResourceUtil.getTestResource(
                                     testType == TestType.AUTHORIZED_QUEUE_WHITELIST
                                             ? "io/dataspray/authorizer/AuthorizerEndpointBase/authorized-queue-whitelist.json"

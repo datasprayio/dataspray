@@ -24,7 +24,6 @@ package io.dataspray.stream.control;
 
 import com.google.common.base.Enums;
 import com.google.common.collect.ImmutableSet;
-import io.dataspray.web.resource.AbstractResource;
 import io.dataspray.store.LambdaDeployer;
 import io.dataspray.store.LambdaDeployer.DeployedVersion;
 import io.dataspray.store.LambdaDeployer.State;
@@ -38,6 +37,7 @@ import io.dataspray.stream.control.model.TaskVersion;
 import io.dataspray.stream.control.model.TaskVersions;
 import io.dataspray.stream.control.model.UploadCodeRequest;
 import io.dataspray.stream.control.model.UploadCodeResponse;
+import io.dataspray.web.resource.AbstractResource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;

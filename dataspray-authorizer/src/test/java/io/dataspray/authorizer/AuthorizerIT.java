@@ -78,7 +78,7 @@ class AuthorizerIT extends AuthorizerBase {
                 usageKeyType.getId(),
                 description,
                 queueWhitelistOpt.orElse(ImmutableSet.of()),
-                expiryOpt.map(Instant::toEpochMilli).orElse(null));
+                expiryOpt.map(Instant::getEpochSecond).orElse(null));
         TableSchema<ApiAccess> apiKeySchema = singleTable.parseTableSchema(ApiAccess.class);
         apiKeySchema.table().putItem(apiKeySchema.toItem(apiAccess));
         return apiAccess;
