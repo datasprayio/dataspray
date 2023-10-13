@@ -38,7 +38,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 public abstract class AbstractLocalstackLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
-    private static final String LOCALSTACK_VERSION = "2.2.0";
+    private static final String LOCALSTACK_VERSION = "2.3.0";
 
     private Optional<LocalStackContainer> localStackContainerOpt;
 
@@ -100,6 +100,8 @@ public abstract class AbstractLocalstackLifecycleManager implements QuarkusTestR
                 propsBuilder.put("aws.s3.pathStyleEnabled", "true");
                 break;
             case API_GATEWAY:
+                propsBuilder.put("aws.apigateway.serviceEndpoint", container.getEndpointOverride(Service.API_GATEWAY).toString());
+                propsBuilder.put("aws.apigateway.productionRegion", container.getRegion());
                 break;
             default:
                 throw new RuntimeException("Service " + service + " not supported");

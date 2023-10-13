@@ -20,37 +20,18 @@
  * SOFTWARE.
  */
 
-package io.dataspray.authorizer;
+package io.dataspray.authorizer.model;
 
-import com.google.common.collect.ImmutableSet;
-import io.dataspray.store.ApiAccessStore;
-import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
+import com.google.common.collect.ImmutableMap;
+import io.quarkus.runtime.annotations.RegisterForReflection;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-import java.time.Instant;
-import java.util.Optional;
-
-@Slf4j
-@QuarkusTest
-class AuthorizerTest extends AuthorizerBase {
-
-    @Inject
-    ApiAccessStore apiAccessStore;
-
-    @Override
-    protected ApiAccessStore.ApiAccess createApiAccess(
-            String accountId,
-            ApiAccessStore.UsageKeyType usageKeyType,
-            String description,
-            Optional<ImmutableSet<String>> queueWhitelistOpt,
-            Optional<Instant> expiryOpt) {
-
-        return apiAccessStore.createApiAccess(
-                accountId,
-                usageKeyType,
-                description,
-                queueWhitelistOpt,
-                expiryOpt);
-    }
+@Data
+@AllArgsConstructor
+@RegisterForReflection
+public class Response {
+    int statusCode;
+    ImmutableMap<String, String> headers;
+    Object body;
 }

@@ -124,6 +124,9 @@
     "name": "com.amazonaws.services.lambda.runtime.RequestHandler"
   },
   {
+    "name": "com.amazonaws.services.lambda.runtime.RequestStreamHandler"
+  },
+  {
     "name": "com.amazonaws.services.lambda.runtime.events.APIGatewayCustomAuthorizerEvent",
     "allDeclaredFields": true,
     "queryAllDeclaredMethods": true,

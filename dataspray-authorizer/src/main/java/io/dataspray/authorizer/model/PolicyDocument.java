@@ -20,37 +20,40 @@
  * SOFTWARE.
  */
 
-package io.dataspray.authorizer;
+package io.dataspray.authorizer.model;
 
-import com.google.common.collect.ImmutableSet;
-import io.dataspray.store.ApiAccessStore;
-import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.gson.annotations.SerializedName;
+import io.quarkus.runtime.annotations.RegisterForReflection;
+import lombok.Getter;
 
-import java.time.Instant;
-import java.util.Optional;
+import java.util.List;
 
-@Slf4j
-@QuarkusTest
-class AuthorizerEndpointTest extends AuthorizerEndpointBase {
+/**
+ * PolicyDocument represents an IAM Policy, specifically for the execute-api:Invoke action
+ * in the context of an API Gateway Authorizer
+ */
+@Getter
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+@RegisterForReflection
+public class PolicyDocument {
 
-    @Inject
-    ApiAccessStore apiAccessStore;
+    @JsonProperty("Version")
+    @SerializedName("Version")
+    final String version = "2012-10-17";
+    @JsonProperty("Statement")
+    @SerializedName("Statement")
+    private List<Statement> statements = Lists.newArrayList();
 
-    @Override
-    ApiAccessStore.ApiAccess createApiAccess(
-            String accountId,
-            ApiAccessStore.UsageKeyType usageKeyType,
-            String description,
-            Optional<ImmutableSet<String>> queueWhitelistOpt,
-            Optional<Instant> expiryOpt) {
+    public ImmutableList<Statement> getStatements() {
+        return ImmutableList.copyOf(statements);
+    }
 
-        return apiAccessStore.createApiAccess(
-                accountId,
-                usageKeyType,
-                description,
-                queueWhitelistOpt,
-                expiryOpt);
+    public Statement addStatement(Statement statement) {
+        statements.add(statement);
+        return statement;
     }
 }

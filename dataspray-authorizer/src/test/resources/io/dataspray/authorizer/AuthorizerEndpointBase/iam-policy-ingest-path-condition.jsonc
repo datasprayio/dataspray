@@ -1,5 +1,6 @@
-// TODO convert this to a test
-// To test denying Ingest API paths with account and target path parameters, use the following simulator:
+// To test that this policy structure does in fact work as expected,
+// by denying Ingest API paths with account and target path parameters,
+// use the following policy simulator:
 // https://policysim.aws.amazon.com/home/index.jsp?#
 // Create a new inline policy and paste the content of this file.
 // Then select "API Gateway" with Invoke method (and another one for testing denial)

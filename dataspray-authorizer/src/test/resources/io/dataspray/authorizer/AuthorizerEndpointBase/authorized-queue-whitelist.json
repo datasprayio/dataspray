@@ -1,0 +1,30 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "execute-api:Invoke",
+      "Effect": "ALLOW",
+      "Resource": [
+        "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/*"
+      ]
+    },
+    {
+      "Action": "execute-api:Invoke",
+      "Effect": "DENY",
+      "Resource": [
+        "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/account",
+        "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/account/*"
+      ],
+      "Condition": {
+        "StringNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/account/test-account-id/target/whitelisted-queue-1",
+            "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/account/test-account-id/target/whitelisted-queue-1/*",
+            "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/account/test-account-id/target/whitelisted-queue-2",
+            "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/account/test-account-id/target/whitelisted-queue-2/*"
+          ]
+        }
+      }
+    }
+  ]
+}

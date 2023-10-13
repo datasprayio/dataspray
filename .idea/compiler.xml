@@ -44,8 +44,8 @@
         <module name="dataspray-base-lambda-web-service" />
         <module name="dataspray-resources" />
         <module name="dataspray-stream-control" />
-        <module name="dataspray-site" />
         <module name="dataspray-package" />
+        <module name="dataspray-site" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

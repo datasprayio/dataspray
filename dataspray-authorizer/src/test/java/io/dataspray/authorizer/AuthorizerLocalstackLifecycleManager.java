@@ -26,11 +26,12 @@ import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.aws.test.AbstractLocalstackLifecycleManager;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
+import static org.testcontainers.containers.localstack.LocalStackContainer.Service.API_GATEWAY;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.DYNAMODB;
 
 public class AuthorizerLocalstackLifecycleManager extends AbstractLocalstackLifecycleManager {
     @Override
     protected ImmutableSet<LocalStackContainer.Service> enabledServices() {
-        return ImmutableSet.of(DYNAMODB);
+        return ImmutableSet.of(DYNAMODB, API_GATEWAY);
     }
 }

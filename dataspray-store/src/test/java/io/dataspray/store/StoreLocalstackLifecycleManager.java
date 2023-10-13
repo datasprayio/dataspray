@@ -20,37 +20,18 @@
  * SOFTWARE.
  */
 
-package io.dataspray.authorizer;
+package io.dataspray.store;
 
 import com.google.common.collect.ImmutableSet;
-import io.dataspray.store.ApiAccessStore;
-import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
+import io.dataspray.common.aws.test.AbstractLocalstackLifecycleManager;
+import org.testcontainers.containers.localstack.LocalStackContainer;
 
-import java.time.Instant;
-import java.util.Optional;
+import static org.testcontainers.containers.localstack.LocalStackContainer.Service.API_GATEWAY;
+import static org.testcontainers.containers.localstack.LocalStackContainer.Service.DYNAMODB;
 
-@Slf4j
-@QuarkusTest
-class AuthorizerTest extends AuthorizerBase {
-
-    @Inject
-    ApiAccessStore apiAccessStore;
-
+public class StoreLocalstackLifecycleManager extends AbstractLocalstackLifecycleManager {
     @Override
-    protected ApiAccessStore.ApiAccess createApiAccess(
-            String accountId,
-            ApiAccessStore.UsageKeyType usageKeyType,
-            String description,
-            Optional<ImmutableSet<String>> queueWhitelistOpt,
-            Optional<Instant> expiryOpt) {
-
-        return apiAccessStore.createApiAccess(
-                accountId,
-                usageKeyType,
-                description,
-                queueWhitelistOpt,
-                expiryOpt);
+    protected ImmutableSet<LocalStackContainer.Service> enabledServices() {
+        return ImmutableSet.of(DYNAMODB, API_GATEWAY);
     }
 }

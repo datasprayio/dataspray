@@ -23,13 +23,16 @@
 package io.dataspray.store;
 
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.singletable.DynamoTable;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.Value;
@@ -37,6 +40,7 @@ import lombok.Value;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static io.dataspray.singletable.TableType.Gsi;
@@ -58,7 +62,11 @@ public interface ApiAccessStore {
 
     Optional<ApiAccess> getApiAccessByApiKey(String apiKey, boolean useCache);
 
-    void revokeApiKey(String apiKeyValue);
+    void revokeApiKey(String apiKey);
+
+    UsageKey getOrCreateUsageKeyForAccount(String accountId);
+
+    void getAllUsageKeys(Consumer<ImmutableList<UsageKey>> batchConsumer);
 
     @Value
     @AllArgsConstructor
@@ -85,24 +93,60 @@ public interface ApiAccessStore {
         @NonNull
         ImmutableSet<String> queueWhitelist;
 
+        @Nullable
         Long ttlInEpochSec;
 
         public UsageKeyType getUsageKeyType() {
             return UsageKeyType.BY_ID.get(usageKeyTypeId);
         }
 
+        /**
+         * @return The usage key which is used to identify the usage of the API key.
+         */
         public Optional<String> getUsageKey() {
             switch (getUsageKeyType()) {
                 case UNLIMITED:
                     return Optional.empty();
                 case ACCOUNT_WIDE:
-                    return Optional.of(accountId);
+                    // Share usage key across all API keys on the same account.
+                    // Let's just use the account ID as usage key since it's not a secret.
+                    return Optional.of(getUsageKeyType().getId() + "-" + accountId);
                 default:
                     throw new IllegalStateException("Unknown usage key type: " + getUsageKeyType());
             }
         }
+
+        public boolean isTtlNotExpired() {
+            return ttlInEpochSec == null
+                   || ttlInEpochSec >= Instant.now().getEpochSecond();
+        }
     }
 
+    /**
+     * Mapping of Account ID to Api Key Amazon ID.
+     * <br />
+     * An api key has its own Amazon ID that is required for all API calls, hence this mapping.
+     */
+    @Value
+    @AllArgsConstructor
+    @EqualsAndHashCode
+    @Builder(toBuilder = true)
+    @DynamoTable(type = Primary, partitionKeys = "accountId", rangePrefix = "usageKeyByAccountId")
+    @DynamoTable(type = Gsi, indexNumber = 1, shardKeys = {"accountId"}, shardCount = 10, rangePrefix = "usageKeys", rangeKeys = "accountId")
+    @RegisterForReflection
+    class UsageKey {
+        @NonNull
+        String accountId;
+
+        /**
+         * Unique Amazon ID for a given api key.
+         * This is because ApiGateway API has no methods to fetch by api key, only by its auto-generated ID.
+         */
+        @NonNull
+        String usageKeyId;
+    }
+
+    @Getter
     enum UsageKeyType {
         UNLIMITED(0),
         ACCOUNT_WIDE(1);
@@ -110,10 +154,6 @@ public interface ApiAccessStore {
 
         UsageKeyType(long id) {
             this.id = id;
-        }
-
-        public long getId() {
-            return id;
         }
 
         public static final ImmutableMap<Long, UsageKeyType> BY_ID = Arrays.stream(values())

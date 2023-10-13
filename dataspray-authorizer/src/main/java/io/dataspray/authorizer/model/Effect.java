@@ -20,37 +20,15 @@
  * SOFTWARE.
  */
 
-package io.dataspray.authorizer;
+package io.dataspray.authorizer.model;
 
-import com.google.common.collect.ImmutableSet;
-import io.dataspray.store.ApiAccessStore;
-import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
+import com.google.gson.annotations.SerializedName;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
-import java.time.Instant;
-import java.util.Optional;
-
-@Slf4j
-@QuarkusTest
-class AuthorizerTest extends AuthorizerBase {
-
-    @Inject
-    ApiAccessStore apiAccessStore;
-
-    @Override
-    protected ApiAccessStore.ApiAccess createApiAccess(
-            String accountId,
-            ApiAccessStore.UsageKeyType usageKeyType,
-            String description,
-            Optional<ImmutableSet<String>> queueWhitelistOpt,
-            Optional<Instant> expiryOpt) {
-
-        return apiAccessStore.createApiAccess(
-                accountId,
-                usageKeyType,
-                description,
-                queueWhitelistOpt,
-                expiryOpt);
-    }
+@RegisterForReflection
+public enum Effect {
+    @SerializedName("Allow")
+    ALLOW,
+    @SerializedName("Deny")
+    DENY
 }

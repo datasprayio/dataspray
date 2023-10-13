@@ -22,35 +22,16 @@
 
 package io.dataspray.authorizer;
 
-import com.google.common.collect.ImmutableSet;
-import io.dataspray.store.ApiAccessStore;
-import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
+import lombok.SneakyThrows;
 
-import java.time.Instant;
-import java.util.Optional;
+public class ResourceUtil {
 
-@Slf4j
-@QuarkusTest
-class AuthorizerTest extends AuthorizerBase {
-
-    @Inject
-    ApiAccessStore apiAccessStore;
-
-    @Override
-    protected ApiAccessStore.ApiAccess createApiAccess(
-            String accountId,
-            ApiAccessStore.UsageKeyType usageKeyType,
-            String description,
-            Optional<ImmutableSet<String>> queueWhitelistOpt,
-            Optional<Instant> expiryOpt) {
-
-        return apiAccessStore.createApiAccess(
-                accountId,
-                usageKeyType,
-                description,
-                queueWhitelistOpt,
-                expiryOpt);
+    @SneakyThrows
+    public static String getTestResource(String resourceName) {
+        try (var resource = ResourceUtil.class
+                .getClassLoader()
+                .getResourceAsStream(resourceName)) {
+            return new String(resource.readAllBytes());
+        }
     }
 }
