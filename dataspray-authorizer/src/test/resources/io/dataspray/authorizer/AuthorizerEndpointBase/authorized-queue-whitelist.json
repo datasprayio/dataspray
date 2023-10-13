@@ -18,10 +18,10 @@
       "Condition": {
         "StringNotLike": {
           "aws:PrincipalArn": [
-            "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/account/test-account-id/target/whitelisted-queue-1",
-            "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/account/test-account-id/target/whitelisted-queue-1/*",
-            "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/account/test-account-id/target/whitelisted-queue-2",
-            "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/account/test-account-id/target/whitelisted-queue-2/*"
+            "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/account/fd376965-10d2-43b3-a16c-35d3d8f0455a/target/whitelisted-queue-1",
+            "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/account/fd376965-10d2-43b3-a16c-35d3d8f0455a/target/whitelisted-queue-1/*",
+            "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/account/fd376965-10d2-43b3-a16c-35d3d8f0455a/target/whitelisted-queue-2",
+            "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/account/fd376965-10d2-43b3-a16c-35d3d8f0455a/target/whitelisted-queue-2/*"
           ]
         }
       }

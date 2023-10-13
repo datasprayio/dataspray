@@ -23,7 +23,10 @@
 package io.dataspray.authorizer;
 
 import com.google.common.collect.ImmutableSet;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import io.dataspray.store.ApiAccessStore;
+import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -31,12 +34,18 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Instant;
 import java.util.Optional;
 
+import static io.dataspray.store.DynamoApiGatewayApiAccessStore.API_KEY_LENGTH;
+
 @Slf4j
 @QuarkusTest
 class AuthorizerTest extends AuthorizerBase {
 
     @Inject
     ApiAccessStore apiAccessStore;
+    @Inject
+    SingleTable singleTable;
+    @Inject
+    KeygenUtil keygenUtil;
 
     @Override
     protected ApiAccessStore.ApiAccess createApiAccess(
@@ -46,11 +55,17 @@ class AuthorizerTest extends AuthorizerBase {
             Optional<ImmutableSet<String>> queueWhitelistOpt,
             Optional<Instant> expiryOpt) {
 
-        return apiAccessStore.createApiAccess(
+        ApiAccessStore.ApiAccess apiAccess = new ApiAccessStore.ApiAccess(
+                keygenUtil.generateSecureApiKey(API_KEY_LENGTH),
                 accountId,
-                usageKeyType,
+                usageKeyType.getId(),
                 description,
-                queueWhitelistOpt,
-                expiryOpt);
+                queueWhitelistOpt.orElseGet(ImmutableSet::of),
+                expiryOpt.map(Instant::getEpochSecond).orElse(null));
+
+        TableSchema<ApiAccessStore.ApiAccess> apiAccessSchema = singleTable.parseTableSchema(ApiAccessStore.ApiAccess.class);
+        apiAccessSchema.table().putItem(apiAccessSchema.toItem(apiAccess));
+
+        return apiAccess;
     }
 }
