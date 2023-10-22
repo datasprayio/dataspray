@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Slf4j
 @QuarkusTest
 @TestProfile(AwsTestProfile.class)
-public class ControlTest {
+public class OldControlTest {
 
     @ConfigProperty(name = LambdaDeployerImpl.CODE_BUCKET_NAME_PROP_NAME)
     String codeBucketName;

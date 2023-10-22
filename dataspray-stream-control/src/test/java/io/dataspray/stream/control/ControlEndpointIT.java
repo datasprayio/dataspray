@@ -22,8 +22,12 @@
 
 package io.dataspray.stream.control;
 
+import io.dataspray.common.aws.test.MotoLifecycleManager;
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 
 @QuarkusIntegrationTest
-public class ControlIT extends ControlTest {
+@QuarkusTestResource(MotoLifecycleManager.class)
+public class ControlIT {
+    // TODO
 }

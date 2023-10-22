@@ -26,9 +26,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBStreams;
 import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
 import com.amazonaws.services.dynamodbv2.local.shared.access.AmazonDynamoDBLocal;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import io.quarkus.arc.properties.IfBuildProperty;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.quarkus.test.junit.QuarkusTestProfile;
@@ -37,35 +35,26 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.streams.DynamoDbStreamsAsyncClient;
 import software.amazon.awssdk.services.dynamodb.streams.DynamoDbStreamsClient;
 
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Slf4j
 @ApplicationScoped
 public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
 
-    /**
-     * This is not the best way of doing this, but MockDynamoDbClient will be instantiated twice 1/ as a test resource
-     * and 2/ as a bean. This property is either populated in start method or injected as a config property
-     * respectively.
-     */
-    @ConfigProperty(name = "aws.dynamo.mock.instanceId", defaultValue = "n/a")
-    String instanceId;
+    private volatile AmazonDynamoDBLocal instance;
 
     @Alternative
     @Priority(1)
     @Singleton
     @IfBuildProperty(name = "aws.dynamo.mock.enable", stringValue = "true")
     public DynamoDbClient getDynamoDbClient() {
-        log.info("Fetching mock DynamoDbClient with instance ID {}", instanceId);
-        return instances.get(instanceId).dynamoDbClient();
+        log.info("Fetching mock DynamoDbClient");
+        return getInstance().dynamoDbClient();
     }
 
     @Alternative
@@ -73,8 +62,8 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
     @Singleton
     @IfBuildProperty(name = "aws.dynamo.mock.enable", stringValue = "true")
     public DynamoDbAsyncClient getDynamoDbAsyncClient() {
-        log.info("Fetching mock DynamoDbAsyncClient with instance ID {}", instanceId);
-        return instances.get(instanceId).dynamoDbAsyncClient();
+        log.info("Fetching mock DynamoDbAsyncClient");
+        return getInstance().dynamoDbAsyncClient();
     }
 
     @Alternative
@@ -82,8 +71,8 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
     @Singleton
     @IfBuildProperty(name = "aws.dynamo.mock.enable", stringValue = "true")
     public DynamoDbStreamsClient getDynamoDbStreamsClient() {
-        log.info("Fetching mock DynamoDbStreamsClient with instance ID {}", instanceId);
-        return instances.get(instanceId).dynamoDbStreamsClient();
+        log.info("Fetching mock DynamoDbStreamsClient");
+        return getInstance().dynamoDbStreamsClient();
     }
 
     @Alternative
@@ -91,8 +80,8 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
     @Singleton
     @IfBuildProperty(name = "aws.dynamo.mock.enable", stringValue = "true")
     public DynamoDbStreamsAsyncClient getDynamoDbStreamsAsyncClient() {
-        log.info("Fetching mock DynamoDbStreamsAsyncClient with instance ID {}", instanceId);
-        return instances.get(instanceId).dynamoDbStreamsAsyncClient();
+        log.info("Fetching mock DynamoDbStreamsAsyncClient");
+        return getInstance().dynamoDbStreamsAsyncClient();
     }
 
     @Alternative
@@ -100,8 +89,8 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
     @Singleton
     @IfBuildProperty(name = "aws.dynamo.mock.enable", stringValue = "true")
     public AmazonDynamoDB getAmazonDynamoDB() {
-        log.info("Fetching mock AmazonDynamoDB with instance ID {}", instanceId);
-        return instances.get(instanceId).amazonDynamoDB();
+        log.info("Fetching mock AmazonDynamoDB");
+        return getInstance().amazonDynamoDB();
     }
 
     @Alternative
@@ -109,45 +98,49 @@ public class MockDynamoDbClient implements QuarkusTestResourceLifecycleManager {
     @Singleton
     @IfBuildProperty(name = "aws.dynamo.mock.enable", stringValue = "true")
     public AmazonDynamoDBStreams getAmazonDynamoDBStreams() {
-        log.info("Fetching mock AmazonDynamoDBStreams with instance ID {}", instanceId);
-        return instances.get(instanceId).amazonDynamoDBStreams();
+        log.info("Fetching mock AmazonDynamoDBStreams");
+        return getInstance().amazonDynamoDBStreams();
     }
 
+    @Alternative
+    @Priority(1)
     @Singleton
+    @IfBuildProperty(name = "aws.dynamo.mock.enable", stringValue = "true")
     public AmazonDynamoDBLocal getAmazonDynamoDBLocal() {
         log.info("Fetching mock AmazonDynamoDBLocal");
-        System.setProperty("sqlite4java.library.path", "target/native-lib");
-        return DynamoDBEmbedded.create();
+        return getInstance();
     }
-
-    private static final Map<String, AmazonDynamoDBLocal> instances = Maps.newConcurrentMap();
 
     @Override
     public Map<String, String> start() {
-        System.setProperty("sqlite4java.library.path", "target/native-lib");
-
-        instanceId = UUID.randomUUID().toString();
-        log.info("Starting mock DynamoDb instance with ID {}", instanceId);
-        AmazonDynamoDBLocal amazonDynamoDBLocal = DynamoDBEmbedded.create();
-
-        return ImmutableMap.of("aws.dynamo.mock.instanceId", instanceId);
+        return Map.of();
     }
 
     @Override
     public void stop() {
-        log.info("Shutting down mock DynamoDb instance with ID {}", instanceId);
-        instances.remove(instanceId).shutdown();
+        if (instance != null) {
+            log.info("Shutting down mock DynamoDb instance");
+            instance.shutdown();
+        }
+    }
+
+    private AmazonDynamoDBLocal getInstance() {
+        if (instance == null) {
+            synchronized (this) {
+                if (instance == null) {
+                    System.setProperty("sqlite4java.library.path", "target/native-lib");
+                    log.info("Starting mock DynamoDb instance");
+                    instance = DynamoDBEmbedded.create();
+                }
+            }
+        }
+        return instance;
     }
 
     public static class Profile implements QuarkusTestProfile {
 
         public Map<String, String> getConfigOverrides() {
             return ImmutableMap.of("aws.dynamo.mock.enable", "true");
-        }
-
-        @Override
-        public List<TestResourceEntry> testResources() {
-            return ImmutableList.of(new TestResourceEntry(MockS3Client.class));
         }
     }
 }
