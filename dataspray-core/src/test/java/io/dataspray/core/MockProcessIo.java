@@ -25,7 +25,7 @@ package io.dataspray.core;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.dataspray.common.TestResourceUtil;
+import io.dataspray.common.test.TestResourceUtil;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import jakarta.inject.Singleton;

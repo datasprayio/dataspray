@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package io.dataspray.common;
+package io.dataspray.common.test;
 
 import lombok.SneakyThrows;
 

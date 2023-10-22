@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package io.dataspray.common.aws.test;
+package io.dataspray.common.test.aws;
 
 import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTestProfile;

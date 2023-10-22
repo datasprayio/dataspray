@@ -24,7 +24,7 @@ package io.dataspray.stream.control;
 
 import com.google.common.collect.ImmutableList;
 import io.dataspray.common.authorizer.AuthorizerConstants;
-import io.dataspray.common.aws.test.AwsTestProfile;
+import io.dataspray.common.test.aws.AwsTestProfile;
 import io.dataspray.store.LambdaDeployerImpl;
 import io.dataspray.stream.client.StreamApi;
 import io.dataspray.stream.control.model.DeployRequest;
@@ -45,6 +45,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.BucketAlreadyOwnedByYouException;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 
 import java.nio.file.Files;
@@ -55,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Slf4j
 @QuarkusTest
 @TestProfile(AwsTestProfile.class)
-public class OldControlTest {
+public class ControlResourceTest {
 
     @ConfigProperty(name = LambdaDeployerImpl.CODE_BUCKET_NAME_PROP_NAME)
     String codeBucketName;
@@ -69,14 +70,18 @@ public class OldControlTest {
 
     @BeforeEach
     public void beforeEach() {
-        s3Client.createBucket(CreateBucketRequest.builder()
-                .bucket(codeBucketName)
-                .build());
+        try {
+            s3Client.createBucket(CreateBucketRequest.builder()
+                    .bucket(codeBucketName)
+                    .build());
+        } catch (BucketAlreadyOwnedByYouException ex) {
+            // Already exists and is ours
+        }
     }
 
     @Test
     public void test() throws Exception {
-        String taskId = "task1";
+        String taskId = "task-control-resource-test";
         UploadCodeResponse uploadCodeResponse = resource.uploadCode(UploadCodeRequest.builder()
                 .taskId(taskId)
                 .contentLengthBytes(12L).build());
@@ -141,7 +146,7 @@ public class OldControlTest {
                                         .version("2")
                                         .status(TaskStatus.StatusEnum.RUNNING)
                                         .lastUpdateStatus(TaskStatus.LastUpdateStatusEnum.SUCCESSFUL).build())).build(),
-                resource.statusAll());
+                filterStatusAll(resource.statusAll(), taskId));
 
         assertEquals(
                 TaskStatus.builder()
@@ -150,6 +155,16 @@ public class OldControlTest {
                 resource.delete(taskId));
     }
 
+    /**
+     * Filters response value to include only status from given task id
+     */
+    private static TaskStatuses filterStatusAll(TaskStatuses taskStatuses, String taskId) {
+        return taskStatuses.toBuilder()
+                .tasks(taskStatuses.getTasks().stream()
+                        .filter(ts -> ts.getTaskId().equals(taskId))
+                        .collect(ImmutableList.toImmutableList()))
+                .build();
+    }
 
     @Mock
     @ApplicationScoped

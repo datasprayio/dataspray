@@ -20,11 +20,11 @@
  * SOFTWARE.
  */
 
-package io.dataspray.common.aws.test;
+package io.dataspray.common.test.aws;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import io.dataspray.common.TestResourceUtil;
+import io.dataspray.common.test.TestResourceUtil;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer;

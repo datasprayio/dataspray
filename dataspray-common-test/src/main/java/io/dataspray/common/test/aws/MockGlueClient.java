@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package io.dataspray.common.aws.test;
+package io.dataspray.common.test.aws;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -50,7 +50,7 @@ import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
-import static io.dataspray.common.aws.test.MockIamClient.SDK_200;
+import static io.dataspray.common.test.aws.MockIamClient.SDK_200;
 import static org.mockito.Mockito.when;
 
 @ApplicationScoped

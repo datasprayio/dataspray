@@ -28,13 +28,24 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.SdkHttpClient;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClientBuilder;
+
+import java.net.URI;
+import java.util.Optional;
 
 @Slf4j
 @ApplicationScoped
 public class CognitoClientProvider {
+
+    @ConfigProperty(name = "aws.cognito.productionRegion")
+    Optional<String> productionRegionOpt;
+    @ConfigProperty(name = "aws.cognito.serviceEndpoint")
+    Optional<String> serviceEndpointOpt;
 
     @Inject
     AwsCredentialsProvider awsCredentialsProvider;
@@ -44,9 +55,14 @@ public class CognitoClientProvider {
     @Singleton
     public CognitoIdentityProviderClient getCognitoClient() {
         log.debug("Opening Cognito v2 client");
-        return CognitoIdentityProviderClient.builder()
+        CognitoIdentityProviderClientBuilder cognitoIdentityProviderClientBuilder = CognitoIdentityProviderClient.builder()
                 .credentialsProvider(awsCredentialsProvider)
-                .httpClient(sdkHttpClient)
-                .build();
+                .httpClient(sdkHttpClient);
+        serviceEndpointOpt.map(URI::create)
+                .ifPresent(cognitoIdentityProviderClientBuilder::endpointOverride);
+        productionRegionOpt.map(Region::of)
+                .ifPresent(cognitoIdentityProviderClientBuilder::region);
+
+        return cognitoIdentityProviderClientBuilder.build();
     }
 }

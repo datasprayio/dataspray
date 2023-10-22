@@ -20,12 +20,12 @@
  * SOFTWARE.
  */
 
-package io.dataspray.common.aws.test;
+package io.dataspray.common.test.aws;
 
 import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.dataspray.common.TestResourceUtil;
+import io.dataspray.common.test.TestResourceUtil;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import lombok.SneakyThrows;

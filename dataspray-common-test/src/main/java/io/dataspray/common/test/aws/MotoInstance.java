@@ -20,22 +20,20 @@
  * SOFTWARE.
  */
 
-package io.dataspray.stream.control;
+package io.dataspray.common.test.aws;
 
-import io.dataspray.common.test.aws.AwsTestProfile;
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
-import io.restassured.RestAssured;
-import jakarta.ws.rs.core.Response.Status;
-import org.junit.jupiter.api.Test;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import org.testcontainers.containers.GenericContainer;
 
-@QuarkusTest
-@TestProfile(AwsTestProfile.class)
-public class PingTest {
-
-    @Test
-    public void test() {
-        RestAssured.when().get("/ping")
-                .then().statusCode(Status.NO_CONTENT.getStatusCode());
-    }
+@Data
+@AllArgsConstructor
+public class MotoInstance {
+    String region;
+    String awsAccessKey;
+    String awsSecretKey;
+    int port;
+    String endpoint;
+    @SuppressWarnings("rawtypes")
+    GenericContainer motoContainer;
 }

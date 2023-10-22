@@ -75,19 +75,23 @@ public class S3ClientProvider {
         log.debug("Opening S3 v2 client on {}", serviceEndpointOpt);
         waitUntilPortOpen();
         S3ClientBuilder builder = S3Client.builder()
-                .credentialsProvider(awsCredentialsProviderSdk2)
-                .httpClient(sdkHttpClient);
+                .credentialsProvider(awsCredentialsProviderSdk2);
         if (pathStyleEnabled) {
             builder.serviceConfiguration(S3Configuration.builder()
                     .pathStyleAccessEnabled(true).build());
         }
         serviceEndpointOpt.map(URI::create).ifPresent(builder::endpointOverride);
         productionRegionOpt.map(Region::of).ifPresent(builder::region);
-        dnsResolverToOpt.ifPresent(dnsResolverTo -> builder.httpClientBuilder(ApacheHttpClient.builder()
-                .dnsResolver(host -> {
-                    log.trace("Resolving {}", host);
-                    return new InetAddress[]{InetAddress.getByName(dnsResolverTo)};
-                })));
+        dnsResolverToOpt.ifPresentOrElse(
+                // When resolver is set, ignore our injected client, we are running
+                // in a test, instead use one that we can control DNS resolution on
+                dnsResolverTo -> builder.httpClientBuilder(ApacheHttpClient.builder()
+                        .dnsResolver(host -> {
+                            log.trace("Resolving {}", host);
+                            return new InetAddress[]{InetAddress.getByName(dnsResolverTo)};
+                        })),
+                // Otherwise use the provided client
+                () -> builder.httpClient(sdkHttpClient));
         return builder.build();
     }
 

@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package io.dataspray.common.aws.test;
+package io.dataspray.common.test.aws;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBStreams;

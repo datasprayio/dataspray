@@ -140,14 +140,15 @@ public class StreamApiImpl implements StreamApi {
     @Override
     public void uploadCode(String presignedUrlStr, File file) throws IOException {
         log.trace("Uploading file {} to presigned url {}", file.getPath(), presignedUrlStr);
-        Response response = getHttpClient(true, false)
+        try (Response response = getHttpClient(true, false)
                 .newCall(new Request.Builder()
                         .url(presignedUrlStr)
                         .put(RequestBody.create(MediaType.get("application/zip"), file))
                         .build())
-                .execute();
-        if (response.code() < 200 || response.code() > 299) {
-            throw new IOException("Failed with status " + response.code() + " to upload to S3: " + Strings.nullToEmpty(response.message()));
+                .execute()) {
+            if (response.code() < 200 || response.code() > 299) {
+                throw new IOException("Failed with status " + response.code() + " to upload to S3: " + Strings.nullToEmpty(response.message()));
+            }
         }
     }
 }

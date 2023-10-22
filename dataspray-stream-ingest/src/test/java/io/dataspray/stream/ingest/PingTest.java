@@ -22,7 +22,7 @@
 
 package io.dataspray.stream.ingest;
 
-import io.dataspray.common.aws.test.AwsTestProfile;
+import io.dataspray.common.test.aws.AwsTestProfile;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.RestAssured;

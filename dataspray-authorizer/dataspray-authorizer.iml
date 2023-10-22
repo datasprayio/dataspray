@@ -6,4 +6,8 @@
       <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
     </content>
   </component>
+  <component name="Quarkus Tools">
+    <option name="hash" value="-1669883996" />
+    <option name="version" value="1" />
+  </component>
 </module>

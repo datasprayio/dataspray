@@ -29,6 +29,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.json.GsonUtil;
+import io.dataspray.common.test.aws.AbstractLocalstackLifecycleManager;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import io.dataspray.store.ApiAccessStore;
@@ -49,7 +50,7 @@ import java.util.Optional;
 class AuthorizerIT extends AuthorizerBase {
     ApiAccess apiKey;
 
-    /** Injected via {@link io.dataspray.common.aws.test.AbstractLocalstackLifecycleManager#inject(Object)} */
+    /** Injected via {@link AbstractLocalstackLifecycleManager#inject(Object)} */
     LocalStackContainer localStackContainer;
 
     SingleTable singleTable;

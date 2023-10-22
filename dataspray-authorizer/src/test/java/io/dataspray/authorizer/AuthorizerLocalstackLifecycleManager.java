@@ -23,7 +23,7 @@
 package io.dataspray.authorizer;
 
 import com.google.common.collect.ImmutableSet;
-import io.dataspray.common.aws.test.AbstractLocalstackLifecycleManager;
+import io.dataspray.common.test.aws.AbstractLocalstackLifecycleManager;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.API_GATEWAY;

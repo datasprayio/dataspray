@@ -25,17 +25,18 @@ package io.dataspray.stream.control;
 import io.dataspray.common.test.aws.AwsTestProfile;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import io.restassured.RestAssured;
-import jakarta.ws.rs.core.Response.Status;
-import org.junit.jupiter.api.Test;
+import jakarta.inject.Inject;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @QuarkusTest
 @TestProfile(AwsTestProfile.class)
-public class PingTest {
+public class ControlEndpointTest extends ControlEndpointBase {
 
-    @Test
-    public void test() {
-        RestAssured.when().get("/ping")
-                .then().statusCode(Status.NO_CONTENT.getStatusCode());
+    @Inject
+    S3Client s3Client;
+
+    @Override
+    protected S3Client getS3Client() {
+        return s3Client;
     }
 }
