@@ -25,7 +25,6 @@ package io.dataspray.stream.control;
 import com.google.common.collect.ImmutableList;
 import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.dataspray.common.test.aws.AwsTestProfile;
-import io.dataspray.store.LambdaDeployerImpl;
 import io.dataspray.stream.client.StreamApi;
 import io.dataspray.stream.control.model.DeployRequest;
 import io.dataspray.stream.control.model.TaskStatus;
@@ -41,7 +40,6 @@ import io.quarkus.test.junit.TestProfile;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -58,9 +56,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @TestProfile(AwsTestProfile.class)
 public class ControlResourceTest {
 
-    @ConfigProperty(name = LambdaDeployerImpl.CODE_BUCKET_NAME_PROP_NAME)
-    String codeBucketName;
-
     @Inject
     ControlResource resource;
     @Inject
@@ -72,7 +67,7 @@ public class ControlResourceTest {
     public void beforeEach() {
         try {
             s3Client.createBucket(CreateBucketRequest.builder()
-                    .bucket(codeBucketName)
+                    .bucket("io-dataspray-code-upload")
                     .build());
         } catch (BucketAlreadyOwnedByYouException ex) {
             // Already exists and is ours

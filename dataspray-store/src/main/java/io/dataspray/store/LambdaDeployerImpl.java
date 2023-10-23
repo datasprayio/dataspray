@@ -120,9 +120,9 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     String awsRegion;
     @ConfigProperty(name = DEPLOY_ENVIRONMENT_PROP_NAME)
     DeployEnvironment deployEnv;
-    @ConfigProperty(name = CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME)
+    @ConfigProperty(name = CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME, defaultValue = "customer-permission-boundary")
     String customerFunctionPermissionBoundaryName;
-    @ConfigProperty(name = CODE_BUCKET_NAME_PROP_NAME)
+    @ConfigProperty(name = CODE_BUCKET_NAME_PROP_NAME, defaultValue = "io-dataspray-code-upload")
     String codeBucketName;
 
     @Inject
