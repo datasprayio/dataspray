@@ -20,24 +20,20 @@
  * SOFTWARE.
  */
 
-package io.dataspray.web;
+package io.dataspray.stream.control;
 
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.RestAssured;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Test;
+import jakarta.inject.Inject;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import static org.hamcrest.Matchers.equalTo;
-
-@Slf4j
 @QuarkusTest
-public class ExampleTest {
+public class ControlTest extends ControlBase {
 
-    @Test
-    public void testPing() {
-        RestAssured.when()
-                .get("/api/ping")
-                .then()
-                .body(equalTo("OK"));
+    @Inject
+    S3Client s3Client;
+
+    @Override
+    protected S3Client getS3Client() {
+        return s3Client;
     }
 }

@@ -25,7 +25,6 @@ package io.dataspray.web.resource;
 import com.google.common.base.Strings;
 import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.quarkus.amazon.lambda.http.model.AwsProxyRequest;
-import io.quarkus.amazon.lambda.http.model.AwsProxyRequestContext;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Cookie;
@@ -55,8 +54,6 @@ public abstract class AbstractResource {
     @Context
     protected com.amazonaws.services.lambda.runtime.Context lambdaContext;
     @Context
-    protected AwsProxyRequestContext proxyRequestContext;
-    @Context
     protected AwsProxyRequest proxyRequest;
     @Context
     protected SecurityContext securityContext;
@@ -66,11 +63,11 @@ public abstract class AbstractResource {
     protected UriInfo uriInfo;
 
     protected String getCustomerId() {
-        return proxyRequestContext.getAuthorizer().getContextValue(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID);
+        return proxyRequest.getRequestContext().getAuthorizer().getContextValue(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID);
     }
 
     protected String getCustomerApiKey() {
-        return proxyRequestContext.getAuthorizer().getContextValue(AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE);
+        return proxyRequest.getRequestContext().getAuthorizer().getContextValue(AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE);
     }
 
     protected Optional<String> getAuthKey() {

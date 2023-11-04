@@ -133,17 +133,17 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
 
     @SneakyThrows
     private void attemptJoinThread(Thread thread) {
+        thread.join(10_000);
+        if (!thread.isAlive()) {
+            return;
+        }
+        log.warn("Thread {} is not joining, interrupting", thread.getName());
+        thread.interrupt();
         thread.join(5_000);
         if (!thread.isAlive()) {
             return;
         }
-        log.trace("Thread {} is not joining, interrupting", thread.getName());
-        thread.interrupt();
-        thread.join(3_000);
-        if (!thread.isAlive()) {
-            return;
-        }
-        log.trace("Thread {} is not interrupting, stopping", thread.getName());
+        log.warn("Thread {} is not interrupting, stopping", thread.getName());
         thread.stop();
     }
 

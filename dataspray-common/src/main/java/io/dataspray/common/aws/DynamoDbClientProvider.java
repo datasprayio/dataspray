@@ -2,12 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package io.dataspray.common.aws;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import io.dataspray.common.NetworkUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -36,8 +30,6 @@ public class DynamoDbClientProvider {
     Optional<String> serviceEndpointOpt;
 
     @Inject
-    AWSCredentialsProvider awsCredentialsProviderSdk1;
-    @Inject
     AwsCredentialsProvider awsCredentialsProviderSdk2;
     @Inject
     SdkHttpClient sdkHttpClient;
@@ -54,28 +46,6 @@ public class DynamoDbClientProvider {
         serviceEndpointOpt.map(URI::create).ifPresent(builder::endpointOverride);
         productionRegionOpt.map(Region::of).ifPresent(builder::region);
         return builder.build();
-    }
-
-    @Singleton
-    public AmazonDynamoDB getAmazonDynamoDB() {
-        log.debug("Opening Dynamo v1 client on {}", serviceEndpointOpt);
-        waitUntilPortOpen();
-        AmazonDynamoDBClientBuilder amazonDynamoDBClientBuilder = AmazonDynamoDBClientBuilder
-                .standard()
-                .withCredentials(awsCredentialsProviderSdk1);
-        if (serviceEndpointOpt.isPresent() && productionRegionOpt.isPresent()) {
-            amazonDynamoDBClientBuilder.withEndpointConfiguration(
-                    new AwsClientBuilder.EndpointConfiguration(serviceEndpointOpt.get(), productionRegionOpt.get()));
-        } else if (productionRegionOpt.isPresent()) {
-            amazonDynamoDBClientBuilder.withRegion(Regions.fromName(productionRegionOpt.get()));
-        }
-
-        return amazonDynamoDBClientBuilder.build();
-    }
-
-    @Singleton
-    public DynamoDB getDynamoDB(AmazonDynamoDB dynamo) {
-        return new DynamoDB(dynamo);
     }
 
     private void waitUntilPortOpen() {

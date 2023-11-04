@@ -38,7 +38,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import static io.dataspray.authorizer.JsonMatcher.jsonStringEqualTo;
+import static io.dataspray.common.test.JsonMatcher.jsonStringEqualTo;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.jupiter.api.Assertions.fail;

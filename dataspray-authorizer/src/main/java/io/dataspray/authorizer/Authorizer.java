@@ -22,7 +22,6 @@
 
 package io.dataspray.authorizer;
 
-import com.amazonaws.arn.Arn;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayCustomAuthorizerEvent;
@@ -41,6 +40,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.ws.rs.core.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.arns.Arn;
 
 import java.util.Map;
 import java.util.Optional;
@@ -84,8 +84,9 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
 
             // Extract endpoint info
             Arn methodArn = Arn.fromString(event.getMethodArn());
-            String region = methodArn.getRegion();
-            String awsAccountId = methodArn.getAccountId(); // OR event.getRequestContext().getAccountId()
+            String region = methodArn.region().orElseThrow();
+            String awsAccountId = methodArn.accountId()
+                    .orElseGet(() -> event.getRequestContext().getAccountId());
             String restApiId = event.getRequestContext().getApiId();
             String stage = event.getRequestContext().getStage();
 

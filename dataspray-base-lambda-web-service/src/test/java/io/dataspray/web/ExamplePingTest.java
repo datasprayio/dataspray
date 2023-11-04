@@ -20,23 +20,24 @@
  * SOFTWARE.
  */
 
-package io.dataspray.stream.control;
+package io.dataspray.web;
 
-import io.dataspray.common.test.aws.AwsTestProfile;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
-import jakarta.inject.Inject;
-import software.amazon.awssdk.services.s3.S3Client;
+import io.restassured.RestAssured;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.Matchers.equalTo;
+
+@Slf4j
 @QuarkusTest
-@TestProfile(AwsTestProfile.class)
-public class ControlEndpointTest extends ControlEndpointBase {
+public class ExamplePingTest {
 
-    @Inject
-    S3Client s3Client;
-
-    @Override
-    protected S3Client getS3Client() {
-        return s3Client;
+    @Test
+    public void testPing() {
+        RestAssured.when()
+                .get("/api/ping")
+                .then()
+                .body(equalTo("OK"));
     }
 }

@@ -102,10 +102,6 @@
             <artifactId>url-connection-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-dynamodb</artifactId>
-        </dependency>
-        <dependency>
             <!-- Resolve conflict with aws-java-sdk-dynamodb pulling in old version -->
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>

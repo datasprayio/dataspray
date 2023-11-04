@@ -27,8 +27,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import io.dataspray.common.test.aws.AwsTestProfile;
-import io.dataspray.common.test.aws.MockFirehoseClient.FirehoseQueue;
 import io.dataspray.common.json.GsonUtil;
 import io.dataspray.store.AccountStore;
 import io.dataspray.store.SqsQueueStore;
@@ -63,7 +61,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Slf4j
 @QuarkusTest
-@TestProfile(AwsTestProfile.class)
 public class IngestTest {
 
     @ConfigProperty(name = FIREHOSE_STREAM_NAME_PROP_NAME)

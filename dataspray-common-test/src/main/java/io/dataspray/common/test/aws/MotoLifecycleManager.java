@@ -26,16 +26,20 @@ import com.google.common.collect.ImmutableMap;
 import io.dataspray.common.NetworkUtil;
 import io.dataspray.common.test.TestResourceUtil;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+import lombok.extern.slf4j.Slf4j;
 import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.InternetProtocol;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkState;
 
+@Slf4j
 public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
     private static final String MOTO_VERSION = "4.2.6";
@@ -45,21 +49,21 @@ public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager
     @Override
     public final Map<String, String> start() {
         String region = "us-east-1";
+        long awsAccountId = 479823472389L;
         String awsAccessKey = UUID.randomUUID().toString();
         String awsSecretKey = UUID.randomUUID().toString();
         // Setup Moto container
         int port = NetworkUtil.get().findFreePort();
         String endpoint = "http://localhost:" + port;
-        @SuppressWarnings("rawtypes")
-        GenericContainer motoContainer = new FixedHostPortGenericContainer(
+        GenericContainer<?> motoContainer = new FixedHostPortGenericContainer<>(
                 "motoserver/moto:" + MOTO_VERSION)
                 .withFixedExposedPort(port, port, InternetProtocol.TCP)
-                .withCommand("ec2")
                 .withEnv("AWS_ACCESS_KEY_ID", awsAccessKey)
                 .withEnv("AWS_SECRET_ACCESS_KEY", awsSecretKey)
                 .withEnv("AWS_DEFAULT_REGION", region)
                 .withEnv("MOTO_PORT", String.valueOf(port))
-                .withEnv("MOTO_PRETTIFY_RESPONSES", "True");
+                .withEnv("MOTO_ACCOUNT_ID", String.valueOf(awsAccountId))
+                .withLogConsumer(frame -> log.info("{}", frame.getUtf8StringWithoutLineEnding()));
         instanceOpt = Optional.of(new MotoInstance(
                 region,
                 awsAccessKey,
@@ -67,6 +71,9 @@ public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager
                 port,
                 endpoint,
                 motoContainer));
+        motoContainer.waitingFor(new LogMessageWaitStrategy()
+                .withRegEx(".*Running on all addresses.*")
+                .withStartupTimeout(Duration.ofMinutes(1)));
 
         // Start container
         motoContainer.start();
@@ -74,6 +81,7 @@ public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager
         // Common properties
         ImmutableMap.Builder<String, String> propsBuilder = ImmutableMap.builder();
         propsBuilder.put("startupWaitUntilDeps", "true");
+        propsBuilder.put("aws.accountId", String.valueOf(awsAccountId));
         propsBuilder.put("aws.region", region);
         propsBuilder.put("aws.credentials.accessKey", awsAccessKey);
         propsBuilder.put("aws.credentials.secretKey", awsSecretKey);

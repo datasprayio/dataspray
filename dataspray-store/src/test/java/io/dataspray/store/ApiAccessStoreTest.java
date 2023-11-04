@@ -22,7 +22,6 @@
 
 package io.dataspray.store;
 
-import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.dataspray.singletable.SingleTable;
@@ -38,6 +37,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.apigateway.ApiGatewayClient;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 import java.time.Instant;
 import java.util.Map;
@@ -55,6 +57,8 @@ public class ApiAccessStoreTest {
 
     @Inject
     ApiAccessStore apiAccessStore;
+    @Inject
+    DynamoDbClient dynamo;
     @Inject
     SingleTable singleTable;
     @Inject
@@ -262,16 +266,21 @@ public class ApiAccessStoreTest {
         TableSchema<ApiAccess> apiAccessSchema = singleTable.parseTableSchema(ApiAccess.class);
 
         // Insert into dynamo
-        apiAccessSchema.table().putItem(apiAccessSchema.toItem(apiAccess));
+        dynamo.putItem(PutItemRequest.builder()
+                .tableName(apiAccessSchema.tableName())
+                .item(apiAccessSchema.toAttrMap(apiAccess))
+                .build());
 
         return apiAccess;
     }
 
     private boolean usageKeyExists(String accountId) {
         TableSchema<UsageKey> usageKeySchema = singleTable.parseTableSchema(UsageKey.class);
-        Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeySchema.fromItem(usageKeySchema.table().getItem(new GetItemSpec()
-                .withPrimaryKey(usageKeySchema.primaryKey(Map.of(
-                        "accountId", accountId))))));
+        Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
+                .tableName(usageKeySchema.tableName())
+                .key(usageKeySchema.primaryKey(Map.of(
+                        "accountId", accountId)))
+                .build()).item()));
         return usageKeyOpt.isPresent();
     }
 }

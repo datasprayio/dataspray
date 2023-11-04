@@ -26,10 +26,13 @@ import com.google.common.collect.ImmutableSet;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import io.dataspray.store.ApiAccessStore;
+import io.dataspray.store.ApiAccessStore.ApiAccess;
 import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -43,19 +46,21 @@ class AuthorizerTest extends AuthorizerBase {
     @Inject
     ApiAccessStore apiAccessStore;
     @Inject
+    DynamoDbClient dynamo;
+    @Inject
     SingleTable singleTable;
     @Inject
     KeygenUtil keygenUtil;
 
     @Override
-    protected ApiAccessStore.ApiAccess createApiAccess(
+    protected ApiAccess createApiAccess(
             String accountId,
             ApiAccessStore.UsageKeyType usageKeyType,
             String description,
             Optional<ImmutableSet<String>> queueWhitelistOpt,
             Optional<Instant> expiryOpt) {
 
-        ApiAccessStore.ApiAccess apiAccess = new ApiAccessStore.ApiAccess(
+        ApiAccess apiAccess = new ApiAccess(
                 keygenUtil.generateSecureApiKey(API_KEY_LENGTH),
                 accountId,
                 usageKeyType.getId(),
@@ -63,8 +68,10 @@ class AuthorizerTest extends AuthorizerBase {
                 queueWhitelistOpt.orElseGet(ImmutableSet::of),
                 expiryOpt.map(Instant::getEpochSecond).orElse(null));
 
-        TableSchema<ApiAccessStore.ApiAccess> apiAccessSchema = singleTable.parseTableSchema(ApiAccessStore.ApiAccess.class);
-        apiAccessSchema.table().putItem(apiAccessSchema.toItem(apiAccess));
+        TableSchema<ApiAccess> apiAccessSchema = singleTable.parseTableSchema(ApiAccess.class);
+        dynamo.putItem(PutItemRequest.builder()
+                .tableName(apiAccessSchema.tableName())
+                .item(apiAccessSchema.toAttrMap(apiAccess)).build());
 
         return apiAccess;
     }

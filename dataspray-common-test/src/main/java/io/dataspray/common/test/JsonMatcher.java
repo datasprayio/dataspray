@@ -20,9 +20,8 @@
  * SOFTWARE.
  */
 
-package io.dataspray.authorizer;
+package io.dataspray.common.test;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import io.dataspray.common.json.GsonUtil;
@@ -33,7 +32,6 @@ import org.hamcrest.TypeSafeMatcher;
 @Slf4j
 public class JsonMatcher extends TypeSafeMatcher<Object> {
 
-    private static final Gson gson = GsonUtil.get();
     private final String expectedStr;
 
     private JsonMatcher(String expectedStr) {
@@ -52,8 +50,10 @@ public class JsonMatcher extends TypeSafeMatcher<Object> {
         String actualStrPretty = objToStr(strToObj(actualStr));
 
         boolean matches = expectedStr.equals(actualStrPretty);
-        log.error("JSON Does not match\n\texpected:\n{}\n\tactual:\n ",
-                expectedStr, actualStrPretty);
+        if (!matches) {
+            log.error("JSON Does not match\n\texpected:\n{}\n\tactual:\n{}",
+                    expectedStr, actualStrPretty);
+        }
 
         return matches;
     }
@@ -65,7 +65,7 @@ public class JsonMatcher extends TypeSafeMatcher<Object> {
     }
 
     private static String objToStr(Object obj) {
-        return gson.toJson(obj);
+        return GsonUtil.get().toJson(obj);
     }
 
     private static JsonElement strToObj(String str) {

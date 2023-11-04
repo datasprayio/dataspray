@@ -41,6 +41,8 @@ public class BuilderImpl implements Builder {
     public static final String BUILDER_OUT = "builder.out";
     public static final String BUILDER_ERR = "builder.err";
 
+    private static final String MVN_CLEAN_INSTALL_CMD = "mvn clean install -e";
+
     @ConfigProperty(name = BUILDER_IN)
     Optional<String> in;
     @ConfigProperty(name = BUILDER_OUT)
@@ -70,8 +72,8 @@ public class BuilderImpl implements Builder {
                 .orElseThrow(() -> new RuntimeException("Cannot find java processor with name " + processorName));
 
         ProcessBuilder processBuilder = isWindows()
-                ? new ProcessBuilder("cmd.exe", "/c", "mvn clean install")
-                : new ProcessBuilder("sh", "-c", "mvn clean install");
+                ? new ProcessBuilder("cmd.exe", "/c", MVN_CLEAN_INSTALL_CMD)
+                : new ProcessBuilder("sh", "-c", MVN_CLEAN_INSTALL_CMD);
         processBuilder.directory(CodegenImpl.getProcessorDir(project, processor.getNameDir()).toFile());
 
         err.map(File::new).ifPresentOrElse(processBuilder::redirectError, () -> processBuilder.redirectError(Redirect.INHERIT));

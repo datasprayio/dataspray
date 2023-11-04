@@ -30,4 +30,12 @@ public interface ExampleApi {
     @GET
     @Path("/ping")
     String ping();
+
+    @GET
+    @Path("/customer-id")
+    String customerId();
+
+    @GET
+    @Path("/customer-api-key")
+    String customerApiKey();
 }

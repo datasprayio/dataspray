@@ -31,4 +31,14 @@ public class ExampleResource extends AbstractResource implements ExampleApi {
     public String ping() {
         return "OK";
     }
+
+    @Override
+    public String customerId() {
+        return getCustomerId();
+    }
+
+    @Override
+    public String customerApiKey() {
+        return getCustomerApiKey();
+    }
 }

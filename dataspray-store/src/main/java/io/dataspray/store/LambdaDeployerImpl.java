@@ -57,6 +57,8 @@ import software.amazon.awssdk.services.lambda.model.FunctionCode;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
 import software.amazon.awssdk.services.lambda.model.GetAliasRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionRequest;
+import software.amazon.awssdk.services.lambda.model.GetPolicyRequest;
+import software.amazon.awssdk.services.lambda.model.LambdaException;
 import software.amazon.awssdk.services.lambda.model.ListEventSourceMappingsRequest;
 import software.amazon.awssdk.services.lambda.model.ListEventSourceMappingsResponse;
 import software.amazon.awssdk.services.lambda.model.ListFunctionsRequest;
@@ -150,8 +152,10 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .functionName(functionName)
                             .build())
                     .configuration());
+            log.debug("Found existing function {}", existingFunctionOpt.get().functionName());
         } catch (ResourceNotFoundException ex) {
             existingFunctionOpt = Optional.empty();
+            log.debug("Function doesn't yet exist {}", functionName);
         }
 
         // Setup function IAM role
@@ -161,6 +165,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             iamClient.getRole(GetRoleRequest.builder()
                     .roleName(functionRoleName)
                     .build());
+            log.debug("Found role {}", functionRoleName);
         } catch (NoSuchEntityException ex2) {
             iamClient.createRole(CreateRoleRequest.builder()
                     .roleName(functionRoleName)
@@ -174,6 +179,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                                     "Principal", Map.of(
                                             "Service", List.of("lambda.amazonaws.com")))))))
                     .build());
+            log.debug("Created role {}", functionRoleName);
             waiterUtil.resolve(iamClient.waiter().waitUntilRoleExists(GetRoleRequest.builder()
                     .roleName(functionRoleName)
                     .build()));
@@ -222,6 +228,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .timeout(LAMBDA_DEFAULT_TIMEOUT)
                             .build())
                     .version();
+            log.debug("Created function {} with published version {} description {}", functionName, publishedVersion, publishedDescription);
 
             // Wait until function version publishes
             waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionExists(GetFunctionRequest.builder()
@@ -240,11 +247,12 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .environment(env)
                     .revisionId(existingFunctionOpt.get().revisionId())
                     .build());
+            log.debug("Updated function configuration {} with description {}", functionName, publishedDescription);
+
             // Wait until updated
-            FunctionConfiguration a = waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionUpdatedV2(GetFunctionRequest.builder()
-                            .functionName(functionName)
-                            .build()))
-                    .configuration();
+            waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionUpdatedV2(GetFunctionRequest.builder()
+                    .functionName(functionName)
+                    .build()));
 
             // Update function code
             publishedVersion = lambdaClient.updateFunctionCode(UpdateFunctionCodeRequest.builder()
@@ -258,6 +266,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             // .revisionId(updateFunctionRevisionId)
                             .build())
                     .version();
+            log.debug("Updated function code {} published version {}", functionName, publishedVersion);
+
             // Wait until updated
             waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionUpdatedV2(GetFunctionRequest.builder()
                     .functionName(functionName)
@@ -273,10 +283,18 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .functionVersion(publishedVersion)
                     .name(LAMBDA_ACTIVE_QUALIFIER)
                     .build());
+            log.debug("Created function {} alias {} with version {}", functionName, LAMBDA_ACTIVE_QUALIFIER, publishedVersion);
             aliasAlreadyExists = false;
-        } catch (ResourceConflictException ex) {
-            aliasAlreadyExists = true;
-            log.trace("Lambda active tag already exists", ex);
+        } catch (LambdaException ex) {
+            if (ex instanceof ResourceConflictException
+                // Moto behavior used in testing
+                || "ConflictException".equals(ex.awsErrorDetails().errorCode())) {
+
+                aliasAlreadyExists = true;
+                log.debug("Alias {} already exists for function {}", LAMBDA_ACTIVE_QUALIFIER, functionName);
+            } else {
+                throw ex;
+            }
         }
 
         // Add queue permissions on the deployed function version
@@ -300,6 +318,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             // Create queue if it doesn't exist
             if (!queueStore.queueExists(customerId, queueNameToAdd)) {
                 queueStore.createQueue(customerId, queueNameToAdd);
+                log.debug("Created queue {}", queueNameToAdd);
             }
 
             // Add the permission for Event Source Mapping on the active qualifier
@@ -326,7 +345,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .forEach(source -> disableSource(taskId, source, "switchover on deploy"));
 
             // Switch active tag
-            // No need to switch if we just craeted it with out published version
+            // No need to switch if we just craeted it without published version
             if (aliasAlreadyExists) {
                 log.info("Updating task {} alias {} to version {} part of switchover on deploy", taskId, LAMBDA_ACTIVE_QUALIFIER, publishedVersion);
                 lambdaClient.updateAlias(UpdateAliasRequest.builder()
@@ -346,12 +365,14 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         for (String queueNameToAdd : missingQueueSources) {
             // Add the Event Source Mapping
             String sourceUuid = lambdaClient.createEventSourceMapping(CreateEventSourceMappingRequest.builder()
-                            .functionName(functionName + ":" + LAMBDA_ACTIVE_QUALIFIER)
+                            // ARN is needed if we want to supply qualifier
+                            .functionName(getFunctionArn(functionName, LAMBDA_ACTIVE_QUALIFIER))
                             .enabled(switchToImmediately)
                             .batchSize(1)
                             .eventSourceArn("arn:aws:sqs:" + awsRegion + ":" + awsAccountId + ":" + queueStore.getAwsQueueName(customerId, queueNameToAdd))
                             .build())
                     .uuid();
+            log.debug("Created function {}:{} event source mapping for queue {}", functionName, LAMBDA_ACTIVE_QUALIFIER, queueNameToAdd);
         }
 
         return new DeployedVersion(
@@ -367,7 +388,9 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         ImmutableSet<QueueSource> queueSources = getTaskQueueSources(customerId, taskId);
 
         // Ensure all event sources are present before switchover
-        Set<String> missingQueueSources = Sets.difference(queueNames, queueSources.stream().map(QueueSource::getQueueName).collect(Collectors.toSet()));
+        Set<String> missingQueueSources = Sets.difference(queueNames, queueSources.stream()
+                .map(QueueSource::getQueueName)
+                .collect(ImmutableSet.toImmutableSet()));
         if (!missingQueueSources.isEmpty()) {
             log.warn("Cannot switch task {} to version {}, missing event source mappings {}", taskId, version, missingQueueSources);
             throw new InternalServerErrorException("Missing source queue, failed to switchover, please re-deploy");
@@ -443,13 +466,15 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     public Optional<Status> status(String customerId, String taskId) {
         Optional<String> activeVersionOpt = fetchActiveVersion(customerId, taskId);
         if (activeVersionOpt.isEmpty()) {
+            log.debug("Task {} has no active version", taskId);
             return Optional.empty();
         }
 
+        String functionName = getFunctionName(customerId, taskId);
         FunctionConfiguration function;
         try {
             function = lambdaClient.getFunction(GetFunctionRequest.builder()
-                            .functionName(getFunctionName(customerId, taskId))
+                            .functionName(functionName)
                             .qualifier(activeVersionOpt.get())
                             .build())
                     .configuration();
@@ -460,17 +485,24 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         ImmutableSet<String> queueNames = readQueueNamesFromFunctionPermissions(customerId, taskId, activeVersionOpt.get());
         final State state;
         if (queueNames.isEmpty()) {
-            state = State.RUNNING;
+            state = State.PAUSED;
+            log.debug("Function {} version {} has no queues, considering {}", functionName, activeVersionOpt.get(), state);
         } else {
             ImmutableMap<String, QueueSource> queueSources = getTaskQueueSources(customerId, taskId).stream()
                     .collect(ImmutableMap.toImmutableMap(QueueSource::getQueueName, s -> s));
 
-            state = queueNames.stream()
-                    .map(queueName -> Optional.ofNullable(queueSources.get(queueName))
-                            .map(QueueSource::getState)
-                            .orElse(State.PAUSED))
+            ImmutableMap<String, Optional<State>> queueNamesToState = queueNames.stream()
+                    .collect(ImmutableMap.toImmutableMap(
+                            queueName -> queueName,
+                            queueName -> Optional.ofNullable(queueSources.get(queueName))
+                                    .map(QueueSource::getState)
+                    ));
+            state = queueNamesToState.values().stream()
+                    .map(s -> s.orElse(State.PAUSED))
                     .max(Comparator.comparing(State::getWeight))
                     .orElse(State.RUNNING);
+            log.debug("Function {} version {} has state {} due to queues states' {}",
+                    functionName, activeVersionOpt.get(), state, queueNamesToState);
         }
 
         return Optional.of(new Status(taskId, function, state));
@@ -547,6 +579,10 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .url()
                 .toExternalForm();
         return new UploadCodeClaim(presignedUrl, codeUrl);
+    }
+
+    private String getFunctionArn(String functionName, String qualifier) {
+        return "arn:aws:lambda:" + awsRegion + ":" + awsAccountId + ":function:" + functionName + ":" + qualifier;
     }
 
     private String getFunctionName(String customerId, String taskId) {
@@ -628,12 +664,14 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .roleName(roleName)
                     .policyName(policyName)
                     .build());
+            log.debug("Found role {} policy {}", roleName, policyName);
         } catch (NoSuchEntityException ex) {
             iamClient.putRolePolicy(PutRolePolicyRequest.builder()
                     .roleName(roleName)
                     .policyName(policyName)
                     .policyDocument(policyDocument)
                     .build());
+            log.debug("Created role {} policy {}", roleName, policyName);
             waiterUtil.resolve(waiterUtil.waitUntilPolicyAttachedToRole(roleName, policyName));
         }
     }
@@ -652,26 +690,30 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     }
 
     private void addQueuePermissionToFunction(String customerId, String taskId, String qualifier, String queueName) {
+        String functionName = getFunctionName(customerId, taskId);
         try {
             lambdaClient.addPermission(AddPermissionRequest.builder()
-                    .functionName(getFunctionName(customerId, taskId) + ":" + qualifier)
+                    .functionName(functionName)
+                    .qualifier(qualifier)
                     .statementId(getQueueStatementId(queueName))
                     .principal("sqs.amazonaws.com")
                     .action("lambda:InvokeFunction")
                     .sourceArn("arn:aws:sqs:" + awsRegion + ":" + awsAccountId + ":" + queueStore.getAwsQueueName(customerId, queueName))
-                    .qualifier(qualifier)
                     .build());
+            log.debug("Created function {} permission for qualifier {} and queue {}", functionName, qualifier, queueName);
         } catch (ResourceConflictException ex) {
-            log.warn("Lambda permission for queue already exists, ignoring", ex);
+            log.warn("Function {}:{} permission for queue {} already exists, ignoring", functionName, qualifier, queueName);
         }
     }
 
     private ImmutableSet<String> readQueueNamesFromFunctionPermissions(String customerId, String taskId, String version) {
-        ResourcePolicyDocument resourcePolicyDocument = gson.fromJson(lambdaClient.getPolicy(software.amazon.awssdk.services.lambda.model.GetPolicyRequest.builder()
-                        .functionName(getFunctionName(customerId, taskId) + ":" + version)
-                        .qualifier(version)
+        String functionName = getFunctionName(customerId, taskId);
+        String policyStr = lambdaClient.getPolicy(GetPolicyRequest.builder()
+                        .functionName(getFunctionArn(functionName, version))
                         .build())
-                .policy(), ResourcePolicyDocument.class);
+                .policy();
+        log.trace("Fetched policy for function {} version {}: {}", functionName, version, policyStr);
+        ResourcePolicyDocument resourcePolicyDocument = gson.fromJson(policyStr, ResourcePolicyDocument.class);
         if (!"2012-10-17".equals(resourcePolicyDocument.getVersion())) {
             log.error("Cannot parse resource policy document with unknown version {} for customer {} taskId {} version {}",
                     resourcePolicyDocument.getVersion(), customerId, taskId, version);
@@ -679,6 +721,9 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         }
         ImmutableSet<String> queueNames = resourcePolicyDocument
                 .getStatements().stream()
+                // Moto behavior: need to also filter out all other versions
+                .filter(statement -> statement.getResource()
+                        .endsWith(":" + version))
                 .map(ResourcePolicyStatement::getStatementId)
                 .map(this::getQueueNameFromStatementId)
                 .filter(Optional::isPresent)
@@ -690,7 +735,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
     private ImmutableSet<QueueSource> getTaskQueueSources(String customerId, String taskId) {
         ImmutableSet<QueueSource> queueSources = lambdaClient.listEventSourceMappingsPaginator(ListEventSourceMappingsRequest.builder()
-                        .functionName(getFunctionName(customerId, taskId) + ":" + LAMBDA_ACTIVE_QUALIFIER)
+                        // ARN is needed if we want to supply qualifier
+                        .functionName(getFunctionArn(getFunctionName(customerId, taskId), LAMBDA_ACTIVE_QUALIFIER))
                         .build())
                 .stream()
                 .map(ListEventSourceMappingsResponse::eventSourceMappings)

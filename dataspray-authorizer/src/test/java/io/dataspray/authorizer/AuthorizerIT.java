@@ -22,11 +22,6 @@
 
 package io.dataspray.authorizer;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.json.GsonUtil;
 import io.dataspray.common.test.aws.AbstractLocalstackLifecycleManager;
@@ -41,6 +36,12 @@ import io.quarkus.test.junit.QuarkusIntegrationTest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -53,12 +54,14 @@ class AuthorizerIT extends AuthorizerBase {
     /** Injected via {@link AbstractLocalstackLifecycleManager#inject(Object)} */
     LocalStackContainer localStackContainer;
 
+    DynamoDbClient dynamo;
     SingleTable singleTable;
 
     @BeforeEach
     public void beforeEach() {
+        this.dynamo = createDynamoClient();
         this.singleTable = createSingleTable();
-        this.singleTable.createTableIfNotExists(SingleTableProvider.LSI_COUNT, SingleTableProvider.GSI_COUNT);
+        this.singleTable.createTableIfNotExists(dynamo, SingleTableProvider.LSI_COUNT, SingleTableProvider.GSI_COUNT);
     }
 
     /**
@@ -81,25 +84,27 @@ class AuthorizerIT extends AuthorizerBase {
                 queueWhitelistOpt.orElse(ImmutableSet.of()),
                 expiryOpt.map(Instant::getEpochSecond).orElse(null));
         TableSchema<ApiAccess> apiKeySchema = singleTable.parseTableSchema(ApiAccess.class);
-        apiKeySchema.table().putItem(apiKeySchema.toItem(apiAccess));
+        dynamo.putItem(PutItemRequest.builder()
+                .tableName(apiKeySchema.tableName())
+                .item(apiKeySchema.toAttrMap(apiAccess)).build());
         return apiAccess;
     }
 
     private SingleTable createSingleTable() {
-        AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder
-                .standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                        localStackContainer.getAccessKey(),
-                        localStackContainer.getSecretKey())))
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.DYNAMODB).toString(),
-                        localStackContainer.getRegion()))
-                .build();
-
         return SingleTable.builder()
-                .overrideDynamo(amazonDynamoDB)
                 .tablePrefix(SingleTableProvider.TABLE_PREFIX_DEFAULT)
                 .overrideGson(GsonUtil.get())
+                .build();
+    }
+
+    private DynamoDbClient createDynamoClient() {
+        return DynamoDbClient.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                        localStackContainer.getAccessKey(),
+                        localStackContainer.getSecretKey())))
+                .endpointOverride(localStackContainer.getEndpointOverride(LocalStackContainer.Service.DYNAMODB))
+                .region(Region.of(localStackContainer.getRegion()))
+                .httpClient(UrlConnectionHttpClient.create())
                 .build();
     }
 }

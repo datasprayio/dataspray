@@ -106,9 +106,6 @@
     "name": "com.amazonaws.auth.AWSCredentialsProvider"
   },
   {
-    "name": "com.amazonaws.services.dynamodbv2.AmazonDynamoDB"
-  },
-  {
     "name": "com.amazonaws.services.lambda.runtime.Client",
     "queryAllDeclaredMethods": true
   },
