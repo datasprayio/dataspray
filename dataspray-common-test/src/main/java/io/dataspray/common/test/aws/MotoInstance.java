@@ -25,10 +25,23 @@ package io.dataspray.common.test.aws;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.testcontainers.containers.GenericContainer;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.firehose.FirehoseClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.sqs.SqsClient;
+
+import java.net.URI;
 
 @Data
 @AllArgsConstructor
 public class MotoInstance {
+    long awsAccountId;
     String region;
     String awsAccessKey;
     String awsSecretKey;
@@ -36,4 +49,61 @@ public class MotoInstance {
     String endpoint;
     @SuppressWarnings("rawtypes")
     GenericContainer motoContainer;
+
+    public S3Client getS3Client() {
+        return S3Client.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                        getAwsAccessKey(),
+                        getAwsSecretKey())))
+                .endpointOverride(URI.create(getEndpoint()))
+                .region(Region.of(getRegion()))
+                .httpClient(UrlConnectionHttpClient.create())
+                .serviceConfiguration(S3Configuration.builder()
+                        .pathStyleAccessEnabled(true).build())
+                .build();
+    }
+
+    public SqsClient getSqsClient() {
+        return SqsClient.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                        getAwsAccessKey(),
+                        getAwsSecretKey())))
+                .endpointOverride(URI.create(getEndpoint()))
+                .region(Region.of(getRegion()))
+                .httpClient(UrlConnectionHttpClient.create())
+                .build();
+    }
+
+    public FirehoseClient getFirehoseClient() {
+        return FirehoseClient.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                        getAwsAccessKey(),
+                        getAwsSecretKey())))
+                .endpointOverride(URI.create(getEndpoint()))
+                .region(Region.of(getRegion()))
+                .httpClient(UrlConnectionHttpClient.create())
+                .build();
+    }
+
+    public DynamoDbClient getDynamoClient() {
+        return DynamoDbClient.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                        getAwsAccessKey(),
+                        getAwsSecretKey())))
+                .endpointOverride(URI.create(getEndpoint()))
+                .region(Region.of(getRegion()))
+                .httpClient(UrlConnectionHttpClient.create())
+                .build();
+    }
+
+    public CognitoIdentityProviderClient getCognitoClient() {
+        return CognitoIdentityProviderClient.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                        getAwsAccessKey(),
+                        getAwsSecretKey())))
+                .endpointOverride(URI.create(getEndpoint()))
+                .region(Region.of(getRegion()))
+                .httpClient(UrlConnectionHttpClient.create())
+                .build();
+    }
 }

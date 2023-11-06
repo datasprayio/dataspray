@@ -27,11 +27,14 @@ import io.dataspray.common.json.GsonUtil;
 import io.quarkus.amazon.lambda.http.model.ApiGatewayAuthorizerContext;
 import io.quarkus.amazon.lambda.http.model.AwsProxyRequest;
 import io.quarkus.amazon.lambda.http.model.AwsProxyRequestContext;
+import io.quarkus.amazon.lambda.http.model.Headers;
 import io.quarkus.amazon.lambda.http.model.MultiValuedTreeMap;
 import io.quarkus.amazon.lambda.runtime.AmazonLambdaApi;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
@@ -59,6 +62,11 @@ public abstract class AbstractLambdaTest {
             MultiValuedTreeMap<String, String> query = new MultiValuedTreeMap<>();
             query.putAll(given.getQuery());
             request.setMultiValueQueryStringParameters(query);
+        }
+        if (given.getContentType() != null) {
+            Headers headers = new Headers();
+            headers.put(HttpHeaders.CONTENT_TYPE, List.of(given.getContentType().toString()));
+            request.setMultiValueHeaders(headers);
         }
         request.setBody(GsonUtil.get().toJson(given.getBody()));
         request.setRequestContext(new AwsProxyRequestContext());
@@ -101,6 +109,7 @@ public abstract class AbstractLambdaTest {
         String path;
         Map<String, String> pathParams;
         Map<String, List<String>> query;
+        MediaType contentType;
         Object body;
         @Builder.Default
         String accountId = "123456";

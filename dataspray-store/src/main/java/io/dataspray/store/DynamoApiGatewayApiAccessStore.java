@@ -66,13 +66,13 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     String usagePlanId;
 
     @Inject
-    DynamoDbClient dynamo;
+    public DynamoDbClient dynamo;
     @Inject
-    SingleTable singleTable;
+    public SingleTable singleTable;
     @Inject
-    ApiGatewayClient apiGatewayClient;
+    public ApiGatewayClient apiGatewayClient;
     @Inject
-    KeygenUtil keygenUtil;
+    public KeygenUtil keygenUtil;
 
     private TableSchema<ApiAccess> apiAccessSchema;
     private IndexSchema<ApiAccess> apiAccessByAccountSchema;

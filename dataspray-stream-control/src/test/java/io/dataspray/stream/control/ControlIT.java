@@ -24,14 +24,7 @@ package io.dataspray.stream.control;
 
 import io.dataspray.common.test.aws.MotoInstance;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.S3Configuration;
-
-import java.net.URI;
 
 @QuarkusIntegrationTest
 public class ControlIT extends ControlBase {
@@ -39,15 +32,6 @@ public class ControlIT extends ControlBase {
     MotoInstance motoInstance;
 
     protected S3Client getS3Client() {
-        return S3Client.builder()
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                        motoInstance.getAwsAccessKey(),
-                        motoInstance.getAwsSecretKey())))
-                .endpointOverride(URI.create(motoInstance.getEndpoint()))
-                .region(Region.of(motoInstance.getRegion()))
-                .httpClient(UrlConnectionHttpClient.create())
-                .serviceConfiguration(S3Configuration.builder()
-                        .pathStyleAccessEnabled(true).build())
-                .build();
+        return motoInstance.getS3Client();
     }
 }

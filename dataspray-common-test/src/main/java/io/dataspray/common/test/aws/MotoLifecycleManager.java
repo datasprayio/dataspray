@@ -65,6 +65,7 @@ public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager
                 .withEnv("MOTO_ACCOUNT_ID", String.valueOf(awsAccountId))
                 .withLogConsumer(frame -> log.info("{}", frame.getUtf8StringWithoutLineEnding()));
         instanceOpt = Optional.of(new MotoInstance(
+                awsAccountId,
                 region,
                 awsAccessKey,
                 awsSecretKey,

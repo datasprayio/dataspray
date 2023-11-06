@@ -1,0 +1,433 @@
+{
+  "resources":{
+  "includes":[{
+    "pattern":"\\QMETA-INF/log4j-provider.properties\\E"
+  }, {
+    "pattern":"\\QMETA-INF/maven/org.apache.maven/maven-core/pom.properties\\E"
+  }, {
+    "pattern":"\\QMETA-INF/microprofile-config.properties\\E"
+  }, {
+    "pattern":"\\QMETA-INF/native/libnetty_resolver_dns_native_macos.dylib\\E"
+  }, {
+    "pattern":"\\QMETA-INF/native/libnetty_resolver_dns_native_macos.jnilib\\E"
+  }, {
+    "pattern":"\\QMETA-INF/native/libnetty_resolver_dns_native_macos_aarch_64.dylib\\E"
+  }, {
+    "pattern":"\\QMETA-INF/native/libnetty_resolver_dns_native_macos_aarch_64.jnilib\\E"
+  }, {
+    "pattern":"\\QMETA-INF/org/apache/logging/log4j/core/config/plugins/Log4j2Plugins.dat\\E"
+  }, {
+    "pattern":"\\QMETA-INF/plexus/components.xml\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.quarkus.runtime.test.TestHttpEndpointProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.smallrye.config.ConfigSourceFactory\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.smallrye.config.ConfigSourceInterceptorFactory\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.smallrye.config.ConfigSourceInterceptor\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.smallrye.config.SecretKeysHandlerFactory\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.smallrye.config.SecretKeysHandler\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/java.lang.System$LoggerFinder\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/java.net.spi.InetAddressResolverProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/java.net.spi.URLStreamHandlerProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/java.nio.channels.spi.SelectorProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/java.nio.file.spi.FileSystemProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/java.time.zone.ZoneRulesProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/javax.script.ScriptEngineFactory\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/javax.xml.parsers.DocumentBuilderFactory\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/javax.xml.stream.XMLInputFactory\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.apache.logging.log4j.core.util.ContextDataProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.apache.logging.log4j.core.util.WatchEventService\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.apache.logging.log4j.spi.Provider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.apache.logging.log4j.util.PropertySource\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.apache.maven.surefire.spi.MasterProcessChannelProcessorFactory\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.codehaus.groovy.runtime.ExtensionModule\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.codehaus.groovy.transform.ASTTransformation\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.eclipse.microprofile.config.spi.ConfigProviderResolver\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.eclipse.microprofile.config.spi.ConfigSourceProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.eclipse.microprofile.config.spi.ConfigSource\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.eclipse.microprofile.config.spi.Converter\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.jboss.logging.LoggerProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.jboss.logmanager.LogContextInitializer\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.jboss.logmanager.MDCProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.jboss.logmanager.NDCProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.junit.jupiter.api.extension.Extension\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.junit.platform.engine.TestEngine\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.junit.platform.launcher.LauncherDiscoveryListener\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.junit.platform.launcher.LauncherSessionListener\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.junit.platform.launcher.PostDiscoveryFilter\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.junit.platform.launcher.TestExecutionListener\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.slf4j.spi.SLF4JServiceProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/sisu/javax.inject.Named\\E"
+  }, {
+    "pattern":"\\QScript1$restAssuredJsonRootObject.class\\E"
+  }, {
+    "pattern":"\\QScript1BeanInfo.groovy\\E"
+  }, {
+    "pattern":"\\QScript1Customizer.groovy\\E"
+  }, {
+    "pattern":"\\Qapplication.properties\\E"
+  }, {
+    "pattern":"\\Qdocker-java.properties\\E"
+  }, {
+    "pattern":"\\Qgroovy/lang/GroovyObject$restAssuredJsonRootObject.class\\E"
+  }, {
+    "pattern":"\\Qgroovy/lang/GroovyObjectSupport$restAssuredJsonRootObject.class\\E"
+  }, {
+    "pattern":"\\Qgroovy/lang/Script$restAssuredJsonRootObject.class\\E"
+  }, {
+    "pattern":"\\Qio/dataspray/stream/ingest/IngestTest.class\\E"
+  }, {
+    "pattern":"\\Qio/quarkus/jackson/customizer/RegisterSerializersAndDeserializersCustomizer.class\\E"
+  }, {
+    "pattern":"\\Qjava/io/File.class\\E"
+  }, {
+    "pattern":"\\Qjava/io/InputStream.class\\E"
+  }, {
+    "pattern":"\\Qjava/io/OutputStream.class\\E"
+  }, {
+    "pattern":"\\Qjava/io/Serializable.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/AutoCloseable.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Boolean.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Byte.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/CharSequence.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Character.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Class.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/ClassLoader.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Comparable.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Double.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Enum.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Exception.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Float.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Integer.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Iterable.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Long.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Number.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Object.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/RuntimeException.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Short.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/String.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/Throwable.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/annotation/Annotation.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/annotation/Documented.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/annotation/Inherited.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/annotation/Repeatable.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/annotation/Retention.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/annotation/Target.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/reflect/Method.class\\E"
+  }, {
+    "pattern":"\\Qjava/lang/reflect/Type.class\\E"
+  }, {
+    "pattern":"\\Qjava/security/Permission.class\\E"
+  }, {
+    "pattern":"\\Qjava/security/Principal.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/Collection.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/List.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/Map.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/Optional.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/OptionalDouble.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/OptionalInt.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/OptionalLong.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/SequencedCollection.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/Set.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/concurrent/CompletableFuture.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/concurrent/Executor.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/concurrent/ExecutorService.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/concurrent/ScheduledExecutorService.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/function/Consumer.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/function/Predicate.class\\E"
+  }, {
+    "pattern":"\\Qjava/util/function/Supplier.class\\E"
+  }, {
+    "pattern":"\\Qjndi.properties\\E"
+  }, {
+    "pattern":"\\Qjunit-platform.properties\\E"
+  }, {
+    "pattern":"\\Qlog4j2-test.jsn\\E"
+  }, {
+    "pattern":"\\Qlog4j2-test.json\\E"
+  }, {
+    "pattern":"\\Qlog4j2-test.properties\\E"
+  }, {
+    "pattern":"\\Qlog4j2-test.xml\\E"
+  }, {
+    "pattern":"\\Qlog4j2-test.yaml\\E"
+  }, {
+    "pattern":"\\Qlog4j2-test.yml\\E"
+  }, {
+    "pattern":"\\Qlog4j2-test18b4aac2.jsn\\E"
+  }, {
+    "pattern":"\\Qlog4j2-test18b4aac2.json\\E"
+  }, {
+    "pattern":"\\Qlog4j2-test18b4aac2.properties\\E"
+  }, {
+    "pattern":"\\Qlog4j2-test18b4aac2.xml\\E"
+  }, {
+    "pattern":"\\Qlog4j2-test18b4aac2.yaml\\E"
+  }, {
+    "pattern":"\\Qlog4j2-test18b4aac2.yml\\E"
+  }, {
+    "pattern":"\\Qlog4j2.StatusLogger.properties\\E"
+  }, {
+    "pattern":"\\Qlog4j2.component.properties\\E"
+  }, {
+    "pattern":"\\Qlog4j2.jsn\\E"
+  }, {
+    "pattern":"\\Qlog4j2.json\\E"
+  }, {
+    "pattern":"\\Qlog4j2.properties\\E"
+  }, {
+    "pattern":"\\Qlog4j2.system.properties\\E"
+  }, {
+    "pattern":"\\Qlog4j2.xml\\E"
+  }, {
+    "pattern":"\\Qlog4j2.yaml\\E"
+  }, {
+    "pattern":"\\Qlog4j2.yml\\E"
+  }, {
+    "pattern":"\\Qlog4j218b4aac2.jsn\\E"
+  }, {
+    "pattern":"\\Qlog4j218b4aac2.json\\E"
+  }, {
+    "pattern":"\\Qlog4j218b4aac2.properties\\E"
+  }, {
+    "pattern":"\\Qlog4j218b4aac2.xml\\E"
+  }, {
+    "pattern":"\\Qlog4j218b4aac2.yaml\\E"
+  }, {
+    "pattern":"\\Qlog4j218b4aac2.yml\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.AnnotationEngine\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.DoNotMockEnforcer\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.InstantiatorProvider2\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.MockResolver\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.MockitoLogger\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.PluginSwitch\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.StackTraceCleanerProvider\\E"
+  }, {
+    "pattern":"\\Qmozilla/public-suffix-list.txt\\E"
+  }, {
+    "pattern":"\\Qorg/apache/maven/model/pom-4.0.0.xml\\E"
+  }, {
+    "pattern":"\\Qorg/osgi/annotation/bundle/Requirements.class\\E"
+  }, {
+    "pattern":"\\Qsoftware/amazon/awssdk/global/handlers/execution.interceptors\\E"
+  }, {
+    "pattern":"\\Qsoftware/amazon/awssdk/services/apigateway/execution.interceptors\\E"
+  }, {
+    "pattern":"\\Qsoftware/amazon/awssdk/services/athena/execution.interceptors\\E"
+  }, {
+    "pattern":"\\Qsoftware/amazon/awssdk/services/cognitoidentityprovider/execution.interceptors\\E"
+  }, {
+    "pattern":"\\Qsoftware/amazon/awssdk/services/firehose/execution.interceptors\\E"
+  }, {
+    "pattern":"\\Qsoftware/amazon/awssdk/services/glue/execution.interceptors\\E"
+  }, {
+    "pattern":"\\Qsoftware/amazon/awssdk/services/s3/execution.interceptors\\E"
+  }, {
+    "pattern":"\\Qsoftware/amazon/awssdk/services/sqs/execution.interceptors\\E"
+  }, {
+    "pattern":"\\Qtestcontainers.properties\\E"
+  }, {
+    "pattern":"\\Qvertx-default-jul-logging.properties\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/io/File.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/io/InputStream.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/io/OutputStream.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/io/Serializable.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/AutoCloseable.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Boolean.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Byte.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/CharSequence.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Character.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Class.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/ClassLoader.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Comparable.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Double.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Enum.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Exception.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Float.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Integer.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Iterable.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Long.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Number.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Object.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/RuntimeException.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Short.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/String.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/Throwable.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/annotation/Annotation.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/annotation/Documented.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/annotation/Inherited.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/annotation/Repeatable.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/annotation/Retention.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/annotation/Target.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/reflect/Method.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/reflect/Type.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/security/Permission.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/security/Principal.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/Collection.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/List.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/Map.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/Optional.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/OptionalDouble.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/OptionalInt.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/OptionalLong.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/SequencedCollection.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/Set.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/concurrent/CompletableFuture.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/concurrent/Executor.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/concurrent/ExecutorService.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/concurrent/ScheduledExecutorService.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/function/Consumer.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/function/Predicate.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/util/function/Supplier.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt72b/nfc.nrm\\E"
+  }, {
+    "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt72b/nfkc.nrm\\E"
+  }, {
+    "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt72b/uprops.icu\\E"
+  }, {
+    "pattern":"java.base:\\Qsun/net/idn/uidna.spp\\E"
+  }, {
+    "pattern":"java.base:\\Qsun/net/www/content-types.properties\\E"
+  }, {
+    "pattern":"jdk.jfr:\\Qjdk/jfr/internal/query/view.ini\\E"
+  }]},
+  "bundles":[]
+}
