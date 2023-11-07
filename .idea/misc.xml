@@ -1,12 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="FrameworkDetectionExcludesConfiguration">
     <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-authorizer" />
-    <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-base-lambda-web-service" />
     <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-cli" />
     <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-common" />
     <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-common-test" />
     <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-core" />
+    <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-lambda-web" />
+    <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-lambda-web-test" />
     <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-package" />
     <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-runner" />
     <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-store" />

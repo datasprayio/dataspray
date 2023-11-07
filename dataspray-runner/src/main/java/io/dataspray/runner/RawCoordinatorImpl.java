@@ -32,7 +32,9 @@ import lombok.extern.slf4j.Slf4j;
 public class RawCoordinatorImpl implements RawCoordinator {
 
     public static final String DATASPRAY_DEFAULT_STORE_NAME = "default";
+    /** Matches {@link io.dataspray.store.LambdaDeployerImpl.DATASPRAY_API_KEY_ENV} */
     public static final String DATASPRAY_API_KEY_ENV = "dataspray_api_key";
+    /** Matches {@link io.dataspray.store.LambdaDeployerImpl.DATASPRAY_CUSTOMER_ID_ENV} */
     public static final String DATASPRAY_CUSTOMER_ID_ENV = "dataspray_customer_id";
     private static volatile RawCoordinatorImpl INSTANCE;
 

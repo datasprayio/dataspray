@@ -26,6 +26,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayCustomAuthorizerEv
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.authorizer.AuthorizerConstants;
+import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.ApiAccessStore.ApiAccess;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -44,7 +45,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @Slf4j
-@QuarkusTestResource(AuthorizerLocalstackLifecycleManager.class)
+@QuarkusTestResource(MotoLifecycleManager.class)
 abstract class AuthorizerBase {
 
     private enum TestType {

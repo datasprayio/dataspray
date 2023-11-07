@@ -122,7 +122,7 @@ public class BaseApiStack extends BaseStack {
 
         Map<String, Object> openApiSpec = constructOpenApiForApiGateway();
         // Add Lambda endpoints to OpenAPI spec
-        ImmutableSet<BaseLambdaWebServiceStack> usedWebServices = addApiGatewayExtensionsToOpenapiSpec(openApiSpec);
+        ImmutableSet<LambdaWebStack> usedWebServices = addApiGatewayExtensionsToOpenapiSpec(openApiSpec);
 
         // Set domain name for API Gateway
         String fqdn = DnsStack.createFqdn(this, getDeployEnv());
@@ -181,7 +181,7 @@ public class BaseApiStack extends BaseStack {
                 .build();
     }
 
-    private void addFunctionToApiGatewayPermission(BaseLambdaWebServiceStack webService) {
+    private void addFunctionToApiGatewayPermission(LambdaWebStack webService) {
         webService.getFunction().addPermission(getConstructId("gateway-to-lambda-permission"), Permission.builder()
                 .sourceArn(restApi.arnForExecuteApi())
                 .principal(ServicePrincipal.Builder
@@ -223,7 +223,7 @@ public class BaseApiStack extends BaseStack {
      */
     @SuppressWarnings("unchecked")
     @SneakyThrows
-    private ImmutableSet<BaseLambdaWebServiceStack> addApiGatewayExtensionsToOpenapiSpec(Map<String, Object> openApiSpec) {
+    private ImmutableSet<LambdaWebStack> addApiGatewayExtensionsToOpenapiSpec(Map<String, Object> openApiSpec) {
         Map<String, Object> components = (Map<String, Object>) openApiSpec.get("components");
         if (components != null) {
             Map<String, Object> securitySchemes = (Map<String, Object>) components.get("securitySchemes");
@@ -250,7 +250,7 @@ public class BaseApiStack extends BaseStack {
                 }
             }
         }
-        Set<BaseLambdaWebServiceStack> usedWebServices = Sets.newHashSet();
+        Set<LambdaWebStack> usedWebServices = Sets.newHashSet();
         Map<String, Object> paths = (Map<String, Object>) openApiSpec.get("paths");
         if (paths != null) {
             for (String path : ImmutableSet.copyOf(paths.keySet())) {
@@ -260,7 +260,7 @@ public class BaseApiStack extends BaseStack {
                         Map<String, Object> methodData = (Map<String, Object>) methods.get(method);
 
                         // Find the tag and corresponding function
-                        BaseLambdaWebServiceStack webService;
+                        LambdaWebStack webService;
                         try {
                             String tag = ((List<String>) methodData.get("tags")).get(0);
                             webService = getOptions().tagToWebService.get(tag);
@@ -306,7 +306,7 @@ public class BaseApiStack extends BaseStack {
         String openapiYamlPath;
         /** Mapping of which function to use for which endpoint (its tag name specifically) */
         @NonNull
-        ImmutableMap<String, ? extends BaseLambdaWebServiceStack> tagToWebService;
+        ImmutableMap<String, ? extends LambdaWebStack> tagToWebService;
         @NonNull
         String authorizerCodeZip;
         @NonNull

@@ -93,8 +93,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.dataspray.common.DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME;
-import static io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_API_KEY_ENV;
-import static io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_CUSTOMER_ID_ENV;
 import static java.util.function.Predicate.not;
 
 @Slf4j
@@ -115,6 +113,10 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     public static final Function<DeployEnvironment, String> FUN_NAME_WILDCARD_GETTER = deployEnv ->
             CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + "*";
     private static final String QUEUE_STATEMENT_ID_PREFIX = "customer-queue-statement-for-name-";
+    /** Matches {@link io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_API_KEY_ENV} */
+    public static final String DATASPRAY_API_KEY_ENV = "dataspray_api_key";
+    /** Matches {@link io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_CUSTOMER_ID_ENV} */
+    public static final String DATASPRAY_CUSTOMER_ID_ENV = "dataspray_customer_id";
 
     @ConfigProperty(name = "aws.accountId")
     String awsAccountId;
@@ -565,7 +567,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         String key = getCodeKeyPrefix(customerId)
                      + taskId
                      + "-"
-                     + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").withZone(ZoneOffset.UTC).format(Instant.now()) + ".zip";
+                     + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS").withZone(ZoneOffset.UTC).format(Instant.now()) + ".zip";
         String codeUrl = "s3://" + codeBucketName + "/" + key;
         String presignedUrl = s3Presigner.presignPutObject(PutObjectPresignRequest.builder()
                         .putObjectRequest(PutObjectRequest.builder()

@@ -29,7 +29,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import lombok.Getter;
 
 /**
- * Signal to API Gateway to retur client a 401.
+ * Signal to API Gateway to return client a 401.
  * <br />
  * If the client token is not recognized or invalid, API Gateway
  * accepts a 401 Unauthorized response to the client by failing like so.

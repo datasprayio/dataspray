@@ -59,13 +59,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
     @Inject
     ApiAccessStore apiAccessStore;
 
-    /**
-     * This method satisfies "RequestHandler<APIGatewayCustomAuthorizerEvent, Object>" and is used by the above
-     * handleRequest.
-     * <br />
-     * having this method also be called handleRequest confuses Quarkus into thinking this is a StreamHandler
-     * causing a ClassCastException.
-     */
+    @Override
     public Object handleRequest(APIGatewayCustomAuthorizerEvent event, Context context) {
         try {
             // if the token is valid, a policy should be generated which will allow or deny access to the client

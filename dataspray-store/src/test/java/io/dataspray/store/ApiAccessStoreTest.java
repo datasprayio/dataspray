@@ -24,6 +24,8 @@ package io.dataspray.store;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import io.dataspray.common.test.aws.MotoInstance;
+import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import io.dataspray.store.ApiAccessStore.ApiAccess;
@@ -52,8 +54,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 @QuarkusTest
-@QuarkusTestResource(StoreLocalstackLifecycleManager.class)
+@QuarkusTestResource(MotoLifecycleManager.class)
 public class ApiAccessStoreTest {
+
+    MotoInstance motoInstance;
 
     @Inject
     ApiAccessStore apiAccessStore;

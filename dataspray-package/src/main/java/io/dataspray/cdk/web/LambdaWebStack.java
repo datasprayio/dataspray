@@ -33,32 +33,48 @@ import software.amazon.awscdk.services.lambda.Architecture;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
+import software.amazon.awscdk.services.lambda.eventsources.ApiEventSource;
 import software.constructs.Construct;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Getter
-public class BaseLambdaWebServiceStack extends BaseStack {
+public abstract class LambdaWebStack extends BaseStack {
 
+    private static final boolean IS_NATIVE = true;
     private static final String QUARKUS_LAMBDA_HANDLER = "io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest";
 
     private final String functionName;
     private final SingletonFunction function;
 
-    public BaseLambdaWebServiceStack(Construct parent, Options options) {
+    public LambdaWebStack(Construct parent, Options options) {
         super(parent, "web-" + options.getFunctionName(), options.getDeployEnv());
 
         functionName = options.getFunctionName();
-        function = SingletonFunction.Builder.create(this, getConstructId("lambda"))
+        SingletonFunction.Builder functionBuilder = SingletonFunction.Builder.create(this, getConstructId("lambda"))
                 .uuid(UUID.nameUUIDFromBytes(getConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
                 .functionName(functionName)
                 .code(Code.fromAsset(options.getCodeZip()))
-                .handler(QUARKUS_LAMBDA_HANDLER)
-                .runtime(Runtime.JAVA_11)
                 .architecture(Architecture.ARM_64)
                 .memorySize(options.getMemorySize())
-                .timeout(Duration.seconds(30))
-                .build();
+                .timeout(Duration.seconds(30));
+        if (IS_NATIVE) {
+            functionBuilder
+                    .runtime(Runtime.PROVIDED)
+                    // Unused in native image
+                    .handler("io.dataspray")
+                    // Required for native image https://github.com/quarkusio/quarkus/issues/29331
+                    .environment(Map.of("DISABLE_SIGNAL_HANDLERS", "true"))
+                    // Taken from sam.native.yaml
+                    .events(List.of(ApiEventSource.Builder.create("any", "/{proxy+}").build()));
+        } else {
+            functionBuilder
+                    .runtime(Runtime.JAVA_11)
+                    .handler(QUARKUS_LAMBDA_HANDLER);
+        }
+        function = functionBuilder.build();
     }
 
     @Value

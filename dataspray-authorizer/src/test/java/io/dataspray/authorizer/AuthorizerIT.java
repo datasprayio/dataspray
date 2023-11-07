@@ -24,7 +24,7 @@ package io.dataspray.authorizer;
 
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.json.GsonUtil;
-import io.dataspray.common.test.aws.AbstractLocalstackLifecycleManager;
+import io.dataspray.common.test.aws.MotoInstance;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import io.dataspray.store.ApiAccessStore;
@@ -35,11 +35,6 @@ import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
@@ -51,15 +46,14 @@ import java.util.Optional;
 class AuthorizerIT extends AuthorizerBase {
     ApiAccess apiKey;
 
-    /** Injected via {@link AbstractLocalstackLifecycleManager#inject(Object)} */
-    LocalStackContainer localStackContainer;
+    MotoInstance motoInstance;
 
     DynamoDbClient dynamo;
     SingleTable singleTable;
 
     @BeforeEach
     public void beforeEach() {
-        this.dynamo = createDynamoClient();
+        this.dynamo = motoInstance.getDynamoClient();
         this.singleTable = createSingleTable();
         this.singleTable.createTableIfNotExists(dynamo, SingleTableProvider.LSI_COUNT, SingleTableProvider.GSI_COUNT);
     }
@@ -94,17 +88,6 @@ class AuthorizerIT extends AuthorizerBase {
         return SingleTable.builder()
                 .tablePrefix(SingleTableProvider.TABLE_PREFIX_DEFAULT)
                 .overrideGson(GsonUtil.get())
-                .build();
-    }
-
-    private DynamoDbClient createDynamoClient() {
-        return DynamoDbClient.builder()
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                        localStackContainer.getAccessKey(),
-                        localStackContainer.getSecretKey())))
-                .endpointOverride(localStackContainer.getEndpointOverride(LocalStackContainer.Service.DYNAMODB))
-                .region(Region.of(localStackContainer.getRegion()))
-                .httpClient(UrlConnectionHttpClient.create())
                 .build();
     }
 }
