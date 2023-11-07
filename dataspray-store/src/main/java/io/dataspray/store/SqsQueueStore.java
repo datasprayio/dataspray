@@ -122,6 +122,7 @@ public class SqsQueueStore implements QueueStore {
                         QueueAttributeName.VISIBILITY_TIMEOUT, Integer.toString(LAMBDA_DEFAULT_TIMEOUT),
                         QueueAttributeName.MESSAGE_RETENTION_PERIOD, String.valueOf(14 * 24 * 60 * 60)))
                 .build());
+        log.info("Created queue {} for customer {}", queueName, customerId);
     }
 
     public String getAwsQueueUrl(String customerId, String queueName) {

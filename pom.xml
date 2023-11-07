@@ -38,21 +38,21 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <junit.version>5.8.2</junit.version>
-        <projectlombok.version>1.18.22</projectlombok.version>
-        <quarkus.version>3.2.0.Final</quarkus.version>
+        <projectlombok.version>1.18.30</projectlombok.version>
+        <quarkus.version>3.5.0</quarkus.version>
         <!-- If changed, also change in .node-version and .nvmrc -->
         <node.version>v18.16.1</node.version>
         <pnpm.version>v8.6.10</pnpm.version>
-        <slf4j.version>1.7.25</slf4j.version>
+        <slf4j.version>2.0.7</slf4j.version>
         <logback.version>1.2.9</logback.version>
-        <jackson.version>2.13.3</jackson.version>
-        <aws.sdk2.version>2.20.115</aws.sdk2.version>
-        <aws.sdk1.version>1.12.459</aws.sdk1.version>
+        <jackson.version>2.15.3</jackson.version>
+        <aws.sdk.version>2.20.115</aws.sdk.version>
         <!-- Keep in sync with cdk version used in aws-cdk-maven-pluginn (aws.cdk.4j.version)
             https://github.com/datasprayio/aws-cdk-4j/blob/master/pom.xml#L54-->
         <aws.cdk.version>2.89.0</aws.cdk.version>
         <aws.cdk.4j.version>2.1.3</aws.cdk.4j.version>
         <sqlite4java>1.0.392</sqlite4java>
+
         <skipTests/>
         <skipITs/>
         <argLine/>
@@ -62,7 +62,8 @@
         <module>dataspray-common</module>
         <module>dataspray-common-test</module>
         <module>dataspray-resources</module>
-        <module>dataspray-base-lambda-web-service</module>
+        <module>dataspray-lambda-web-test</module>
+        <module>dataspray-lambda-web</module>
         <module>dataspray-stream-client</module>
         <!-- Remote dev env coming soon... -->
         <!--<module>dataspray-remote-workspace</module>-->
@@ -113,6 +114,12 @@
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
+                <artifactId>dataspray-lambda-web-test</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-site</artifactId>
                 <classifier>open-next</classifier>
                 <version>${project.version}</version>
@@ -144,7 +151,7 @@
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
-                <artifactId>dataspray-base-lambda-web-service</artifactId>
+                <artifactId>dataspray-lambda-web</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -161,12 +168,12 @@
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>single-table</artifactId>
-                <version>0.0.11</version>
+                <version>2.1.2</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>30.1.1-jre</version>
+                <version>32.1.3-jre</version>
             </dependency>
             <dependency>
                 <groupId>com.github.rholder</groupId>
@@ -243,6 +250,11 @@
                 <artifactId>commons-cli</artifactId>
                 <version>1.5.0</version>
             </dependency>
+            <dependency>
+                <groupId>joda-time</groupId>
+                <artifactId>joda-time</artifactId>
+                <version>2.12.5</version>
+            </dependency>
 
             <dependency>
                 <groupId>io.quarkus</groupId>
@@ -252,15 +264,16 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>io.quarkus.platform</groupId>
+                <artifactId>quarkus-amazon-services-bom</artifactId>
+                <version>${quarkus.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-arc</artifactId>
                 <version>${quarkus.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.slf4j</groupId>
-                        <artifactId>slf4j-jboss-logmanager</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.quarkus</groupId>
@@ -271,39 +284,21 @@
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-amazon-lambda-rest</artifactId>
                 <version>${quarkus.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.slf4j</groupId>
-                        <artifactId>slf4j-jboss-logmanager</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-junit5</artifactId>
                 <version>${quarkus.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.slf4j</groupId>
-                        <artifactId>slf4j-jboss-logmanager</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>bom</artifactId>
-                <version>${aws.sdk2.version}</version>
+                <version>${aws.sdk.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>aws-java-sdk-bom</artifactId>
-                <version>${aws.sdk1.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
+
             <dependency>
                 <groupId>software.amazon.awscdk</groupId>
                 <artifactId>aws-cdk-lib</artifactId>
@@ -358,7 +353,7 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>1.30</version>
+                <version>2.1</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
@@ -372,61 +367,30 @@
             </dependency>
 
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
                 <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jdk8</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.openapitools</groupId>
                 <artifactId>jackson-databind-nullable</artifactId>
-                <version>0.2.3</version>
+                <version>0.2.6</version>
             </dependency>
 
-            <!-- Logging-->
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
+
             <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>jul-to-slf4j</artifactId>
-                <version>${slf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-to-slf4j</artifactId>
-                <version>2.13.3</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>jcl-over-slf4j</artifactId>
-                <version>1.7.30</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>${logback.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-core</artifactId>
-                <version>${logback.version}</version>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-resolver-dns-native-macos</artifactId>
+                <version>4.1.100.Final</version>
+                <scope>runtime</scope>
+                <classifier>osx-x86_64</classifier>
             </dependency>
 
             <dependency>
@@ -471,6 +435,16 @@
                         <artifactId>log4j-core</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>2.17.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>2.17.1</version>
             </dependency>
             <dependency>
                 <groupId>com.almworks.sqlite4java</groupId>
@@ -562,12 +536,48 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.3.0</version>
                 </plugin>
                 <plugin>
+                    <!-- Enables GraalVM agent during unit tests -->
+                    <!-- https://blogs.oracle.com/developers/post/building-cross-platform-native-images-with-graalvm -->
                     <groupId>org.graalvm.buildtools</groupId>
                     <artifactId>native-maven-plugin</artifactId>
-                    <version>0.9.11</version>
+                    <version>0.9.24</version>
+                    <extensions>true</extensions>
+                    <!--                    <executions>-->
+                    <!--                        <execution>-->
+                    <!--                            <id>build-native</id>-->
+                    <!--                            <goals>-->
+                    <!--                                <goal>build</goal>-->
+                    <!--                            </goals>-->
+                    <!--                            <phase>package</phase>-->
+                    <!--                        </execution>-->
+                    <!--                        <execution>-->
+                    <!--                            <id>test-native</id>-->
+                    <!--                            <goals>-->
+                    <!--                                <goal>test</goal>-->
+                    <!--                            </goals>-->
+                    <!--                            <phase>test</phase>-->
+                    <!--                        </execution>-->
+                    <!--                    </executions>-->
+                    <configuration>
+                        <agent>
+                            <!-- Docs https://graalvm.github.io/native-build-tools/latest/maven-plugin.html#agent-support-configuring-options -->
+                            <enabled>true</enabled>
+                        </agent>
+                        <metadataRepository>
+                            <enabled>true</enabled>
+                        </metadataRepository>
+                        <buildArgs combine.children="append">
+                            <buildArg>--no-fallback</buildArg>
+                            <buildArg>--verbose</buildArg>
+                            <!-- Include resource bundles here -->
+                            <!-- You may want to whitelist from the list in target/native/agent-output/test/session-*/resource-config.json -->
+                            <buildArg>-H:IncludeResourceBundles='net.sourceforge.argparse4j.internal.ArgumentParserImpl'
+                            </buildArg>
+                        </buildArgs>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -582,7 +592,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.0.0-M4</version>
+                    <version>3.1.2</version>
                     <configuration>
                         <argLine>@{argLine} -Xmx1024m</argLine>
                         <parallel>classesAndMethods</parallel>
@@ -594,16 +604,21 @@
                             <PROJECT_VERSION>${project.version}</PROJECT_VERSION>
                         </environmentVariables>
                         <systemPropertyVariables>
-                            <quarkus.http.test-port>0</quarkus.http.test-port>
-                            <quarkus.lambda.mock-event-server.test-port>0</quarkus.lambda.mock-event-server.test-port>
-                            <quarkus.lambda.mock-event-server.dev-port>0</quarkus.lambda.mock-event-server.dev-port>
+                            <quarkus.test.arg-line>
+                                -agentlib:native-image-agent=trace-output=${project.build.directory}/native-image-agent-trace.json
+                            </quarkus.test.arg-line>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-report-plugin</artifactId>
+                    <version>3.1.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>3.0.0-M4</version>
+                    <version>3.1.2</version>
                     <executions>
                         <execution>
                             <goals>
@@ -616,9 +631,7 @@
                         <trimStackTrace>false</trimStackTrace>
                         <useFile>false</useFile>
                         <systemPropertyVariables>
-                            <quarkus.http.test-port>0</quarkus.http.test-port>
-                            <quarkus.lambda.mock-event-server.test-port>0</quarkus.lambda.mock-event-server.test-port>
-                            <quarkus.lambda.mock-event-server.dev-port>0</quarkus.lambda.mock-event-server.dev-port>
+                            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>

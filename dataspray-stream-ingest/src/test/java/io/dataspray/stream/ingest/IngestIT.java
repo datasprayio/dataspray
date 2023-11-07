@@ -22,8 +22,40 @@
 
 package io.dataspray.stream.ingest;
 
+import io.dataspray.common.test.aws.MotoInstance;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
+import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.firehose.FirehoseClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 @QuarkusIntegrationTest
-public class IngestIT extends IngestTest {
+public class IngestIT extends IngestBase {
+
+    MotoInstance motoInstance;
+
+    @Override
+    protected DynamoDbClient getDynamoClient() {
+        return motoInstance.getDynamoClient();
+    }
+
+    protected S3Client getS3Client() {
+        return motoInstance.getS3Client();
+    }
+
+    @Override
+    protected SqsClient getSqsClient() {
+        return motoInstance.getSqsClient();
+    }
+
+    @Override
+    protected FirehoseClient getFirehoseClient() {
+        return motoInstance.getFirehoseClient();
+    }
+
+    @Override
+    protected CognitoIdentityProviderClient getCognitoClient() {
+        return motoInstance.getCognitoClient();
+    }
 }

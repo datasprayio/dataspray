@@ -22,25 +22,27 @@
 
 package io.dataspray.store;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.google.gson.Gson;
 import io.dataspray.singletable.SingleTable;
 import io.quarkus.runtime.Startup;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 @Slf4j
 @ApplicationScoped
 public class SingleTableProvider {
 
     public static final String TABLE_PREFIX_PROP_NAME = "singletable.tablePrefix";
+    public static final String TABLE_PREFIX_DEFAULT = "dataspray";
     public static final int LSI_COUNT = 0;
     public static final int GSI_COUNT = 2;
 
-    @ConfigProperty(name = TABLE_PREFIX_PROP_NAME, defaultValue = "dataspray")
+    @ConfigProperty(name = TABLE_PREFIX_PROP_NAME, defaultValue = TABLE_PREFIX_DEFAULT)
     String tablePrefix;
     @ConfigProperty(name = "singletable.createTableOnStartup", defaultValue = "false")
     boolean createTableOnStartup;
@@ -48,22 +50,23 @@ public class SingleTableProvider {
     @Inject
     Gson gson;
     @Inject
-    AmazonDynamoDB dynamo;
+    DynamoDbClient dynamo;
+    @Inject
+    Provider<SingleTable> singleTableProvider;
 
     @Singleton
     public SingleTable getSingleTable() {
         log.debug("Opening SingleTable");
         return SingleTable.builder()
                 .tablePrefix(tablePrefix)
-                .overrideDynamo(dynamo)
                 .overrideGson(gson)
                 .build();
     }
 
     @Startup
-    void init(SingleTable singleTable) {
+    void init() {
         if (createTableOnStartup) {
-            singleTable.createTableIfNotExists(LSI_COUNT, GSI_COUNT);
+            singleTableProvider.get().createTableIfNotExists(dynamo, LSI_COUNT, GSI_COUNT);
         }
     }
 }

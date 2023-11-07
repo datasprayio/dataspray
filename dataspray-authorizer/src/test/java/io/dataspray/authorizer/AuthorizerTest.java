@@ -22,63 +22,57 @@
 
 package io.dataspray.authorizer;
 
-import com.amazonaws.services.lambda.runtime.events.APIGatewayCustomAuthorizerEvent;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.gson.Gson;
-import io.dataspray.authorizer.model.AuthPolicy;
-import io.dataspray.common.authorizer.AuthorizerConstants;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.ApiAccessStore.ApiAccess;
+import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.core.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static io.dataspray.store.DynamoApiGatewayApiAccessStore.API_KEY_LENGTH;
 
 @Slf4j
 @QuarkusTest
-class AuthorizerTest {
+class AuthorizerTest extends AuthorizerBase {
 
     @Inject
-    Authorizer authorizer;
+    ApiAccessStore apiAccessStore;
     @Inject
-    Gson gson;
+    DynamoDbClient dynamo;
     @Inject
-    InMemoryApiAccessStore apiAccessStore;
+    SingleTable singleTable;
+    @Inject
+    KeygenUtil keygenUtil;
 
-    @Test
-    void handleRequest() {
-        ApiAccess apiAccess = apiAccessStore.createApiAccess(
-                UUID.randomUUID().toString(),
-                ApiAccessStore.UsageKeyType.ACCOUNT_WIDE,
-                "Description",
-                Optional.of(ImmutableSet.of("q1", "q2")),
-                Optional.of(Instant.now().plus(Duration.ofDays(3))));
-        APIGatewayCustomAuthorizerEvent event = new APIGatewayCustomAuthorizerEvent();
-        event.setMethodArn("arn:aws:execute-api:us-east-1:123456789012:abcdef123/default/$connect");
-        event.setHeaders(ImmutableMap.of(HttpHeaders.AUTHORIZATION, "bearer " + apiAccess.getApiKey()));
-        event.setRequestContext(APIGatewayCustomAuthorizerEvent.RequestContext.builder()
-                .withAccountId(apiAccess.getAccountId())
-                .withApiId("api-id")
-                .withStage("stage")
-                .build());
+    @Override
+    protected ApiAccess createApiAccess(
+            String accountId,
+            ApiAccessStore.UsageKeyType usageKeyType,
+            String description,
+            Optional<ImmutableSet<String>> queueWhitelistOpt,
+            Optional<Instant> expiryOpt) {
 
-        AuthPolicy authPolicy = gson.fromJson(authorizer.handleRequest(event, null), AuthPolicy.class);
-        log.info("Returned AuthPolicy {}", authPolicy);
+        ApiAccess apiAccess = new ApiAccess(
+                keygenUtil.generateSecureApiKey(API_KEY_LENGTH),
+                accountId,
+                usageKeyType.getId(),
+                description,
+                queueWhitelistOpt.orElseGet(ImmutableSet::of),
+                expiryOpt.map(Instant::getEpochSecond).orElse(null));
 
-        assertEquals(apiAccess.getAccountId(), authPolicy.getUsageIdentifierKey());
-        assertTrue(authPolicy.getContext().containsKey("apiKey"));
-        assertEquals(apiAccess.getAccountId(), authPolicy.getContext().get(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID));
-        assertEquals(apiAccess.getApiKey(), authPolicy.getContext().get(AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE));
-        assertEquals(apiAccess.getAccountId(), authPolicy.getPrincipalId());
+        TableSchema<ApiAccess> apiAccessSchema = singleTable.parseTableSchema(ApiAccess.class);
+        dynamo.putItem(PutItemRequest.builder()
+                .tableName(apiAccessSchema.tableName())
+                .item(apiAccessSchema.toAttrMap(apiAccess)).build());
+
+        return apiAccess;
     }
 }

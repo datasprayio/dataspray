@@ -222,7 +222,7 @@ components:
             schema:
               $ref: '#/components/schemas/TaskStatus'
 /control/task/{taskId}/pause:
-  delete:
+  patch:
     operationId: pause
     tags: [ Control ]
     parameters:
@@ -239,7 +239,7 @@ components:
             schema:
               $ref: '#/components/schemas/TaskStatus'
 /control/task/{taskId}/resume:
-  delete:
+  patch:
     operationId: resume
     tags: [ Control ]
     parameters:

@@ -2,11 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package io.dataspray.common.aws;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import io.dataspray.common.NetworkUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -14,6 +9,7 @@ import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -43,9 +39,9 @@ public class S3ClientProvider {
     boolean pathStyleEnabled;
 
     @Inject
-    AWSCredentialsProvider awsCredentialsProviderSdk1;
-    @Inject
     AwsCredentialsProvider awsCredentialsProviderSdk2;
+    @Inject
+    SdkHttpClient sdkHttpClient;
     @Inject
     NetworkUtil networkUtil;
 
@@ -79,35 +75,17 @@ public class S3ClientProvider {
         }
         serviceEndpointOpt.map(URI::create).ifPresent(builder::endpointOverride);
         productionRegionOpt.map(Region::of).ifPresent(builder::region);
-        dnsResolverToOpt.ifPresent(dnsResolverTo -> builder.httpClientBuilder(ApacheHttpClient.builder()
-                .dnsResolver(host -> {
-                    log.trace("Resolving {}", host);
-                    return new InetAddress[]{InetAddress.getByName(dnsResolverTo)};
-                })));
+        dnsResolverToOpt.ifPresentOrElse(
+                // When resolver is set, ignore our injected client, we are running
+                // in a test, instead use one that we can control DNS resolution on
+                dnsResolverTo -> builder.httpClientBuilder(ApacheHttpClient.builder()
+                        .dnsResolver(host -> {
+                            log.trace("Resolving {}", host);
+                            return new InetAddress[]{InetAddress.getByName(dnsResolverTo)};
+                        })),
+                // Otherwise use the provided client
+                () -> builder.httpClient(sdkHttpClient));
         return builder.build();
-    }
-
-    @Singleton
-    public AmazonS3 getAmazonS3() {
-        log.debug("Opening S3 v1 client on {}", serviceEndpointOpt);
-        waitUntilPortOpen();
-        AmazonS3ClientBuilder amazonS3ClientBuilder = AmazonS3ClientBuilder
-                .standard()
-                .withClientConfiguration(new ClientConfiguration()
-                        .withSignerOverride("AWSS3V4SignerType"))
-                .withCredentials(awsCredentialsProviderSdk1);
-        if (serviceEndpointOpt.isPresent() && productionRegionOpt.isPresent()) {
-            amazonS3ClientBuilder.withEndpointConfiguration(
-                    new AwsClientBuilder.EndpointConfiguration(serviceEndpointOpt.get(), productionRegionOpt.get()));
-        }
-        productionRegionOpt.ifPresent(amazonS3ClientBuilder::withRegion);
-        dnsResolverToOpt.ifPresent(dnsResolverTo -> amazonS3ClientBuilder.withClientConfiguration(new ClientConfiguration()
-                .withDnsResolver(host -> {
-                    log.trace("Resolving {}", host);
-                    return new InetAddress[]{InetAddress.getByName(dnsResolverTo)};
-                })));
-
-        return amazonS3ClientBuilder.build();
     }
 
     private void waitUntilPortOpen() {

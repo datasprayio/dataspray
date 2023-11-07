@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.SerializedName;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Value;
@@ -65,6 +66,7 @@ public interface LambdaDeployer {
     UploadCodeClaim uploadCode(String customerId, String taskId, long contentLengthBytes);
 
     @Value
+    @RegisterForReflection
     class Status {
         String taskId;
         FunctionConfiguration function;
@@ -73,6 +75,7 @@ public interface LambdaDeployer {
 
     @Getter
     @AllArgsConstructor
+    @RegisterForReflection
     enum State {
         RUNNING(0, false, Optional.of(true)),
         STARTING(1, true, Optional.of(true)),
@@ -91,6 +94,7 @@ public interface LambdaDeployer {
     }
 
     @Value
+    @RegisterForReflection
     class QueueSource {
         String queueName;
         String uuid;
@@ -98,18 +102,21 @@ public interface LambdaDeployer {
     }
 
     @Value
+    @RegisterForReflection
     class Versions {
         Status status;
         ImmutableMap<String, DeployedVersion> taskByVersion;
     }
 
     @Value
+    @RegisterForReflection
     class DeployedVersion {
         String version;
         String description;
     }
 
     @Value
+    @RegisterForReflection
     class ResourcePolicyDocument {
         @Nonnull
         @SerializedName("Version")
@@ -121,13 +128,19 @@ public interface LambdaDeployer {
     }
 
     @Value
+    @RegisterForReflection
     class ResourcePolicyStatement {
         @Nonnull
         @SerializedName("Sid")
         String statementId;
+
+        @Nonnull
+        @SerializedName("Resource")
+        String resource;
     }
 
     @Value
+    @RegisterForReflection
     class UploadCodeClaim {
         @Nonnull
         String presignedUrl;

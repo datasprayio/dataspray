@@ -22,8 +22,16 @@
 
 package io.dataspray.stream.control;
 
+import io.dataspray.common.test.aws.MotoInstance;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @QuarkusIntegrationTest
-public class ControlIT extends ControlTest {
+public class ControlIT extends ControlBase {
+
+    MotoInstance motoInstance;
+
+    protected S3Client getS3Client() {
+        return motoInstance.getS3Client();
+    }
 }

@@ -5,8 +5,6 @@
     <file url="file://$PROJECT_DIR$/dataspray-authorizer/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-backend/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-backend/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-base-lambda-web-service/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-base-lambda-web-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-cli/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-cli/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-common-test/src/main/java" charset="UTF-8" />
@@ -15,6 +13,10 @@
     <file url="file://$PROJECT_DIR$/dataspray-common/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-core/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-core/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-lambda-web-test/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-lambda-web-test/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-lambda-web/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-lambda-web/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-package/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-package/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-remote-workspace/src/main/java" charset="UTF-8" />

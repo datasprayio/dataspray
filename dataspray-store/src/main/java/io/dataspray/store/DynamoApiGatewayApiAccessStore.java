@@ -22,14 +22,12 @@
 
 package io.dataspray.store;
 
-import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
-import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.singletable.IndexSchema;
+import io.dataspray.singletable.ShardPageResult;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import io.dataspray.store.util.KeygenUtil;
@@ -43,14 +41,19 @@ import software.amazon.awssdk.services.apigateway.model.CreateApiKeyRequest;
 import software.amazon.awssdk.services.apigateway.model.CreateApiKeyResponse;
 import software.amazon.awssdk.services.apigateway.model.CreateUsagePlanKeyRequest;
 import software.amazon.awssdk.services.apigateway.model.CreateUsagePlanKeyResponse;
-import software.amazon.awssdk.services.apigateway.model.GetApiKeyRequest;
-import software.amazon.awssdk.services.apigateway.model.NotFoundException;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.StreamSupport;
+import java.util.function.Consumer;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 @Slf4j
 @ApplicationScoped
@@ -59,74 +62,72 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     public static final String USAGE_PLAN_ID_PROP_NAME = "apiAccess.usagePlan.id";
     public static final int API_KEY_LENGTH = 42;
 
-    @ConfigProperty(name = USAGE_PLAN_ID_PROP_NAME)
+    @ConfigProperty(name = USAGE_PLAN_ID_PROP_NAME, defaultValue = "unset")
     String usagePlanId;
 
     @Inject
-    SingleTable singleTable;
+    public DynamoDbClient dynamo;
     @Inject
-    ApiGatewayClient apiGatewayClient;
+    public SingleTable singleTable;
     @Inject
-    KeygenUtil keygenUtil;
+    public ApiGatewayClient apiGatewayClient;
+    @Inject
+    public KeygenUtil keygenUtil;
 
-    private TableSchema<ApiAccess> apiKeySchema;
-    private IndexSchema<ApiAccess> apiKeyByAccountSchema;
+    private TableSchema<ApiAccess> apiAccessSchema;
+    private IndexSchema<ApiAccess> apiAccessByAccountSchema;
+    private TableSchema<UsageKey> usageKeySchema;
+    private IndexSchema<UsageKey> usageKeyScanSchema;
     private Cache<String, Optional<ApiAccess>> apiAccessByApiKeyCache;
 
     @Startup
-    void init(SingleTable singleTable) {
+    void init() {
         apiAccessByApiKeyCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(Duration.ofMinutes(1))
                 .build();
 
-        apiKeySchema = singleTable.parseTableSchema(ApiAccess.class);
-        apiKeyByAccountSchema = singleTable.parseGlobalSecondaryIndexSchema(1, ApiAccess.class);
+        apiAccessSchema = singleTable.parseTableSchema(ApiAccess.class);
+        apiAccessByAccountSchema = singleTable.parseGlobalSecondaryIndexSchema(1, ApiAccess.class);
+        usageKeySchema = singleTable.parseTableSchema(UsageKey.class);
+        usageKeyScanSchema = singleTable.parseGlobalSecondaryIndexSchema(1, UsageKey.class);
     }
 
     @Override
     public ApiAccess createApiAccess(String accountId, UsageKeyType usageKeyType, String description, Optional<ImmutableSet<String>> queueWhitelistOpt, Optional<Instant> expiryOpt) {
-        String apiKeyValue = keygenUtil.generateSecureApiKey(API_KEY_LENGTH);
-
-        // If this is a first API key on the account, create a new API Gateway API Key, otherwise use existing one
-        // noinspection UnnecessaryLocalVariable
-        String apiGatewayApiKey = accountId;
-        try {
-            apiGatewayClient.getApiKey(GetApiKeyRequest.builder()
-                    .apiKey(apiGatewayApiKey)
-                    .includeValue(false).build());
-        } catch (NotFoundException ex) {
-            CreateApiKeyResponse createApiKeyResponse = apiGatewayClient.createApiKey(CreateApiKeyRequest.builder()
-                    .name(accountId)
-                    .value(apiGatewayApiKey)
-                    .description(description)
-                    .enabled(true).build());
-            CreateUsagePlanKeyResponse createUsagePlanKeyResponse = apiGatewayClient.createUsagePlanKey(CreateUsagePlanKeyRequest.builder()
-                    .keyId(createApiKeyResponse.id())
-                    .usagePlanId(usagePlanId).build());
-        }
-
-        ApiAccess apiKey = new ApiAccess(
-                apiKeyValue,
+        ApiAccess apiAccess = new ApiAccess(
+                keygenUtil.generateSecureApiKey(API_KEY_LENGTH),
                 accountId,
                 usageKeyType.getId(),
                 description,
                 queueWhitelistOpt.orElseGet(ImmutableSet::of),
                 expiryOpt.map(Instant::getEpochSecond).orElse(null));
-        apiKeySchema.table().putItem(apiKeySchema.toItem(apiKey));
-        return apiKey;
+        checkArgument(apiAccess.isTtlNotExpired());
+
+        if (UsageKeyType.ACCOUNT_WIDE.equals(usageKeyType)) {
+            getOrCreateUsageKeyForAccount(accountId);
+        }
+
+        dynamo.putItem(PutItemRequest.builder()
+                .tableName(apiAccessSchema.tableName())
+                .item(apiAccessSchema.toAttrMap(apiAccess))
+                .build());
+
+        apiAccessByApiKeyCache.put(apiAccess.getApiKey(), Optional.of(apiAccess));
+        return apiAccess;
     }
 
     @Override
     public ImmutableSet<ApiAccess> getApiAccessesByAccountId(String accountId) {
-        return StreamSupport.stream(apiKeyByAccountSchema.index().query(new QuerySpec()
-                                .withHashKey(apiKeyByAccountSchema.partitionKey(Map.of(
-                                        "accountId", accountId)))
-                                .withRangeKeyCondition(new RangeKeyCondition(apiKeyByAccountSchema.rangeKeyName())
-                                        .beginsWith(apiKeyByAccountSchema.rangeValuePartial(Map.of()))))
-                        .pages()
-                        .spliterator(), false)
-                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                .map(apiKeyByAccountSchema::fromItem)
+        return dynamo.queryPaginator(QueryRequest.builder()
+                        .tableName(apiAccessByAccountSchema.tableName())
+                        .indexName(apiAccessByAccountSchema.indexName())
+                        .keyConditions(apiAccessByAccountSchema.attrMapToConditions(apiAccessByAccountSchema.primaryKey(Map.of(
+                                "accountId", accountId))))
+                        .build())
+                .items()
+                .stream()
+                .map(apiAccessByAccountSchema::fromAttrMap)
+                .filter(ApiAccess::isTtlNotExpired)
                 .collect(ImmutableSet.toImmutableSet());
     }
 
@@ -138,7 +139,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
             //noinspection OptionalAssignedToNull
             if (apiAccessOptFromCache != null) {
                 if (apiAccessOptFromCache.isPresent()
-                    && apiAccessOptFromCache.get().getTtlInEpochSec() < Instant.now().getEpochSecond()) {
+                    && !apiAccessOptFromCache.get().isTtlNotExpired()) {
                     // Api key expired inside the cache, invalidate it
                     apiAccessByApiKeyCache.invalidate(apiKey);
                 } else {
@@ -148,10 +149,13 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         }
 
         // Fetch from DB
-        Optional<ApiAccess> apiAccessOpt = Optional.ofNullable(apiKeySchema.fromItem(apiKeySchema.table().getItem(new GetItemSpec()
-                        .withPrimaryKey(apiKeySchema.primaryKey(Map.of(
-                                "apiKeyValue", apiKey))))))
-                .filter(apiAccess -> apiAccess.getTtlInEpochSec() >= Instant.now().getEpochSecond());
+        Optional<ApiAccess> apiAccessOpt = Optional.ofNullable(apiAccessSchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
+                        .tableName(apiAccessSchema.tableName())
+                        .key(apiAccessSchema.primaryKey(Map.of(
+                                "apiKey", apiKey)))
+                        .consistentRead(!useCache)
+                        .build()).item()))
+                .filter(ApiAccess::isTtlNotExpired);
 
         // Update cache
         apiAccessByApiKeyCache.put(apiKey, apiAccessOpt);
@@ -160,8 +164,61 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public void revokeApiKey(String apiKeyValue) {
-        apiKeySchema.table().deleteItem(new DeleteItemSpec().withPrimaryKey(apiKeySchema.primaryKey(Map.of(
-                "apiKeyValue", apiKeyValue))));
+    public void revokeApiKey(String apiKey) {
+        dynamo.deleteItem(DeleteItemRequest.builder()
+                .tableName(apiAccessSchema.tableName())
+                .key(apiAccessSchema.primaryKey(Map.of(
+                        "apiKey", apiKey)))
+                .build());
+    }
+
+    @Override
+    public UsageKey getOrCreateUsageKeyForAccount(String accountId) {
+
+        // Lookup mapping from dynamo
+        Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
+                .tableName(usageKeySchema.tableName())
+                .key(usageKeySchema.primaryKey(Map.of(
+                        "accountId", accountId)))
+                .build()).item()));
+
+        // Return existing key
+        if (usageKeyOpt.isPresent()) {
+            return usageKeyOpt.get();
+        }
+
+        // Create a new API Gateway API Key
+        CreateApiKeyResponse createApiKeyResponse = apiGatewayClient.createApiKey(CreateApiKeyRequest.builder()
+                .name(accountId)
+                // For account-wide usage key, the key itself is the account ID
+                .value(accountId)
+                .enabled(true).build());
+        CreateUsagePlanKeyResponse createUsagePlanKeyResponse = apiGatewayClient.createUsagePlanKey(CreateUsagePlanKeyRequest.builder()
+                .keyType("API_KEY")
+                .keyId(createApiKeyResponse.id())
+                .usagePlanId(usagePlanId).build());
+
+        // Store mapping in dynamo
+        UsageKey usageKey = new UsageKey(accountId, createApiKeyResponse.id());
+        dynamo.putItem(PutItemRequest.builder()
+                .tableName(usageKeySchema.tableName())
+                .item(usageKeySchema.toAttrMap(usageKey))
+                .build());
+
+        return usageKey;
+    }
+
+    @Override
+    public void getAllUsageKeys(Consumer<ImmutableList<UsageKey>> batchConsumer) {
+        Optional<String> cursorOpt = Optional.empty();
+        do {
+            ShardPageResult<UsageKey> result = singleTable.fetchShardNextPage(
+                    dynamo,
+                    usageKeyScanSchema,
+                    cursorOpt,
+                    100);
+            cursorOpt = result.getCursorOpt();
+            batchConsumer.accept(result.getItems());
+        } while (cursorOpt.isPresent());
     }
 }

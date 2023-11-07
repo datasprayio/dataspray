@@ -30,17 +30,17 @@ import lombok.extern.slf4j.Slf4j;
 public class NoopCustomerLogger implements CustomerLogger {
 
     @Override
-    public void error(String accountId, String msg) {
+    public void error(String msg, String accountId) {
         log.error("{}{}", getPrefix(accountId), msg);
     }
 
     @Override
-    public void warn(String accountId, String msg) {
+    public void warn(String msg, String accountId) {
         log.warn("{}{}", getPrefix(accountId), msg);
     }
 
     @Override
-    public void info(String accountId, String msg) {
+    public void info(String msg, String accountId) {
         log.info("{}{}", getPrefix(accountId), msg);
     }
 

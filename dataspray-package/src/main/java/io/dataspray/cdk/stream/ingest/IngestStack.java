@@ -23,7 +23,7 @@
 package io.dataspray.cdk.stream.ingest;
 
 import com.google.common.collect.ImmutableList;
-import io.dataspray.cdk.web.BaseLambdaWebServiceStack;
+import io.dataspray.cdk.web.LambdaWebStack;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.AccountStore;
 import lombok.Getter;
@@ -54,7 +54,7 @@ import static java.util.Objects.requireNonNull;
 
 @Slf4j
 @Getter
-public class IngestStack extends BaseLambdaWebServiceStack {
+public class IngestStack extends LambdaWebStack {
 
     private final String bucketEtlName;
     private final Bucket bucketEtl;

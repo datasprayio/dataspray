@@ -23,7 +23,16 @@
 package io.dataspray.stream.control;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.restassured.RestAssured;
+import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.Test;
 
 @QuarkusIntegrationTest
 public class PingIT extends PingTest {
+
+    @Test
+    public void test() {
+        RestAssured.when().get("/ping")
+                .then().statusCode(Response.Status.NO_CONTENT.getStatusCode());
+    }
 }

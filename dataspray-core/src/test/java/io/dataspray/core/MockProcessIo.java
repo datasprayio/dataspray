@@ -25,7 +25,7 @@ package io.dataspray.core;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.dataspray.common.TestResourceUtil;
+import io.dataspray.common.test.TestResourceUtil;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import jakarta.inject.Singleton;
@@ -133,17 +133,17 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
 
     @SneakyThrows
     private void attemptJoinThread(Thread thread) {
+        thread.join(10_000);
+        if (!thread.isAlive()) {
+            return;
+        }
+        log.warn("Thread {} is not joining, interrupting", thread.getName());
+        thread.interrupt();
         thread.join(5_000);
         if (!thread.isAlive()) {
             return;
         }
-        log.trace("Thread {} is not joining, interrupting", thread.getName());
-        thread.interrupt();
-        thread.join(3_000);
-        if (!thread.isAlive()) {
-            return;
-        }
-        log.trace("Thread {} is not interrupting, stopping", thread.getName());
+        log.warn("Thread {} is not interrupting, stopping", thread.getName());
         thread.stop();
     }
 

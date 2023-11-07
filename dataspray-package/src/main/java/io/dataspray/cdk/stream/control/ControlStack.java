@@ -23,7 +23,7 @@
 package io.dataspray.cdk.stream.control;
 
 import com.google.common.collect.ImmutableList;
-import io.dataspray.cdk.web.BaseLambdaWebServiceStack;
+import io.dataspray.cdk.web.LambdaWebStack;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.LambdaDeployerImpl;
 import io.dataspray.store.SqsQueueStore;
@@ -41,7 +41,7 @@ import software.constructs.Construct;
 
 @Slf4j
 @Getter
-public class ControlStack extends BaseLambdaWebServiceStack {
+public class ControlStack extends LambdaWebStack {
 
     /** Separated out to remove cyclic dependency */
     private final String customerFunctionPermissionBoundaryManagedPolicyName;

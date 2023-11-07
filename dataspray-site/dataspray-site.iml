@@ -6,6 +6,9 @@
       <excludeFolder url="file://$MODULE_DIR$/node" />
       <excludeFolder url="file://$MODULE_DIR$/node_modules" />
       <excludeFolder url="file://$MODULE_DIR$/out" />
+      <excludeFolder url="file://$MODULE_DIR$/.open-next" />
+      <excludeFolder url="file://$MODULE_DIR$/public/logo" />
+      <excludeFolder url="file://$MODULE_DIR$/public/vscode-web" />
     </content>
   </component>
 </module>

@@ -31,12 +31,14 @@ import io.dataspray.web.resource.AbstractResource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException;
 
 import java.io.InputStream;
+import java.util.Optional;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
@@ -73,17 +75,22 @@ public class IngestResource extends AbstractResource implements IngestApi {
         messageInputStream.close();
 
         // Submit message to queue for stream processing
+        MediaType mediaType = Optional.ofNullable(headers.getMediaType())
+                .orElseGet(() -> {
+                    customerLog.warn("Message for stream " + targetId + " missing media type", accountId);
+                    return MediaType.APPLICATION_OCTET_STREAM_TYPE;
+                });
         try {
-            queueStore.submit(accountId, targetId, messageBytes, headers.getMediaType());
+            queueStore.submit(accountId, targetId, messageBytes, mediaType);
         } catch (QueueDoesNotExistException ex) {
             queueStore.createQueue(accountId, targetId);
-            queueStore.submit(accountId, targetId, messageBytes, headers.getMediaType());
+            queueStore.submit(accountId, targetId, messageBytes, mediaType);
         }
 
         // Submit message to S3 for later batch processing
         if (streamMetadata.getRetentionOpt().isPresent()) {
             // Only JSON supported for now
-            if (APPLICATION_JSON_TYPE.equals(headers.getMediaType())) {
+            if (APPLICATION_JSON_TYPE.equals(mediaType)) {
                 etlStore.putRecord(accountId, targetId, messageBytes, streamMetadata.getRetentionOpt().get());
             } else {
                 customerLog.warn("Message for stream " + targetId + " requires " + APPLICATION_JSON + ", skipping ETL", accountId);
