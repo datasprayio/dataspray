@@ -57,11 +57,11 @@ public abstract class LambdaWebStack extends BaseStack {
                 .uuid(UUID.nameUUIDFromBytes(getConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
                 .functionName(functionName)
                 .code(Code.fromAsset(options.getCodeZip()))
-                .architecture(Architecture.ARM_64)
                 .memorySize(options.getMemorySize())
                 .timeout(Duration.seconds(30));
         if (IS_NATIVE) {
             functionBuilder
+                    .architecture(detectNativeArch())
                     .runtime(Runtime.PROVIDED)
                     // Unused in native image
                     .handler("io.dataspray")
@@ -71,10 +71,26 @@ public abstract class LambdaWebStack extends BaseStack {
                     .events(List.of(ApiEventSource.Builder.create("any", "/{proxy+}").build()));
         } else {
             functionBuilder
+                    // For JVM default to ARM as it's cheaper
+                    .architecture(Architecture.ARM_64)
                     .runtime(Runtime.JAVA_11)
                     .handler(QUARKUS_LAMBDA_HANDLER);
         }
         function = functionBuilder.build();
+    }
+
+    private Architecture detectNativeArch() {
+        // Good enough
+        String osArch = System.getProperty("os.arch", "");
+        if (osArch.equalsIgnoreCase("aarch64")
+            || osArch.contains("arm")) {
+            return Architecture.ARM_64;
+        } else if (osArch.contains("amd")
+                   || osArch.contains("x86")) {
+            return Architecture.X86_64;
+        } else {
+            throw new RuntimeException("Unknown architecture: " + osArch);
+        }
     }
 
     @Value
