@@ -53,16 +53,36 @@ public abstract class LambdaWebStack extends BaseStack {
         super(parent, "web-" + options.getFunctionName(), options.getDeployEnv());
 
         functionName = options.getFunctionName();
-        SingletonFunction.Builder functionBuilder = SingletonFunction.Builder.create(this, getConstructId("lambda"))
-                .uuid(UUID.nameUUIDFromBytes(getConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
+        function = getSingletonFunctionBuilder(
+                this,
+                getConstructId("lambda"),
+                functionName,
+                options.getCodeZip(),
+                options.getMemorySize(),
+                QUARKUS_LAMBDA_HANDLER);
+    }
+
+    /**
+     * Hybrid SingletonFunction of native or JVM code
+     */
+    static SingletonFunction getSingletonFunctionBuilder(
+            Construct scope,
+            String constructId,
+            String functionName,
+            String codeZip,
+            int memorySize,
+            String jvmHandler) {
+        SingletonFunction.Builder functionBuilder = SingletonFunction.Builder.create(scope, constructId)
+                .uuid(UUID.nameUUIDFromBytes(constructId.getBytes(Charsets.UTF_8)).toString())
                 .functionName(functionName)
-                .code(Code.fromAsset(options.getCodeZip()))
-                .memorySize(options.getMemorySize())
+                .code(Code.fromAsset(codeZip))
+                .memorySize(memorySize)
                 .timeout(Duration.seconds(30));
         if (IS_NATIVE) {
             functionBuilder
                     .architecture(detectNativeArch())
-                    .runtime(Runtime.PROVIDED)
+                    // PROVIDED does not support arm64
+                    .runtime(Runtime.PROVIDED_AL2)
                     // Unused in native image
                     .handler("io.dataspray")
                     // Required for native image https://github.com/quarkusio/quarkus/issues/29331
@@ -74,12 +94,12 @@ public abstract class LambdaWebStack extends BaseStack {
                     // For JVM default to ARM as it's cheaper
                     .architecture(Architecture.ARM_64)
                     .runtime(Runtime.JAVA_11)
-                    .handler(QUARKUS_LAMBDA_HANDLER);
+                    .handler(jvmHandler);
         }
-        function = functionBuilder.build();
+        return functionBuilder.build();
     }
 
-    private Architecture detectNativeArch() {
+    private static Architecture detectNativeArch() {
         // Good enough
         String osArch = System.getProperty("os.arch", "");
         if (osArch.equalsIgnoreCase("aarch64")

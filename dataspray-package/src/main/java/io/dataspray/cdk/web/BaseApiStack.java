@@ -25,7 +25,6 @@ package io.dataspray.cdk.web;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -57,10 +56,7 @@ import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
-import software.amazon.awscdk.services.lambda.Architecture;
-import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Permission;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
 import software.amazon.awscdk.services.route53.ARecord;
 import software.amazon.awscdk.services.route53.AaaaRecord;
@@ -74,7 +70,6 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -98,16 +93,13 @@ public class BaseApiStack extends BaseStack {
         this.options = options;
 
         authorizerFunctionName = "authorizer" + options.getDeployEnv().getSuffix();
-        authorizerFunction = SingletonFunction.Builder.create(this, getConstructId("lambda"))
-                .uuid(UUID.nameUUIDFromBytes(getConstructId("lambda").getBytes(Charsets.UTF_8)).toString())
-                .functionName(authorizerFunctionName)
-                .code(Code.fromAsset(options.getAuthorizerCodeZip()))
-                .handler(Authorizer.class.getName() + "::handleRequest")
-                .runtime(Runtime.JAVA_11)
-                .architecture(Architecture.ARM_64)
-                .memorySize(512)
-                .timeout(Duration.seconds(30))
-                .build();
+        authorizerFunction = LambdaWebStack.getSingletonFunctionBuilder(
+                this,
+                getConstructId("lambda"),
+                authorizerFunctionName,
+                options.getAuthorizerCodeZip(),
+                512,
+                Authorizer.class.getName() + "::handleRequest");
 
         roleApiGatewayInvoke = Role.Builder.create(this, getConstructId("role"))
                 .roleName(getConstructId("authorizer-role-invoke"))
