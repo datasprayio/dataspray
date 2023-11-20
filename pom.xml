@@ -54,7 +54,7 @@
             https://github.com/datasprayio/open-next-cdk/blob/main/.projenrc.js#L21
         -->
         <aws.cdk.version>2.105.0</aws.cdk.version>
-        <aws.cdk.4j.version>2.2.3-SNAPSHOT</aws.cdk.4j.version>
+        <aws.cdk.4j.version>2.2.4</aws.cdk.4j.version>
         <sqlite4java>1.0.392</sqlite4java>
 
         <skipTests/>
