@@ -94,6 +94,10 @@
             <groupId>io.dataspray</groupId>
             <artifactId>open-next-cdk</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.dataspray</groupId>
+            <artifactId>next-export-cdk</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -153,16 +157,28 @@
                         <configuration>
                             <overWriteSnapshots>true</overWriteSnapshots>
                             <artifactItems>
+                                <!-- For static NextJS site -->
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-site</artifactId>
-                                    <classifier>open-next</classifier>
+                                    <classifier>static-site</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/open-next/</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/static-site/</outputDirectory>
                                     <includes>**</includes>
                                 </artifactItem>
+                                <!-- For Open-Next -->
+                                <!--<artifactItem>-->
+                                <!--    <groupId>io.dataspray</groupId>-->
+                                <!--    <artifactId>dataspray-site</artifactId>-->
+                                <!--    <classifier>open-next</classifier>-->
+                                <!--    <version>${project.version}</version>-->
+                                <!--    <type>tar.gz</type>-->
+                                <!--    <overWrite>true</overWrite>-->
+                                <!--    <outputDirectory>${project.build.directory}/open-next/</outputDirectory>-->
+                                <!--    <includes>**</includes>-->
+                                <!--</artifactItem>-->
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-stream-client</artifactId>
@@ -207,7 +223,7 @@
                                 <argument>${project.build.directory}/code-authorizer/function.zip</argument>
                                 <argument>${project.build.directory}/code-control/function.zip</argument>
                                 <argument>${project.build.directory}/code-ingest/function.zip</argument>
-                                <argument>${project.build.directory}/open-next/.open-next</argument>
+                                <argument>${project.build.directory}/static-site</argument>
                             </arguments>
                         </configuration>
                     </execution>

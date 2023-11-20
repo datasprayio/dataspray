@@ -14,17 +14,6 @@
         </processorPath>
         <module name="dataspray-authorizer" />
       </profile>
-      <profile name="Annotation profile for dataspray-cli" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processor name="lombok.launch.AnnotationProcessorHider$AnnotationProcessor" />
-        <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.22/lombok-1.18.22.jar" />
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.22/lombok-1.18.22.jar" />
-        </processorPath>
-        <module name="dataspray-cli" />
-      </profile>
       <profile name="Annotation profile for dataspray-stream-control" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
@@ -55,18 +44,19 @@
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
         </processorPath>
+        <module name="dataspray-stream-client" />
+        <module name="dataspray-remote-workspace" />
+        <module name="dataspray-store" />
+        <module name="dataspray-core" />
+        <module name="dataspray-lambda-web" />
+        <module name="dataspray-runner" />
         <module name="dataspray-lambda-web-test" />
         <module name="dataspray-common" />
         <module name="dataspray-common-test" />
-        <module name="dataspray-stream-client" />
-        <module name="dataspray-remote-workspace" />
+        <module name="dataspray-cli" />
         <module name="dataspray-resources" />
-        <module name="dataspray-store" />
-        <module name="dataspray-core" />
         <module name="dataspray-package" />
         <module name="dataspray-site" />
-        <module name="dataspray-lambda-web" />
-        <module name="dataspray-runner" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

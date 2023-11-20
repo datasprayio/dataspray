@@ -47,10 +47,14 @@
         <logback.version>1.2.9</logback.version>
         <jackson.version>2.15.3</jackson.version>
         <aws.sdk.version>2.20.115</aws.sdk.version>
-        <!-- Keep in sync with cdk version used in aws-cdk-maven-pluginn (aws.cdk.4j.version)
-            https://github.com/datasprayio/aws-cdk-4j/blob/master/pom.xml#L54-->
-        <aws.cdk.version>2.89.0</aws.cdk.version>
-        <aws.cdk.4j.version>2.1.3</aws.cdk.4j.version>
+        <!--
+            Keep in sync with cdk version used in aws-cdk-maven-plugin (aws.cdk.4j.version)
+            https://github.com/datasprayio/aws-cdk-4j/blob/master/pom.xml#L55
+            And also with cdk version used in open-next-cdk
+            https://github.com/datasprayio/open-next-cdk/blob/main/.projenrc.js#L21
+        -->
+        <aws.cdk.version>2.105.0</aws.cdk.version>
+        <aws.cdk.4j.version>2.2.3-SNAPSHOT</aws.cdk.4j.version>
         <sqlite4java>1.0.392</sqlite4java>
 
         <skipTests/>
@@ -327,7 +331,12 @@
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>open-next-cdk</artifactId>
-                <version>0.0.8</version>
+                <version>0.0.10</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
+                <artifactId>next-export-cdk</artifactId>
+                <version>0.0.0</version>
             </dependency>
 
             <dependency>

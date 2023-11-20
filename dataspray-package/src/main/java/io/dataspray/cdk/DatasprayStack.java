@@ -25,7 +25,7 @@ package io.dataspray.cdk;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import io.dataspray.cdk.dns.DnsStack;
-import io.dataspray.cdk.site.OpenNextStack;
+import io.dataspray.cdk.site.StaticSiteStack;
 import io.dataspray.cdk.store.AuthNzStack;
 import io.dataspray.cdk.store.SingleTableStack;
 import io.dataspray.cdk.stream.control.ControlStack;
@@ -57,16 +57,22 @@ public class DatasprayStack {
         String authorizerCodeZip = args[1];
         String controlCodeZip = args[2];
         String ingestCodeZip = args[3];
-        String openNextDir = args[4];
+        String staticSiteDir = args[4];
 
         // Keep track of all Lambdas in order to pass config properties to them
         Set<SingletonFunction> functions = Sets.newHashSet();
 
         DnsStack dnsStack = new DnsStack(app, deployEnv);
-        new OpenNextStack(app, deployEnv, OpenNextStack.Options.builder()
+        // Static site
+        new StaticSiteStack(app, deployEnv, StaticSiteStack.Options.builder()
                 .dnsStack(dnsStack)
-                .openNextDir(openNextDir)
+                .staticSiteDir(staticSiteDir)
                 .build());
+        // Open-next
+        //new OpenNextStack(app, deployEnv, OpenNextStack.Options.builder()
+        //        .dnsStack(dnsStack)
+        //        .openNextDir(openNextDir)
+        //        .build());
 
         SingleTableStack singleTableStack = new SingleTableStack(app, deployEnv);
         AuthNzStack authNzStack = new AuthNzStack(app, deployEnv);

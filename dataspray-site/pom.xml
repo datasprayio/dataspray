@@ -80,6 +80,13 @@
                                     <followSymlinks>false</followSymlinks>
                                 </fileset>
                                 <fileset>
+                                    <directory>${project.basedir}/out</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
                                     <directory>${project.basedir}/.next</directory>
                                     <includes>
                                         <include>**</include>
@@ -88,13 +95,6 @@
                                 </fileset>
                                 <fileset>
                                     <directory>${project.basedir}/.open-next</directory>
-                                    <includes>
-                                        <include>**</include>
-                                    </includes>
-                                    <followSymlinks>false</followSymlinks>
-                                </fileset>
-                                <fileset>
-                                    <directory>${project.basedir}/public/vscode-web</directory>
                                     <includes>
                                         <include>**</include>
                                     </includes>
@@ -217,7 +217,9 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
                     <descriptors>
-                        <descriptor>${project.basedir}/assembly-opennext.xml</descriptor>
+                        <descriptor>${project.basedir}/assembly-static-site.xml</descriptor>
+                        <!-- Not using for now -->
+                        <!-- <descriptor>${project.basedir}/assembly-open-next.xml</descriptor>-->
                     </descriptors>
                     <tarLongFileMode>posix</tarLongFileMode>
                 </configuration>
