@@ -137,7 +137,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 processor.getOutputStreams().stream().map(StreamLink::getStreamName).collect(Collectors.toSet()),
                 handler);
         TaskVersion deployedVersion = streamApi.control(apiKey).deployVersion(processor.getTaskId(), new DeployRequest()
-                .runtime(DeployRequest.RuntimeEnum.JAVA11)
+                .runtime(DeployRequest.RuntimeEnum.JAVA21)
                 .handler(handler)
                 .inputQueueNames(processor.getInputStreams().stream()
                         .map(StreamLink::getStreamName)

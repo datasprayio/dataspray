@@ -9,7 +9,8 @@ import Head from 'next/head';
 import { useMemo } from 'react';
 
 function MyApp({ Component, pageProps }: AppProps) {
-  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
+  // If not specified, use dark mode to prevent flash of white
+  const prefersDarkMode = !useMediaQuery('(prefers-color-scheme: light)');
   const theme = useMemo(
     () =>
       createTheme({

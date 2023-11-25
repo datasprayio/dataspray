@@ -44,6 +44,7 @@ import software.constructs.Construct;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 @Slf4j
 @Getter
@@ -55,7 +56,7 @@ public class StaticSiteStack extends BaseStack {
     private final AaaaRecord recordSetAaaa;
 
     public StaticSiteStack(Construct parent, DeployEnvironment deployEnv, Options options) {
-        super(parent, "site", deployEnv);
+        super(parent, "site-" + options.getIdentifier(), deployEnv);
 
         String fqdn = DnsStack.createFqdn(this, deployEnv);
         IHostedZone dnsZone = options.getDnsStack().getDnsZone(this, fqdn);
@@ -98,6 +99,11 @@ public class StaticSiteStack extends BaseStack {
     @Value
     @lombok.Builder
     public static class Options {
+        @NonNull
+        String identifier;
+        @NonNull
+        @lombok.Builder.Default
+        Optional<String> subdomain = Optional.empty();
         @NonNull
         DnsStack dnsStack;
         @NonNull

@@ -41,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
 
+import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
@@ -57,22 +58,25 @@ public class DatasprayStack {
         String authorizerCodeZip = args[1];
         String controlCodeZip = args[2];
         String ingestCodeZip = args[3];
-        String staticSiteDir = args[4];
+        String staticSiteLandingDir = args[4];
+        String staticSiteAppDir = args[4];
 
         // Keep track of all Lambdas in order to pass config properties to them
         Set<SingletonFunction> functions = Sets.newHashSet();
 
+        // Frontend
         DnsStack dnsStack = new DnsStack(app, deployEnv);
-        // Static site
         new StaticSiteStack(app, deployEnv, StaticSiteStack.Options.builder()
+                .identifier("landing")
                 .dnsStack(dnsStack)
-                .staticSiteDir(staticSiteDir)
+                .staticSiteDir(staticSiteLandingDir)
                 .build());
-        // Open-next
-        //new OpenNextStack(app, deployEnv, OpenNextStack.Options.builder()
-        //        .dnsStack(dnsStack)
-        //        .openNextDir(openNextDir)
-        //        .build());
+        new StaticSiteStack(app, deployEnv, StaticSiteStack.Options.builder()
+                .identifier("dashboard")
+                .subdomain(Optional.of("dashboard"))
+                .dnsStack(dnsStack)
+                .staticSiteDir(staticSiteAppDir)
+                .build());
 
         SingleTableStack singleTableStack = new SingleTableStack(app, deployEnv);
         AuthNzStack authNzStack = new AuthNzStack(app, deployEnv);
@@ -113,7 +117,7 @@ public class DatasprayStack {
     }
 
     private static void setConfigProperty(SingletonFunction function, String prop, String value) {
-        // https://quarkus.io/guides/config-reference#environment-variables
+        // https://quarkus.io/guides/config-reference#environment-variablespom.xml
         String propAsEnvVar = prop.replaceAll("[^a-zA-Z0-9]", "_").toUpperCase();
 
         function.addEnvironment(propAsEnvVar, value);

@@ -1,5 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
 <!--
   ~ Copyright 2023 Matus Faro
   ~
@@ -22,22 +20,26 @@
   ~ SOFTWARE.
   -->
 
-<configuration debug="false">
-    <jmxConfigurator/>
-
-    <contextName>${appName}</contextName>
-
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%loggingHighlight(%msg %ex{0}) %nopex%n</pattern>
-        </encoder>
-    </appender>
-
-    <logger name="org.eclipse.jgit" level="INFO"/>
-    <logger name="io.quarkus" level="WARN"/>
-
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-    </root>
-
-</configuration>
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+    <id>static-site</id>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <formats>
+        <format>tar.gz</format>
+    </formats>
+    <fileSets>
+        <fileSet>
+            <!-- Required to populate redirects for dynamic routing -->
+            <directory>${project.basedir}/.next</directory>
+            <outputDirectory>/.next</outputDirectory>
+            <includes>
+                <include>routes-manifest.json</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/out</directory>
+            <outputDirectory>/out</outputDirectory>
+        </fileSet>
+    </fileSets>
+</assembly>

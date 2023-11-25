@@ -157,28 +157,26 @@
                         <configuration>
                             <overWriteSnapshots>true</overWriteSnapshots>
                             <artifactItems>
-                                <!-- For static NextJS site -->
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
-                                    <artifactId>dataspray-site</artifactId>
+                                    <artifactId>dataspray-site-landing</artifactId>
                                     <classifier>static-site</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/static-site/</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/static-site-landing/</outputDirectory>
                                     <includes>**</includes>
                                 </artifactItem>
-                                <!-- For Open-Next -->
-                                <!--<artifactItem>-->
-                                <!--    <groupId>io.dataspray</groupId>-->
-                                <!--    <artifactId>dataspray-site</artifactId>-->
-                                <!--    <classifier>open-next</classifier>-->
-                                <!--    <version>${project.version}</version>-->
-                                <!--    <type>tar.gz</type>-->
-                                <!--    <overWrite>true</overWrite>-->
-                                <!--    <outputDirectory>${project.build.directory}/open-next/</outputDirectory>-->
-                                <!--    <includes>**</includes>-->
-                                <!--</artifactItem>-->
+                                <artifactItem>
+                                    <groupId>io.dataspray</groupId>
+                                    <artifactId>dataspray-site-dashboard</artifactId>
+                                    <classifier>static-site</classifier>
+                                    <version>${project.version}</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/static-site-dashboard/</outputDirectory>
+                                    <includes>**</includes>
+                                </artifactItem>
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-stream-client</artifactId>
@@ -223,7 +221,8 @@
                                 <argument>${project.build.directory}/code-authorizer/function.zip</argument>
                                 <argument>${project.build.directory}/code-control/function.zip</argument>
                                 <argument>${project.build.directory}/code-ingest/function.zip</argument>
-                                <argument>${project.build.directory}/static-site</argument>
+                                <argument>${project.build.directory}/static-site-landing</argument>
+                                <argument>${project.build.directory}/static-site-dashboard</argument>
                             </arguments>
                         </configuration>
                     </execution>

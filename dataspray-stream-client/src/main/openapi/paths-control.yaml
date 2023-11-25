@@ -41,8 +41,9 @@ components:
           type: string
           # Subset of software.amazon.awssdk.services.lambda.model.Runtime
           enum:
-            - JAVA8
             - JAVA11
+            - JAVA17
+            - JAVA21
             - NODEJS14_X
             - PYTHON3_9
             - GO1_X

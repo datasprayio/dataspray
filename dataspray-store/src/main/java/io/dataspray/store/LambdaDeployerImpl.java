@@ -69,6 +69,8 @@ import software.amazon.awssdk.services.lambda.model.PackageType;
 import software.amazon.awssdk.services.lambda.model.ResourceConflictException;
 import software.amazon.awssdk.services.lambda.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.lambda.model.Runtime;
+import software.amazon.awssdk.services.lambda.model.SnapStart;
+import software.amazon.awssdk.services.lambda.model.SnapStartApplyOn;
 import software.amazon.awssdk.services.lambda.model.UpdateAliasRequest;
 import software.amazon.awssdk.services.lambda.model.UpdateEventSourceMappingRequest;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
@@ -203,6 +205,20 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                                         "arn:aws:logs:" + awsRegion + ":" + awsAccountId + ":log-group:/aws/lambda/" + FUN_NAME_WILDCARD_GETTER.apply(deployEnv) + ":*"
                                 ))))));
 
+        // Determine SnapStart setting
+        final SnapStartApplyOn snapStartApplyOn;
+        switch (runtime) {
+            // Supported runtimes: https://docs.aws.amazon.com/lambda/latest/dg/snapstart.html#snapstart-runtimes
+            case JAVA11:
+            case JAVA17:
+            case JAVA21:
+                snapStartApplyOn = SnapStartApplyOn.PUBLISHED_VERSIONS;
+                break;
+            default:
+                snapStartApplyOn = SnapStartApplyOn.NONE;
+                break;
+        }
+
         // Create or update function configuration and code
         final String publishedVersion;
         final String publishedDescription = generateVersionDescription(taskId, queueNames);
@@ -228,6 +244,9 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .environment(env)
                             .memorySize(128)
                             .timeout(LAMBDA_DEFAULT_TIMEOUT)
+                            .snapStart(SnapStart.builder()
+                                    .applyOn(snapStartApplyOn)
+                                    .build())
                             .build())
                     .version();
             log.debug("Created function {} with published version {} description {}", functionName, publishedVersion, publishedDescription);
@@ -247,6 +266,9 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .runtime(runtime)
                     .handler(handler)
                     .environment(env)
+                    .snapStart(SnapStart.builder()
+                            .applyOn(snapStartApplyOn)
+                            .build())
                     .revisionId(existingFunctionOpt.get().revisionId())
                     .build());
             log.debug("Updated function configuration {} with description {}", functionName, publishedDescription);

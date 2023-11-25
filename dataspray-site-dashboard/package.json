@@ -1,0 +1,43 @@
+{
+  "name": "dataspray",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev:dev": "next dev",
+    "dev": "concurrently -n NX,TS -c cyan,green \"next dev\" \"pnpm dev:ts --watch\"",
+    "dev:ts": "tsc --noEmit --incremental --preserveWatchOutput --pretty",
+    "build": "pnpm run build:staticsite",
+    "build:opennext": "NEXTJS_OUTPUT=standalone open-next build --build-command 'pnpm run build:next'",
+    "build:next": "next build",
+    "build:staticsite": "NEXTJS_OUTPUT=export pnpm run build:next",
+    "start": "pnpm run start:staticsite",
+    "start:staticsite": "serve out",
+    "start:next": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@cloudscape-design/components": "^3.0.443",
+    "@cloudscape-design/global-styles": "^1.0.15",
+    "amazon-cognito-identity-js": "^6.3.1",
+    "next": "^14.0.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.45",
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "concurrently": "^8.2.0",
+    "esbuild": "^0.18.17",
+    "eslint": "^8.46.0",
+    "eslint-config-next": "^14.0.3",
+    "inquirer": "^9.2.8",
+    "open-next": "^2.3.2",
+    "serve": "^14.2.1",
+    "typescript": "^5.1.6",
+    "webpack": "^5.88.2"
+  },
+  "pnpm": {
+    "patchedDependencies": {}
+  }
+}

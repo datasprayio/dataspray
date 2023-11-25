@@ -4,7 +4,6 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/dataspray-authorizer/dataspray-authorizer.iml" filepath="$PROJECT_DIR$/dataspray-authorizer/dataspray-authorizer.iml" />
       <module fileurl="file://$PROJECT_DIR$/dataspray-package/dataspray-package.iml" filepath="$PROJECT_DIR$/dataspray-package/dataspray-package.iml" />
-      <module fileurl="file://$PROJECT_DIR$/dataspray-site/dataspray-site.iml" filepath="$PROJECT_DIR$/dataspray-site/dataspray-site.iml" />
       <module fileurl="file://$PROJECT_DIR$/dataspray-stream-control/dataspray-stream-control.iml" filepath="$PROJECT_DIR$/dataspray-stream-control/dataspray-stream-control.iml" />
       <module fileurl="file://$PROJECT_DIR$/dataspray-stream-ingest/dataspray-stream-ingest.iml" filepath="$PROJECT_DIR$/dataspray-stream-ingest/dataspray-stream-ingest.iml" />
     </modules>
