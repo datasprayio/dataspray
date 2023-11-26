@@ -68,7 +68,6 @@ import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionRespon
 import software.amazon.awssdk.services.lambda.model.PackageType;
 import software.amazon.awssdk.services.lambda.model.ResourceConflictException;
 import software.amazon.awssdk.services.lambda.model.ResourceNotFoundException;
-import software.amazon.awssdk.services.lambda.model.Runtime;
 import software.amazon.awssdk.services.lambda.model.SnapStart;
 import software.amazon.awssdk.services.lambda.model.SnapStartApplyOn;
 import software.amazon.awssdk.services.lambda.model.UpdateAliasRequest;
@@ -146,7 +145,16 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
 
     @Override
-    public DeployedVersion deployVersion(String customerId, String customerApiKey, String taskId, String codeUrl, String handler, ImmutableSet<String> queueNames, Runtime runtime, boolean switchToImmediately) {
+    public DeployedVersion deployVersion(
+            String customerId,
+            String customerApiKey,
+            String taskId,
+            String codeUrl,
+            String handler,
+            ImmutableSet<String> queueNames,
+            String runtimeStr,
+            boolean switchToImmediately) {
+
         String functionName = getFunctionName(customerId, taskId);
 
         // Check whether function exists
@@ -207,11 +215,11 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
         // Determine SnapStart setting
         final SnapStartApplyOn snapStartApplyOn;
-        switch (runtime) {
+        switch (runtimeStr) {
             // Supported runtimes: https://docs.aws.amazon.com/lambda/latest/dg/snapstart.html#snapstart-runtimes
-            case JAVA11:
-            case JAVA17:
-            case JAVA21:
+            case "JAVA11":
+            case "JAVA17":
+            case "JAVA21":
                 snapStartApplyOn = SnapStartApplyOn.PUBLISHED_VERSIONS;
                 break;
             default:
@@ -239,7 +247,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                                     .s3Bucket(codeBucketName)
                                     .s3Key(getCodeKeyFromUrl(customerId, codeUrl))
                                     .build())
-                            .runtime(runtime)
+                            .runtime(runtimeStr)
                             .handler(handler)
                             .environment(env)
                             .memorySize(128)
@@ -263,7 +271,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     // Description always changes with the latest timestamp
                     .description(publishedDescription)
                     .role(functionRoleArn)
-                    .runtime(runtime)
+                    .runtime(runtimeStr)
                     .handler(handler)
                     .environment(env)
                     .snapStart(SnapStart.builder()

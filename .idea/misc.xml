@@ -32,6 +32,7 @@
     <option name="ignoredFiles">
       <set>
         <option value="$PROJECT_DIR$/dataspray-backend/pom.xml" />
+        <option value="$PROJECT_DIR$/dataspray-site-dashboard/pom.xml" />
       </set>
     </option>
   </component>

@@ -82,7 +82,7 @@ public abstract class LambdaWebStack extends BaseStack {
             functionBuilder
                     .architecture(detectNativeArch())
                     // PROVIDED does not support arm64
-                    .runtime(Runtime.PROVIDED_AL2)
+                    .runtime(Runtime.PROVIDED_AL2023)
                     // Unused in native image
                     .handler("io.dataspray")
                     // Required for native image https://github.com/quarkusio/quarkus/issues/29331
@@ -93,7 +93,8 @@ public abstract class LambdaWebStack extends BaseStack {
             functionBuilder
                     // For JVM default to ARM as it's cheaper
                     .architecture(Architecture.ARM_64)
-                    .runtime(Runtime.JAVA_11)
+                    // TODO Switch to JAVA_21 once AWS SDK Lambda version is bumped by Quarkus
+                    .runtime(Runtime.JAVA_17)
                     .handler(jvmHandler);
         }
         return functionBuilder.build();

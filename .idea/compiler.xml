@@ -17,7 +17,6 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
         </processorPath>
         <module name="dataspray-stream-ingest" />
-        <module name="dataspray-site-landing" />
         <module name="dataspray-stream-client" />
         <module name="dataspray-remote-workspace" />
         <module name="dataspray-store" />
@@ -32,19 +31,12 @@
         <module name="dataspray-resources" />
         <module name="dataspray-stream-control" />
         <module name="dataspray-package" />
+        <module name="dataspray-site" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="dataspray-api" target="17" />
-      <module name="dataspray-backend" target="11" />
-      <module name="dataspray-core-common" target="17" />
-      <module name="dataspray-core-parent" target="17" />
-      <module name="dataspray-core-processors-parent" target="17" />
-      <module name="dataspray-definition" target="17" />
-      <module name="dataspray-definition-generator" target="17" />
-      <module name="dataspray-processor-java" target="17" />
-      <module name="dataspray-processors" target="17" />
-      <module name="dataspray-site" target="11" />
+      <module name="dataspray-site-dashboard" target="21" />
+      <module name="dataspray-site-landing" target="21" />
     </bytecodeTargetLevel>
   </component>
 </project>

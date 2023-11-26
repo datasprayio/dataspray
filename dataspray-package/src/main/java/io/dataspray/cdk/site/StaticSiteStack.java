@@ -56,7 +56,7 @@ public class StaticSiteStack extends BaseStack {
     private final AaaaRecord recordSetAaaa;
 
     public StaticSiteStack(Construct parent, DeployEnvironment deployEnv, Options options) {
-        super(parent, "site-" + options.getIdentifier(), deployEnv);
+        super(parent, options.getIdentifier(), deployEnv);
 
         String fqdn = DnsStack.createFqdn(this, deployEnv);
         IHostedZone dnsZone = options.getDnsStack().getDnsZone(this, fqdn);

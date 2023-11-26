@@ -40,11 +40,9 @@ import io.dataspray.stream.control.model.UploadCodeResponse;
 import io.dataspray.web.resource.AbstractResource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
-import software.amazon.awssdk.services.lambda.model.Runtime;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -82,8 +80,10 @@ public class ControlResource extends AbstractResource implements ControlApi {
                 deployRequest.getInputQueueNames().stream()
                         .distinct()
                         .collect(ImmutableSet.toImmutableSet()),
-                Enums.getIfPresent(Runtime.class, deployRequest.getRuntime().name()).toJavaUtil()
-                        .orElseThrow(() -> new BadRequestException("Unknown runtime: " + deployRequest.getRuntime())),
+                // TODO Switch this back to Runtime enum when Quarkus bumps AWS SDK version that supports JAVA21
+                // Enums.getIfPresent(Runtime.class, deployRequest.getRuntime().name()).toJavaUtil()
+                //         .orElseThrow(() -> new BadRequestException("Unknown runtime: " + deployRequest.getRuntime())),
+                deployRequest.getRuntime().name(),
                 deployRequest.getSwitchToNow());
         return new TaskVersion(
                 taskId,

@@ -41,7 +41,6 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
 
-import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
@@ -58,8 +57,7 @@ public class DatasprayStack {
         String authorizerCodeZip = args[1];
         String controlCodeZip = args[2];
         String ingestCodeZip = args[3];
-        String staticSiteLandingDir = args[4];
-        String staticSiteAppDir = args[4];
+        String staticSiteDir = args[4];
 
         // Keep track of all Lambdas in order to pass config properties to them
         Set<SingletonFunction> functions = Sets.newHashSet();
@@ -67,15 +65,9 @@ public class DatasprayStack {
         // Frontend
         DnsStack dnsStack = new DnsStack(app, deployEnv);
         new StaticSiteStack(app, deployEnv, StaticSiteStack.Options.builder()
-                .identifier("landing")
+                .identifier("site")
                 .dnsStack(dnsStack)
-                .staticSiteDir(staticSiteLandingDir)
-                .build());
-        new StaticSiteStack(app, deployEnv, StaticSiteStack.Options.builder()
-                .identifier("dashboard")
-                .subdomain(Optional.of("dashboard"))
-                .dnsStack(dnsStack)
-                .staticSiteDir(staticSiteAppDir)
+                .staticSiteDir(staticSiteDir)
                 .build());
 
         SingleTableStack singleTableStack = new SingleTableStack(app, deployEnv);
