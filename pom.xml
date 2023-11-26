@@ -62,7 +62,8 @@
         <lambda-native.container-build>false</lambda-native.container-build>
         <lambda-native-it.phase>none</lambda-native-it.phase>
         <lambda-native-it.finalName>${project.build.finalName}-it</lambda-native-it.finalName>
-        <failsafe.native-image-path>${project.build.finalName}</failsafe.native-image-path>
+        <failsafe.native-image-path>${project.build.directory}/${project.build.finalName}-runner
+        </failsafe.native-image-path>
 
         <skipTests/>
         <skipITs/>
@@ -707,7 +708,7 @@
                         <execution>
                             <!-- Lambda native image -->
                             <id>lambda-native</id>
-                            <phase>${lambda-native.phase}</phase>
+                            <phase>none</phase>
                             <goals>
                                 <goal>build</goal>
                             </goals>
@@ -722,7 +723,7 @@
                             <!-- Lambda native image for testing only -->
                             <!-- In case the lambda-native is cross-compiled, using this to run ITs -->
                             <id>lambda-native-it</id>
-                            <phase>${lambda-native.phase}</phase>
+                            <phase>none</phase>
                             <goals>
                                 <goal>build</goal>
                             </goals>
@@ -783,7 +784,8 @@
                 <native.image.path.it>runner-it</native.image.path.it>
                 <!-- Run the build of native executable for testing -->
                 <lambda-native-it.skip>false</lambda-native-it.skip>
-                <failsafe.native-image-path>${lambda-native-it.finalName}</failsafe.native-image-path>
+                <failsafe.native-image-path>${project.build.directory}/${lambda-native-it.finalName}-runner
+                </failsafe.native-image-path>
             </properties>
         </profile>
     </profiles>
