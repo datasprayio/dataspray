@@ -31,11 +31,11 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>dataspray-site-dashboard</artifactId>
+    <artifactId>dataspray-site</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>DataSpray Dashboard Site</name>
+    <name>DataSpray Site</name>
     <url>https://dataspray.io</url>
 
     <build>
