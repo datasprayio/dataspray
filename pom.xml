@@ -39,14 +39,15 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <junit.version>5.8.2</junit.version>
         <projectlombok.version>1.18.30</projectlombok.version>
-        <quarkus.version>3.5.0</quarkus.version>
+        <!-- If changed, update aws.sdk.version -->
+        <quarkus.version>3.5.3</quarkus.version>
+        <aws.sdk.version>2.21.17</aws.sdk.version>
         <!-- If changed, also change in .node-version and .nvmrc -->
         <node.version>v18.16.1</node.version>
         <pnpm.version>v8.6.10</pnpm.version>
         <slf4j.version>2.0.7</slf4j.version>
         <logback.version>1.2.9</logback.version>
         <jackson.version>2.15.3</jackson.version>
-        <aws.sdk.version>2.21.29</aws.sdk.version>
         <!--
             Keep in sync with cdk version used in aws-cdk-maven-plugin (aws.cdk.4j.version)
             https://github.com/datasprayio/aws-cdk-4j/blob/master/pom.xml#L55
@@ -56,6 +57,12 @@
         <aws.cdk.version>2.105.0</aws.cdk.version>
         <aws.cdk.4j.version>2.2.4</aws.cdk.4j.version>
         <sqlite4java>1.0.392</sqlite4java>
+
+        <lambda-native.phase>package</lambda-native.phase>
+        <lambda-native.container-build>false</lambda-native.container-build>
+        <lambda-native-it.phase>none</lambda-native-it.phase>
+        <lambda-native-it.finalName>${project.build.finalName}-it</lambda-native-it.finalName>
+        <failsafe.native-image-path>${project.build.finalName}</failsafe.native-image-path>
 
         <skipTests/>
         <skipITs/>
@@ -78,8 +85,7 @@
         <module>dataspray-authorizer</module>
         <module>dataspray-stream-control</module>
         <module>dataspray-stream-ingest</module>
-        <module>dataspray-site-landing</module>
-        <module>dataspray-site-dashboard</module>
+        <module>dataspray-site</module>
         <module>dataspray-package</module>
     </modules>
 
@@ -125,13 +131,7 @@
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
-                <artifactId>dataspray-site-landing</artifactId>
-                <classifier>open-next</classifier>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.dataspray</groupId>
-                <artifactId>dataspray-site-dashboard</artifactId>
+                <artifactId>dataspray-site</artifactId>
                 <classifier>open-next</classifier>
                 <version>${project.version}</version>
             </dependency>
@@ -648,6 +648,7 @@
                         <useFile>false</useFile>
                         <systemPropertyVariables>
                             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                            <native.image.path>${failsafe.native-image-path}</native.image.path>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>
@@ -686,6 +687,51 @@
                     <configuration>
                         <javaVersion>${java.version}</javaVersion>
                     </configuration>
+                    <executions>
+                        <execution>
+                            <!-- Regular jar file -->
+                            <id>jar</id>
+                            <phase>none</phase>
+                            <goals>
+                                <goal>build</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <!-- Build a Quarkus CLI -->
+                            <id>cli</id>
+                            <phase>none</phase>
+                            <goals>
+                                <goal>build</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <!-- Lambda native image -->
+                            <id>lambda-native</id>
+                            <phase>${lambda-native.phase}</phase>
+                            <goals>
+                                <goal>build</goal>
+                            </goals>
+                            <configuration>
+                                <systemProperties>
+                                    <quarkus.native.container-build>${lambda-native.container-build}
+                                    </quarkus.native.container-build>
+                                </systemProperties>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <!-- Lambda native image for testing only -->
+                            <!-- In case the lambda-native is cross-compiled, using this to run ITs -->
+                            <id>lambda-native-it</id>
+                            <phase>${lambda-native.phase}</phase>
+                            <goals>
+                                <goal>build</goal>
+                            </goals>
+                            <configuration>
+                                <skip>${skipITs}${skipTests}</skip>
+                                <finalName>${lambda-native-it.finalName}</finalName>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.skife.maven</groupId>
@@ -707,4 +753,38 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>macos</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                </os>
+            </activation>
+            <properties>
+                <!--
+                    On MacOS, we need to build a linux executable rather than Mach-O
+                    in order to deploy it to AWS Lambda.
+                    https://quarkus.io/guides/maven-tooling#build-a-container-friendly-executable
+
+                    This means our integration tests will fail as it can't run Mach-O.
+                    https://github.com/quarkusio/quarkus/issues/24860
+
+                    Instead let's build both, test against Mach-O, and package up the linux executable.
+                -->
+                <!-- Delay creating as we won't be using this in ITs -->
+                <lambda-native.phase>verify</lambda-native.phase>
+                <!-- Run this instead to use it in integration tests -->
+                <lambda-native-it.phase>package</lambda-native-it.phase>
+                <!-- Build linux executable using Docker container -->
+                <lambda-native.container-build>true</lambda-native.container-build>
+                <!-- Run IT against separate native executable -->
+                <native.image.path.it>runner-it</native.image.path.it>
+                <!-- Run the build of native executable for testing -->
+                <lambda-native-it.skip>false</lambda-native-it.skip>
+                <failsafe.native-image-path>${lambda-native-it.finalName}</failsafe.native-image-path>
+            </properties>
+        </profile>
+    </profiles>
 </project>

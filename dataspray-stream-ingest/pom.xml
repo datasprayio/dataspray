@@ -214,9 +214,12 @@
                 <artifactId>quarkus-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <goals>
-                            <goal>build</goal>
-                        </goals>
+                        <id>lambda-native</id>
+                        <phase>${lambda-native.phase}</phase>
+                    </execution>
+                    <execution>
+                        <id>lambda-native-it</id>
+                        <phase>${lambda-native-it.phase}</phase>
                     </execution>
                 </executions>
             </plugin>

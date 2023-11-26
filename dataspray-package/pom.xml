@@ -159,22 +159,12 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
-                                    <artifactId>dataspray-site-landing</artifactId>
+                                    <artifactId>dataspray-site</artifactId>
                                     <classifier>static-site</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/static-site-landing/</outputDirectory>
-                                    <includes>**</includes>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>io.dataspray</groupId>
-                                    <artifactId>dataspray-site-dashboard</artifactId>
-                                    <classifier>static-site</classifier>
-                                    <version>${project.version}</version>
-                                    <type>tar.gz</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/static-site-dashboard/</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/static-site/</outputDirectory>
                                     <includes>**</includes>
                                 </artifactItem>
                                 <artifactItem>
@@ -197,9 +187,8 @@
                 <artifactId>quarkus-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <goals>
-                            <goal>build</goal>
-                        </goals>
+                        <id>jar</id>
+                        <phase>compile</phase>
                     </execution>
                 </executions>
             </plugin>
@@ -221,8 +210,7 @@
                                 <argument>${project.build.directory}/code-authorizer/function.zip</argument>
                                 <argument>${project.build.directory}/code-control/function.zip</argument>
                                 <argument>${project.build.directory}/code-ingest/function.zip</argument>
-                                <argument>${project.build.directory}/static-site-landing</argument>
-                                <argument>${project.build.directory}/static-site-dashboard</argument>
+                                <argument>${project.build.directory}/static-site</argument>
                             </arguments>
                         </configuration>
                     </execution>
