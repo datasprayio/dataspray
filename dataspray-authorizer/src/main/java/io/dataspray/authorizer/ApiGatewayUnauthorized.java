@@ -23,8 +23,6 @@
 package io.dataspray.authorizer;
 
 
-import com.fasterxml.jackson.annotation.JsonRawValue;
-import com.fasterxml.jackson.annotation.JsonValue;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import lombok.Getter;
 
@@ -34,14 +32,11 @@ import lombok.Getter;
  * If the client token is not recognized or invalid, API Gateway
  * accepts a 401 Unauthorized response to the client by failing like so.
  * <pre>throw new RuntimeException("Unauthorized");</pre>
- * Although return a String "Unauthorized" should also suffice
+ * Some claim returning a string "Unauthorized" or "{errorMessage:'Unathorized'}" works, but it doesn't.
  *
  * @see <a
  * href="https://github.com/awslabs/aws-apigateway-lambda-authorizer-blueprints/blob/master/blueprints/java/src/example/APIGatewayAuthorizerHandler.java#L42">Example
  * throwing exception</a>
- * @see <a
- * href="https://stackoverflow.com/questions/64909861/how-to-return-401-from-aws-lambda-authorizer-without-raising-an-exception#comment132887021_66788544">Example
- * returning string</a>
  */
 @RegisterForReflection
 public class ApiGatewayUnauthorized extends RuntimeException {
@@ -57,14 +52,5 @@ public class ApiGatewayUnauthorized extends RuntimeException {
     public ApiGatewayUnauthorized(String reason) {
         super(API_GATEWAY_UNAUTHORIZED_RETURN_VALUE);
         this.reason = reason;
-    }
-
-    /**
-     * This serializes this object to the literal string if Jackson is used
-     */
-    @JsonValue
-    @JsonRawValue
-    public String getApiGatewayUnauthorizedReturnValue() {
-        return API_GATEWAY_UNAUTHORIZED_RETURN_VALUE;
     }
 }

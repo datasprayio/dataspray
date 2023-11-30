@@ -95,7 +95,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                             AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE, apiAccess.getApiKey()));
         } catch (ApiGatewayUnauthorized ex) {
             log.info("Client unauthorized: {}", ex.getReason());
-            return ex;
+            throw ex;
         }
     }
 
