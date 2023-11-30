@@ -52,6 +52,13 @@
                         <configuration>
                             <filesets>
                                 <fileset>
+                                    <directory>${project.basedir}/src/client</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
                                     <directory>${project.basedir}/build</directory>
                                     <includes>
                                         <include>**</include>
@@ -150,6 +157,15 @@
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.basedir}/public/logo/</outputDirectory>
                                     <excludes>favicon.*</excludes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>io.dataspray</groupId>
+                                    <artifactId>dataspray-stream-client</artifactId>
+                                    <classifier>client-typescript</classifier>
+                                    <version>${project.version}</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.basedir}/src/client/</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
