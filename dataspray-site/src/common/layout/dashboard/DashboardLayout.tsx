@@ -20,26 +20,30 @@
  * SOFTWARE.
  */
 
-import {isSsr} from "./isoUtil";
+import {AppLayout, TopNavigation} from "@cloudscape-design/components";
+import styles from './DashboardLayout.module.scss';
+import Navigation from "./Navigation";
 
-export const loadExternal = (url: string) => new Promise<void>((resolve, reject) => {
-    if (isSsr()) return;
-    const script = document.createElement('script');
-    script.src = url;
-    script.async = true;
-    script.onload = ev => resolve();
-    script.onerror = err => reject(Error(`${url} failed to load: ${err}`));
-    document.head.appendChild(script);
-});
-
-export const loadExternalCss = (url: string) => new Promise<void>((resolve, reject) => {
-    if (isSsr()) return;
-    const css = document.createElement('link');
-    css.href = url;
-    css.type = 'text/css';
-    css.rel = 'stylesheet';
-    css.media = 'screen,print';
-    css.onload = ev => resolve();
-    css.onerror = err => reject(Error(`${url} failed to load: ${err}`));
-    document.head.appendChild(css);
-});
+export default function DashboardLayout(props: {
+    children: React.ReactNode,
+    title?: string,
+}) {
+    return (
+        <>
+            <div id='top-nav' className={styles.topNav}>
+                <TopNavigation
+                    identity={{
+                        logo: {src: '/logo/logo-small.png', alt: 'Logo'},
+                        title: props.title,
+                        href: '/dashboard',
+                    }}
+                />
+            </div>
+            <AppLayout
+                headerSelector='#top-nav'
+                navigation={(<Navigation/>)}
+            />
+            {props.children}
+        </>
+    )
+}

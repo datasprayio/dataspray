@@ -50,3 +50,5 @@ public/favicon.*
 public/logo
 public/vscode-web
 
+# Generated typescript client
+src/client
