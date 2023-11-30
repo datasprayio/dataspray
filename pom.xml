@@ -690,14 +690,6 @@
                     </configuration>
                     <executions>
                         <execution>
-                            <!-- Regular jar file -->
-                            <id>jar</id>
-                            <phase>none</phase>
-                            <goals>
-                                <goal>build</goal>
-                            </goals>
-                        </execution>
-                        <execution>
                             <!-- Build a Quarkus CLI -->
                             <id>cli</id>
                             <phase>none</phase>
