@@ -19,16 +19,15 @@
   </a>
 </div>
 <br />
-<br />
 <h3 align="center">Work in progress...</h3>
 
 ## Self-host
 
-### From released CloudFormation template
+### From CloudFormation template
 
 ⚠️ Not yet available...
 
-### From repository
+### From sources
 
 Ensure you installed all dependencies and run the following command:
 
