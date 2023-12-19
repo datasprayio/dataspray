@@ -31,11 +31,12 @@ import io.dataspray.store.impl.ApiAccessStore;
 import io.dataspray.stream.control.model.ApiKeyWithSecret;
 import io.dataspray.stream.control.model.ApiKeys;
 import io.dataspray.stream.control.model.AuthResult;
+import io.dataspray.stream.control.model.ChallengePasswordChange;
+import io.dataspray.stream.control.model.ChallengeTotpCode;
 import io.dataspray.stream.control.model.SignInChallengePasswordChangeRequest;
 import io.dataspray.stream.control.model.SignInChallengeTotpCodeRequest;
 import io.dataspray.stream.control.model.SignInRequest;
 import io.dataspray.stream.control.model.SignInResponse;
-import io.dataspray.stream.control.model.SignInResponseChallengeTotpCode;
 import io.dataspray.stream.control.model.SignUpConfirmCodeRequest;
 import io.dataspray.stream.control.model.SignUpRequest;
 import io.dataspray.stream.control.model.SignUpResponse;
@@ -280,13 +281,13 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
             switch (challengeName) {
                 case SOFTWARE_TOKEN_MFA:
                     return SignInResponse.builder()
-                            .challengeTotpCode(SignInResponseChallengeTotpCode.builder()
+                            .challengeTotpCode(ChallengeTotpCode.builder()
                                     .session(session)
                                     .build())
                             .build();
                 case NEW_PASSWORD_REQUIRED:
                     return SignInResponse.builder()
-                            .challengePasswordChange(SignInResponseChallengeTotpCode.builder()
+                            .challengePasswordChange(ChallengePasswordChange.builder()
                                     .session(session)
                                     .build())
                             .build();

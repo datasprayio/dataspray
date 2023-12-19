@@ -30,7 +30,7 @@ export default function DashboardLayout(props: {
     children: React.ReactNode,
     pageTitle?: string,
 }) {
-    const {authResult} = useAuth();
+    const {authResult} = useAuth('redirect-if-signed-out');
     return (
         <BaseLayout pageTitle={props.pageTitle}>
             <div id='top-nav' className={styles.topNav}>

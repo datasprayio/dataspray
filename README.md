@@ -59,7 +59,7 @@ You will need to create a NS record in your parent domain zone pointing to the s
 <details>
   <summary>Setup Email</summary>
 
-If you wish to receive emails sent by DataSpray, you will need to verify your domain in SES and provide the
+If you wish to receive emails sent by DataSpray, you will need to verify your email identity in SES and provide the
 parameter `-DsesEmail=support@example.com`.
 
 Without it, Cognito will be able to send a limited number of emails and DataSpray will not be able to send any email

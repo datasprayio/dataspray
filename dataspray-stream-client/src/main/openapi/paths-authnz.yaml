@@ -46,6 +46,22 @@ components:
           type: string
         password:
           type: string
+    # Only zero or one response challenge can be present
+    SignInResponse:
+      type: object
+      required:
+        - confirmed
+      properties:
+        result:
+          $ref: '#/components/schemas/AuthResult'
+        errorMsg:
+          type: string
+        challengeTotpCode:
+          $ref: '#/components/schemas/ChallengeTotpCode'
+        challengePasswordChange:
+          $ref: '#/components/schemas/ChallengePasswordChange'
+        codeRequired:
+          type: boolean
     AuthResult:
       type: object
       required:
@@ -59,32 +75,22 @@ components:
           type: string
         idToken:
           type: string
-    # Only zero or one response challenge can be present
-    SignInResponse:
+    ChallengeTotpCode:
+      description: The user has to provide a TOTP code
       type: object
       required:
-        - confirmed
+        - session
       properties:
-        result:
-          $ref: '#/components/schemas/AuthResult'
-        errorMsg:
+        session:
           type: string
-        challengeTotpCode:
-          type: object
-          required:
-            - session
-          properties:
-            session:
-              type: string
-        challengePasswordChange:
-          type: object
-          required:
-            - session
-          properties:
-            session:
-              type: string
-        codeRequired:
-          type: boolean
+    ChallengePasswordChange:
+      description: The user has to set a new password
+      type: object
+      required:
+        - session
+      properties:
+        session:
+          type: string
     SignInChallengeTotpCodeRequest:
       type: object
       required:
