@@ -317,6 +317,7 @@ public class BaseApiStack extends BaseStack {
                                 "summary", "CORS support",
                                 "description", "Enable CORS by returning correct headers",
                                 "tags", ImmutableList.of("Cors"),
+                                "security", ImmutableList.of(), // Remove any security from cors endpoints
                                 "responses", ImmutableMap.of(
                                         "200", ImmutableMap.of(
                                                 "description", "Default response for CORS method",
