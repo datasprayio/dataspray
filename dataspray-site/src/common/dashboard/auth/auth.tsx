@@ -48,9 +48,9 @@ export const useAuth = (redirect?: 'redirect-if-signed-in' | 'redirect-if-signed
     // Redirect if this page requests that user is signed in/out
     const router = useRouter();
     useEffect(() => {
-        if(redirect === 'redirect-if-signed-in' && authResult) {
+        if (redirect === 'redirect-if-signed-in' && authResult) {
             router.push('/dashboard');
-        } else if(redirect === 'redirect-if-signed-out' && !authResult) {
+        } else if (redirect === 'redirect-if-signed-out' && !authResult) {
             router.push({
                 pathname: '/dashboard/auth/signin',
                 query: {to: router.asPath},
@@ -121,7 +121,7 @@ const signUpConfirmCode = async (
 ): Promise<void> => {
     try {
         const signupResponse = await getClientAuth().signUpConfirmCode({
-            signUpConfirmCodeRequest: { email, code }
+            signUpConfirmCodeRequest: {email, code}
         });
 
         await handleSignupResponse(onSignIn, signupResponse, email, password, setError, routerPush);

@@ -29,7 +29,7 @@ const BaseLayout = (props: {
 }) => {
     const pageTitle = props.pageTitle
         ? `${props.pageTitle} | DataSpray`
-: 'DataSpray';
+        : 'DataSpray';
     return (
         <>
             <Head>

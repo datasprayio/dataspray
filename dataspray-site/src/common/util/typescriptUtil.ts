@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2023 Matus Faro
  *

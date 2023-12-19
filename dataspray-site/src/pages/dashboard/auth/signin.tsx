@@ -80,62 +80,63 @@ const Page: NextPageWithLayout = () => {
                                 variant="embedded"
                                 actions={
                                     <SpaceBetween direction="horizontal" size="xs">
-                                        <Button disabled={isSubmitting} variant="primary" onClick={e => handleSubmit()}>Submit</Button>
+                                        <Button disabled={isSubmitting} variant="primary"
+                                                onClick={e => handleSubmit()}>Submit</Button>
                                     </SpaceBetween>
                                 }
                                 header={<Header variant="h1">Form header</Header>}
                                 errorText={error}
                             >
-                                    <SpaceBetween direction="vertical" size="l">
-                                        <FormField
-                                            label="Email"
-                                            errorText={errors?.email}
-                                        >
-                                            <Input
-                                                type="text"
-                                                name="email"
-                                                placeholder="name@example.com"
-                                                onChangeNative={handleChange}
-                                                onBlurNative={handleBlur}
-                                                value={values?.email}
-                                                autoFocus
-                                            />
-                                        </FormField>
-                                        <FormField
-                                            label="Password"
-                                            errorText={errors?.password}
-                                            description={
-                                                <>
-                                                    <Link
-                                                        href="/dashboard/auth/forgot"
-                                                        variant="primary"
-                                                        fontSize="body-s"
-                                                        onFollow={routerOnFollow}
-                                                    >
-                                                        Forgot password?
-                                                    </Link>
-                                                    {" "}
-                                                    <Link
-                                                        href="/dashboard/auth/signup"
-                                                        variant="primary"
-                                                        fontSize="body-s"
-                                                        onFollow={routerOnFollow}
-                                                    >
-                                                        Already have an account?
-                                                    </Link>
-                                                </>
-                                            }
-                                        >
-                                            <Input
-                                                type="password"
-                                                name="password"
-                                                placeholder="Password"
-                                                onChangeNative={handleChange}
-                                                onBlurNative={handleBlur}
-                                                value={values?.password}
-                                            />
-                                        </FormField>
-                                     </SpaceBetween>
+                                <SpaceBetween direction="vertical" size="l">
+                                    <FormField
+                                        label="Email"
+                                        errorText={errors?.email}
+                                    >
+                                        <Input
+                                            type="text"
+                                            name="email"
+                                            placeholder="name@example.com"
+                                            onChangeNative={handleChange}
+                                            onBlurNative={handleBlur}
+                                            value={values?.email}
+                                            autoFocus
+                                        />
+                                    </FormField>
+                                    <FormField
+                                        label="Password"
+                                        errorText={errors?.password}
+                                        description={
+                                            <>
+                                                <Link
+                                                    href="/dashboard/auth/forgot"
+                                                    variant="primary"
+                                                    fontSize="body-s"
+                                                    onFollow={routerOnFollow}
+                                                >
+                                                    Forgot password?
+                                                </Link>
+                                                {" "}
+                                                <Link
+                                                    href="/dashboard/auth/signup"
+                                                    variant="primary"
+                                                    fontSize="body-s"
+                                                    onFollow={routerOnFollow}
+                                                >
+                                                    Already have an account?
+                                                </Link>
+                                            </>
+                                        }
+                                    >
+                                        <Input
+                                            type="password"
+                                            name="password"
+                                            placeholder="Password"
+                                            onChangeNative={handleChange}
+                                            onBlurNative={handleBlur}
+                                            value={values?.password}
+                                        />
+                                    </FormField>
+                                </SpaceBetween>
                             </Form>
                         </form>
                     )}

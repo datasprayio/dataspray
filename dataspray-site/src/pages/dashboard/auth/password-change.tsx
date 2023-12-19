@@ -57,7 +57,7 @@ const Page: NextPageWithLayout = () => {
                             password: yup.string().required('Password is required.'),
                         })
                     )}
-                    onSubmit={(values) =>  signInPasswordChange(email, session, values.password, to, setError, router.push)}
+                    onSubmit={(values) => signInPasswordChange(email, session, values.password, to, setError, router.push)}
                 >
                     {({
                         isSubmitting,

@@ -40,7 +40,7 @@ import type {UrlObject} from "url";
  * @param hiddenQueryParams
  */
 export const urlWithHiddenParams = (url: UrlObject, ...hiddenQueryParams: string[]): [Url, Url] => {
-    if(!url.query) {
+    if (!url.query) {
         return [url, url];
     }
     const querySanitized = typeof url.query === 'string'
