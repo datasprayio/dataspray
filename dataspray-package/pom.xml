@@ -241,7 +241,7 @@
                 <awsProfile>dataspray</awsProfile>
                 <dnsDomain>dataspray.io</dnsDomain>
                 <dnsSubdomain>staging</dnsSubdomain>
-                <dnsDomainZoneId>Z104172015L8HFMCRVJ9X</dnsDomainZoneId>
+                <dnsDomainZoneId>Z0185545H51GBAR2608W</dnsDomainZoneId>
                 <sesEmail>support.staging@dataspray.io</sesEmail>
             </properties>
         </profile>
