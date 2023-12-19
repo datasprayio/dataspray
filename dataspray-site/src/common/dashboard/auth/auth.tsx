@@ -65,7 +65,7 @@ export const useAuth = (redirect?: 'redirect-if-signed-in' | 'redirect-if-signed
         signIn: (...args: OmitFirstArg<typeof signIn>) => signIn(onSignIn, ...args),
         signInConfirmTotp: (...args: OmitFirstArg<typeof signInConfirmTotp>) => signInConfirmTotp(onSignIn, ...args),
         signInPasswordChange: (...args: OmitFirstArg<typeof signInPasswordChange>) => signInPasswordChange(onSignIn, ...args),
-    }), [onSignIn]);
+    }), [authResult, onSignIn]);
 }
 
 // Persistent storage where to keep auth to persist through page refresh/load

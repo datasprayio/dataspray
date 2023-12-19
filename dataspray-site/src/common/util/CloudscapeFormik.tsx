@@ -39,7 +39,8 @@ export const CloudscapeFormik = <Values extends FormikValues = FormikValues, Ext
             validateOnMount={false}
             validateOnBlur={performValidation}
             validateOnChange={performValidation}
-            children={(childrenProps: FormikProps<Values>) =>
+        >
+            {(childrenProps: FormikProps<Values>) =>
                 props.children({
                     ...childrenProps,
                     handleSubmit: e => {
@@ -47,6 +48,6 @@ export const CloudscapeFormik = <Values extends FormikValues = FormikValues, Ext
                         childrenProps.handleSubmit(e)
                     }
                 })}
-        />
+        </Formik>
     )
 }
