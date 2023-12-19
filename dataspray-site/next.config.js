@@ -25,7 +25,10 @@ const nextConfig = {
     ...(process.env.NEXTJS_OUTPUT && {
         output: process.env.NEXTJS_OUTPUT,
     }),
-    trailingSlash: true,
+    // When using static site generator along with nextjs-export-cdk construct,
+    // it requries the trailingSlash to be false. If we switch to the dynamic
+    // open-next-cdk construct, we can revert back to trailingSlash: true.
+    trailingSlash: false,
     reactStrictMode: true,
     pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],
     transpilePackages: [

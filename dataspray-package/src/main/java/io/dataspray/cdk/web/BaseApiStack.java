@@ -300,9 +300,9 @@ public class BaseApiStack extends BaseStack {
                                         "default", ImmutableMap.of(
                                                 "statusCode", "200",
                                                 "responseParameters", ImmutableMap.of(
-                                                        "method.response.header.Access-Control-Allow-Headers", "'''Content-Type,X-Amz-Date,Authorization,X-Api-Key'''",
-                                                        "method.response.header.Access-Control-Allow-Methods", "'''*'''",
-                                                        "method.response.header.Access-Control-Allow-Origin", "'''*'''"),
+                                                        "method.response.header.Access-Control-Allow-Headers", "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
+                                                        "method.response.header.Access-Control-Allow-Methods", "'*'",
+                                                        "method.response.header.Access-Control-Allow-Origin", "'*'"),
                                                 "responseTemplates", ImmutableMap.of(
                                                         "application/json", "{}"))))
                                 .put("passthroughBehavior", "when_no_match")
@@ -334,15 +334,18 @@ public class BaseApiStack extends BaseStack {
                                                 "content", ImmutableMap.of())),
                                 "x-amazon-apigateway-integration", ImmutableMap.of(
                                         "type", "mock",
+                                        // Fix binary data issues
+                                        // https://stackoverflow.com/a/63880956
+                                        "contentHandling", "CONVERT_TO_TEXT",
                                         "requestTemplates", ImmutableMap.of(
                                                 "application/json", "{\"statusCode\":200}"),
                                         "responses", ImmutableMap.of(
                                                 "default", ImmutableMap.of(
                                                         "statusCode", "200",
                                                         "responseParameters", ImmutableMap.of(
-                                                                "method.response.header.Access-Control-Allow-Headers", "'''Content-Type,X-Amz-Date,Authorization,X-Api-Key'''",
-                                                                "method.response.header.Access-Control-Allow-Methods", "'''*'''",
-                                                                "method.response.header.Access-Control-Allow-Origin", "'''*'''"),
+                                                                "method.response.header.Access-Control-Allow-Headers", "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
+                                                                "method.response.header.Access-Control-Allow-Methods", "'*'",
+                                                                "method.response.header.Access-Control-Allow-Origin", "'*'"),
                                                         "responseTemplates", ImmutableMap.of(
                                                                 "application/json", "{}"))))));
                     }
@@ -354,6 +357,8 @@ public class BaseApiStack extends BaseStack {
                 "disableExecuteApiEndpoint", true));
         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-binary-media-types.html
         openApiSpec.put("x-amazon-apigateway-binary-media-types", ImmutableList.of("*/*"));
+        // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-api-key-source.html
+        openApiSpec.put("x-amazon-apigateway-api-key-source", "AUTHORIZER");
 
         return ImmutableSet.copyOf(usedWebServices);
     }
