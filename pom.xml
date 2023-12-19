@@ -138,6 +138,11 @@
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
+                <artifactId>dataspray-resources</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-stream-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -228,6 +233,11 @@
                 <version>3.0.0</version>
             </dependency>
             <dependency>
+                <groupId>jakarta.mail</groupId>
+                <artifactId>jakarta.mail-api</artifactId>
+                <version>2.1.2</version>
+            </dependency>
+            <dependency>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-annotations</artifactId>
                 <version>1.6.5</version>
@@ -281,26 +291,6 @@
                 <version>${quarkus.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.quarkus</groupId>
-                <artifactId>quarkus-arc</artifactId>
-                <version>${quarkus.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.quarkus</groupId>
-                <artifactId>quarkus-picocli</artifactId>
-                <version>${quarkus.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.quarkus</groupId>
-                <artifactId>quarkus-amazon-lambda-rest</artifactId>
-                <version>${quarkus.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.quarkus</groupId>
-                <artifactId>quarkus-junit5</artifactId>
-                <version>${quarkus.version}</version>
             </dependency>
 
             <dependency>

@@ -40,6 +40,7 @@ public class IngestIT extends IngestBase {
         return motoInstance.getDynamoClient();
     }
 
+    @Override
     protected S3Client getS3Client() {
         return motoInstance.getS3Client();
     }

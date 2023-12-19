@@ -27,12 +27,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.SerializedName;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.annotation.Nonnull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Value;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Optional;
 

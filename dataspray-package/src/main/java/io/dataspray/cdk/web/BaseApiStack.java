@@ -28,6 +28,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.dataspray.authorizer.Authorizer;
 import io.dataspray.cdk.dns.DnsStack;
@@ -127,6 +128,7 @@ public class BaseApiStack extends BaseStack {
                 .validation(CertificateValidation.fromDns(dnsZone))
                 .build();
         restApi = SpecRestApi.Builder.create(this, getConstructId("apigateway"))
+
                 .apiDefinition(ApiDefinition.fromInline(openApiSpec))
                 .domainName(DomainNameOptions.builder()
                         .certificate(certificate)
@@ -254,15 +256,38 @@ public class BaseApiStack extends BaseStack {
                         // Find the tag and corresponding function
                         LambdaWebStack webService;
                         try {
-                            String tag = ((List<String>) methodData.get("tags")).get(0);
+                            String tag = ((List<String>) methodData.get("tags")).getFirst();
                             webService = getOptions().tagToWebService.get(tag);
                         } catch (NullPointerException | ClassCastException ex) {
-                            throw new RuntimeException("Endpoint does not have a tag for path " + path + " and method " + method, ex);
+                            throw new IllegalStateException("Endpoint does not have a tag for path " + path + " and method " + method, ex);
                         }
                         if (webService == null) {
-                            throw new RuntimeException("No function found for path " + path + " and method " + method);
+                            throw new IllegalStateException("No function found for path " + path + " and method " + method);
                         }
                         usedWebServices.add(webService);
+
+                        // Add cors headers to responses
+                        // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/enable-cors-for-resource-using-swagger-importer-tool.html
+                        Map<String, Object> responses = (Map<String, Object>) methodData.get("responses");
+                        if (responses == null) {
+                            throw new IllegalStateException("Endpoint does not have a responses for path " + path + " and method " + method);
+                        }
+                        for (String responseCode : ImmutableSet.copyOf(responses.keySet())) {
+                            Map<String, Object> response = (Map<String, Object>) responses.get(responseCode);
+                            Map<String, Object> headers = (Map<String, Object>) response.get("headers");
+                            if (headers == null) {
+                                response.put("headers", headers = Maps.newHashMap());
+                            }
+                            headers.put("Access-Control-Allow-Origin", ImmutableMap.of(
+                                    "schema", ImmutableMap.of(
+                                            "type", "string")));
+                            headers.put("Access-Control-Allow-Methods", ImmutableMap.of(
+                                    "schema", ImmutableMap.of(
+                                            "type", "string")));
+                            headers.put("Access-Control-Allow-Headers", ImmutableMap.of(
+                                    "schema", ImmutableMap.of(
+                                            "type", "string")));
+                        }
 
                         // Let Api Gateway know to use this particular lambda function
                         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-integration.html
@@ -270,12 +295,55 @@ public class BaseApiStack extends BaseStack {
                                 .put("httpMethod", "POST")
                                 .put("uri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + webService.getFunctionName() + "/invocations")
                                 .put("responses", ImmutableMap.of(
+                                        // Add cors support
+                                        // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/enable-cors-for-resource-using-swagger-importer-tool.html
                                         "default", ImmutableMap.of(
-                                                "statusCode", "200")))
+                                                "statusCode", "200",
+                                                "responseParameters", ImmutableMap.of(
+                                                        "method.response.header.Access-Control-Allow-Headers", "'''Content-Type,X-Amz-Date,Authorization,X-Api-Key'''",
+                                                        "method.response.header.Access-Control-Allow-Methods", "'''*'''",
+                                                        "method.response.header.Access-Control-Allow-Origin", "'''*'''"),
+                                                "responseTemplates", ImmutableMap.of(
+                                                        "application/json", "{}"))))
                                 .put("passthroughBehavior", "when_no_match")
                                 .put("contentHandling", "CONVERT_TO_TEXT")
                                 .put("type", "aws_proxy")
                                 .build());
+                    }
+                    if (!methods.containsKey("options")) {
+                        // Add CORS support
+                        // https://docs.aws.amazon.com/apigateway/latest/developerguide/enable-cors-for-resource-using-swagger-importer-tool.html
+                        methods.put("options", ImmutableMap.of(
+                                "summary", "CORS support",
+                                "description", "Enable CORS by returning correct headers",
+                                "tags", ImmutableList.of("Cors"),
+                                "responses", ImmutableMap.of(
+                                        "200", ImmutableMap.of(
+                                                "description", "Default response for CORS method",
+                                                "headers", ImmutableMap.of(
+                                                        "Access-Control-Allow-Origin", ImmutableMap.of(
+                                                                "schema", ImmutableMap.of(
+                                                                        "type", "string")),
+                                                        "Access-Control-Allow-Methods", ImmutableMap.of(
+                                                                "schema", ImmutableMap.of(
+                                                                        "type", "string")),
+                                                        "Access-Control-Allow-Headers", ImmutableMap.of(
+                                                                "schema", ImmutableMap.of(
+                                                                        "type", "string"))),
+                                                "content", ImmutableMap.of())),
+                                "x-amazon-apigateway-integration", ImmutableMap.of(
+                                        "type", "mock",
+                                        "requestTemplates", ImmutableMap.of(
+                                                "application/json", "{\"statusCode\":200}"),
+                                        "responses", ImmutableMap.of(
+                                                "default", ImmutableMap.of(
+                                                        "statusCode", "200",
+                                                        "responseParameters", ImmutableMap.of(
+                                                                "method.response.header.Access-Control-Allow-Headers", "'''Content-Type,X-Amz-Date,Authorization,X-Api-Key'''",
+                                                                "method.response.header.Access-Control-Allow-Methods", "'''*'''",
+                                                                "method.response.header.Access-Control-Allow-Origin", "'''*'''"),
+                                                        "responseTemplates", ImmutableMap.of(
+                                                                "application/json", "{}"))))));
                     }
                 }
             }

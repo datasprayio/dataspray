@@ -32,6 +32,7 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Fn;
 import software.amazon.awscdk.services.cognito.AccountRecovery;
 import software.amazon.awscdk.services.cognito.AdvancedSecurityMode;
+import software.amazon.awscdk.services.cognito.AuthFlow;
 import software.amazon.awscdk.services.cognito.AutoVerifiedAttrs;
 import software.amazon.awscdk.services.cognito.CfnUserPool;
 import software.amazon.awscdk.services.cognito.DeviceTracking;
@@ -41,6 +42,7 @@ import software.amazon.awscdk.services.cognito.MfaSecondFactor;
 import software.amazon.awscdk.services.cognito.PasswordPolicy;
 import software.amazon.awscdk.services.cognito.SignInAliases;
 import software.amazon.awscdk.services.cognito.UserPool;
+import software.amazon.awscdk.services.cognito.UserPoolClient;
 import software.constructs.Construct;
 
 import java.util.List;
@@ -54,13 +56,14 @@ public class AuthNzStack extends BaseStack {
 
     private final CfnParameter emailWithParam;
     private final UserPool userPool;
+    private final UserPoolClient userPoolClient;
 
     public AuthNzStack(Construct parent, DeployEnvironment deployEnv) {
         super(parent, "authnz", deployEnv);
 
         userPool = UserPool.Builder.create(this, getConstructId("userpool"))
                 .userPoolName(getConstructId("userpool"))
-                .selfSignUpEnabled(true)
+                .selfSignUpEnabled(false)
                 .autoVerify(AutoVerifiedAttrs.builder()
                         .email(true).build())
                 .mfa(Mfa.OPTIONAL)
@@ -68,9 +71,13 @@ public class AuthNzStack extends BaseStack {
                         .otp(true)
                         .sms(false).build())
                 .passwordPolicy(PasswordPolicy.builder()
+                        // If changed, also change the error message in method AuthNzResource.signUp
+                        // when catching InvalidPasswordException
                         .minLength(8)
                         .requireLowercase(true)
+                        .requireUppercase(true)
                         .requireDigits(true)
+                        .requireSymbols(true)
                         .tempPasswordValidity(Duration.days(1)).build())
                 .signInCaseSensitive(false)
                 .signInAliases(SignInAliases.builder()
@@ -110,5 +117,13 @@ public class AuthNzStack extends BaseStack {
                                 emailWithParam.getValueAsString(),
                                 ">")))));
 
+        userPoolClient = UserPoolClient.Builder.create(this, getConstructId("userpoolclient"))
+                .authFlows(AuthFlow.builder()
+                        .adminUserPassword(true)
+                        .build())
+                .userPool(userPool)
+                .userPoolClientName("authnz")
+                .generateSecret(false)
+                .build();
     }
 }

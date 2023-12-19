@@ -22,7 +22,7 @@
 
 import Head from 'next/head';
 import {NextPageWithLayout} from "../_app";
-import DashboardLayout from "../../common/layout/dashboard/DashboardLayout";
+import DashboardLayout from "../../common/dashboard/layout/DashboardLayout";
 
 const Page: NextPageWithLayout = () => {
     return (
@@ -39,7 +39,7 @@ const Page: NextPageWithLayout = () => {
 
 Page.getLayout = (page) => (
     <DashboardLayout
-        title='Home'
+        pageTitle='Home'
     >{page}</DashboardLayout>
 )
 

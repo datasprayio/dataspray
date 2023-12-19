@@ -38,6 +38,17 @@
     <name>DataSpray Site</name>
     <url>https://dataspray.io</url>
 
+    <dependencies>
+        <dependency>
+            <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-resources</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-stream-client</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>

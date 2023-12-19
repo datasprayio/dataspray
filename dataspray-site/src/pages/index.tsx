@@ -21,8 +21,8 @@
  */
 
 import Head from 'next/head';
-import GradientTypography from '../landing/GradientTypography';
-import Block from "../landing/Block";
+import GradientTypography from '../common/landing/GradientTypography';
+import Block from "../common/landing/Block";
 import {Box, Link, SpaceBetween} from "@cloudscape-design/components";
 import Icon from "@cloudscape-design/components/icon";
 import {NextPageWithLayout} from "./_app";

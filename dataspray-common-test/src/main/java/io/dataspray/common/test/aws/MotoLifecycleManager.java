@@ -42,7 +42,7 @@ import static com.google.common.base.Preconditions.checkState;
 @Slf4j
 public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
-    private static final String MOTO_VERSION = "4.2.6";
+    private static final String MOTO_VERSION = "4.2.12";
 
     private Optional<MotoInstance> instanceOpt;
 

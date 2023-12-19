@@ -25,8 +25,8 @@ package io.dataspray.authorizer;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
-import io.dataspray.store.ApiAccessStore;
-import io.dataspray.store.ApiAccessStore.ApiAccess;
+import io.dataspray.store.impl.ApiAccessStore;
+import io.dataspray.store.impl.ApiAccessStore.ApiAccess;
 import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -37,7 +37,7 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import java.time.Instant;
 import java.util.Optional;
 
-import static io.dataspray.store.DynamoApiGatewayApiAccessStore.API_KEY_LENGTH;
+import static io.dataspray.store.impl.DynamoApiGatewayApiAccessStore.API_KEY_LENGTH;
 
 @Slf4j
 @QuarkusTest

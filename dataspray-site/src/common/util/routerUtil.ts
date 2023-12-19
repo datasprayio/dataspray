@@ -20,31 +20,40 @@
  * SOFTWARE.
  */
 
-package io.dataspray.store;
+import {Url} from "next/dist/shared/lib/router/router";
+import {parse} from "querystring";
+import type {UrlObject} from "url";
 
-import jakarta.enterprise.context.ApplicationScoped;
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
-@ApplicationScoped
-public class NoopCustomerLogger implements CustomerLogger {
-
-    @Override
-    public void error(String msg, String accountId) {
-        log.error("{}{}", getPrefix(accountId), msg);
+/**
+ * Workaround For NextJS Router, hides the given params from the url. Effectivelly the same as
+ * React Router's state, but for NextJS.
+ *
+ * <pre>
+ *  await router.push(...urlWithHiddenParams({
+ *          pathname: '/dashboard/auth/confirm',
+ *          query: { email, password },
+ *      }, 'email', 'password'))
+ * </pre>
+ *
+ * @see https://github.com/vercel/next.js/issues/771
+ * @param url
+ * @param hiddenQueryParams
+ */
+export const urlWithHiddenParams = (url: UrlObject, ...hiddenQueryParams: string[]): [Url, Url] => {
+    if(!url.query) {
+        return [url, url];
     }
-
-    @Override
-    public void warn(String msg, String accountId) {
-        log.warn("{}{}", getPrefix(accountId), msg);
-    }
-
-    @Override
-    public void info(String msg, String accountId) {
-        log.info("{}{}", getPrefix(accountId), msg);
-    }
-
-    private String getPrefix(String accountId) {
-        return "Customer log for " + accountId + ": ";
-    }
+    const querySanitized = typeof url.query === 'string'
+        ? parse(url.query)
+        : url.query;
+    hiddenQueryParams.forEach(key => {
+        delete querySanitized[key];
+    })
+    return [
+        url,
+        {
+            ...url,
+            query: querySanitized,
+        }
+    ]
 }

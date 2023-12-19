@@ -20,12 +20,14 @@
  * SOFTWARE.
  */
 
-package io.dataspray.store;
+package io.dataspray.store.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dataspray.store.AccountStore.EtlRetention;
+import io.dataspray.store.CustomerLogger;
+import io.dataspray.store.EtlStore;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;

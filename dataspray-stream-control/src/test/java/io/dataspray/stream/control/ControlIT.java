@@ -31,6 +31,7 @@ public class ControlIT extends ControlBase {
 
     MotoInstance motoInstance;
 
+    @Override
     protected S3Client getS3Client() {
         return motoInstance.getS3Client();
     }

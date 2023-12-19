@@ -69,7 +69,7 @@ public class GsonUtil {
                             .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
                             .disableHtmlEscaping()
                             .registerTypeAdapterFactory(ImmutableAdapterFactory.forGuava())
-                            .registerTypeAdapterFactory(new JavaxNonnullAdapterFactory())
+                            .registerTypeAdapterFactory(new NonnullAdapterFactory())
                             .registerTypeAdapter(Instant.class, new InstantTypeConverter())
                             .registerTypeAdapter(LocalDate.class, new LocalDateTypeConverter())
                             .registerTypeAdapterFactory(ExplicitNull.get())

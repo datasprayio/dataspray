@@ -28,6 +28,7 @@ import com.google.common.collect.Streams;
 import com.google.gson.annotations.SerializedName;
 import com.jcabi.aspects.Cacheable;
 import io.dataspray.common.StringUtil;
+import jakarta.annotation.Nonnull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -36,7 +37,6 @@ import lombok.Value;
 import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
 
-import javax.annotation.Nonnull;
 import java.io.File;
 import java.util.Collection;
 import java.util.Optional;

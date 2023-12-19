@@ -20,30 +20,33 @@
  * SOFTWARE.
  */
 
-import {AppLayout, TopNavigation} from "@cloudscape-design/components";
-import styles from './DashboardLayout.module.scss';
-import Navigation from "./Navigation";
 
-export default function DashboardLayout(props: {
-    children: React.ReactNode,
-    title?: string,
-}) {
+import {Formik, FormikConfig} from "formik";
+import React, {useState} from "react";
+import {FormikProps, FormikValues} from "formik/dist/types";
+
+export const CloudscapeFormik = <Values extends FormikValues = FormikValues, ExtraProps = {}>(props:
+    Omit<
+        FormikConfig<Values> & ExtraProps,
+        'validateOnMount' | 'validateOnBlur' | 'validateOnChange' | 'children'>
+    & { children: ((props: FormikProps<Values>) => React.ReactNode) }
+): React.JSX.Element => {
+    // Only start validation after first attempt at submitting
+    const [performValidation, setPerformValidation] = useState(false)
     return (
-        <>
-            <div id='top-nav' className={styles.topNav}>
-                <TopNavigation
-                    identity={{
-                        logo: {src: '/logo/logo-small.png', alt: 'Logo'},
-                        title: props.title,
-                        href: '/dashboard',
-                    }}
-                />
-            </div>
-            <AppLayout
-                headerSelector='#top-nav'
-                navigation={(<Navigation/>)}
-            />
-            {props.children}
-        </>
+        <Formik
+            {...props}
+            validateOnMount={false}
+            validateOnBlur={performValidation}
+            validateOnChange={performValidation}
+            children={(childrenProps: FormikProps<Values>) =>
+                props.children({
+                    ...childrenProps,
+                    handleSubmit: e => {
+                        setPerformValidation(true);
+                        childrenProps.handleSubmit(e)
+                    }
+                })}
+        />
     )
 }

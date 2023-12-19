@@ -32,11 +32,11 @@ import io.dataspray.cdk.stream.control.ControlStack;
 import io.dataspray.cdk.stream.ingest.IngestStack;
 import io.dataspray.cdk.web.BaseApiStack;
 import io.dataspray.common.DeployEnvironment;
-import io.dataspray.store.CognitoAccountStore;
-import io.dataspray.store.DynamoApiGatewayApiAccessStore;
-import io.dataspray.store.FirehoseS3AthenaEtlStore;
-import io.dataspray.store.LambdaDeployerImpl;
 import io.dataspray.store.SingleTableProvider;
+import io.dataspray.store.impl.CognitoAccountStore;
+import io.dataspray.store.impl.DynamoApiGatewayApiAccessStore;
+import io.dataspray.store.impl.FirehoseS3AthenaEtlStore;
+import io.dataspray.store.impl.LambdaDeployerImpl;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
@@ -76,7 +76,7 @@ public class DatasprayStack {
         IngestStack ingestStack = new IngestStack(app, deployEnv, ingestCodeZip);
         functions.add(ingestStack.getFunction());
 
-        ControlStack controlStack = new ControlStack(app, deployEnv, controlCodeZip);
+        ControlStack controlStack = new ControlStack(app, deployEnv, controlCodeZip, authNzStack);
         functions.add(controlStack.getFunction());
 
         BaseApiStack baseApiStack = new BaseApiStack(app, BaseApiStack.Options.builder()
@@ -97,6 +97,7 @@ public class DatasprayStack {
         for (SingletonFunction function : functions) {
             setConfigProperty(function, DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME, deployEnv.name());
             setConfigProperty(function, CognitoAccountStore.USER_POOL_ID_PROP_NAME, authNzStack.getUserPool().getUserPoolId());
+            setConfigProperty(function, CognitoAccountStore.USER_POOL_APP_CLIENT_ID_PROP_NAME, authNzStack.getUserPoolClient().getUserPoolClientId());
             setConfigProperty(function, SingleTableProvider.TABLE_PREFIX_PROP_NAME, singleTableStack.getSingleTableTable().getTableName());
             setConfigProperty(function, FirehoseS3AthenaEtlStore.ETL_BUCKET_PROP_NAME, ingestStack.getBucketEtlName());
             setConfigProperty(function, FirehoseS3AthenaEtlStore.FIREHOSE_STREAM_NAME_PROP_NAME, ingestStack.getFirehoseName());

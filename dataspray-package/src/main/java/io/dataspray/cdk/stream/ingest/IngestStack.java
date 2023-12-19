@@ -48,8 +48,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.dataspray.store.FirehoseS3AthenaEtlStore.*;
-import static io.dataspray.store.SqsQueueStore.CUSTOMER_QUEUE_WILDCARD;
+import static io.dataspray.store.impl.FirehoseS3AthenaEtlStore.*;
+import static io.dataspray.store.impl.SqsQueueStore.CUSTOMER_QUEUE_WILDCARD;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j

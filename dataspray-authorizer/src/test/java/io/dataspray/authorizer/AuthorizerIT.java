@@ -27,9 +27,9 @@ import io.dataspray.common.json.GsonUtil;
 import io.dataspray.common.test.aws.MotoInstance;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
-import io.dataspray.store.ApiAccessStore;
-import io.dataspray.store.ApiAccessStore.ApiAccess;
-import io.dataspray.store.DynamoApiGatewayApiAccessStore;
+import io.dataspray.store.impl.ApiAccessStore;
+import io.dataspray.store.impl.ApiAccessStore.ApiAccess;
+import io.dataspray.store.impl.DynamoApiGatewayApiAccessStore;
 import io.dataspray.store.SingleTableProvider;
 import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
@@ -60,7 +60,7 @@ class AuthorizerIT extends AuthorizerBase {
 
     /**
      * Since an integration test cannot inject resources even for test setup, this method re-implements
-     * {@link io.dataspray.store.DynamoApiGatewayApiAccessStore#createApiAccess} to add an API key entry in Dynamo.
+     * {@link DynamoApiGatewayApiAccessStore#createApiAccess} to add an API key entry in Dynamo.
      */
     @Override
     protected ApiAccessStore.ApiAccess createApiAccess(

@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package io.dataspray.store;
+package io.dataspray.store.impl;
 
 
 import com.google.common.collect.ImmutableList;

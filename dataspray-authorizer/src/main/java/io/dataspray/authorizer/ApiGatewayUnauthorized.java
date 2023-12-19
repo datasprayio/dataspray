@@ -32,11 +32,11 @@ import lombok.Getter;
  * If the client token is not recognized or invalid, API Gateway
  * accepts a 401 Unauthorized response to the client by failing like so.
  * <pre>throw new RuntimeException("Unauthorized");</pre>
- * Some claim returning a string "Unauthorized" or "{errorMessage:'Unathorized'}" works, but it doesn't.
+ * Some claim returning a string `Unauthorized` or `{errorMessage:"Unauthorized"}` works, but it doesn't.
  *
  * @see <a
  * href="https://github.com/awslabs/aws-apigateway-lambda-authorizer-blueprints/blob/master/blueprints/java/src/example/APIGatewayAuthorizerHandler.java#L42">Example
- * throwing exception</a>
+ * unauthorized by throwing exception</a>
  */
 @RegisterForReflection
 public class ApiGatewayUnauthorized extends RuntimeException {

@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package io.dataspray.store;
+package io.dataspray.store.impl;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -30,6 +30,7 @@ import io.dataspray.singletable.IndexSchema;
 import io.dataspray.singletable.ShardPageResult;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
+import io.dataspray.store.impl.ApiAccessStore;
 import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.runtime.Startup;
 import jakarta.enterprise.context.ApplicationScoped;

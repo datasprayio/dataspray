@@ -27,8 +27,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
-import io.dataspray.store.ApiAccessStore;
-import io.dataspray.store.ApiAccessStore.ApiAccess;
+import io.dataspray.store.impl.ApiAccessStore;
+import io.dataspray.store.impl.ApiAccessStore.ApiAccess;
 import io.quarkus.test.common.QuarkusTestResource;
 import jakarta.ws.rs.core.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
@@ -102,8 +102,8 @@ abstract class AuthorizerBase {
             switch (testType) {
                 case UNAUTHORIZED_NONE:
                 case UNAUTHORIZED_EXPIRED:
-                    response.statusCode(200)
-                            .body(equalTo("Unauthorized"));
+                    response.statusCode(500)
+                            .body(equalTo("{\"errorType\":\"io.dataspray.authorizer.ApiGatewayUnauthorized\",\"errorMessage\":\"Unauthorized\"}"));
                     break;
                 case AUTHORIZED_UNLIMITED:
                 case AUTHORIZED_LIMITED_ACCOUNT_WIDE:

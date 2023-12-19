@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package io.dataspray.store;
+package io.dataspray.store.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -30,6 +30,8 @@ import com.google.common.primitives.Longs;
 import com.google.gson.Gson;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.common.StringUtil;
+import io.dataspray.store.LambdaDeployer;
+import io.dataspray.store.QueueStore;
 import io.dataspray.store.util.WaiterUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

@@ -21,6 +21,7 @@
  */
 
 import {SideNavigation, SideNavigationProps} from "@cloudscape-design/components";
+import {useRouterOnFollow} from "../../util/useRouterOnFollow";
 import {useRouter} from "next/router";
 
 const items: SideNavigationProps['items'] = [
@@ -47,16 +48,14 @@ const items: SideNavigationProps['items'] = [
 
 export default function Navigation(props: {}) {
     const router = useRouter();
+    const routerOnFollow = useRouterOnFollow();
 
     return (
         <SideNavigation
             activeHref={router.pathname}
             header={{href: '/home/index.html', text: 'Service'}}
             items={items}
-            onFollow={event => {
-                event.preventDefault();
-                router.push(event.detail.href)
-            }}
+            onFollow={routerOnFollow}
         />
     )
 }

@@ -11,19 +11,19 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
 /**
  * Force Gson to abide by @javax.annotation.Nonnull annotation.
  */
-public class JavaxNonnullAdapterFactory implements TypeAdapterFactory {
+public class NonnullAdapterFactory implements TypeAdapterFactory {
     public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
-        boolean parentHasNonnull = type.getRawType().isAnnotationPresent(Nonnull.class);
+        boolean parentHasNonnull = hasNonnull(type.getRawType().getAnnotations());
         ImmutableList<Field> nonnullFields = Arrays.stream(type.getRawType().getDeclaredFields())
-                .filter(field -> field.isAnnotationPresent(Nonnull.class))
+                .filter(field -> hasNonnull(field.getAnnotations()))
                 .collect(ImmutableList.toImmutableList());
         if (!parentHasNonnull && nonnullFields.isEmpty()) {
             return null;
@@ -65,5 +65,12 @@ public class JavaxNonnullAdapterFactory implements TypeAdapterFactory {
                 }
             }
         };
+    }
+
+    boolean hasNonnull(Annotation[] annotations) {
+        return Arrays.stream(annotations)
+                .anyMatch(annotation ->
+                        annotation.annotationType() == javax.annotation.Nonnull.class
+                        || annotation.annotationType() == jakarta.annotation.Nonnull.class);
     }
 }

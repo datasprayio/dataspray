@@ -29,6 +29,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.apigateway.ApiGatewayClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.firehose.FirehoseClient;
@@ -98,6 +99,17 @@ public class MotoInstance {
 
     public CognitoIdentityProviderClient getCognitoClient() {
         return CognitoIdentityProviderClient.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                        getAwsAccessKey(),
+                        getAwsSecretKey())))
+                .endpointOverride(URI.create(getEndpoint()))
+                .region(Region.of(getRegion()))
+                .httpClient(UrlConnectionHttpClient.create())
+                .build();
+    }
+
+    public ApiGatewayClient getApiGatewayClient() {
+        return ApiGatewayClient.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
                         getAwsAccessKey(),
                         getAwsSecretKey())))

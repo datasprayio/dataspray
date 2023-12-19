@@ -27,9 +27,9 @@ import io.dataspray.common.json.GsonUtil;
 import io.dataspray.common.test.aws.AbstractLambdaTest;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.store.AccountStore;
-import io.dataspray.store.DynamoApiGatewayApiAccessStore;
-import io.dataspray.store.FirehoseS3AthenaEtlStore;
-import io.dataspray.store.SqsQueueStore;
+import io.dataspray.store.impl.DynamoApiGatewayApiAccessStore;
+import io.dataspray.store.impl.FirehoseS3AthenaEtlStore;
+import io.dataspray.store.impl.SqsQueueStore;
 import io.quarkus.test.common.QuarkusTestResource;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.Response;
@@ -59,7 +59,7 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 
-import static io.dataspray.store.FirehoseS3AthenaEtlStore.*;
+import static io.dataspray.store.impl.FirehoseS3AthenaEtlStore.*;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -83,7 +83,6 @@ public abstract class IngestBase extends AbstractLambdaTest {
         String targetId = "registration";
         String bucketName = "io-dataspray-etl";
         String firehoseName = "dataspray-ingest-etl";
-        String userPoolId = "user-pool-id";
 
         // Setup account
         DynamoApiGatewayApiAccessStore apiAccessStore = new DynamoApiGatewayApiAccessStore();

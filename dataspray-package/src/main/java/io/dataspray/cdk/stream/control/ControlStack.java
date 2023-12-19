@@ -23,10 +23,11 @@
 package io.dataspray.cdk.stream.control;
 
 import com.google.common.collect.ImmutableList;
+import io.dataspray.cdk.store.AuthNzStack;
 import io.dataspray.cdk.web.LambdaWebStack;
 import io.dataspray.common.DeployEnvironment;
-import io.dataspray.store.LambdaDeployerImpl;
-import io.dataspray.store.SqsQueueStore;
+import io.dataspray.store.impl.LambdaDeployerImpl;
+import io.dataspray.store.impl.SqsQueueStore;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.Duration;
@@ -50,7 +51,7 @@ public class ControlStack extends LambdaWebStack {
     private final String bucketCodeName;
     private final Bucket bucketCode;
 
-    public ControlStack(Construct parent, DeployEnvironment deployEnv, String codeZip) {
+    public ControlStack(Construct parent, DeployEnvironment deployEnv, String codeZip, AuthNzStack authNzStack) {
         super(parent, Options.builder()
                 .deployEnv(deployEnv)
                 .functionName("control" + deployEnv.getSuffix())

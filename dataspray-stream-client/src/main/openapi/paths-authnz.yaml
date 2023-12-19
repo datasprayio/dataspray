@@ -1,5 +1,129 @@
 components:
   schemas:
+    SignUpRequest:
+      type: object
+      required:
+        - email
+        - password
+        - tosAgreed
+        - marketingAgreed
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        tosAgreed:
+          type: boolean
+        marketingAgreed:
+          type: boolean
+    SignUpResponse:
+      type: object
+      properties:
+        confirmed:
+          type: boolean
+        errorMsg:
+          type: string
+        codeRequired:
+          type: boolean
+    SignUpConfirmCodeRequest:
+      type: object
+      required:
+        - email
+        - code
+      properties:
+        email:
+          type: string
+        code:
+          type: string
+
+    SignInRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    AuthResult:
+      type: object
+      required:
+        - accessToken
+        - refreshToken
+        - idToken
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        idToken:
+          type: string
+    # Only zero or one response challenge can be present
+    SignInResponse:
+      type: object
+      required:
+        - confirmed
+      properties:
+        result:
+          $ref: '#/components/schemas/AuthResult'
+        errorMsg:
+          type: string
+        challengeTotpCode:
+          type: object
+          required:
+            - session
+          properties:
+            session:
+              type: string
+        challengePasswordChange:
+          type: object
+          required:
+            - session
+          properties:
+            session:
+              type: string
+        codeRequired:
+          type: boolean
+    SignInChallengeTotpCodeRequest:
+      type: object
+      required:
+        - email
+        - session
+        - code
+      properties:
+        email:
+          type: string
+        session:
+          type: string
+        code:
+          type: string
+    SignInChallengePasswordChangeRequest:
+      type: object
+      required:
+        - email
+        - session
+        - newPassword
+      properties:
+        email:
+          type: string
+        session:
+          type: string
+        newPassword:
+          type: string
+    SignInRefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+    SignInRefreshTokenResponse:
+      type: object
+      properties:
+        result:
+          $ref: '#/components/schemas/AuthResult'
+
     ApiKey:
       type: object
       required:
@@ -32,6 +156,109 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ApiKey'
+
+/sign-up:
+  put:
+    operationId: signUp
+    tags: [ AuthNZ ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SignUpRequest'
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpResponse'
+/sign-up/code:
+  put:
+    operationId: signUpConfirmCode
+    tags: [ AuthNZ ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SignUpConfirmCodeRequest'
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpResponse'
+/sign-in:
+  post:
+    operationId: signIn
+    tags: [ AuthNZ ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SignInRequest'
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInResponse'
+/sign-in/totp:
+  post:
+    operationId: signInChallengeTotpCode
+    tags: [ AuthNZ ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SignInChallengeTotpCodeRequest'
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInResponse'
+/sign-in/password-change:
+  post:
+    operationId: signInChallengePasswordChange
+    tags: [ AuthNZ ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SignInChallengePasswordChangeRequest'
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInResponse'
+/sign-in/refresh:
+  post:
+    operationId: signInRefreshToken
+    tags: [ AuthNZ ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SignInRefreshTokenRequest'
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInRefreshTokenResponse'
 
 /apikeys:
   post:

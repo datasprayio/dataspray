@@ -20,16 +20,31 @@
  * SOFTWARE.
  */
 
-package io.dataspray.common.test.aws;
+package io.dataspray.stream.control;
 
-import com.google.common.collect.ImmutableMap;
-import io.quarkus.test.junit.QuarkusTestProfile;
+import io.dataspray.common.test.aws.MotoInstance;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
+import software.amazon.awssdk.services.apigateway.ApiGatewayClient;
+import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-import java.util.Map;
+@QuarkusIntegrationTest
+public class AuthNzIT extends AuthNzBase {
 
-public class SingleTenantAccountStoreProfile implements QuarkusTestProfile {
+    MotoInstance motoInstance;
 
-    public Map<String, String> getConfigOverrides() {
-        return ImmutableMap.of("accountstore.singletenant.enable", "true");
+    @Override
+    protected DynamoDbClient getDynamoClient() {
+        return motoInstance.getDynamoClient();
+    }
+
+    @Override
+    protected ApiGatewayClient apiGatewayClient() {
+        return motoInstance.getApiGatewayClient();
+    }
+
+    @Override
+    protected CognitoIdentityProviderClient getCognitoClient() {
+        return motoInstance.getCognitoClient();
     }
 }

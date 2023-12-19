@@ -18,6 +18,16 @@ components:
 paths:
   /ping:
     $ref: 'paths-health.yaml#/~1ping'
+  /sign-up:
+    $ref: 'paths-authnz.yaml#/~1sign-up'
+  /sign-up/code:
+    $ref: 'paths-authnz.yaml#/~1sign-up~1code'
+  /sign-in:
+    $ref: 'paths-authnz.yaml#/~1sign-in'
+  /sign-in/totp:
+    $ref: 'paths-authnz.yaml#/~1sign-in~1totp'
+  /sign-in/password-change:
+    $ref: 'paths-authnz.yaml#/~1sign-in~1password-change'
   /apikeys:
     $ref: 'paths-authnz.yaml#/~1apikeys'
   /apikey:

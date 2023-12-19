@@ -20,9 +20,10 @@
  * SOFTWARE.
  */
 
-package io.dataspray.store;
+package io.dataspray.store.impl;
 
 import com.google.common.base.Charsets;
+import io.dataspray.store.QueueStore;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.MediaType;
@@ -42,7 +43,7 @@ import java.util.Base64.Encoder;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.dataspray.store.LambdaDeployerImpl.LAMBDA_DEFAULT_TIMEOUT;
+import static io.dataspray.store.impl.LambdaDeployerImpl.LAMBDA_DEFAULT_TIMEOUT;
 
 @Slf4j
 @ApplicationScoped

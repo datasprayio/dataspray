@@ -1,0 +1,140 @@
+diff --git a/checkbox/interfaces.d.ts b/checkbox/interfaces.d.ts
+index 73492184991c3d0c06af040cbaf2176c2982998d..8207ef242abcbeab4e901ace1605e139e2674454 100644
+--- a/checkbox/interfaces.d.ts
++++ b/checkbox/interfaces.d.ts
+@@ -17,6 +17,10 @@ export interface CheckboxProps extends BaseCheckboxProps {
+      * Called when the user changes the component state. The event `detail` contains the current value for the `checked` property.
+      */
+     onChange?: NonCancelableEventHandler<CheckboxProps.ChangeDetail>;
++    /**
++     * Underlying native onBlur event handler.
++     */
++    onBlurNative?: React.FocusEventHandler<HTMLInputElement>;
+     /**
+      * Specifies whether to add `aria-required` to the native control.
+      */
+diff --git a/checkbox/internal.js b/checkbox/internal.js
+index 46aabc38e8b860ce98f1d0ad92549b53303e2219..68df19d184efec9a14b95d2eda9aefefa2c3bc5c 100644
+--- a/checkbox/internal.js
++++ b/checkbox/internal.js
+@@ -11,7 +11,7 @@ import styles from './styles.css.js';
+ import CheckboxIcon from '../internal/components/checkbox-icon';
+ import { useFormFieldContext } from '../internal/context/form-field-context';
+ const InternalCheckbox = React.forwardRef((_a, ref) => {
+-    var { controlId, name, checked, disabled, ariaRequired, indeterminate, children, description, ariaLabel, onFocus, onBlur, onChange, tabIndex, showOutline, ariaControls, __internalRootRef } = _a, rest = __rest(_a, ["controlId", "name", "checked", "disabled", "ariaRequired", "indeterminate", "children", "description", "ariaLabel", "onFocus", "onBlur", "onChange", "tabIndex", "showOutline", "ariaControls", "__internalRootRef"]);
++    var { controlId, name, checked, disabled, ariaRequired, indeterminate, children, description, ariaLabel, onFocus, onBlur, onChange, onBlurNative, tabIndex, showOutline, ariaControls, __internalRootRef } = _a, rest = __rest(_a, ["controlId", "name", "checked", "disabled", "ariaRequired", "indeterminate", "children", "description", "ariaLabel", "onFocus", "onBlur", "onChange", "onBlurNative", "tabIndex", "showOutline", "ariaControls", "__internalRootRef"]);
+     const { ariaDescribedby, ariaLabelledby } = useFormFieldContext(rest);
+     const baseProps = getBaseProps(rest);
+     const checkboxRef = useRef(null);
+@@ -22,6 +22,7 @@ const InternalCheckbox = React.forwardRef((_a, ref) => {
+         }
+     });
+     return (React.createElement(AbstractSwitch, Object.assign({}, baseProps, { className: clsx(styles.root, baseProps.className), controlClassName: styles['checkbox-control'], outlineClassName: styles.outline, controlId: controlId, disabled: disabled, label: children, description: description, descriptionBottomPadding: true, ariaLabel: ariaLabel, ariaLabelledby: ariaLabelledby, ariaDescribedby: ariaDescribedby, ariaControls: ariaControls, showOutline: showOutline, nativeControl: nativeControlProps => (React.createElement("input", Object.assign({}, nativeControlProps, { ref: checkboxRef, type: "checkbox", checked: checked, name: name, "aria-required": ariaRequired ? 'true' : undefined, tabIndex: tabIndex, onFocus: () => fireNonCancelableEvent(onFocus), onBlur: () => fireNonCancelableEvent(onBlur), 
++            onBlur: e => { onBlurNative && onBlurNative(e) },
+             // empty handler to suppress React controllability warning
+             onChange: () => { } }))), onClick: () => {
+             var _a;
+diff --git a/input/index.js b/input/index.js
+index 5248d6d12123ae5bb595f83bd937d57cbc036892..5b715bff4dde1eddd8f4f35297b764d4c4b44412 100644
+--- a/input/index.js
++++ b/input/index.js
+@@ -9,7 +9,7 @@ import styles from './styles.css.js';
+ import { applyDisplayName } from '../internal/utils/apply-display-name';
+ import useBaseComponent from '../internal/hooks/use-base-component';
+ const Input = React.forwardRef((_a, ref) => {
+-    var { value, type = 'text', step, inputMode, autoComplete = true, spellcheck, disabled, readOnly, disableBrowserAutocorrect, onKeyDown, onKeyUp, onChange, onBlur, onFocus, ariaRequired, name, placeholder, autoFocus, ariaLabel, ariaLabelledby, ariaDescribedby, invalid, controlId, clearAriaLabel } = _a, rest = __rest(_a, ["value", "type", "step", "inputMode", "autoComplete", "spellcheck", "disabled", "readOnly", "disableBrowserAutocorrect", "onKeyDown", "onKeyUp", "onChange", "onBlur", "onFocus", "ariaRequired", "name", "placeholder", "autoFocus", "ariaLabel", "ariaLabelledby", "ariaDescribedby", "invalid", "controlId", "clearAriaLabel"]);
++    var { value, type = 'text', step, inputMode, autoComplete = true, spellcheck, disabled, readOnly, disableBrowserAutocorrect, onKeyDown, onKeyUp, onChange, onChangeNative, onBlur, onBlurNative, onFocus, ariaRequired, name, placeholder, autoFocus, ariaLabel, ariaLabelledby, ariaDescribedby, invalid, controlId, clearAriaLabel } = _a, rest = __rest(_a, ["value", "type", "step", "inputMode", "autoComplete", "spellcheck", "disabled", "readOnly", "disableBrowserAutocorrect", "onKeyDown", "onKeyUp", "onChange", "onChangeNative", "onBlur", "onBlurNative", "onFocus", "ariaRequired", "name", "placeholder", "autoFocus", "ariaLabel", "ariaLabelledby", "ariaDescribedby", "invalid", "controlId", "clearAriaLabel"]);
+     const baseComponentProps = useBaseComponent('Input');
+     const baseProps = getBaseProps(rest);
+     const inputRef = useRef(null);
+@@ -33,7 +33,9 @@ const Input = React.forwardRef((_a, ref) => {
+         onKeyDown,
+         onKeyUp,
+         onChange,
++        onChangeNative,
+         onBlur,
++        onBlurNative,
+         onFocus,
+         placeholder,
+         readOnly,
+diff --git a/input/interfaces.d.ts b/input/interfaces.d.ts
+index cecf6258385c16983ed06eec22112c6c7849d054..79afdd13b6d785a5112aa4b3d8be78469ce8ac52 100644
+--- a/input/interfaces.d.ts
++++ b/input/interfaces.d.ts
+@@ -51,6 +51,10 @@ export interface BaseInputProps {
+      * Called when input focus is removed from the UI control.
+      */
+     onBlur?: NonCancelableEventHandler<null>;
++    /**
++     * Direct access to the native `onblur` event handler.
++     */
++    onBlurNative?: NonCancelableEventHandler<null>;
+     /**
+      * Called when input focus is moved to the UI control.
+      */
+@@ -60,6 +64,10 @@ export interface BaseInputProps {
+      * The event `detail` contains the current value of the field.
+      */
+     onChange?: NonCancelableEventHandler<InputProps.ChangeDetail>;
++    /**
++     * Direct access to the native `onchange` event handler.
++     */
++    onChangeNative?: NonCancelableEventHandler<InputProps.ChangeDetail>;
+ }
+ export interface InputAutoCorrect {
+     /**
+diff --git a/input/internal.js b/input/internal.js
+index d5cb87c1b54e5609c79925821772aafabc61f0ab..e0459251f4b6cc0556e47adfa5261f39838d8189 100644
+--- a/input/internal.js
++++ b/input/internal.js
+@@ -14,13 +14,13 @@ import { useFormFieldContext } from '../internal/context/form-field-context';
+ import styles from './styles.css.js';
+ import { useInternalI18n } from '../i18n/context';
+ function InternalInput(_a, ref) {
+-    var { type = 'text', step, inputMode, autoComplete = true, ariaLabel, clearAriaLabel: clearAriaLabelOverride, name, value, placeholder, autoFocus, disabled, readOnly, disableBrowserAutocorrect, spellcheck, __noBorderRadius, __leftIcon, __leftIconVariant = 'subtle', __onLeftIconClick, ariaRequired, __rightIcon, __onRightIconClick, onKeyDown, onKeyUp, onChange, __onDelayedInput, __onBlurWithDetail, onBlur, onFocus, __nativeAttributes, __internalRootRef, __inheritFormFieldProps } = _a, rest = __rest(_a, ["type", "step", "inputMode", "autoComplete", "ariaLabel", "clearAriaLabel", "name", "value", "placeholder", "autoFocus", "disabled", "readOnly", "disableBrowserAutocorrect", "spellcheck", "__noBorderRadius", "__leftIcon", "__leftIconVariant", "__onLeftIconClick", "ariaRequired", "__rightIcon", "__onRightIconClick", "onKeyDown", "onKeyUp", "onChange", "__onDelayedInput", "__onBlurWithDetail", "onBlur", "onFocus", "__nativeAttributes", "__internalRootRef", "__inheritFormFieldProps"]);
++    var { type = 'text', step, inputMode, autoComplete = true, ariaLabel, clearAriaLabel: clearAriaLabelOverride, name, value, placeholder, autoFocus, disabled, readOnly, disableBrowserAutocorrect, spellcheck, __noBorderRadius, __leftIcon, __leftIconVariant = 'subtle', __onLeftIconClick, ariaRequired, __rightIcon, __onRightIconClick, onKeyDown, onKeyUp, onChange, onChangeNative, __onDelayedInput, __onBlurWithDetail, onBlur, onBlurNative, onFocus, __nativeAttributes, __internalRootRef, __inheritFormFieldProps } = _a, rest = __rest(_a, ["type", "step", "inputMode", "autoComplete", "ariaLabel", "clearAriaLabel", "name", "value", "placeholder", "autoFocus", "disabled", "readOnly", "disableBrowserAutocorrect", "spellcheck", "__noBorderRadius", "__leftIcon", "__leftIconVariant", "__onLeftIconClick", "ariaRequired", "__rightIcon", "__onRightIconClick", "onKeyDown", "onKeyUp", "onChange", "onChangeNative", "__onDelayedInput", "__onBlurWithDetail", "onBlur", "onBlurNative", "onFocus", "__nativeAttributes", "__internalRootRef", "__inheritFormFieldProps"]);
+     const baseProps = getBaseProps(rest);
+     const i18n = useInternalI18n('input');
+     const fireDelayedInput = useDebounceCallback((value) => fireNonCancelableEvent(__onDelayedInput, { value }));
+     const handleChange = (value) => {
+         fireDelayedInput(value);
+-        fireNonCancelableEvent(onChange, { value });
++        onChange && fireNonCancelableEvent(onChange, { value });
+     };
+     const inputRef = useRef(null);
+     const searchProps = useSearchProps(type, disabled, readOnly, value, inputRef, handleChange);
+@@ -29,7 +29,7 @@ function InternalInput(_a, ref) {
+     __onRightIconClick = __onRightIconClick !== null && __onRightIconClick !== void 0 ? __onRightIconClick : searchProps.__onRightIconClick;
+     const formFieldContext = useFormFieldContext(rest);
+     const { ariaLabelledby, ariaDescribedby, controlId, invalid } = __inheritFormFieldProps ? formFieldContext : rest;
+-    const attributes = Object.assign({ 'aria-label': ariaLabel, 
++    const attributes = Object.assign({ 'aria-label': ariaLabel,
+         // aria-labelledby has precedence over aria-label in accessible name calculation.
+         // When aria-label is provided for Input, it should override aria-labelledBy from form-field context.
+         // If both aria-label and aria-labelledby come from Input props, aria-labelledby will be used in accessible name
+@@ -42,10 +42,14 @@ function InternalInput(_a, ref) {
+         readOnly,
+         type,
+         step,
+-        inputMode, spellCheck: spellcheck, onKeyDown: onKeyDown && (event => fireKeyboardEvent(onKeyDown, event)), onKeyUp: onKeyUp && (event => fireKeyboardEvent(onKeyUp, event)), 
++        inputMode, spellCheck: spellcheck, onKeyDown: onKeyDown && (event => fireKeyboardEvent(onKeyDown, event)), onKeyUp: onKeyUp && (event => fireKeyboardEvent(onKeyUp, event)),
+         // We set a default value on the component in order to force it into the controlled mode.
+-        value: value !== null && value !== void 0 ? value : '', onChange: onChange && (event => handleChange(event.target.value)), onBlur: e => {
++        value: value !== null && value !== void 0 ? value : '', onChange: (onChange || onChangeNative) && (event => {
++            handleChange(event.target.value)
++            onChangeNative && onChangeNative(event)
++        }), onBlur: e => {
+             onBlur && fireNonCancelableEvent(onBlur);
++            onBlurNative && onBlurNative(e);
+             __onBlurWithDetail && fireNonCancelableEvent(__onBlurWithDetail, { relatedTarget: e.relatedTarget });
+         }, onFocus: onFocus && (() => fireNonCancelableEvent(onFocus)) }, __nativeAttributes);
+     if (type === 'number') {
+@@ -79,7 +83,7 @@ function InternalInput(_a, ref) {
+             React.createElement(InternalButton
+             // Used for test utils
+             // eslint-disable-next-line react/forbid-component-props
+-            , { 
++            , {
+                 // Used for test utils
+                 // eslint-disable-next-line react/forbid-component-props
+                 className: styles['input-button-right'], variant: "inline-icon", formAction: "none", iconName: __rightIcon, onClick: __onRightIconClick, ariaLabel: i18n('clearAriaLabel', clearAriaLabelOverride), disabled: disabled })))));
