@@ -334,14 +334,13 @@ public class BaseApiStack extends BaseStack {
                                                 "content", ImmutableMap.of())),
                                 "x-amazon-apigateway-integration", ImmutableMap.of(
                                         "type", "mock",
-                                        // Fix binary data issues
-                                        // https://stackoverflow.com/a/63880956
-                                        "contentHandling", "CONVERT_TO_TEXT",
+                                        "contentHandling", "CONVERT_TO_TEXT", // Fix binary data issues https://stackoverflow.com/a/63880956
                                         "requestTemplates", ImmutableMap.of(
                                                 "application/json", "{\"statusCode\":200}"),
                                         "responses", ImmutableMap.of(
                                                 "default", ImmutableMap.of(
                                                         "statusCode", "200",
+                                                        "contentHandling", "CONVERT_TO_TEXT", // Fix binary data issues https://stackoverflow.com/a/63880956
                                                         "responseParameters", ImmutableMap.of(
                                                                 "method.response.header.Access-Control-Allow-Headers", "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
                                                                 "method.response.header.Access-Control-Allow-Methods", "'*'",
@@ -356,7 +355,7 @@ public class BaseApiStack extends BaseStack {
         openApiSpec.put("x-amazon-apigateway-endpoint-configuration", ImmutableMap.of(
                 "disableExecuteApiEndpoint", true));
         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-binary-media-types.html
-        openApiSpec.put("x-amazon-apigateway-binary-media-types", ImmutableList.of("*/*"));
+        openApiSpec.put("x-amazon-apigateway-binary-media-types", ImmutableList.of("application/octet-stream"));
         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-api-key-source.html
         openApiSpec.put("x-amazon-apigateway-api-key-source", "AUTHORIZER");
 
