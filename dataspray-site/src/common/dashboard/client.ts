@@ -21,6 +21,7 @@
  */
 
 import * as Api from "../../client";
+import {isCsr} from "../util/isoUtil";
 
 // Recommended way to create a constructor type
 // https://www.typescriptlang.org/docs/handbook/2/generics.html#using-class-types-in-generics
@@ -28,11 +29,7 @@ type BaseAPIConstructor<T> = { new(conf: Api.Configuration): T };
 
 const clientCache = new Map<BaseAPIConstructor<any>, Api.BaseAPI>();
 var confCache: Api.Configuration;
-
-export const getClientControl = (): Api.ControlApiInterface => getClient(Api.ControlApi);
-export const getClientIngest = (): Api.IngestApiInterface => getClient(Api.IngestApi);
-export const getClientAuth = (): Api.AuthNZApiInterface => getClient(Api.AuthNZApi);
-export const getClientHealth = (): Api.HealthApiInterface => getClient(Api.HealthApi);
+var apiKey: string = '';
 
 const getClient = <T extends Api.BaseAPI>(ctor: BaseAPIConstructor<T>): T => {
     var client: T = clientCache.get(ctor) as T;
@@ -45,11 +42,30 @@ const getClient = <T extends Api.BaseAPI>(ctor: BaseAPIConstructor<T>): T => {
 
 const getClientConfiguration = (): Api.Configuration => {
     if (!confCache) {
-        const apiConf: Api.ConfigurationParameters = {
-            fetchApi: window.fetch.bind(window),
-            basePath: Api.BASE_PATH,
-        };
-        confCache = new Api.Configuration(apiConf)
+
+        const fetchApi = isCsr()
+            ? window.fetch.bind(window)
+            : async () => {
+                throw new Error("SSR fetch is disabled");
+            }
+        const basePath = Api.BASE_PATH;
+        const apiKeyGetter = (headerName: string) => "Authorization".toUpperCase() === headerName.toUpperCase()
+            ? apiKey : '';
+
+        confCache = new Api.Configuration({fetchApi, basePath, apiKey: apiKeyGetter})
     }
     return confCache;
 }
+
+/**
+ * Fetch the client instance for the given API type
+ */
+export const getClientControl = (): Api.ControlApiInterface => getClient(Api.ControlApi);
+export const getClientIngest = (): Api.IngestApiInterface => getClient(Api.IngestApi);
+export const getClientAuth = (): Api.AuthNZApiInterface => getClient(Api.AuthNZApi);
+export const getClientHealth = (): Api.HealthApiInterface => getClient(Api.HealthApi);
+/**
+ * Set the API key to be used by the client. Takes effect immediately for existing clients.
+ * @param newApiKey
+ */
+export const setApiKey = (newApiKey: string) => apiKey = newApiKey

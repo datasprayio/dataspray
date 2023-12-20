@@ -20,21 +20,36 @@
  * SOFTWARE.
  */
 
-package io.dataspray.store;
+package io.dataspray.store.impl;
 
-import io.dataspray.store.OrganizationStore.EtlRetention;
-import software.amazon.awssdk.services.glue.model.DataFormat;
+import io.dataspray.store.OrganizationStore;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.ClientErrorException;
+import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 
-public interface EtlStore {
+import java.util.Optional;
 
-    void putRecord(String customerId,
-                   String targetId,
-                   byte[] jsonBytes,
-                   EtlRetention retention);
+/**
+ * Organization management backed by Cognito groups.
+ */
+@Slf4j
+@ApplicationScoped
+public class CognitoGroupOrganizationStore implements OrganizationStore {
 
-    void setTableDefinition(String customerId,
-                            String targetId,
-                            DataFormat dataFormat,
-                            String schemaDefinition,
-                            EtlRetention retention);
+    @Inject
+    CognitoIdentityProviderClient cognitoClient;
+
+    @Override
+    public StreamMetadata authorizeStreamPut(String accountId, String targetId, Optional<String> authKeyOpt) throws ClientErrorException {
+        // TODO
+        return getStream(accountId, targetId);
+    }
+
+    @Override
+    public StreamMetadata getStream(String accountId, String targetId) throws ClientErrorException {
+        // TODO
+        return new StreamMetadata(Optional.of(EtlRetention.DEFAULT));
+    }
 }

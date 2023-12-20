@@ -25,9 +25,9 @@ package io.dataspray.store.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.dataspray.store.AccountStore.EtlRetention;
 import io.dataspray.store.CustomerLogger;
 import io.dataspray.store.EtlStore;
+import io.dataspray.store.OrganizationStore.EtlRetention;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
@@ -78,7 +78,7 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
     public static final String GLUE_CUSTOMER_PREFIX = "customer-";
     public static final String GLUE_SCHEMA_FOR_QUEUE_PREFIX = "queue-";
     public static final String ETL_PARTITION_KEY_RETENTION = "_ds_retention";
-    public static final String ETL_PARTITION_KEY_ACCOUNT = "_ds_account";
+    public static final String ETL_PARTITION_KEY_ORGANIZATION = "_ds_organization";
     public static final String ETL_PARTITION_KEY_TARGET = "_ds_target";
     public static final String ETL_BUCKET_RETENTION_PREFIX_PREFIX = "retention=";
     public static final String ETL_BUCKET_RETENTION_PREFIX = ETL_BUCKET_RETENTION_PREFIX_PREFIX + "!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}";
@@ -91,7 +91,7 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
                                                          "/hour=!{timestamp:HH}" +
                                                          "/";
     public static final String ETL_BUCKET_PREFIX = ETL_BUCKET_RETENTION_PREFIX +
-                                                   "/account=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ACCOUNT + "}" +
+                                                   "/organization=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}" +
                                                    "/target=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TARGET + "}" +
                                                    "/year=!{timestamp:yyyy}" +
                                                    "/month=!{timestamp:MM}" +
@@ -100,7 +100,7 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
                                                    "/";
     public static final TriFunction<EtlRetention, String, String, String> ETL_BUCKET_TARGET_PREFIX = (etlRetention, customerId, targetId) -> ETL_BUCKET_PREFIX
             .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}", etlRetention.name())
-            .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ACCOUNT + "}", customerId)
+            .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}", customerId)
             .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TARGET + "}", targetId);
 
     @ConfigProperty(name = "aws.accountId")
@@ -136,7 +136,7 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
 
         // Add metadata for Firehose dynamic partitioning
         json.put(ETL_PARTITION_KEY_RETENTION, retention.name());
-        json.put(ETL_PARTITION_KEY_ACCOUNT, customerId);
+        json.put(ETL_PARTITION_KEY_ORGANIZATION, customerId);
         json.put(ETL_PARTITION_KEY_TARGET, targetId);
         final byte[] jsonWithMetadataBytes;
         try {

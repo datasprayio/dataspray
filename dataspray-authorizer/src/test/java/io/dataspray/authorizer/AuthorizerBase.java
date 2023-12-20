@@ -27,8 +27,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
-import io.dataspray.store.impl.ApiAccessStore;
-import io.dataspray.store.impl.ApiAccessStore.ApiAccess;
+import io.dataspray.store.ApiAccessStore;
+import io.dataspray.store.ApiAccessStore.ApiAccess;
 import io.quarkus.test.common.QuarkusTestResource;
 import jakarta.ws.rs.core.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
@@ -70,7 +70,7 @@ abstract class AuthorizerBase {
                 apiAccessOpt = Optional.of(createApiAccess(
                         "fd376965-10d2-43b3-a16c-35d3d8f0455a",
                         testType == TestType.AUTHORIZED_LIMITED_ACCOUNT_WIDE
-                                ? ApiAccessStore.UsageKeyType.ACCOUNT_WIDE
+                                ? ApiAccessStore.UsageKeyType.ORGANIZATION_WIDE
                                 : ApiAccessStore.UsageKeyType.UNLIMITED,
                         "test key",
                         testType == TestType.AUTHORIZED_QUEUE_WHITELIST
@@ -91,7 +91,7 @@ abstract class AuthorizerBase {
                     .contentType("application/json")
                     .accept("application/json")
                     .body(createEvent(
-                            apiAccessOpt.map(ApiAccess::getAccountId).orElse(UUID.randomUUID().toString()),
+                            apiAccessOpt.map(ApiAccess::getOrganizationName).orElse(UUID.randomUUID().toString()),
                             apiAccessOpt.map(ApiAccess::getApiKey).orElse(UUID.randomUUID().toString())))
                     .when()
                     .post()
@@ -110,9 +110,9 @@ abstract class AuthorizerBase {
                 case AUTHORIZED_QUEUE_WHITELIST:
                     ApiAccess apiAccess = apiAccessOpt.get();
                     response.statusCode(200)
-                            .body("principalId", equalTo(apiAccess.getAccountId()))
+                            .body("principalId", equalTo(apiAccess.getOrganizationName()))
                             .body("usageIdentifierKey", equalTo(apiAccessOpt.flatMap(ApiAccess::getUsageKey).orElse(null)))
-                            .body("context." + AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID, equalTo(apiAccess.getAccountId()))
+                            .body("context." + AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID, equalTo(apiAccess.getOrganizationName()))
                             .body("context." + AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE, equalTo(apiAccess.getApiKey()))
                             .body("policyDocument", jsonStringEqualTo(ResourceUtil.getTestResource(
                                     testType == TestType.AUTHORIZED_QUEUE_WHITELIST

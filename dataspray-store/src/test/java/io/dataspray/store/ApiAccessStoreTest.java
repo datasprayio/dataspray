@@ -28,10 +28,9 @@ import io.dataspray.common.test.aws.MotoInstance;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
-import io.dataspray.store.impl.ApiAccessStore;
-import io.dataspray.store.impl.ApiAccessStore.ApiAccess;
-import io.dataspray.store.impl.ApiAccessStore.UsageKey;
-import io.dataspray.store.impl.ApiAccessStore.UsageKeyType;
+import io.dataspray.store.ApiAccessStore.ApiAccess;
+import io.dataspray.store.ApiAccessStore.UsageKey;
+import io.dataspray.store.ApiAccessStore.UsageKeyType;
 import io.dataspray.store.impl.DynamoApiGatewayApiAccessStore;
 import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -82,7 +81,7 @@ public class ApiAccessStoreTest {
                 Optional.empty(),
                 Optional.empty());
 
-        assertEquals(accountId, apiAccess.getAccountId());
+        assertEquals(accountId, apiAccess.getOrganizationName());
         assertEquals(UsageKeyType.UNLIMITED, apiAccess.getUsageKeyType());
         assertEquals("description", apiAccess.getDescription());
         assertEquals(Set.of(), apiAccess.getQueueWhitelist());
@@ -95,7 +94,7 @@ public class ApiAccessStoreTest {
         ApiAccess apiAccess1 = apiAccessStore.createApiAccess(
                 accountId,
                 // Should cause a fetch miss for usage key, then create it
-                UsageKeyType.ACCOUNT_WIDE,
+                UsageKeyType.ORGANIZATION_WIDE,
                 "description",
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
@@ -107,7 +106,7 @@ public class ApiAccessStoreTest {
         ApiAccess apiAccess2 = apiAccessStore.createApiAccess(
                 accountId,
                 // Should fetch the previously created usage key
-                UsageKeyType.ACCOUNT_WIDE,
+                UsageKeyType.ORGANIZATION_WIDE,
                 "description",
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
@@ -172,18 +171,18 @@ public class ApiAccessStoreTest {
                 Optional.empty(),
                 Optional.empty());
 
-        assertEquals(Set.of(apiAccess), apiAccessStore.getApiAccessesByAccountId(apiAccess.getAccountId()));
+        assertEquals(Set.of(apiAccess), apiAccessStore.getApiAccessesByOrganizationName(apiAccess.getOrganizationName()));
 
         ApiAccess apiAccess2 = apiAccessStore.createApiAccess(
-                apiAccess.getAccountId(),
+                apiAccess.getOrganizationName(),
                 UsageKeyType.UNLIMITED,
                 "description2",
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
 
-        assertEquals(Set.of(apiAccess, apiAccess2), apiAccessStore.getApiAccessesByAccountId(apiAccess.getAccountId()));
+        assertEquals(Set.of(apiAccess, apiAccess2), apiAccessStore.getApiAccessesByOrganizationName(apiAccess.getOrganizationName()));
 
-        assertEquals(Set.of(), apiAccessStore.getApiAccessesByAccountId("non-existent"));
+        assertEquals(Set.of(), apiAccessStore.getApiAccessesByOrganizationName("non-existent"));
     }
 
     @Test
@@ -195,7 +194,7 @@ public class ApiAccessStoreTest {
                 Optional.empty(),
                 Optional.of(Instant.now().minusSeconds(10)));
 
-        assertEquals(Set.of(), apiAccessStore.getApiAccessesByAccountId(apiAccess.getAccountId()));
+        assertEquals(Set.of(), apiAccessStore.getApiAccessesByOrganizationName(apiAccess.getOrganizationName()));
     }
 
     @Test
@@ -219,27 +218,27 @@ public class ApiAccessStoreTest {
         // Cache hit, should be revoked
         assertEquals(Optional.empty(), apiAccessStore.getApiAccessByApiKey(apiAccess.getApiKey(), true));
         // Also access by account id should be revoked
-        assertEquals(Set.of(), apiAccessStore.getApiAccessesByAccountId(apiAccess.getAccountId()));
+        assertEquals(Set.of(), apiAccessStore.getApiAccessesByOrganizationName(apiAccess.getOrganizationName()));
     }
 
     @Test
     public void testUsageKeyCreateGet() throws Exception {
         String accountId1 = UUID.randomUUID().toString();
-        UsageKey usageKey1 = apiAccessStore.getOrCreateUsageKeyForAccount(accountId1);
-        assertEquals(accountId1, usageKey1.getAccountId());
+        UsageKey usageKey1 = apiAccessStore.getOrCreateUsageKeyForOrganization(accountId1);
+        assertEquals(accountId1, usageKey1.getOrganizationName());
 
         String accountId2 = UUID.randomUUID().toString();
-        UsageKey usageKey2a = apiAccessStore.getOrCreateUsageKeyForAccount(accountId2);
-        UsageKey usageKey2b = apiAccessStore.getOrCreateUsageKeyForAccount(accountId2);
-        assertEquals(accountId2, usageKey2a.getAccountId());
-        assertEquals(accountId2, usageKey2b.getAccountId());
+        UsageKey usageKey2a = apiAccessStore.getOrCreateUsageKeyForOrganization(accountId2);
+        UsageKey usageKey2b = apiAccessStore.getOrCreateUsageKeyForOrganization(accountId2);
+        assertEquals(accountId2, usageKey2a.getOrganizationName());
+        assertEquals(accountId2, usageKey2b.getOrganizationName());
         assertEquals(usageKey2a.getUsageKeyId(), usageKey2b.getUsageKeyId());
     }
 
     @Test
     public void testUsageKeyScan() throws Exception {
-        UsageKey usageKey1 = apiAccessStore.getOrCreateUsageKeyForAccount(UUID.randomUUID().toString());
-        UsageKey usageKey2 = apiAccessStore.getOrCreateUsageKeyForAccount(UUID.randomUUID().toString());
+        UsageKey usageKey1 = apiAccessStore.getOrCreateUsageKeyForOrganization(UUID.randomUUID().toString());
+        UsageKey usageKey2 = apiAccessStore.getOrCreateUsageKeyForOrganization(UUID.randomUUID().toString());
 
         Set<UsageKey> allUsageKeys = Sets.newHashSet();
         apiAccessStore.getAllUsageKeys(allUsageKeys::addAll);

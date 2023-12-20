@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package io.dataspray.store.impl;
+package io.dataspray.store;
 
 
 import com.google.common.collect.ImmutableList;
@@ -52,19 +52,19 @@ public interface ApiAccessStore {
     long TRIAL_USAGE_PLAN_VERSION = 1;
 
     ApiAccess createApiAccess(
-            String accountId,
+            String organizationName,
             UsageKeyType usageKeyType,
             String description,
             Optional<ImmutableSet<String>> queueWhitelistOpt,
             Optional<Instant> expiryOpt);
 
-    ImmutableSet<ApiAccess> getApiAccessesByAccountId(String accountId);
+    ImmutableSet<ApiAccess> getApiAccessesByOrganizationName(String organizationName);
 
     Optional<ApiAccess> getApiAccessByApiKey(String apiKey, boolean useCache);
 
     void revokeApiKey(String apiKey);
 
-    UsageKey getOrCreateUsageKeyForAccount(String accountId);
+    UsageKey getOrCreateUsageKeyForOrganization(String organizationName);
 
     void getAllUsageKeys(Consumer<ImmutableList<UsageKey>> batchConsumer);
 
@@ -73,7 +73,7 @@ public interface ApiAccessStore {
     @EqualsAndHashCode(onlyExplicitlyIncluded = true)
     @Builder(toBuilder = true)
     @DynamoTable(type = Primary, partitionKeys = "apiKey", rangePrefix = "apiKey")
-    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = "accountId", rangePrefix = "apiKeyByAccountId")
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = "organizationName", rangePrefix = "apiKeyByOrganizationName")
     @RegisterForReflection
     class ApiAccess {
         @NonNull
@@ -82,7 +82,7 @@ public interface ApiAccessStore {
         String apiKey;
 
         @NonNull
-        String accountId;
+        String organizationName;
 
         @NonNull
         Long usageKeyTypeId;
@@ -107,10 +107,10 @@ public interface ApiAccessStore {
             switch (getUsageKeyType()) {
                 case UNLIMITED:
                     return Optional.empty();
-                case ACCOUNT_WIDE:
+                case ORGANIZATION_WIDE:
                     // Share usage key across all API keys on the same account.
                     // Let's just use the account ID as usage key since it's not a secret.
-                    return Optional.of(getUsageKeyType().getId() + "-" + accountId);
+                    return Optional.of(getUsageKeyType().getId() + "-" + organizationName);
                 default:
                     throw new IllegalStateException("Unknown usage key type: " + getUsageKeyType());
             }
@@ -131,12 +131,12 @@ public interface ApiAccessStore {
     @AllArgsConstructor
     @EqualsAndHashCode
     @Builder(toBuilder = true)
-    @DynamoTable(type = Primary, partitionKeys = "accountId", rangePrefix = "usageKeyByAccountId")
-    @DynamoTable(type = Gsi, indexNumber = 1, shardKeys = {"accountId"}, shardCount = 10, rangePrefix = "usageKeys", rangeKeys = "accountId")
+    @DynamoTable(type = Primary, partitionKeys = "organizationName", rangePrefix = "usageKeyByOrganizationName")
+    @DynamoTable(type = Gsi, indexNumber = 1, shardKeys = {"organizationName"}, shardCount = 10, rangePrefix = "usageKeys", rangeKeys = "organizationName")
     @RegisterForReflection
     class UsageKey {
         @NonNull
-        String accountId;
+        String organizationName;
 
         /**
          * Unique Amazon ID for a given api key.
@@ -149,7 +149,7 @@ public interface ApiAccessStore {
     @Getter
     enum UsageKeyType {
         UNLIMITED(0),
-        ACCOUNT_WIDE(1);
+        ORGANIZATION_WIDE(1);
         private final long id;
 
         UsageKeyType(long id) {

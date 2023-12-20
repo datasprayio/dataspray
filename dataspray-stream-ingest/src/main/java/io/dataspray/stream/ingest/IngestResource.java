@@ -22,10 +22,10 @@
 
 package io.dataspray.stream.ingest;
 
-import io.dataspray.store.AccountStore;
-import io.dataspray.store.AccountStore.StreamMetadata;
 import io.dataspray.store.CustomerLogger;
 import io.dataspray.store.EtlStore;
+import io.dataspray.store.OrganizationStore;
+import io.dataspray.store.OrganizationStore.StreamMetadata;
 import io.dataspray.store.QueueStore;
 import io.dataspray.web.resource.AbstractResource;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -50,7 +50,7 @@ public class IngestResource extends AbstractResource implements IngestApi {
     public static final int MESSAGE_MAX_BYTES = 256 * 1024;
 
     @Inject
-    AccountStore accountStore;
+    OrganizationStore accountStore;
     @Inject
     QueueStore queueStore;
     @Inject

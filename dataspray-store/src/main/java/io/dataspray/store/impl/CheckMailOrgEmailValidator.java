@@ -129,8 +129,10 @@ public class CheckMailOrgEmailValidator implements EmailValidator {
     /**
      * API definition
      * <p>
-     * https://check-mail.org/get-started/
-     * https://rapidapi.com/Top-Rated/api/e-mail-check-invalid-or-disposable-domain
+     *
+     * @see <a href="https://check-mail.org/get-started/">https://check-mail.org/get-started/</a>
+     * @see <a
+     * href="https://rapidapi.com/Top-Rated/api/e-mail-check-invalid-or-disposable-domain">https://rapidapi.com/Top-Rated/api/e-mail-check-invalid-or-disposable-domain</a>
      */
     @Value
     private static class CheckMailResponse {

@@ -30,7 +30,7 @@ import io.dataspray.singletable.IndexSchema;
 import io.dataspray.singletable.ShardPageResult;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
-import io.dataspray.store.impl.ApiAccessStore;
+import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.runtime.Startup;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -76,7 +76,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     public KeygenUtil keygenUtil;
 
     private TableSchema<ApiAccess> apiAccessSchema;
-    private IndexSchema<ApiAccess> apiAccessByAccountSchema;
+    private IndexSchema<ApiAccess> apiAccessByOrganizationSchema;
     private TableSchema<UsageKey> usageKeySchema;
     private IndexSchema<UsageKey> usageKeyScanSchema;
     private Cache<String, Optional<ApiAccess>> apiAccessByApiKeyCache;
@@ -88,24 +88,24 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
                 .build();
 
         apiAccessSchema = singleTable.parseTableSchema(ApiAccess.class);
-        apiAccessByAccountSchema = singleTable.parseGlobalSecondaryIndexSchema(1, ApiAccess.class);
+        apiAccessByOrganizationSchema = singleTable.parseGlobalSecondaryIndexSchema(1, ApiAccess.class);
         usageKeySchema = singleTable.parseTableSchema(UsageKey.class);
         usageKeyScanSchema = singleTable.parseGlobalSecondaryIndexSchema(1, UsageKey.class);
     }
 
     @Override
-    public ApiAccess createApiAccess(String accountId, UsageKeyType usageKeyType, String description, Optional<ImmutableSet<String>> queueWhitelistOpt, Optional<Instant> expiryOpt) {
+    public ApiAccess createApiAccess(String organizationName, UsageKeyType usageKeyType, String description, Optional<ImmutableSet<String>> queueWhitelistOpt, Optional<Instant> expiryOpt) {
         ApiAccess apiAccess = new ApiAccess(
                 keygenUtil.generateSecureApiKey(API_KEY_LENGTH),
-                accountId,
+                organizationName,
                 usageKeyType.getId(),
                 description,
                 queueWhitelistOpt.orElseGet(ImmutableSet::of),
                 expiryOpt.map(Instant::getEpochSecond).orElse(null));
         checkArgument(apiAccess.isTtlNotExpired());
 
-        if (UsageKeyType.ACCOUNT_WIDE.equals(usageKeyType)) {
-            getOrCreateUsageKeyForAccount(accountId);
+        if (UsageKeyType.ORGANIZATION_WIDE.equals(usageKeyType)) {
+            getOrCreateUsageKeyForOrganization(organizationName);
         }
 
         dynamo.putItem(PutItemRequest.builder()
@@ -118,16 +118,16 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public ImmutableSet<ApiAccess> getApiAccessesByAccountId(String accountId) {
+    public ImmutableSet<ApiAccess> getApiAccessesByOrganizationName(String organizationName) {
         return dynamo.queryPaginator(QueryRequest.builder()
-                        .tableName(apiAccessByAccountSchema.tableName())
-                        .indexName(apiAccessByAccountSchema.indexName())
-                        .keyConditions(apiAccessByAccountSchema.attrMapToConditions(apiAccessByAccountSchema.primaryKey(Map.of(
-                                "accountId", accountId))))
+                        .tableName(apiAccessByOrganizationSchema.tableName())
+                        .indexName(apiAccessByOrganizationSchema.indexName())
+                        .keyConditions(apiAccessByOrganizationSchema.attrMapToConditions(apiAccessByOrganizationSchema.primaryKey(Map.of(
+                                "organizationName", organizationName))))
                         .build())
                 .items()
                 .stream()
-                .map(apiAccessByAccountSchema::fromAttrMap)
+                .map(apiAccessByOrganizationSchema::fromAttrMap)
                 .filter(ApiAccess::isTtlNotExpired)
                 .collect(ImmutableSet.toImmutableSet());
     }
@@ -174,13 +174,13 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public UsageKey getOrCreateUsageKeyForAccount(String accountId) {
+    public UsageKey getOrCreateUsageKeyForOrganization(String organizationName) {
 
         // Lookup mapping from dynamo
         Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
                 .tableName(usageKeySchema.tableName())
                 .key(usageKeySchema.primaryKey(Map.of(
-                        "accountId", accountId)))
+                        "organizationName", organizationName)))
                 .build()).item()));
 
         // Return existing key
@@ -190,9 +190,9 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
 
         // Create a new API Gateway API Key
         CreateApiKeyResponse createApiKeyResponse = apiGatewayClient.createApiKey(CreateApiKeyRequest.builder()
-                .name(accountId)
-                // For account-wide usage key, the key itself is the account ID
-                .value(accountId)
+                .name(organizationName)
+                // For organization-wide usage key, the key itself is the organization name
+                .value(organizationName)
                 .enabled(true).build());
         CreateUsagePlanKeyResponse createUsagePlanKeyResponse = apiGatewayClient.createUsagePlanKey(CreateUsagePlanKeyRequest.builder()
                 .keyType("API_KEY")
@@ -200,7 +200,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
                 .usagePlanId(usagePlanId).build());
 
         // Store mapping in dynamo
-        UsageKey usageKey = new UsageKey(accountId, createApiKeyResponse.id());
+        UsageKey usageKey = new UsageKey(organizationName, createApiKeyResponse.id());
         dynamo.putItem(PutItemRequest.builder()
                 .tableName(usageKeySchema.tableName())
                 .item(usageKeySchema.toAttrMap(usageKey))

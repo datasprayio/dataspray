@@ -23,42 +23,32 @@
 package io.dataspray.store.impl;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import io.dataspray.store.AccountStore;
+import io.dataspray.store.UserStore;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.ClientErrorException;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserRequest;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeResponse;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.AliasAttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AssociateSoftwareTokenRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AssociateSoftwareTokenResponse;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ChallengeNameType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSignUpRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSignUpResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ResendConfirmationCodeRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ResendConfirmationCodeResponse;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifySoftwareTokenRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifySoftwareTokenResponse;
 
-import java.util.Optional;
-import java.util.stream.Stream;
-
 @Slf4j
 @ApplicationScoped
-public class CognitoAccountStore implements AccountStore {
+public class CognitoUserStore implements UserStore {
 
     public static final String USER_POOL_ID_PROP_NAME = "aws.cognito.user-pool.id";
     public static final String USER_POOL_APP_CLIENT_ID_PROP_NAME = "aws.cognito.user-pool.client.id";
@@ -199,6 +189,11 @@ public class CognitoAccountStore implements AccountStore {
                 "SESSION", verifySoftwareTokenSession));
     }
 
+    @Override
+    public void validateAccessToken(String accessToken) {
+        // TODO
+    }
+
     /**
      * Respond to challenge. Used for but not limited to:
      * <ul>
@@ -218,40 +213,6 @@ public class CognitoAccountStore implements AccountStore {
                 .challengeName(challengeName)
                 .challengeResponses(responses)
                 .build());
-    }
-
-    @Override
-    public Optional<Account> getAccount(String accountId) {
-        AdminGetUserResponse response;
-        try {
-            response = cognitoClient.adminGetUser(AdminGetUserRequest.builder()
-                    .username(accountId)
-                    .userPoolId(userPoolId).build());
-        } catch (ResourceNotFoundException ex) {
-            return Optional.empty();
-        }
-        return Optional.of(Account.builder()
-                .accountId(response.username())
-                .email(response.userAttributes().stream()
-                        .filter(attribute -> AliasAttributeType.EMAIL.toString().equalsIgnoreCase(attribute.name()))
-                        .map(AttributeType::value)
-                        .findAny().orElseThrow())
-                .enabledStreamNames(response.userAttributes().stream()
-                        .filter(attribute -> ACCOUNT_STREAM_NAMES_ATTRIBUTE.equalsIgnoreCase(attribute.name()))
-                        .map(AttributeType::value)
-                        .flatMap(setStr -> Stream.of(setStr.split(",")))
-                        .collect(ImmutableSet.toImmutableSet()))
-                .build());
-    }
-
-    @Override
-    public StreamMetadata authorizeStreamPut(String accountId, String targetId, Optional<String> authKeyOpt) throws ClientErrorException {
-        return getStream(accountId, targetId);
-    }
-
-    @Override
-    public StreamMetadata getStream(String accountId, String targetId) throws ClientErrorException {
-        return new StreamMetadata(Optional.of(EtlRetention.DEFAULT));
     }
 
     @Override

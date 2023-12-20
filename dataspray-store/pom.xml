@@ -85,6 +85,16 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>apigateway</artifactId>
         </dependency>
+
+        <!-- For verifying Cognito JWTs -->
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>java-jwt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>jwks-rsa</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

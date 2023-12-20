@@ -34,8 +34,10 @@ import io.dataspray.authorizer.model.HttpMethod;
 import io.dataspray.authorizer.model.PolicyDocument;
 import io.dataspray.authorizer.model.Statement;
 import io.dataspray.common.authorizer.AuthorizerConstants;
-import io.dataspray.store.impl.ApiAccessStore;
-import io.dataspray.store.impl.ApiAccessStore.ApiAccess;
+import io.dataspray.store.ApiAccessStore;
+import io.dataspray.store.ApiAccessStore.ApiAccess;
+import io.dataspray.store.CognitoJwtVerifier;
+import io.dataspray.store.UserStore;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -48,6 +50,8 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static io.dataspray.store.CognitoJwtVerifier.VerifiedCognitoJwt;
+
 @Slf4j
 @Named("authorizer")
 public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEvent, Object> {
@@ -58,6 +62,10 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
     Gson gson;
     @Inject
     ApiAccessStore apiAccessStore;
+    @Inject
+    UserStore userStore;
+    @Inject
+    CognitoJwtVerifier cognitoJwtVerifier;
 
     @Override
     public Object handleRequest(APIGatewayCustomAuthorizerEvent event, Context context) {
@@ -70,11 +78,30 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             // Keep in mind, the policy is cached for 5 minutes by default (TTL is configurable in the authorizer)
             // and will apply to subsequent calls to any method/resource in the RestApi made with the same token
 
-            String apiKeyStr = extractApiKeyFromAuthorization(event);
+            // Extract Authorization header
+            String authorizationValue = event.getHeaders().getOrDefault(AUTHORIZATION_HEADER, "");
+            String authorizationValueLower = authorizationValue.toLowerCase();
 
-            ApiAccess apiAccess = apiAccessStore.getApiAccessByApiKey(apiKeyStr, true)
-                    .orElseThrow(() -> new ApiGatewayUnauthorized("API access not found"));
-            String principalId = apiAccess.getAccountId();
+            // TODO
+
+            ImmutableSet<String> organizationNames;
+            if (authorizationValueLower.startsWith("cognito ")) {
+                String accessToken = authorizationValue.substring(8);
+                VerifiedCognitoJwt verifiedCognitoJwt = cognitoJwtVerifier.verify(accessToken)
+                        .orElseThrow(() -> new ApiGatewayUnauthorized("Cognito JWT verification failed"));
+                organizationNames = verifiedCognitoJwt.getGroupNames();
+                // TODO
+            } else if (authorizationValueLower.startsWith("apikey ")) {
+                String apiKeyStr = authorizationValue.substring(7);
+                ApiAccess apiAccess = apiAccessStore.getApiAccessByApiKey(apiKeyStr, true)
+                        .orElseThrow(() -> new ApiGatewayUnauthorized("invalid apikey found"));
+                String principalId = apiAccess.getOrganizationName();
+                organizationNames = verifiedCognitoJwt.getGroupNames();
+                // TODO
+            } else {
+                throw new ApiGatewayUnauthorized("Client unauthorized: No valid authorization scheme found");
+            }
+
 
             // Extract endpoint info
             Arn methodArn = Arn.fromString(event.getMethodArn());
@@ -86,7 +113,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
 
             // Send back allow policy
             log.info("Client authorized for account id {}", apiAccess.getAccountId());
-            PolicyDocument policyDocument = generatePolicyDocument(region, awsAccountId, restApiId, stage, apiAccess);
+            PolicyDocument policyDocument = generatePolicyDocument(region, awsAccountId, restApiId, stage, organizationNames);
             return new AuthPolicy(
                     principalId,
                     policyDocument,
@@ -99,19 +126,14 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
         }
     }
 
-    private String extractApiKeyFromAuthorization(APIGatewayCustomAuthorizerEvent event) throws ApiGatewayUnauthorized {
-        String authorizationHeaderValue = event.getHeaders().getOrDefault(AUTHORIZATION_HEADER, "");
-        if (authorizationHeaderValue.length() <= 7) {
-            throw new ApiGatewayUnauthorized("Authorization header missing or too short");
-        }
-        if (!authorizationHeaderValue.toLowerCase().startsWith("bearer ")) {
-            throw new ApiGatewayUnauthorized("Client unauthorized: Authorization not bearer");
-        }
-        return authorizationHeaderValue.substring(7);
-    }
-
     @VisibleForTesting
-    public static PolicyDocument generatePolicyDocument(String region, String awsAccountId, String restApiId, String stage, ApiAccess apiKey) {
+    public static PolicyDocument generatePolicyDocument(
+            String region,
+            String awsAccountId,
+            String restApiId,
+            String stage,
+            ImmutableSet<String> organizationNames,
+            ImmutableSet<String> queueWhitelist) {
 
         PolicyDocument policyDocument = new PolicyDocument();
 
@@ -122,13 +144,12 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                 .addResource(Statement.getExecuteApiArn(region, awsAccountId, restApiId, stage,
                         HttpMethod.ALL, Optional.of(getResourcePathAll()))));
 
-        // For Ingest API, for paths ".../account/{accountId}/target/{targetId}/...", only allow your own account id
+        // For Ingest API, for paths ".../organization/{accountId}/target/{targetId}/...", only allow your own account id
         // and whitelisted targets.
         // The idea here is to allow all by default and only deny other accounts (except own account). This can also be
         // accomplished by allowing all except accounts and then allowing own account, having others implicitly denied.
         // To verify this works as expected, follow the guide and test against the policy simulator:
         // dataspray-authorizer/src/test/resources/io/dataspray/authorizer/AuthorizerEndpointBase/iam-policy-ingest-path-condition.jsonc
-        String accountIdSanitized = sanitizeArnInjection(apiKey.getAccountId());
         Statement accountAndTargetStatement = new Statement()
                 .setEffect(Effect.DENY)
                 .setAction("execute-api:Invoke")
@@ -138,20 +159,22 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                                         HttpMethod.ALL, Optional.of(resourcePath)))
                         .collect(ImmutableSet.toImmutableSet()));
         final ImmutableSet<String> arnMatchers;
+
+        String organizationNameSanitized = sanitizeArnInjection(apiKey.getOrganizationName());
         if (apiKey.getQueueWhitelist().isEmpty()) {
             // Allow all paths under account
-            arnMatchers = getResourcePathsForAccount(accountIdSanitized)
+            arnMatchers = getResourcePathsForOrganization(organizationNameSanitized)
                     .map(resourcePath -> Statement.getExecuteApiArn(region, awsAccountId, restApiId, stage,
                             HttpMethod.ALL, Optional.of(resourcePath)))
                     .collect(ImmutableSet.toImmutableSet());
         } else {
             // Allow only paths under own account under whitelisted target queues
             // If you need to add a non-target path, this is where you would add an exception
-            arnMatchers = apiKey.getQueueWhitelist().stream()
+            arnMatchers = queueWhitelist().stream()
                     // Sanitize to prevent injection
                     .map(Authorizer::sanitizeArnInjection)
                     // Get resource paths specific to the queue target, not for all of account
-                    .flatMap(queue -> getResourcePathsForAccountAndTarget(accountIdSanitized, queue))
+                    .flatMap(queue -> getResourcePathsForAccountAndTarget(organizationNameSanitized, queue))
                     .map(resourcePath -> Statement.getExecuteApiArn(region, awsAccountId, restApiId, stage,
                             HttpMethod.ALL, Optional.of(resourcePath)))
                     .collect(ImmutableSet.toImmutableSet());
@@ -168,22 +191,22 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
 
     private static Stream<String> getResourcePathsAllAccounts() {
         return Stream.of(
-                "/account",
-                "/account/*"
+                "/organization",
+                "/organization/*"
         );
     }
 
-    private static Stream<String> getResourcePathsForAccount(String accountIdSanitized) {
+    private static Stream<String> getResourcePathsForOrganization(String accountIdSanitized) {
         return Stream.of(
-                "/account/" + accountIdSanitized,
-                "/account/" + accountIdSanitized + "/*"
+                "/organization/" + accountIdSanitized,
+                "/organization/" + accountIdSanitized + "/*"
         );
     }
 
     private static Stream<String> getResourcePathsForAccountAndTarget(String accountIdSanitized, String target) {
         return Stream.of(
-                "/account/" + accountIdSanitized + "/target/" + target,
-                "/account/" + accountIdSanitized + "/target/" + target + "/*"
+                "/organization/" + accountIdSanitized + "/target/" + target,
+                "/organization/" + accountIdSanitized + "/target/" + target + "/*"
         );
     }
 

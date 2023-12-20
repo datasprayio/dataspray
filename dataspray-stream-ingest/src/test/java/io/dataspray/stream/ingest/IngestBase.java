@@ -26,7 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import io.dataspray.common.json.GsonUtil;
 import io.dataspray.common.test.aws.AbstractLambdaTest;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
-import io.dataspray.store.AccountStore;
+import io.dataspray.store.UserStore;
 import io.dataspray.store.impl.DynamoApiGatewayApiAccessStore;
 import io.dataspray.store.impl.FirehoseS3AthenaEtlStore;
 import io.dataspray.store.impl.SqsQueueStore;
@@ -116,7 +116,7 @@ public abstract class IngestBase extends AbstractLambdaTest {
         // Submit data to Ingest Resource
         request(Given.builder()
                 .method(HttpMethod.POST)
-                .path("/account/" + customerId + "/target/" + targetId + "/message")
+                .path("/organization/" + customerId + "/target/" + targetId + "/message")
                 .contentType(APPLICATION_JSON_TYPE)
                 .body(body)
                 .build())
@@ -149,8 +149,8 @@ public abstract class IngestBase extends AbstractLambdaTest {
         log.info("Object content {}", objectJson);
         assertEquals(ImmutableMap.builder()
                 .putAll(body)
-                .put(ETL_PARTITION_KEY_RETENTION, AccountStore.EtlRetention.DEFAULT.name())
-                .put(ETL_PARTITION_KEY_ACCOUNT, customerId)
+                .put(ETL_PARTITION_KEY_RETENTION, UserStore.EtlRetention.DEFAULT.name())
+                .put(ETL_PARTITION_KEY_ORGANIZATION, customerId)
                 .put(ETL_PARTITION_KEY_TARGET, targetId)
                 .build(), objectJson);
     }

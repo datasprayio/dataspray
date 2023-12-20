@@ -24,11 +24,6 @@ package io.dataspray.store;
 
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableSet;
-import jakarta.ws.rs.ClientErrorException;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthResponse;
@@ -39,9 +34,7 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.ResendConfi
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifySoftwareTokenResponse;
 
-import java.util.Optional;
-
-public interface AccountStore {
+public interface UserStore {
 
     SignUpResponse signup(String email, String password);
 
@@ -65,55 +58,13 @@ public interface AccountStore {
 
     AdminRespondToAuthChallengeResponse signinChallengeTotpSetup(String session, String email, String verifySoftwareTokenSession);
 
-    Optional<Account> getAccount(String accountId);
-
-    StreamMetadata authorizeStreamPut(
-            String accountId,
-            String targetId,
-            Optional<String> authKeyOpt) throws ClientErrorException;
-
-    StreamMetadata getStream(
-            String accountId,
-            String targetId) throws ClientErrorException;
+    void validateAccessToken(String accessToken);
 
     /**
      * Since Quarkus has no easy way to set properties on runtime from ta test, we need this endpoint to set them.
      */
     @VisibleForTesting
     void setCognitoProperties(CognitoProperties cognitoProperties);
-
-    @Value
-    class StreamMetadata {
-        @NonNull
-        Optional<EtlRetention> retentionOpt;
-    }
-
-    @Value
-    @Builder(toBuilder = true)
-    @AllArgsConstructor
-    class Account {
-        @NonNull
-        String accountId;
-
-        @NonNull
-        String email;
-
-        @NonNull
-        ImmutableSet<String> enabledStreamNames;
-    }
-
-    @Getter
-    @AllArgsConstructor
-    enum EtlRetention {
-        DAY(1),
-        WEEK(7),
-        THREE_MONTHS(3 * 30),
-        YEAR(366),
-        THREE_YEARS(3 * 366);
-        public static final EtlRetention DEFAULT = THREE_MONTHS;
-        int expirationInDays;
-    }
-
 
     @VisibleForTesting
     @Value

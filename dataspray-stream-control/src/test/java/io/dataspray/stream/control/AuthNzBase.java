@@ -24,7 +24,7 @@ package io.dataspray.stream.control;
 
 import io.dataspray.common.test.aws.AbstractLambdaTest;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
-import io.dataspray.store.AccountStore.CognitoProperties;
+import io.dataspray.store.UserStore.CognitoProperties;
 import io.dataspray.stream.control.model.SignInRequest;
 import io.dataspray.stream.control.model.SignInResponse;
 import io.dataspray.stream.control.model.SignUpConfirmCodeRequest;

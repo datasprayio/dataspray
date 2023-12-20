@@ -22,19 +22,29 @@
 
 package io.dataspray.store;
 
-import io.dataspray.store.OrganizationStore.EtlRetention;
-import software.amazon.awssdk.services.glue.model.DataFormat;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.google.common.collect.ImmutableSet;
+import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.annotation.Nonnull;
+import lombok.Value;
 
-public interface EtlStore {
+import java.util.Optional;
 
-    void putRecord(String customerId,
-                   String targetId,
-                   byte[] jsonBytes,
-                   EtlRetention retention);
+/**
+ * JWT Verifier and parser for Cognito tokens.
+ */
+public interface CognitoJwtVerifier {
 
-    void setTableDefinition(String customerId,
-                            String targetId,
-                            DataFormat dataFormat,
-                            String schemaDefinition,
-                            EtlRetention retention);
+    Optional<VerifiedCognitoJwt> verify(String accessToken) throws JWTVerificationException;
+
+    @Value
+    @RegisterForReflection
+    class VerifiedCognitoJwt {
+
+        @Nonnull
+        String username;
+
+        @Nonnull
+        ImmutableSet<String> groupNames;
+    }
 }

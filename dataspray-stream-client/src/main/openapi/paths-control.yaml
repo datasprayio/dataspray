@@ -114,7 +114,7 @@ components:
         lastUpdateStatusReason:
           type: string
 
-/code/upload:
+/organization/{organizationName}/control/code/upload:
   put:
     operationId: uploadCode
     tags: [ Control ]
@@ -132,10 +132,16 @@ components:
             schema:
               $ref: '#/components/schemas/UploadCodeResponse'
 
-/control/status:
+/organization/{organizationName}/control/status:
   get:
     operationId: statusAll
     tags: [ Control ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         description: Ok
@@ -143,11 +149,16 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskStatuses'
-/control/task/{taskId}/status/:
+/organization/{organizationName}/control/task/{taskId}/status/:
   get:
     operationId: status
     tags: [ Control ]
     parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
       - name: taskId
         in: path
         required: true
@@ -160,11 +171,16 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskStatus'
-/control/task/{taskId}/deploy:
+/organization/{organizationName}/control/task/{taskId}/deploy:
   patch:
     operationId: deployVersion
     tags: [ Control ]
     parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
       - name: taskId
         in: path
         required: true
@@ -183,11 +199,16 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskVersion'
-/control/task/{taskId}/versions:
+/organization/{organizationName}/control/task/{taskId}/versions:
   get:
     operationId: getVersions
     tags: [ Control ]
     parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
       - name: taskId
         in: path
         required: true
@@ -200,11 +221,16 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskVersions'
-/control/task/{taskId}/activate:
+/organization/{organizationName}/control/task/{taskId}/activate:
   patch:
     operationId: activateVersion
     tags: [ Control ]
     parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
       - name: taskId
         in: path
         required: true
@@ -222,11 +248,16 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskStatus'
-/control/task/{taskId}/pause:
+/organization/{organizationName}/control/task/{taskId}/pause:
   patch:
     operationId: pause
     tags: [ Control ]
     parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
       - name: taskId
         in: path
         required: true
@@ -239,11 +270,16 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskStatus'
-/control/task/{taskId}/resume:
+/organization/{organizationName}/control/task/{taskId}/resume:
   patch:
     operationId: resume
     tags: [ Control ]
     parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
       - name: taskId
         in: path
         required: true
@@ -256,11 +292,16 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskStatus'
-/control/task/{taskId}/delete:
+/organization/{organizationName}/control/task/{taskId}/delete:
   delete:
     operationId: delete
     tags: [ Control ]
     parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
       - name: taskId
         in: path
         required: true

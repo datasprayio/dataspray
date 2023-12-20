@@ -25,7 +25,7 @@ package io.dataspray.cdk.stream.ingest;
 import com.google.common.collect.ImmutableList;
 import io.dataspray.cdk.web.LambdaWebStack;
 import io.dataspray.common.DeployEnvironment;
-import io.dataspray.store.AccountStore;
+import io.dataspray.store.UserStore;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.Duration;
@@ -84,13 +84,13 @@ public class IngestStack extends LambdaWebStack {
                 .autoDeleteObjects(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 // Add different expiry for each retention prefix
-                .lifecycleRules(Arrays.stream(AccountStore.EtlRetention.values()).map(retention -> LifecycleRule.builder()
+                .lifecycleRules(Arrays.stream(UserStore.EtlRetention.values()).map(retention -> LifecycleRule.builder()
                         .id(retention.name())
                         .expiration(Duration.days(retention.getExpirationInDays()))
                         .prefix(ETL_BUCKET_RETENTION_PREFIX + retention.name())
                         .build()).collect(Collectors.toList()))
                 // Move objects to archive after inactivity to save costs
-                .intelligentTieringConfigurations(Arrays.stream(AccountStore.EtlRetention.values())
+                .intelligentTieringConfigurations(Arrays.stream(UserStore.EtlRetention.values())
                         // Only makes sense for data stored for more than 4 months (migrated after 3)
                         .filter(retention -> retention.getExpirationInDays() > 120)
                         .map(retention -> IntelligentTieringConfiguration.builder()
@@ -126,7 +126,7 @@ public class IngestStack extends LambdaWebStack {
                                         "ParameterValue", "JQ-1.6"),
                                 Map.of("ParameterName", "MetadataExtractionQuery",
                                         "ParameterValue", "{" +
-                                                          Stream.of(ETL_PARTITION_KEY_RETENTION, ETL_PARTITION_KEY_ACCOUNT, ETL_PARTITION_KEY_TARGET)
+                                                          Stream.of(ETL_PARTITION_KEY_RETENTION, ETL_PARTITION_KEY_ORGANIZATION, ETL_PARTITION_KEY_TARGET)
                                                                   .map(key -> key + ":." + key)
                                                                   .collect(Collectors.joining(","))
                                                           + "}"))))));
