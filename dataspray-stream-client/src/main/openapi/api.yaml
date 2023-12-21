@@ -52,5 +52,5 @@ paths:
     $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1resume'
   /organization/{organizationName}/control/task/{taskId}/delete:
     $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1delete'
-  /organization/{organizationName}/{accountId}/target/{targetId}/message:
+  /organization/{organizationName}/target/{targetId}/message:
     $ref: 'paths-ingest.yaml#/~1organization~1{organizationName}~1target~1{targetId}~1message'

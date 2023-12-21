@@ -24,15 +24,24 @@ package io.dataspray.stream.client;
 
 import io.dataspray.stream.control.client.ControlApi;
 import io.dataspray.stream.ingest.client.IngestApi;
+import lombok.Value;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 
 public interface StreamApi {
 
-    IngestApi ingest(String apiKey);
+    IngestApi ingest(Organization organization);
 
-    ControlApi control(String apiKey);
+    ControlApi control(Organization organization);
 
     void uploadCode(String presignedUrl, File file) throws IOException;
+
+    @Value
+    class Organization {
+        String name;
+        String apiKey;
+        Optional<String> endpoint;
+    }
 }

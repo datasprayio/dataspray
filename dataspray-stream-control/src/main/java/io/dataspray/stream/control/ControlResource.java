@@ -42,6 +42,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
 
 import java.util.Optional;
@@ -54,26 +55,30 @@ import static io.dataspray.stream.control.model.TaskStatus.StatusEnum.NOTFOUND;
 @ApplicationScoped
 public class ControlResource extends AbstractResource implements ControlApi {
 
+    public static final String DATASPRAY_API_ENDPOINT_PROP_NAME = "dataspray.api.endpoint";
+    @ConfigProperty(name = DATASPRAY_API_ENDPOINT_PROP_NAME)
+    Optional<String> datasprayApiEndpoint;
+
     @Inject
     LambdaDeployer deployer;
 
     @Override
-    public TaskStatus activateVersion(String taskId, String version) {
-        deployer.switchVersion(getCustomerId(), taskId, version);
-        return getStatus(getCustomerId(), taskId);
+    public TaskStatus activateVersion(String organizationName, String taskId, String version) {
+        deployer.switchVersion(organizationName, taskId, version);
+        return getStatus(organizationName, taskId);
     }
 
     @Override
-    public TaskStatus delete(String taskId) {
-        deployer.delete(getCustomerId(), taskId);
-        return getStatus(getCustomerId(), taskId);
+    public TaskStatus delete(String organizationName, String taskId) {
+        deployer.delete(organizationName, taskId);
+        return getStatus(organizationName, taskId);
     }
 
     @Override
-    public TaskVersion deployVersion(String taskId, DeployRequest deployRequest) {
+    public TaskVersion deployVersion(String organizationName, String taskId, DeployRequest deployRequest) {
         DeployedVersion deployedVersion = deployer.deployVersion(
-                getCustomerId(),
-                getCustomerApiKey(),
+                organizationName,
+                datasprayApiEndpoint,
                 taskId,
                 deployRequest.getCodeUrl(),
                 deployRequest.getHandler(),
@@ -92,8 +97,8 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     @Override
-    public TaskVersions getVersions(String taskId) {
-        Versions versions = deployer.getVersions(getCustomerId(), taskId);
+    public TaskVersions getVersions(String organizationName, String taskId) {
+        Versions versions = deployer.getVersions(organizationName, taskId);
         return new TaskVersions(
                 toTaskStatus(taskId, Optional.of(versions.getStatus())),
                 versions.getTaskByVersion().values().stream()
@@ -105,37 +110,37 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     @Override
-    public TaskStatus pause(String taskId) {
-        deployer.pause(getCustomerId(), taskId);
-        return getStatus(getCustomerId(), taskId);
+    public TaskStatus pause(String organizationName, String taskId) {
+        deployer.pause(organizationName, taskId);
+        return getStatus(organizationName, taskId);
     }
 
     @Override
-    public TaskStatus resume(String taskId) {
-        deployer.resume(getCustomerId(), taskId);
-        return getStatus(getCustomerId(), taskId);
+    public TaskStatus resume(String organizationName, String taskId) {
+        deployer.resume(organizationName, taskId);
+        return getStatus(organizationName, taskId);
     }
 
     @Override
-    public TaskStatus status(String taskId) {
-        return getStatus(getCustomerId(), taskId);
+    public TaskStatus status(String organizationName, String taskId) {
+        return getStatus(organizationName, taskId);
     }
 
     @Override
-    public TaskStatuses statusAll() {
-        return new TaskStatuses(deployer.statusAll(getCustomerId()).stream()
+    public TaskStatuses statusAll(String organizationName) {
+        return new TaskStatuses(deployer.statusAll(organizationName).stream()
                 .map(status -> toTaskStatus(status.getTaskId(), Optional.of(status)))
                 .collect(Collectors.toList()));
     }
 
     @Override
-    public UploadCodeResponse uploadCode(UploadCodeRequest uploadCodeRequest) {
-        UploadCodeClaim uploadCodeClaim = deployer.uploadCode(getCustomerId(), uploadCodeRequest.getTaskId(), uploadCodeRequest.getContentLengthBytes());
+    public UploadCodeResponse uploadCode(String organizationName, UploadCodeRequest uploadCodeRequest) {
+        UploadCodeClaim uploadCodeClaim = deployer.uploadCode(organizationName, uploadCodeRequest.getTaskId(), uploadCodeRequest.getContentLengthBytes());
         return new UploadCodeResponse(uploadCodeClaim.getPresignedUrl(), uploadCodeClaim.getCodeUrl());
     }
 
-    private TaskStatus getStatus(String customerId, String taskId) {
-        return toTaskStatus(taskId, deployer.status(customerId, taskId));
+    private TaskStatus getStatus(String organizationName, String taskId) {
+        return toTaskStatus(taskId, deployer.status(organizationName, taskId));
     }
 
     private TaskStatus toTaskStatus(String taskId, Optional<Status> statusOpt) {

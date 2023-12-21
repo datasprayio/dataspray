@@ -84,6 +84,11 @@ public interface ApiAccessStore {
         @NonNull
         String organizationName;
 
+//        TODO add differentiation on who owns this api key:
+//         1/ processor and version
+//         2/ user of an organization
+        TODO
+
         @NonNull
         Long usageKeyTypeId;
 

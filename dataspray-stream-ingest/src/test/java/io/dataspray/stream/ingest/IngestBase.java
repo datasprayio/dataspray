@@ -28,8 +28,8 @@ import io.dataspray.common.test.aws.AbstractLambdaTest;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.store.UserStore;
 import io.dataspray.store.impl.DynamoApiGatewayApiAccessStore;
-import io.dataspray.store.impl.FirehoseS3AthenaEtlStore;
-import io.dataspray.store.impl.SqsQueueStore;
+import io.dataspray.store.impl.FirehoseS3AthenaBatchStore;
+import io.dataspray.store.impl.SqsStreamStore;
 import io.quarkus.test.common.QuarkusTestResource;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.Response;
@@ -59,7 +59,7 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 
-import static io.dataspray.store.impl.FirehoseS3AthenaEtlStore.*;
+import static io.dataspray.store.impl.FirehoseS3AthenaBatchStore.*;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -103,7 +103,7 @@ public abstract class IngestBase extends AbstractLambdaTest {
                 .extendedS3DestinationConfiguration(ExtendedS3DestinationConfiguration.builder()
                         .bucketARN("arn:aws:s3:::" + bucketName)
                         .compressionFormat(CompressionFormat.ZIP)
-                        .prefix(FirehoseS3AthenaEtlStore.ETL_BUCKET_PREFIX)
+                        .prefix(FirehoseS3AthenaBatchStore.ETL_BUCKET_PREFIX)
                         .bufferingHints(BufferingHints.builder()
                                 .intervalInSeconds(0).build())
                         .build())
@@ -124,7 +124,7 @@ public abstract class IngestBase extends AbstractLambdaTest {
 
         // Assert message is in queue
         String queueUrl = "https://sqs.us-east-1.amazonaws.com/479823472389/"
-                          + SqsQueueStore.CUSTOMER_QUEUE_PREFIX + customerId + "-" + targetId;
+                          + SqsStreamStore.CUSTOMER_QUEUE_PREFIX + customerId + "-" + targetId;
         List<Message> messages = getSqsClient().receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(queueUrl)
                 .maxNumberOfMessages(10).build()).messages();

@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 @ApplicationScoped
 public class AuthorizerConstants {
 
-    public static final String CONTEXT_KEY_ACCOUNT_ID = "accountId";
+    public static final String CONTEXT_KEY_ORGANIZATION_NAMES = "organizationName";
     public static final String CONTEXT_KEY_APIKEY_VALUE = "apiKey";
 
     private AuthorizerConstants() {

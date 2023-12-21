@@ -85,6 +85,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     void init() {
         apiAccessByApiKeyCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(Duration.ofMinutes(1))
+                .maximumSize(1000)
                 .build();
 
         apiAccessSchema = singleTable.parseTableSchema(ApiAccess.class);

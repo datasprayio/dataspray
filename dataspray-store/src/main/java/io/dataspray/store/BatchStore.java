@@ -22,19 +22,19 @@
 
 package io.dataspray.store;
 
-import io.dataspray.store.OrganizationStore.EtlRetention;
+import io.dataspray.store.TargetStore.BatchRetention;
 import software.amazon.awssdk.services.glue.model.DataFormat;
 
-public interface EtlStore {
+public interface BatchStore {
 
     void putRecord(String customerId,
                    String targetId,
                    byte[] jsonBytes,
-                   EtlRetention retention);
+                   BatchRetention retention);
 
     void setTableDefinition(String customerId,
                             String targetId,
                             DataFormat dataFormat,
                             String schemaDefinition,
-                            EtlRetention retention);
+                            BatchRetention retention);
 }

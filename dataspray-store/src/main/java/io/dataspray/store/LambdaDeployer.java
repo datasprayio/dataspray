@@ -39,8 +39,8 @@ import java.util.Optional;
 public interface LambdaDeployer {
 
     DeployedVersion deployVersion(
-            String customerId,
-            String customerApiKey,
+            String organizationName,
+            Optional<String> apiEndpointOpt,
             String taskId,
             String codeUrl,
             String handler,
@@ -48,19 +48,19 @@ public interface LambdaDeployer {
             String runtimeStr,
             boolean switchToImmediately);
 
-    void switchVersion(String customerId, String taskId, String version);
+    void switchVersion(String organizationName, String taskId, String version);
 
-    Versions getVersions(String customerId, String taskId);
+    Versions getVersions(String organizationName, String taskId);
 
-    Optional<Status> status(String customerId, String taskId);
+    Optional<Status> status(String organizationName, String taskId);
 
-    ImmutableList<Status> statusAll(String customerId);
+    ImmutableList<Status> statusAll(String organizationName);
 
-    void pause(String customerId, String taskId);
+    void pause(String organizationName, String taskId);
 
-    void resume(String customerId, String taskId);
+    void resume(String organizationName, String taskId);
 
-    void delete(String customerId, String taskId);
+    void delete(String organizationName, String taskId);
 
     UploadCodeClaim uploadCode(String customerId, String taskId, long contentLengthBytes);
 

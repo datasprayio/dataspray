@@ -80,10 +80,6 @@
         </dependency>
         <dependency>
             <groupId>software.amazon.awscdk</groupId>
-            <artifactId>apigatewayv2-alpha</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awscdk</groupId>
             <artifactId>kinesisfirehose-alpha</artifactId>
         </dependency>
         <dependency>

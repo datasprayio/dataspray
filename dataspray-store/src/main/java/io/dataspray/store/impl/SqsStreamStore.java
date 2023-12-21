@@ -23,7 +23,8 @@
 package io.dataspray.store.impl;
 
 import com.google.common.base.Charsets;
-import io.dataspray.store.QueueStore;
+import io.dataspray.store.CustomerLogger;
+import io.dataspray.store.StreamStore;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.MediaType;
@@ -47,7 +48,7 @@ import static io.dataspray.store.impl.LambdaDeployerImpl.LAMBDA_DEFAULT_TIMEOUT;
 
 @Slf4j
 @ApplicationScoped
-public class SqsQueueStore implements QueueStore {
+public class SqsStreamStore implements StreamStore {
     public static final String CUSTOMER_QUEUE_PREFIX = "customer-";
     // ARN with queue name wildcard is supported:
     // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-basic-examples-of-iam-policies.html
@@ -60,11 +61,13 @@ public class SqsQueueStore implements QueueStore {
 
     @Inject
     SqsClient sqsClient;
+    @Inject
+    CustomerLogger customerLog;
 
     private final Encoder base64Encoder = Base64.getEncoder();
 
     @Override
-    public void submit(String customerId, String queueName, byte[] messageBytes, MediaType contentType) {
+    public void submit(String organizationName, String streamName, byte[] messageBytes, MediaType contentType) {
         // Since SQS accepts messages as String, convert each message appropriately
         final String messageStr;
         switch (contentType.toString()) {
@@ -76,7 +79,7 @@ public class SqsQueueStore implements QueueStore {
             // Binary messages send as base64
             default:
                 log.warn("Unknown content type {} received from accountId {} queue {}, sending as base64",
-                        contentType, customerId, queueName);
+                        contentType, organizationName, streamName);
             case "application/octet-stream":
             case "application/avro":
             case "application/protobuf":
@@ -84,17 +87,29 @@ public class SqsQueueStore implements QueueStore {
                 break;
         }
 
+        try {
+            sendMessage(organizationName, streamName, messageStr);
+        } catch (QueueDoesNotExistException ex) {
+            // If the queue does not exist, create it
+            createStream(organizationName, streamName);
+
+            // and retry
+            sendMessage(organizationName, streamName, messageStr);
+        }
+    }
+
+    private void sendMessage(String organizationName, String streamName, String messageStr) {
         sqsClient.sendMessage(SendMessageRequest.builder()
-                .queueUrl(getAwsQueueUrl(customerId, queueName))
+                .queueUrl(getAwsQueueUrl(organizationName, streamName))
                 .messageBody(messageStr)
                 .build());
     }
 
     @Override
-    public boolean queueExists(String customerId, String queueName) {
+    public boolean streamExists(String organizationName, String streamName) {
         try {
             sqsClient.getQueueUrl(GetQueueUrlRequest.builder()
-                    .queueName(getAwsQueueName(customerId, queueName))
+                    .queueName(getAwsQueueName(organizationName, streamName))
                     .build());
             return true;
         } catch (QueueDoesNotExistException ex) {
@@ -103,10 +118,10 @@ public class SqsQueueStore implements QueueStore {
     }
 
     @Override
-    public Optional<Map<QueueAttributeName, String>> queueAttributes(String customerId, String queueName, QueueAttributeName... fetchAttributes) {
+    public Optional<Map<QueueAttributeName, String>> queueAttributes(String organizationName, String queueName, QueueAttributeName... fetchAttributes) {
         try {
             return Optional.of(sqsClient.getQueueAttributes(GetQueueAttributesRequest.builder()
-                    .queueUrl(getAwsQueueUrl(customerId, queueName))
+                    .queueUrl(getAwsQueueUrl(organizationName, queueName))
                     .attributeNames(fetchAttributes)
                     .build()).attributes());
         } catch (QueueDoesNotExistException ex) {
@@ -115,15 +130,15 @@ public class SqsQueueStore implements QueueStore {
     }
 
     @Override
-    public void createQueue(String customerId, String queueName) {
+    public void createStream(String organizationName, String streamName) {
         CreateQueueResponse queueResponse = sqsClient.createQueue(CreateQueueRequest.builder()
-                .queueName(getAwsQueueName(customerId, queueName))
+                .queueName(getAwsQueueName(organizationName, streamName))
                 .attributes(Map.of(
                         // Queue visibility timeout cannot be less than function timeout
                         QueueAttributeName.VISIBILITY_TIMEOUT, Integer.toString(LAMBDA_DEFAULT_TIMEOUT),
                         QueueAttributeName.MESSAGE_RETENTION_PERIOD, String.valueOf(14 * 24 * 60 * 60)))
                 .build());
-        log.info("Created queue {} for customer {}", queueName, customerId);
+        customerLog.info("Created new queue " + streamName, organizationName);
     }
 
     public String getAwsQueueUrl(String customerId, String queueName) {
@@ -133,13 +148,13 @@ public class SqsQueueStore implements QueueStore {
     }
 
     @Override
-    public String getAwsQueueName(String customerId, String queueName) {
-        return CUSTOMER_QUEUE_PREFIX + customerId + "-" + queueName;
+    public String getAwsQueueName(String organizationName, String streamName) {
+        return CUSTOMER_QUEUE_PREFIX + organizationName + "-" + streamName;
     }
 
     @Override
-    public Optional<String> extractQueueNameFromAwsQueueName(String customerId, String awsQueueName) {
-        String prefix = CUSTOMER_QUEUE_PREFIX + customerId + "-";
+    public Optional<String> extractStreamNameFromAwsQueueName(String organizationName, String awsQueueName) {
+        String prefix = CUSTOMER_QUEUE_PREFIX + organizationName + "-";
         return awsQueueName.startsWith(prefix)
                 ? Optional.of(awsQueueName.substring(prefix.length()))
                 : Optional.empty();

@@ -22,9 +22,38 @@
 
 package io.dataspray.core.cli;
 
+import com.google.common.collect.ImmutableList;
+import lombok.Value;
+
+import java.util.Optional;
+
 public interface CliConfig {
 
-    String getDataSprayApiKey();
+    ConfigState getConfigState();
 
-    void setDataSprayApiKey(String apiKey);
+    /**
+     * Get API Key.
+     * <p>
+     * Organization is determined in the following order:
+     *     <ol>
+     *         <li>Organization name passed as parameter</li>
+     *         <li>Organization name from environment variable</li>
+     *         <li>Organization name defined as default</li>
+     *         </ol>
+     * </p>
+     */
+    Organization getOrganization(Optional<String> organizationOpt);
+
+    void setOrganization(String organizationName, String apiKey, Optional<String> endpointOpt);
+
+    Optional<String> getDefaultOrganization();
+
+    void setDefaultOrganization(String organizationName);
+
+    @Value
+    class ConfigState {
+        String configFilePath;
+        Optional<String> defaultOrganization;
+        ImmutableList<Organization> organizations;
+    }
 }

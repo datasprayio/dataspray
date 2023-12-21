@@ -23,6 +23,7 @@
 package io.dataspray.web.resource;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.quarkus.amazon.lambda.http.model.AwsProxyRequest;
 import jakarta.ws.rs.Path;
@@ -62,12 +63,15 @@ public abstract class AbstractResource {
     @Context
     protected UriInfo uriInfo;
 
-    protected String getCustomerId() {
-        return proxyRequest.getRequestContext().getAuthorizer().getContextValue(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID);
-    }
-
-    protected String getCustomerApiKey() {
-        return proxyRequest.getRequestContext().getAuthorizer().getContextValue(AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE);
+    protected ImmutableSet<String> getOrganizationNames() {
+        return Optional.ofNullable(Strings.emptyToNull(proxyRequest
+                        .getRequestContext()
+                        .getAuthorizer()
+                        .getContextValue(AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES)))
+                .stream()
+                .flatMap(names -> ImmutableSet.copyOf(names.split(",")).stream())
+                .filter(Predicate.not(Strings::isNullOrEmpty))
+                .collect(ImmutableSet.toImmutableSet());
     }
 
     protected Optional<String> getAuthKey() {

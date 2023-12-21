@@ -33,12 +33,7 @@ public class ExampleResource extends AbstractResource implements ExampleApi {
     }
 
     @Override
-    public String customerId() {
-        return getCustomerId();
-    }
-
-    @Override
-    public String customerApiKey() {
-        return getCustomerApiKey();
+    public String organizationName() {
+        return getOrganizationNames();
     }
 }

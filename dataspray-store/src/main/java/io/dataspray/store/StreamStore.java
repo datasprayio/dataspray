@@ -28,20 +28,20 @@ import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import java.util.Map;
 import java.util.Optional;
 
-public interface QueueStore {
+public interface StreamStore {
 
-    void submit(String customerId, String queueName, byte[] messageBytes, MediaType contentType);
+    void submit(String organizationName, String streamName, byte[] messageBytes, MediaType contentType);
 
     /** Check whether queue exists */
-    boolean queueExists(String customerId, String queueName);
+    boolean streamExists(String organizationName, String streamName);
 
     /** Check queue attributes */
-    Optional<Map<QueueAttributeName, String>> queueAttributes(String customerId, String queueName, QueueAttributeName... fetchAttributes);
+    Optional<Map<QueueAttributeName, String>> queueAttributes(String organizationName, String queueName, QueueAttributeName... fetchAttributes);
 
-    void createQueue(String customerId, String queueName);
+    void createStream(String organizationName, String streamName);
 
     /** Converts user supplied queue name to AWS queue name */
-    String getAwsQueueName(String customerId, String queueName);
+    String getAwsQueueName(String organizationName, String streamName);
 
-    Optional<String> extractQueueNameFromAwsQueueName(String customerId, String awsQueueName);
+    Optional<String> extractStreamNameFromAwsQueueName(String organizationName, String awsQueueName);
 }

@@ -112,7 +112,7 @@ abstract class AuthorizerBase {
                     response.statusCode(200)
                             .body("principalId", equalTo(apiAccess.getOrganizationName()))
                             .body("usageIdentifierKey", equalTo(apiAccessOpt.flatMap(ApiAccess::getUsageKey).orElse(null)))
-                            .body("context." + AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID, equalTo(apiAccess.getOrganizationName()))
+                            .body("context." + AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, equalTo(apiAccess.getOrganizationName()))
                             .body("context." + AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE, equalTo(apiAccess.getApiKey()))
                             .body("policyDocument", jsonStringEqualTo(ResourceUtil.getTestResource(
                                     testType == TestType.AUTHORIZED_QUEUE_WHITELIST

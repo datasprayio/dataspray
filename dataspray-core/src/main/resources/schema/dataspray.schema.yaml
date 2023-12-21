@@ -14,7 +14,7 @@ properties:
   version:
     description: Version of DataSpray definition
     enum:
-      - V1.0.0
+      - V0.0.0
   name:
     description: Project name
     type: string

@@ -60,7 +60,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
     @Override
     @SneakyThrows
-    public void statusAll(String apiKey, Project project) {
+    public void statusAll(Organization organization, Project project) {
         streamApi.control(apiKey).statusAll()
                 .getTasks()
                 .forEach(this::printStatus);
@@ -68,7 +68,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
     @Override
     @SneakyThrows
-    public void status(String apiKey, Project project, String processorName) {
+    public void status(Organization organization, Project project, String processorName) {
         if (project.getDefinition().getJavaProcessors().stream()
                 .map(Item::getName)
                 .noneMatch(processorName::equals)) {
@@ -79,7 +79,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
     }
 
     @Override
-    public void deploy(String apiKey, Project project, String processorName, boolean activateVersion) {
+    public void deploy(Organization organization, Project project, String processorName, boolean activateVersion) {
         Processor processor = project.getProcessorByName(processorName);
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
@@ -100,7 +100,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
     @Override
     @SneakyThrows
-    public String upload(String apiKey, Project project, String processorName, File codeZipFile) {
+    public String upload(Organization organization, Project project, String processorName, File codeZipFile) {
         Processor processor = project.getProcessorByName(processorName);
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
@@ -123,7 +123,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
     @Override
     @SneakyThrows
-    public String publish(String apiKey, Project project, String processorName, String codeUrl, boolean activateVersion) {
+    public String publish(Organization organization, Project project, String processorName, String codeUrl, boolean activateVersion) {
         Processor processor = project.getProcessorByName(processorName);
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
@@ -157,7 +157,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
     @Override
     @SneakyThrows
-    public TaskStatus activateVersion(String apiKey, Project project, String processorName, String version) {
+    public TaskStatus activateVersion(Organization organization, Project project, String processorName, String version) {
         Processor processor = project.getProcessorByName(processorName);
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
@@ -172,7 +172,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
     @Override
     @SneakyThrows
-    public TaskStatus pause(String apiKey, Project project, String processorName) {
+    public TaskStatus pause(Organization organization, Project project, String processorName) {
         Processor processor = project.getProcessorByName(processorName);
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
@@ -187,7 +187,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
     @Override
     @SneakyThrows
-    public TaskStatus resume(String apiKey, Project project, String processorName) {
+    public TaskStatus resume(Organization organization, Project project, String processorName) {
         Processor processor = project.getProcessorByName(processorName);
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
@@ -202,7 +202,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
     @Override
     @SneakyThrows
-    public TaskVersions listVersions(String apiKey, Project project, String processorName) {
+    public TaskVersions listVersions(Organization organization, Project project, String processorName) {
         Processor processor = project.getProcessorByName(processorName);
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
@@ -215,7 +215,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
     @Override
     @SneakyThrows
-    public TaskStatus delete(String apiKey, Project project, String processorName) {
+    public TaskStatus delete(Organization organization, Project project, String processorName) {
         Processor processor = project.getProcessorByName(processorName);
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());

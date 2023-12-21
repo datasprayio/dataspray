@@ -118,8 +118,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                     principalId,
                     policyDocument,
                     apiAccess.getUsageKey(),
-                    Map.of(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID, apiAccess.getAccountId(),
-                            AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE, apiAccess.getApiKey()));
+                    Map.of(AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", organizationNames)));
         } catch (ApiGatewayUnauthorized ex) {
             log.info("Client unauthorized: {}", ex.getReason());
             throw ex;
@@ -144,7 +143,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                 .addResource(Statement.getExecuteApiArn(region, awsAccountId, restApiId, stage,
                         HttpMethod.ALL, Optional.of(getResourcePathAll()))));
 
-        // For Ingest API, for paths ".../organization/{accountId}/target/{targetId}/...", only allow your own account id
+        // For Ingest API, for paths ".../organization/{organizationName}/target/{targetId}/...", only allow your own account id
         // and whitelisted targets.
         // The idea here is to allow all by default and only deny other accounts (except own account). This can also be
         // accomplished by allowing all except accounts and then allowing own account, having others implicitly denied.

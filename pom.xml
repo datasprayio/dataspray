@@ -40,8 +40,8 @@
         <junit.version>5.8.2</junit.version>
         <projectlombok.version>1.18.30</projectlombok.version>
         <!-- If changed, update aws.sdk.version -->
-        <quarkus.version>3.5.3</quarkus.version>
-        <aws.sdk.version>2.21.17</aws.sdk.version>
+        <quarkus.version>3.6.4</quarkus.version>
+        <aws.sdk.version>2.21.29</aws.sdk.version>
         <!-- If changed, also change in .node-version and .nvmrc -->
         <node.version>v18.16.1</node.version>
         <pnpm.version>v8.6.10</pnpm.version>
@@ -51,11 +51,12 @@
         <!--
             Keep in sync with cdk version used in aws-cdk-maven-plugin (aws.cdk.4j.version)
             https://github.com/datasprayio/aws-cdk-4j/blob/master/pom.xml#L55
-            And also with cdk version used in open-next-cdk
+            And also with cdk version used in open-next-cdk or nextjs-export-cdk whichever is used at the moment:
             https://github.com/datasprayio/open-next-cdk/blob/main/.projenrc.js#L21
+            https://github.com/datasprayio/nextjs-export-cdk/blob/main/.projenrc.ts#L6
         -->
-        <aws.cdk.version>2.105.0</aws.cdk.version>
-        <aws.cdk.4j.version>2.2.4</aws.cdk.4j.version>
+        <aws.cdk.version>2.115.0</aws.cdk.version>
+        <aws.cdk.4j.version>2.2.5</aws.cdk.4j.version>
         <sqlite4java>1.0.392</sqlite4java>
 
         <lambda-native.phase>package</lambda-native.phase>
@@ -319,11 +320,6 @@
             </dependency>
             <dependency>
                 <groupId>software.amazon.awscdk</groupId>
-                <artifactId>apigatewayv2-alpha</artifactId>
-                <version>${aws.cdk.version}-alpha.0</version>
-            </dependency>
-            <dependency>
-                <groupId>software.amazon.awscdk</groupId>
                 <artifactId>kinesisfirehose-alpha</artifactId>
                 <version>${aws.cdk.version}-alpha.0</version>
             </dependency>
@@ -345,7 +341,7 @@
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>next-export-cdk</artifactId>
-                <version>0.0.0</version>
+                <version>0.0.1</version>
             </dependency>
 
             <dependency>
@@ -561,7 +557,7 @@
                     <!-- https://blogs.oracle.com/developers/post/building-cross-platform-native-images-with-graalvm -->
                     <groupId>org.graalvm.buildtools</groupId>
                     <artifactId>native-maven-plugin</artifactId>
-                    <version>0.9.24</version>
+                    <version>0.9.28</version>
                     <extensions>true</extensions>
                     <!--                    <executions>-->
                     <!--                        <execution>-->

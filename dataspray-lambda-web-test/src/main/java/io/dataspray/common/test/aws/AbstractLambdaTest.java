@@ -75,7 +75,7 @@ public abstract class AbstractLambdaTest {
         request.getRequestContext().setHttpMethod(given.getMethod());
         request.getRequestContext().setAuthorizer(new ApiGatewayAuthorizerContext());
         request.getRequestContext().getAuthorizer().setPrincipalId(given.getAccountId());
-        request.getRequestContext().getAuthorizer().setContextValue(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID, given.getAccountId());
+        request.getRequestContext().getAuthorizer().setContextValue(AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, given.getAccountId());
         request.getRequestContext().getAuthorizer().setContextValue(AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE, given.getApiKeyValue());
         Response response = RestAssured.given()
                 .contentType("application/json")

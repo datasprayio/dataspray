@@ -25,9 +25,9 @@ package io.dataspray.store.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.dataspray.store.BatchStore;
 import io.dataspray.store.CustomerLogger;
-import io.dataspray.store.EtlStore;
-import io.dataspray.store.OrganizationStore.EtlRetention;
+import io.dataspray.store.TargetStore.BatchRetention;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
@@ -72,7 +72,7 @@ import java.util.Optional;
 
 @Slf4j
 @ApplicationScoped
-public class FirehoseS3AthenaEtlStore implements EtlStore {
+public class FirehoseS3AthenaBatchStore implements BatchStore {
     public static final String ETL_BUCKET_PROP_NAME = "etl.bucket.name";
     public static final String FIREHOSE_STREAM_NAME_PROP_NAME = "etl.firehose.name";
     public static final String GLUE_CUSTOMER_PREFIX = "customer-";
@@ -82,7 +82,7 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
     public static final String ETL_PARTITION_KEY_TARGET = "_ds_target";
     public static final String ETL_BUCKET_RETENTION_PREFIX_PREFIX = "retention=";
     public static final String ETL_BUCKET_RETENTION_PREFIX = ETL_BUCKET_RETENTION_PREFIX_PREFIX + "!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}";
-    public static final String ETL_BUCKET_ERROR_PREFIX = ETL_BUCKET_RETENTION_PREFIX_PREFIX + EtlRetention.DAY.name() +
+    public static final String ETL_BUCKET_ERROR_PREFIX = ETL_BUCKET_RETENTION_PREFIX_PREFIX + BatchRetention.DAY.name() +
                                                          "/error" +
                                                          "/result=!{firehose:error-output-type}" +
                                                          "/year=!{timestamp:yyyy}" +
@@ -98,8 +98,8 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
                                                    "/day=!{timestamp:dd}" +
                                                    "/hour=!{timestamp:HH}" +
                                                    "/";
-    public static final TriFunction<EtlRetention, String, String, String> ETL_BUCKET_TARGET_PREFIX = (etlRetention, customerId, targetId) -> ETL_BUCKET_PREFIX
-            .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}", etlRetention.name())
+    public static final TriFunction<BatchRetention, String, String, String> ETL_BUCKET_TARGET_PREFIX = (etlBatchRetention, customerId, targetId) -> ETL_BUCKET_PREFIX
+            .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}", etlBatchRetention.name())
             .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}", customerId)
             .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TARGET + "}", targetId);
 
@@ -122,7 +122,7 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
     private final ObjectMapper jsonSerde = new ObjectMapper();
 
     @Override
-    public void putRecord(String customerId, String targetId, byte[] jsonBytes, EtlRetention retention) {
+    public void putRecord(String customerId, String targetId, byte[] jsonBytes, BatchRetention retention) {
         // Parse customer message as JSON
         // TODO Optimization: parse only beginning, look for '{', inject metadata, and copy the rest; fallback to this if parsing fails
         final Map<String, Object> json;
@@ -159,7 +159,7 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
             String targetId,
             DataFormat dataFormat,
             String schemaDefinition,
-            EtlRetention retention) {
+            BatchRetention retention) {
         GetRegistryResponse registry = getOrCreateRegistry(customerId);
 
         String schemaName = getSchemaNameForQueue(targetId);
@@ -234,7 +234,7 @@ public class FirehoseS3AthenaEtlStore implements EtlStore {
             String registryName,
             String schemaName,
             String schemaVersionId,
-            EtlRetention retention) {
+            BatchRetention retention) {
         String tableName = getTableName(customerId, targetId);
         Optional<Table> tablePreviousOpt;
         try {

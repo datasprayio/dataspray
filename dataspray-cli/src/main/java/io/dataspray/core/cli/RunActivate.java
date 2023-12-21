@@ -22,6 +22,7 @@
 
 package io.dataspray.core.cli;
 
+import com.google.common.base.Strings;
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
 import io.dataspray.core.StreamRuntime;
@@ -32,6 +33,8 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
+import java.util.Optional;
+
 @Slf4j
 @Command(name = "activate", description = "Activate a specific version of deployed code for task(s)")
 public class RunActivate implements Runnable {
@@ -41,6 +44,8 @@ public class RunActivate implements Runnable {
     private String taskId;
     @Parameters(arity = "1", paramLabel = "<version>", description = "version to activate; use list command to see available versions")
     private String version;
+    @Option(names = {"-o", "--organization"}, description = "Organization name")
+    private String organizationName;
 
     @Inject
     CommandUtil commandUtil;
@@ -55,6 +60,6 @@ public class RunActivate implements Runnable {
     public void run() {
         Project project = codegen.loadProject();
         commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                streamRuntime.activateVersion(cliConfig.getDataSprayApiKey(), project, selectedTaskId, version));
+                streamRuntime.activateVersion(cliConfig.getOrganization(Optional.ofNullable(Strings.emptyToNull(organizationName))), project, selectedTaskId, version));
     }
 }

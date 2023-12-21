@@ -39,18 +39,40 @@ public class Login implements Runnable {
     @Mixin
     LoggingMixin loggingMixin;
 
-    @Option(names = {"-a", "--apiKey"}, description = "DataSpray API Key")
-    String apiKey;
+    @Option(names = {"-o", "--organization"}, description = "Organization name")
+    private String organizationName;
+    @Option(names = {"-a", "--apiKey"}, description = "API Key")
+    private String apiKey;
+    @Option(names = {"-d", "--default"}, description = "Set as default")
+    private boolean setAsDefault;
 
     @Inject
-    CliConfig cliConfig;
+    private CliConfig cliConfig;
 
     @Override
     public void run() {
-        cliConfig.setDataSprayApiKey(Optional.ofNullable(Strings.emptyToNull(this.apiKey))
-                .or(() -> Optional.ofNullable(System.console().readPassword("Enter value for --apiKey (DataSpray API Key): "))
-                        .map(String::valueOf)
+        String organizationName = Optional.ofNullable(Strings.emptyToNull(this.organizationName))
+                .or(() -> Optional.ofNullable(System.console().readLine("Enter value for --organization (Organization name): "))
+                        .map(String::trim)
                         .filter(Predicate.not(String::isBlank)))
-                .orElseThrow(() -> new RuntimeException("Need to supply api key")));
+                .orElseThrow(() -> new RuntimeException("Need to supply organization name"));
+        String apiKey = Optional.ofNullable(Strings.emptyToNull(this.apiKey))
+                .or(() -> Optional.ofNullable(System.console().readPassword("Enter value for --apiKey (API Key): "))
+                        .map(String::valueOf)
+                        .map(String::trim)
+                        .filter(Predicate.not(String::isBlank)))
+                .orElseThrow(() -> new RuntimeException("Need to supply api key"));
+        cliConfig.setOrganization(organizationName, apiKey);
+        if (setAsDefault || cliConfig.getDefaultOrganization().isEmpty()) {
+            cliConfig.setDefaultOrganization(organizationName);
+        } else {
+            boolean setAsDefaultResponse = Optional.ofNullable(System.console().readLine("Set as --default ? (y/n): "))
+                    .map(String::trim)
+                    .filter("y"::equalsIgnoreCase)
+                    .isPresent();
+            if (setAsDefaultResponse) {
+                cliConfig.setDefaultOrganization(organizationName);
+            }
+        }
     }
 }

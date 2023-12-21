@@ -33,18 +33,16 @@ import io.dataspray.core.definition.model.KafkaStore;
 import io.dataspray.core.definition.model.StreamLink;
 import io.dataspray.runner.StoreType;
 
-import static io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_DEFAULT_STORE_NAME;
-
 public enum SampleProject {
     EMPTY(name -> Definition.builder()
             .name(name)
-            .version(Definition.Version.V_1_0_0)
+            .version(Definition.Version.V_0_0_0)
             .dataFormats(ImmutableSet.of())
             .build()),
     CLOUD(name -> Definition.builder()
             .name(name)
             .namespace("com.example")
-            .version(Definition.Version.V_1_0_0)
+            .version(Definition.Version.V_0_0_0)
             .dataFormats(ImmutableSet.of(
                     DataFormat.builder()
                             .name("register")
@@ -65,25 +63,24 @@ public enum SampleProject {
                             .inputStreams(ImmutableSet.of(
                                     StreamLink.builder()
                                             .storeType(StoreType.DATASPRAY)
-                                            .storeName(DATASPRAY_DEFAULT_STORE_NAME)
+                                            .storeName("default")
                                             .streamName("evt_login")
                                             .build(),
                                     StreamLink.builder()
                                             .storeType(StoreType.DATASPRAY)
-                                            .storeName(DATASPRAY_DEFAULT_STORE_NAME)
+                                            .storeName("default")
                                             .streamName("evt_register")
                                             .build()))
                             .outputStreams(ImmutableSet.of(
                                     StreamLink.builder()
                                             .storeType(StoreType.DATASPRAY)
-                                            .storeName(DATASPRAY_DEFAULT_STORE_NAME)
+                                            .storeName("default")
                                             .streamName("last_ip")
                                             .build()))
                             .build()))
             .datasprayStores(ImmutableSet.of(
                     DatasprayStore.builder()
-                            .name(DATASPRAY_DEFAULT_STORE_NAME)
-                            .customerId(DATASPRAY_DEFAULT_STORE_NAME)
+                            .name("default")
                             .streams(ImmutableSet.of(
                                     DataStream.builder()
                                             .dataFormatName("login")
@@ -102,7 +99,7 @@ public enum SampleProject {
     KAFKA(name -> Definition.builder()
             .name(name)
             .namespace("com.example")
-            .version(Definition.Version.V_1_0_0)
+            .version(Definition.Version.V_0_0_0)
             .dataFormats(ImmutableSet.of(
                     DataFormat.builder()
                             .name("register")
