@@ -100,7 +100,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                 principalId = verifiedCognitoJwt.getUserEmail();
                 organizationNames = verifiedCognitoJwt.getGroupNames();
                 queueWhitelist = ImmutableSet.of();
-                usageKey = apiAccessStore.getUsageKey(verifiedCognitoJwt.getUsageKeyType(), verifiedCognitoJwt.getUserEmail(), organizationNames);
+                usageKey = apiAccessStore.getUsageKey(verifiedCognitoJwt.getUsageKeyType(), Optional.of(verifiedCognitoJwt.getUserEmail()), organizationNames);
                 identifier = "user " + verifiedCognitoJwt.getUserEmail() + " via cognito JWT";
 
             } else if (authorizationValueLower.startsWith("apikey ")) {
@@ -115,7 +115,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                 principalId = apiAccess.getPrincipalId();
                 organizationNames = ImmutableSet.of(apiAccess.getOrganizationName());
                 queueWhitelist = apiAccess.getQueueWhitelist();
-                usageKey = apiAccessStore.getUsageKey(apiAccess.getUsageKeyType(), apiAccess.getOwnerEmail(), ImmutableSet.of(apiAccess.getOrganizationName()));
+                usageKey = apiAccessStore.getUsageKey(apiAccess.getUsageKeyType(), Optional.of(apiAccess.getOwnerEmail()), ImmutableSet.of(apiAccess.getOrganizationName()));
                 switch (apiAccess.getOwnerType()) {
                     case USER -> identifier = "user " + apiAccess.getOwnerEmail() + " via apikey";
                     case TASK ->

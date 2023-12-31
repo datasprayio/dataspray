@@ -22,7 +22,6 @@
 
 package io.dataspray.common.test.aws;
 
-import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.dataspray.common.json.GsonUtil;
 import io.quarkus.amazon.lambda.http.model.ApiGatewayAuthorizerContext;
@@ -48,6 +47,10 @@ import static org.hamcrest.CoreMatchers.equalTo;
 
 @Slf4j
 public abstract class AbstractLambdaTest {
+
+    protected String getOrganizationName() {
+        return "my-org";
+    }
 
     protected AwsResponse<Void> request(Given given) {
         return request(Void.class, given);
@@ -77,7 +80,7 @@ public abstract class AbstractLambdaTest {
         request.getRequestContext().setAuthorizer(new ApiGatewayAuthorizerContext());
         request.getRequestContext().getAuthorizer().setPrincipalId(given.getUserEmail());
         request.getRequestContext().getAuthorizer().setContextValue(AuthorizerConstants.CONTEXT_KEY_USER_EMAIL, String.join(",", given.getUserEmail()));
-        request.getRequestContext().getAuthorizer().setContextValue(AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", given.getOrganizationNames()));
+        request.getRequestContext().getAuthorizer().setContextValue(AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", getOrganizationName()));
         Response response = RestAssured.given()
                 .contentType("application/json")
                 .accept("application/json")
@@ -114,8 +117,6 @@ public abstract class AbstractLambdaTest {
         Object body;
         @Builder.Default
         String userEmail = "user@example.com";
-        @Builder.Default
-        ImmutableSet<String> organizationNames = ImmutableSet.of("123456");
     }
 
 

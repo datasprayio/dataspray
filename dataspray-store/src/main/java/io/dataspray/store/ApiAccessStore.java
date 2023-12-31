@@ -88,7 +88,7 @@ public interface ApiAccessStore {
 
     void getAllUsageKeys(Consumer<ImmutableList<UsageKey>> batchConsumer);
 
-    Optional<String> getUsageKey(UsageKeyType type, String userEmail, ImmutableSet<String> organizationNames);
+    Optional<String> getUsageKey(UsageKeyType type, Optional<String> userEmailOpt, ImmutableSet<String> organizationNames);
 
     @Value
     @AllArgsConstructor
@@ -142,7 +142,7 @@ public interface ApiAccessStore {
     }
 
     /**
-     * Mapping of Account ID to Api Key Amazon ID.
+     * Mapping of organization name to Api Key Amazon ID.
      * <br />
      * An api key has its own Amazon ID that is required for all API calls, hence this mapping.
      */
@@ -156,6 +156,11 @@ public interface ApiAccessStore {
     class UsageKey {
         @NonNull
         String organizationName;
+
+        // TODO:
+        // - We want to store not only organization, but also global api keys, make this a mapping between usageKeyValue and usageKeyId
+        // - Fix up naming convention of usagePlan, usageKey and apiKey.
+        TODO
 
         /**
          * Unique Amazon ID for a given api key.

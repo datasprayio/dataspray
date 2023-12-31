@@ -118,6 +118,12 @@ components:
   put:
     operationId: uploadCode
     tags: [ Control ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:

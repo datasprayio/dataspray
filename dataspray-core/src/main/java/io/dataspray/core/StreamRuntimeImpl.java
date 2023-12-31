@@ -108,7 +108,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
         // First get S3 upload presigned url
         log.info("Requesting permission to upload {}", codeZipFile);
-        UploadCodeResponse uploadCodeResponse = streamApi.control(organization.toAccess()).uploadCode(new UploadCodeRequest()
+        UploadCodeResponse uploadCodeResponse = streamApi.control(organization.toAccess()).uploadCode(organization.getName(), new UploadCodeRequest()
                 .taskId(processor.getTaskId())
                 .contentLengthBytes(codeZipFile.length()));
 

@@ -13,9 +13,7 @@ security:
 components:
   securitySchemes:
     Authorizer:
-      type: apiKey
-      in: header
-      name: Authorization
+      $ref: 'common.yaml#/components/securitySchemes/Authorizer'
 
 paths:
   /ping:

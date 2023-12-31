@@ -62,6 +62,8 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
 
     public static final String USAGE_PLAN_ID_PROP_NAME = "apiAccess.usagePlan.id";
     public static final int API_KEY_LENGTH = 42;
+    /** Usage Key prefix to satisfy req of at least 20 characters */
+    public static final String USAGE_KEY_PREFIX = "dataspray-usage-key-";
 
     @ConfigProperty(name = USAGE_PLAN_ID_PROP_NAME, defaultValue = "unset")
     String usagePlanId;
@@ -238,10 +240,11 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         }
 
         // Create a new API Gateway API Key
+        String apiKey = getUsageKey(UsageKeyType.ORGANIZATION, Optional.empty(), ImmutableSet.of(organizationName))
+                .orElseThrow();
         CreateApiKeyResponse createApiKeyResponse = apiGatewayClient.createApiKey(CreateApiKeyRequest.builder()
                 .name(organizationName)
-                // For organization-wide usage key, the key itself is the organization name
-                .value(organizationName)
+                .value(apiKey)
                 .enabled(true).build());
         CreateUsagePlanKeyResponse createUsagePlanKeyResponse = apiGatewayClient.createUsagePlanKey(CreateUsagePlanKeyRequest.builder()
                 .keyType("API_KEY")
@@ -264,7 +267,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         do {
             ShardPageResult<UsageKey> result = singleTable.fetchShardNextPage(
                     dynamo,
-                    usageKeySchema,
+                    usageKeyByOrganizationSchema,
                     cursorOpt,
                     100);
             cursorOpt = result.getCursorOpt();
@@ -273,17 +276,17 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public Optional<String> getUsageKey(UsageKeyType type, String userEmail, ImmutableSet<String> organizationNames) {
+    public Optional<String> getUsageKey(UsageKeyType type, Optional<String> userEmailOpt, ImmutableSet<String> organizationNames) {
 
         // For organization wide usage key, find the organization name
         Optional<String> organizationNameOpt = Optional.empty();
         if (UsageKeyType.ORGANIZATION.equals(type)) {
             if (organizationNames.isEmpty()) {
                 type = UsageKeyType.GLOBAL;
-                log.info("User {} is not part of any organization, falling back to dataspray-wide usage key", userEmail);
+                log.info("User {} is not part of any organization, falling back to dataspray-wide usage key", userEmailOpt);
             } else if (organizationNames.size() > 1) {
                 organizationNameOpt = Optional.of(organizationNames.stream().sorted().findFirst().get());
-                log.info("User {} is part of multiple organizations, using usage key for {} out of {}", userEmail, organizationNameOpt, organizationNames);
+                log.info("User {} is part of multiple organizations, using usage key for {} out of {}", userEmailOpt, organizationNameOpt, organizationNames);
             } else {
                 // Only part of one organization, use it
                 organizationNameOpt = Optional.of(organizationNames.iterator().next());
@@ -294,8 +297,8 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
             case UNLIMITED -> Optional.empty();
             // Share usage key across all API keys on the same organization.
             // Let's just use the account ID as usage key since it's not a secret.
-            case ORGANIZATION -> Optional.of(type.getId() + "-" + organizationNameOpt.get());
-            case GLOBAL -> Optional.of(type.getId() + "-GLOBAL");
+            case ORGANIZATION -> Optional.of(USAGE_KEY_PREFIX + type.getId() + "-" + organizationNameOpt.get());
+            case GLOBAL -> Optional.of(USAGE_KEY_PREFIX + type.getId() + "-GLOBAL");
             default -> throw new IllegalStateException("Unknown usage key type: " + type);
         };
     }

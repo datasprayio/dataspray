@@ -113,10 +113,10 @@ abstract class AuthorizerBase {
                 case AUTHORIZED_QUEUE_WHITELIST:
                     ApiAccess apiAccess = apiAccessOpt.get();
                     response.statusCode(200)
-                            .body("principalId", equalTo(apiAccess.getOrganizationName()))
+                            .body("principalId", equalTo(apiAccess.getPrincipalId()))
                             .body("usageIdentifierKey", equalTo(switch (apiAccess.getUsageKeyType()) {
-                                case ORGANIZATION -> "1-" + apiAccess.getOrganizationName();
-                                case GLOBAL -> "2-GLOBAL";
+                                case ORGANIZATION -> "dataspray-usage-key-1-" + apiAccess.getOrganizationName();
+                                case GLOBAL -> "dataspray-usage-key-2-GLOBAL";
                                 case UNLIMITED -> null;
                             }))
                             .body("context." + AuthorizerConstants.CONTEXT_KEY_USER_EMAIL, equalTo(apiAccess.getOwnerEmail()))
@@ -145,7 +145,7 @@ abstract class AuthorizerBase {
     static APIGatewayCustomAuthorizerEvent createEvent(String apiKey) {
         APIGatewayCustomAuthorizerEvent event = new APIGatewayCustomAuthorizerEvent();
         event.setMethodArn("arn:aws:execute-api:us-east-1:123456789012:abcdef123/default/$connect");
-        event.setHeaders(ImmutableMap.of(HttpHeaders.AUTHORIZATION, "bearer " + apiKey));
+        event.setHeaders(ImmutableMap.of(HttpHeaders.AUTHORIZATION, "apikey " + apiKey));
         event.setRequestContext(APIGatewayCustomAuthorizerEvent.RequestContext.builder()
                 .withAccountId("000000000001") // AWS account id
                 .withApiId("api-id")

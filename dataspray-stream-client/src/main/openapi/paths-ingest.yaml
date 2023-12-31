@@ -10,7 +10,7 @@ components:
     operationId: message
     tags: [ Ingest ]
     parameters:
-      - name: accountId
+      - name: organizationName
         in: path
         required: true
         schema:
