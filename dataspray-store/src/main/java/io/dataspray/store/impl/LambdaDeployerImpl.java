@@ -31,6 +31,7 @@ import com.google.gson.Gson;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.common.StringUtil;
 import io.dataspray.store.ApiAccessStore;
+import io.dataspray.store.ApiAccessStore.ApiAccess;
 import io.dataspray.store.LambdaDeployer;
 import io.dataspray.store.StreamStore;
 import io.dataspray.store.util.WaiterUtil;
@@ -71,6 +72,7 @@ import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionRespon
 import software.amazon.awssdk.services.lambda.model.PackageType;
 import software.amazon.awssdk.services.lambda.model.ResourceConflictException;
 import software.amazon.awssdk.services.lambda.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.lambda.model.Runtime;
 import software.amazon.awssdk.services.lambda.model.SnapStart;
 import software.amazon.awssdk.services.lambda.model.SnapStartApplyOn;
 import software.amazon.awssdk.services.lambda.model.UpdateAliasRequest;
@@ -154,12 +156,13 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     @Override
     public DeployedVersion deployVersion(
             String organizationName,
+            String userEmail,
             Optional<String> apiEndpointOpt,
             String taskId,
             String codeUrl,
             String handler,
             ImmutableSet<String> queueNames,
-            String runtimeStr,
+            Runtime runtime,
             boolean switchToImmediately) {
 
         String functionName = getFunctionName(organizationName, taskId);
@@ -221,24 +224,21 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                                 ))))));
 
         // Determine SnapStart setting
-        final SnapStartApplyOn snapStartApplyOn;
-        switch (runtimeStr) {
+        final SnapStartApplyOn snapStartApplyOn = switch (runtime) {
             // Supported runtimes: https://docs.aws.amazon.com/lambda/latest/dg/snapstart.html#snapstart-runtimes
-            case "JAVA11":
-            case "JAVA17":
-            case "JAVA21":
-                snapStartApplyOn = SnapStartApplyOn.PUBLISHED_VERSIONS;
-                break;
-            default:
-                snapStartApplyOn = SnapStartApplyOn.NONE;
-                break;
-        }
+            case JAVA11, JAVA17, JAVA21 -> SnapStartApplyOn.PUBLISHED_VERSIONS;
+            default -> SnapStartApplyOn.NONE;
+        };
+
+        // Generate an API key for task
+        // This key does not yet have any access, that will be persisted later once we know the published task version.
+        String apiKey = apiAccessStore.generateApiKey();
 
         // Create or update function configuration and code
         final String publishedVersion;
         final String publishedDescription = generateVersionDescription(taskId, queueNames);
         ImmutableMap.Builder<String, String> envBuilder = ImmutableMap.<String, String>builder()
-                .put(DATASPRAY_API_KEY_ENV, createApiKeyForTask(organizationName, taskId))
+                .put(DATASPRAY_API_KEY_ENV, apiKey)
                 .put(DATASPRAY_ORGANIZATION_NAME_ENV, organizationName);
         apiEndpointOpt.ifPresent(endpoint -> envBuilder
                 .put(DATASPRAY_ENDPOINT_ENV, endpoint));
@@ -257,7 +257,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                                     .s3Bucket(codeBucketName)
                                     .s3Key(getCodeKeyFromUrl(organizationName, codeUrl))
                                     .build())
-                            .runtime(runtimeStr)
+                            .runtime(runtime)
                             .handler(handler)
                             .environment(env)
                             .memorySize(128)
@@ -281,7 +281,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     // Description always changes with the latest timestamp
                     .description(publishedDescription)
                     .role(functionRoleArn)
-                    .runtime(runtimeStr)
+                    .runtime(runtime)
                     .handler(handler)
                     .environment(env)
                     .snapStart(SnapStart.builder()
@@ -317,6 +317,16 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .build()));
         }
 
+        // Persist the Api Key now that we know the task's published version
+        ApiAccess apiAccess = apiAccessStore.createApiAccessForTask(
+                apiKey,
+                organizationName,
+                userEmail,
+                taskId,
+                publishedVersion,
+                ApiAccessStore.UsageKeyType.ORGANIZATION,
+                Optional.of(queueNames));
+
         // Create active alias if doesn't exist
         boolean aliasAlreadyExists;
         try {
@@ -346,7 +356,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         for (String inputQueueName : queueNames) {
             addQueuePermissionToFunction(organizationName, taskId, publishedVersion, inputQueueName);
         }
-
 
         // In the next section, we need to create new sources disabled OR if we are switching to this version now
         // need to perform the entire switchover now. Firstly we will prepare the new queues, then perform the switchover
@@ -489,10 +498,13 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .skip(2)
                 .mapToObj(String::valueOf)
                 .collect(ImmutableSet.toImmutableSet());
-        taskVersionsToDelete.forEach(taskVersionToDelete -> lambdaClient.deleteFunction(DeleteFunctionRequest.builder()
-                .functionName(functionName)
-                .qualifier(taskVersionToDelete)
-                .build()));
+        taskVersionsToDelete.forEach(taskVersionToDelete -> {
+            lambdaClient.deleteFunction(DeleteFunctionRequest.builder()
+                    .functionName(functionName)
+                    .qualifier(taskVersionToDelete)
+                    .build());
+            apiAccessStore.revokeApiKeyForTaskVersion(organizationName, taskId, taskVersionToDelete);
+        });
 
         return new Versions(
                 activeStatus,
@@ -597,6 +609,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         lambdaClient.deleteFunction(DeleteFunctionRequest.builder()
                 .functionName(getFunctionName(organizationName, taskId))
                 .build());
+        apiAccessStore.revokeApiKeysForTaskId(organizationName, taskId);
     }
 
     @Override
@@ -838,14 +851,5 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         return statementId.startsWith(QUEUE_STATEMENT_ID_PREFIX)
                 ? Optional.of(statementId.substring(QUEUE_STATEMENT_ID_PREFIX.length()))
                 : Optional.empty();
-    }
-
-    private String createApiKeyForTask(String organizationName, String taskId, Set<String> streamNames) {
-        // TODO
-        apiAccessStore.createApiAccess()
-    }
-
-    private void revokeApiKeyForTask(String organizationName, String taskId) {
-        // TODO
     }
 }

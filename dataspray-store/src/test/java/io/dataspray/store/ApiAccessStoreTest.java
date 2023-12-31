@@ -73,54 +73,56 @@ public class ApiAccessStoreTest {
 
     @Test
     public void testSet() throws Exception {
-        String accountId = UUID.randomUUID().toString();
-        ApiAccess apiAccess = apiAccessStore.createApiAccess(
-                accountId,
+        String organizationName = UUID.randomUUID().toString();
+        String userEmail = UUID.randomUUID().toString() + "@example.com";
+        ApiAccess apiAccess = apiAccessStore.createApiAccessForUser(
+                organizationName,
+                userEmail,
                 UsageKeyType.UNLIMITED,
-                "description",
                 Optional.empty(),
                 Optional.empty());
 
-        assertEquals(accountId, apiAccess.getOrganizationName());
+        assertEquals(organizationName, apiAccess.getOrganizationName());
+        assertEquals(userEmail, apiAccess.getOwnerEmail());
         assertEquals(UsageKeyType.UNLIMITED, apiAccess.getUsageKeyType());
-        assertEquals("description", apiAccess.getDescription());
         assertEquals(Set.of(), apiAccess.getQueueWhitelist());
         assertTrue(apiAccess.isTtlNotExpired());
     }
 
     @Test
     public void testSetUsageAccountWide() throws Exception {
-        String accountId = UUID.randomUUID().toString();
-        ApiAccess apiAccess1 = apiAccessStore.createApiAccess(
-                accountId,
+        String organizationName = UUID.randomUUID().toString();
+        String userEmail = UUID.randomUUID().toString() + "@example.com";
+        ApiAccess apiAccess1 = apiAccessStore.createApiAccessForUser(
+                organizationName,
+                userEmail,
                 // Should cause a fetch miss for usage key, then create it
-                UsageKeyType.ORGANIZATION_WIDE,
-                "description",
+                UsageKeyType.ORGANIZATION,
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
 
-        assertTrue(usageKeyExists(accountId));
+        assertTrue(usageKeyExists(organizationName));
         assertEquals(Set.of("queue1", "queue2"), apiAccess1.getQueueWhitelist());
         assertTrue(apiAccess1.isTtlNotExpired());
 
-        ApiAccess apiAccess2 = apiAccessStore.createApiAccess(
-                accountId,
+        ApiAccess apiAccess2 = apiAccessStore.createApiAccessForUser(
+                organizationName,
+                userEmail,
                 // Should fetch the previously created usage key
-                UsageKeyType.ORGANIZATION_WIDE,
-                "description",
+                UsageKeyType.ORGANIZATION,
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
 
-        assertTrue(usageKeyExists(accountId));
+        assertTrue(usageKeyExists(organizationName));
     }
 
     @Test
     public void testCannotCreateExpired() throws Exception {
         Assertions.assertThrows(IllegalArgumentException.class, () ->
-                apiAccessStore.createApiAccess(
+                apiAccessStore.createApiAccessForUser(
                         UUID.randomUUID().toString(),
+                        UUID.randomUUID().toString() + "@example.com",
                         UsageKeyType.UNLIMITED,
-                        "description",
                         Optional.empty(),
                         Optional.of(Instant.now().minusSeconds(10))));
     }
@@ -128,9 +130,7 @@ public class ApiAccessStoreTest {
     @Test
     public void testGetByApiKey() throws Exception {
         ApiAccess apiAccess = createApiAccessInDb(
-                UUID.randomUUID().toString(),
                 UsageKeyType.UNLIMITED,
-                "description",
                 Optional.empty(),
                 Optional.empty());
 
@@ -148,9 +148,7 @@ public class ApiAccessStoreTest {
     @Test
     public void testGetByApiKeyExpired() throws Exception {
         ApiAccess apiAccess = createApiAccessInDb(
-                UUID.randomUUID().toString(),
                 UsageKeyType.UNLIMITED,
-                "description",
                 Optional.empty(),
                 Optional.of(Instant.now().minusSeconds(10)));
 
@@ -165,18 +163,16 @@ public class ApiAccessStoreTest {
     @Test
     public void testGetByAccount() throws Exception {
         ApiAccess apiAccess = createApiAccessInDb(
-                UUID.randomUUID().toString(),
                 UsageKeyType.UNLIMITED,
-                "description",
                 Optional.empty(),
                 Optional.empty());
 
         assertEquals(Set.of(apiAccess), apiAccessStore.getApiAccessesByOrganizationName(apiAccess.getOrganizationName()));
 
-        ApiAccess apiAccess2 = apiAccessStore.createApiAccess(
+        ApiAccess apiAccess2 = apiAccessStore.createApiAccessForUser(
                 apiAccess.getOrganizationName(),
+                apiAccess.getOwnerEmail(),
                 UsageKeyType.UNLIMITED,
-                "description2",
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
 
@@ -188,9 +184,7 @@ public class ApiAccessStoreTest {
     @Test
     public void testGetByAccountExpired() throws Exception {
         ApiAccess apiAccess = createApiAccessInDb(
-                UUID.randomUUID().toString(),
                 UsageKeyType.UNLIMITED,
-                "description",
                 Optional.empty(),
                 Optional.of(Instant.now().minusSeconds(10)));
 
@@ -200,9 +194,7 @@ public class ApiAccessStoreTest {
     @Test
     public void testRevoke() throws Exception {
         ApiAccess apiAccess = createApiAccessInDb(
-                UUID.randomUUID().toString(),
                 UsageKeyType.UNLIMITED,
-                "description",
                 Optional.empty(),
                 Optional.empty());
 
@@ -252,18 +244,19 @@ public class ApiAccessStoreTest {
      * as well as doesn't throw if you try to insert an expired key.
      */
     private ApiAccess createApiAccessInDb(
-            String accountId,
             UsageKeyType usageKeyType,
-            String description,
             Optional<ImmutableSet<String>> queueWhitelistOpt,
             Optional<Instant> expiryOpt) {
 
         // Create access object
         ApiAccess apiAccess = new ApiAccess(
                 keygenUtil.generateSecureApiKey(DynamoApiGatewayApiAccessStore.API_KEY_LENGTH),
-                accountId,
-                usageKeyType.getId(),
-                description,
+                UUID.randomUUID().toString(),
+                ApiAccessStore.OwnerType.USER,
+                UUID.randomUUID() + "user@example.com",
+                null,
+                null,
+                usageKeyType,
                 queueWhitelistOpt.orElseGet(ImmutableSet::of),
                 expiryOpt.map(Instant::getEpochSecond).orElse(null));
 
@@ -279,12 +272,12 @@ public class ApiAccessStoreTest {
         return apiAccess;
     }
 
-    private boolean usageKeyExists(String accountId) {
+    private boolean usageKeyExists(String organizationName) {
         TableSchema<UsageKey> usageKeySchema = singleTable.parseTableSchema(UsageKey.class);
         Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
                 .tableName(usageKeySchema.tableName())
                 .key(usageKeySchema.primaryKey(Map.of(
-                        "accountId", accountId)))
+                        "organizationName", organizationName)))
                 .build()).item()));
         return usageKeyOpt.isPresent();
     }

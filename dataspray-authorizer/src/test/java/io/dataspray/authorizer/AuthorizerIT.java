@@ -60,21 +60,23 @@ class AuthorizerIT extends AuthorizerBase {
 
     /**
      * Since an integration test cannot inject resources even for test setup, this method re-implements
-     * {@link DynamoApiGatewayApiAccessStore#createApiAccess} to add an API key entry in Dynamo.
+     * {@link DynamoApiGatewayApiAccessStore#createApiAccessForUser} to add an API key entry in Dynamo.
      */
     @Override
     protected ApiAccessStore.ApiAccess createApiAccess(
-            String accountId,
+            String organizationName,
             ApiAccessStore.UsageKeyType usageKeyType,
-            String description,
             Optional<ImmutableSet<String>> queueWhitelistOpt,
             Optional<Instant> expiryOpt) {
 
         ApiAccess apiAccess = new ApiAccess(
                 new KeygenUtil().generateSecureApiKey(DynamoApiGatewayApiAccessStore.API_KEY_LENGTH),
-                accountId,
-                usageKeyType.getId(),
-                description,
+                organizationName,
+                ApiAccessStore.OwnerType.USER,
+                "user@example.com",
+                null,
+                null,
+                usageKeyType,
                 queueWhitelistOpt.orElse(ImmutableSet.of()),
                 expiryOpt.map(Instant::getEpochSecond).orElse(null));
         TableSchema<ApiAccess> apiKeySchema = singleTable.parseTableSchema(ApiAccess.class);

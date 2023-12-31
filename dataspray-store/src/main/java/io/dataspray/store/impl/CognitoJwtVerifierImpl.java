@@ -33,6 +33,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.RSAKeyProvider;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
+import io.dataspray.store.ApiAccessStore.UsageKeyType;
 import io.dataspray.store.CognitoJwtVerifier;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +54,15 @@ import static io.dataspray.store.impl.CognitoUserStore.USER_POOL_ID_PROP_NAME;
 @ApplicationScoped
 public class CognitoJwtVerifierImpl implements CognitoJwtVerifier, RSAKeyProvider {
 
+    /**
+     * By default, all Cognito based accesses are organization wide.
+     * <p>
+     * This is just a limitation at the moment as it's not exactly clear how these limits will be enforced.
+     * The current assumption is that trial accounts are limited by organization and future paid accounts will be able
+     * to raise or lift the limit.
+     */
+    private static final UsageKeyType DEFAULT_USAGE_KEY_TYPE_FOR_COGNITO = UsageKeyType.ORGANIZATION;
+
     @ConfigProperty(name = "aws.cognito.productionRegion", defaultValue = "us-east-1")
     String region;
     @ConfigProperty(name = USER_POOL_ID_PROP_NAME)
@@ -62,6 +72,9 @@ public class CognitoJwtVerifierImpl implements CognitoJwtVerifier, RSAKeyProvide
     private volatile Optional<JwkProvider> jwkProvider;
 
     public Optional<VerifiedCognitoJwt> verify(String accessToken) throws JWTVerificationException {
+        // Verify JWT and decode.
+        // The JWT is in the format of a Cognito Access Token defined here:
+        // Docs https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-the-access-token.html#user-pool-access-token-payload
         DecodedJWT rawJwt;
         try {
             rawJwt = jwtVerifier.verify(accessToken);
@@ -71,7 +84,6 @@ public class CognitoJwtVerifierImpl implements CognitoJwtVerifier, RSAKeyProvide
         }
 
         // Fetch all group claims
-        // Docs https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-the-access-token.html#user-pool-access-token-payload
         ImmutableSet<String> groupNames = Optional.ofNullable(rawJwt.getClaim("cognito:groups").asList(String.class))
                 .map(ImmutableSet::copyOf)
                 .orElse(ImmutableSet.of());
@@ -79,7 +91,13 @@ public class CognitoJwtVerifierImpl implements CognitoJwtVerifier, RSAKeyProvide
         // Fetch username
         String username = Strings.nullToEmpty(rawJwt.getClaim("username").asString());
 
-        return Optional.of(new VerifiedCognitoJwt(username, groupNames));
+        // Currently usage key type is static and not inferred from JWT
+        UsageKeyType usageKeyType = DEFAULT_USAGE_KEY_TYPE_FOR_COGNITO;
+
+        return Optional.of(new VerifiedCognitoJwt(
+                username,
+                groupNames,
+                usageKeyType));
     }
 
     @Override

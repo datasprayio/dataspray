@@ -23,6 +23,8 @@
 package io.dataspray.core.cli;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import io.dataspray.core.StreamRuntime.Organization;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration2.INIConfiguration;
@@ -47,9 +49,15 @@ public class CliConfigImpl implements CliConfig {
 
     private Optional<INIConfiguration> iniCacheOpt = Optional.empty();
 
-    @Override
     public ConfigState getConfigState() {
-        // TODO
+        return new ConfigState(
+                CONFIG_FILE,
+                getDefaultOrganization(),
+                getRootConfig().getSections().stream()
+                        .map(this::getOrganization)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .collect(ImmutableList.toImmutableList()));
     }
 
     @Override
@@ -99,8 +107,10 @@ public class CliConfigImpl implements CliConfig {
     }
 
     @Override
-    public void setOrganization(String organizationName, String apiKey) {
-        getOrganizationConfig(organizationName).setProperty(PROPERTY_API_KEY, apiKey);
+    public void setOrganization(String organizationName, String apiKey, Optional<String> endpointOpt) {
+        SubnodeConfiguration organizationConfig = getOrganizationConfig(organizationName);
+        organizationConfig.setProperty(PROPERTY_API_KEY, apiKey);
+        endpointOpt.ifPresent(endpoint -> organizationConfig.setProperty(PROPERTY_ENDPOINT, endpoint));
         save();
         log.info("Saved your API key to {}", CONFIG_FILE);
     }
@@ -152,7 +162,7 @@ public class CliConfigImpl implements CliConfig {
         try (FileWriter writer = new FileWriter(CONFIG_FILE, false)) {
             ini.write(writer);
         } catch (IOException | ConfigurationException ex) {
-            throw new RuntimeException("Failed to write property " + key + " to config file " + CONFIG_FILE, ex);
+            throw new RuntimeException("Failed to write changes to config file " + CONFIG_FILE, ex);
         }
 
         iniCacheOpt = Optional.of(ini);

@@ -33,7 +33,7 @@ public class ExampleResource extends AbstractResource implements ExampleApi {
     }
 
     @Override
-    public String organizationName() {
-        return getOrganizationNames();
+    public String userEmail() {
+        return getUserEmail().orElseThrow();
     }
 }

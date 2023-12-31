@@ -24,8 +24,10 @@ package io.dataspray.store;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.google.common.collect.ImmutableSet;
+import io.dataspray.store.ApiAccessStore.UsageKeyType;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.Nonnull;
+import lombok.NonNull;
 import lombok.Value;
 
 import java.util.Optional;
@@ -42,9 +44,12 @@ public interface CognitoJwtVerifier {
     class VerifiedCognitoJwt {
 
         @Nonnull
-        String username;
+        String userEmail;
 
         @Nonnull
         ImmutableSet<String> groupNames;
+
+        @NonNull
+        UsageKeyType usageKeyType;
     }
 }

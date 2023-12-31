@@ -23,6 +23,7 @@
 package io.dataspray.core.cli;
 
 import com.google.common.collect.ImmutableList;
+import io.dataspray.core.StreamRuntime.Organization;
 import lombok.Value;
 
 import java.util.Optional;

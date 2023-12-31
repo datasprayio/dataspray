@@ -33,9 +33,8 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 @Slf4j
-@Command(name = "login",
-        description = "Set your API key")
-public class Login implements Runnable {
+@Command(name = "login", description = "Set your environment and credentials")
+public class EnvLogin implements Runnable {
     @Mixin
     LoggingMixin loggingMixin;
 
@@ -43,30 +42,43 @@ public class Login implements Runnable {
     private String organizationName;
     @Option(names = {"-a", "--apiKey"}, description = "API Key")
     private String apiKey;
+    @Option(names = {"-e", "--endpoint"}, description = "Custom endpoint for self-hosted installations")
+    private String endpoint;
     @Option(names = {"-d", "--default"}, description = "Set as default")
     private boolean setAsDefault;
 
     @Inject
-    private CliConfig cliConfig;
+    CliConfig cliConfig;
 
     @Override
     public void run() {
+
+        // Retrieve organization name
         String organizationName = Optional.ofNullable(Strings.emptyToNull(this.organizationName))
-                .or(() -> Optional.ofNullable(System.console().readLine("Enter value for --organization (Organization name): "))
+                .or(() -> Optional.ofNullable(System.console().readLine("Enter value for organization name: "))
                         .map(String::trim)
                         .filter(Predicate.not(String::isBlank)))
                 .orElseThrow(() -> new RuntimeException("Need to supply organization name"));
+
+        // Retrieve api key
         String apiKey = Optional.ofNullable(Strings.emptyToNull(this.apiKey))
-                .or(() -> Optional.ofNullable(System.console().readPassword("Enter value for --apiKey (API Key): "))
+                .or(() -> Optional.ofNullable(System.console().readPassword("Enter value for API Key: "))
                         .map(String::valueOf)
                         .map(String::trim)
                         .filter(Predicate.not(String::isBlank)))
                 .orElseThrow(() -> new RuntimeException("Need to supply api key"));
-        cliConfig.setOrganization(organizationName, apiKey);
+
+        // Don't prompt for endpoint, only if explicitly set as most users won't need it
+        Optional<String> endpointOpt = Optional.ofNullable(Strings.emptyToNull(this.endpoint));
+
+        // Write organization to disk
+        cliConfig.setOrganization(organizationName, apiKey, endpointOpt);
+
+        // Decide whether org should be set as default
         if (setAsDefault || cliConfig.getDefaultOrganization().isEmpty()) {
             cliConfig.setDefaultOrganization(organizationName);
         } else {
-            boolean setAsDefaultResponse = Optional.ofNullable(System.console().readLine("Set as --default ? (y/n): "))
+            boolean setAsDefaultResponse = Optional.ofNullable(System.console().readLine("Set as default organization? (y/n): "))
                     .map(String::trim)
                     .filter("y"::equalsIgnoreCase)
                     .isPresent();

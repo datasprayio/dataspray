@@ -40,10 +40,12 @@ import io.dataspray.stream.control.model.UploadCodeResponse;
 import io.dataspray.web.resource.AbstractResource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
+import software.amazon.awssdk.services.lambda.model.Runtime;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -78,6 +80,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
     public TaskVersion deployVersion(String organizationName, String taskId, DeployRequest deployRequest) {
         DeployedVersion deployedVersion = deployer.deployVersion(
                 organizationName,
+                getUserEmail().orElseThrow(),
                 datasprayApiEndpoint,
                 taskId,
                 deployRequest.getCodeUrl(),
@@ -85,10 +88,8 @@ public class ControlResource extends AbstractResource implements ControlApi {
                 deployRequest.getInputQueueNames().stream()
                         .distinct()
                         .collect(ImmutableSet.toImmutableSet()),
-                // TODO Switch this back to Runtime enum when Quarkus bumps AWS SDK version that supports JAVA21
-                // Enums.getIfPresent(Runtime.class, deployRequest.getRuntime().name()).toJavaUtil()
-                //         .orElseThrow(() -> new BadRequestException("Unknown runtime: " + deployRequest.getRuntime())),
-                deployRequest.getRuntime().name(),
+                Enums.getIfPresent(Runtime.class, deployRequest.getRuntime().name()).toJavaUtil()
+                        .orElseThrow(() -> new BadRequestException("Unknown runtime: " + deployRequest.getRuntime())),
                 deployRequest.getSwitchToNow());
         return new TaskVersion(
                 taskId,

@@ -22,14 +22,14 @@
 
 package io.dataspray.store.impl;
 
+import com.google.common.collect.ImmutableSet;
 import io.dataspray.store.OrganizationStore;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.ClientErrorException;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
-
-import java.util.Optional;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserRequest;
 
 /**
  * Organization management backed by Cognito groups.
@@ -38,18 +38,20 @@ import java.util.Optional;
 @ApplicationScoped
 public class CognitoGroupOrganizationStore implements OrganizationStore {
 
+    @ConfigProperty(name = CognitoUserStore.USER_POOL_ID_PROP_NAME)
+    String userPoolId;
+
     @Inject
     CognitoIdentityProviderClient cognitoClient;
 
     @Override
-    public StreamMetadata authorizeStreamPut(String accountId, String targetId, Optional<String> authKeyOpt) throws ClientErrorException {
-        // TODO
-        return getStream(accountId, targetId);
-    }
-
-    @Override
-    public StreamMetadata getStream(String accountId, String targetId) throws ClientErrorException {
-        // TODO
-        return new StreamMetadata(Optional.of(EtlRetention.DEFAULT));
+    public ImmutableSet<Organization> getOrganizationsForUser(String email) {
+        return cognitoClient.adminListGroupsForUserPaginator(AdminListGroupsForUserRequest.builder()
+                        .userPoolId(userPoolId)
+                        .username(email).build())
+                .groups()
+                .stream()
+                .map(group -> new Organization(group.groupName()))
+                .collect(ImmutableSet.toImmutableSet());
     }
 }

@@ -78,7 +78,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     private TableSchema<ApiAccess> apiAccessSchema;
     private IndexSchema<ApiAccess> apiAccessByOrganizationSchema;
     private TableSchema<UsageKey> usageKeySchema;
-    private IndexSchema<UsageKey> usageKeyScanSchema;
+    private IndexSchema<UsageKey> usageKeyByOrganizationSchema;
     private Cache<String, Optional<ApiAccess>> apiAccessByApiKeyCache;
 
     @Startup
@@ -91,29 +91,57 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         apiAccessSchema = singleTable.parseTableSchema(ApiAccess.class);
         apiAccessByOrganizationSchema = singleTable.parseGlobalSecondaryIndexSchema(1, ApiAccess.class);
         usageKeySchema = singleTable.parseTableSchema(UsageKey.class);
-        usageKeyScanSchema = singleTable.parseGlobalSecondaryIndexSchema(1, UsageKey.class);
+        usageKeyByOrganizationSchema = singleTable.parseGlobalSecondaryIndexSchema(1, UsageKey.class);
     }
 
     @Override
-    public ApiAccess createApiAccess(String organizationName, UsageKeyType usageKeyType, String description, Optional<ImmutableSet<String>> queueWhitelistOpt, Optional<Instant> expiryOpt) {
-        ApiAccess apiAccess = new ApiAccess(
+    public ApiAccess createApiAccessForUser(String organizationName, String userEmail, UsageKeyType usageKeyType, Optional<ImmutableSet<String>> queueWhitelistOpt, Optional<Instant> expiryOpt) {
+        return createApiAccess(new ApiAccess(
                 keygenUtil.generateSecureApiKey(API_KEY_LENGTH),
                 organizationName,
-                usageKeyType.getId(),
-                description,
+                OwnerType.USER,
+                userEmail,
+                null,
+                null,
+                usageKeyType,
                 queueWhitelistOpt.orElseGet(ImmutableSet::of),
-                expiryOpt.map(Instant::getEpochSecond).orElse(null));
+                expiryOpt.map(Instant::getEpochSecond).orElse(null)));
+    }
+
+    @Override
+    public String generateApiKey() {
+        return keygenUtil.generateSecureApiKey(API_KEY_LENGTH);
+    }
+
+    @Override
+    public ApiAccess createApiAccessForTask(String apiKey, String organizationName, String userEmail, String taskId, String taskVersion, UsageKeyType usageKeyType, Optional<ImmutableSet<String>> queueWhitelistOpt) {
+        return createApiAccess(new ApiAccess(
+                apiKey,
+                organizationName,
+                OwnerType.TASK,
+                userEmail,
+                taskId,
+                taskVersion,
+                usageKeyType,
+                queueWhitelistOpt.orElseGet(ImmutableSet::of),
+                null));
+    }
+
+    private ApiAccess createApiAccess(ApiAccess apiAccess) {
         checkArgument(apiAccess.isTtlNotExpired());
 
-        if (UsageKeyType.ORGANIZATION_WIDE.equals(usageKeyType)) {
-            getOrCreateUsageKeyForOrganization(organizationName);
+        // Create Api Gateway Usage Key for this organization if it doesn't exist yet
+        if (UsageKeyType.ORGANIZATION.equals(apiAccess.getUsageKeyType())) {
+            getOrCreateUsageKeyForOrganization(apiAccess.getOrganizationName());
         }
 
+        // Add api key in dynamo
         dynamo.putItem(PutItemRequest.builder()
                 .tableName(apiAccessSchema.tableName())
                 .item(apiAccessSchema.toAttrMap(apiAccess))
                 .build());
 
+        // Add to cache and return
         apiAccessByApiKeyCache.put(apiAccess.getApiKey(), Optional.of(apiAccess));
         return apiAccess;
     }
@@ -175,6 +203,26 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
+    public void revokeApiKeysForTaskId(String organizationName, String taskId) {
+        getApiAccessesByOrganizationName(organizationName).stream()
+                .filter(apiAccess -> OwnerType.TASK.equals(apiAccess.getOwnerType()))
+                .filter(apiAccess -> taskId.equals(apiAccess.getOwnerTaskId()))
+                .map(ApiAccess::getApiKey)
+                // Delete could be batched
+                .forEach(this::revokeApiKey);
+    }
+
+    @Override
+    public void revokeApiKeyForTaskVersion(String organizationName, String taskId, String taskVersion) {
+        getApiAccessesByOrganizationName(organizationName).stream()
+                .filter(apiAccess -> OwnerType.TASK.equals(apiAccess.getOwnerType()))
+                .filter(apiAccess -> taskId.equals(apiAccess.getOwnerTaskId()))
+                .filter(apiAccess -> taskVersion.equals(apiAccess.getOwnerTaskVersion()))
+                .map(ApiAccess::getApiKey)
+                .forEach(this::revokeApiKey);
+    }
+
+    @Override
     public UsageKey getOrCreateUsageKeyForOrganization(String organizationName) {
 
         // Lookup mapping from dynamo
@@ -216,11 +264,39 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         do {
             ShardPageResult<UsageKey> result = singleTable.fetchShardNextPage(
                     dynamo,
-                    usageKeyScanSchema,
+                    usageKeySchema,
                     cursorOpt,
                     100);
             cursorOpt = result.getCursorOpt();
             batchConsumer.accept(result.getItems());
         } while (cursorOpt.isPresent());
+    }
+
+    @Override
+    public Optional<String> getUsageKey(UsageKeyType type, String userEmail, ImmutableSet<String> organizationNames) {
+
+        // For organization wide usage key, find the organization name
+        Optional<String> organizationNameOpt = Optional.empty();
+        if (UsageKeyType.ORGANIZATION.equals(type)) {
+            if (organizationNames.isEmpty()) {
+                type = UsageKeyType.GLOBAL;
+                log.info("User {} is not part of any organization, falling back to dataspray-wide usage key", userEmail);
+            } else if (organizationNames.size() > 1) {
+                organizationNameOpt = Optional.of(organizationNames.stream().sorted().findFirst().get());
+                log.info("User {} is part of multiple organizations, using usage key for {} out of {}", userEmail, organizationNameOpt, organizationNames);
+            } else {
+                // Only part of one organization, use it
+                organizationNameOpt = Optional.of(organizationNames.iterator().next());
+            }
+        }
+
+        return switch (type) {
+            case UNLIMITED -> Optional.empty();
+            // Share usage key across all API keys on the same organization.
+            // Let's just use the account ID as usage key since it's not a secret.
+            case ORGANIZATION -> Optional.of(type.getId() + "-" + organizationNameOpt.get());
+            case GLOBAL -> Optional.of(type.getId() + "-GLOBAL");
+            default -> throw new IllegalStateException("Unknown usage key type: " + type);
+        };
     }
 }

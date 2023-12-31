@@ -32,15 +32,14 @@ import java.util.Optional;
 
 public interface StreamApi {
 
-    IngestApi ingest(Organization organization);
+    IngestApi ingest(Access access);
 
-    ControlApi control(Organization organization);
+    ControlApi control(Access access);
 
     void uploadCode(String presignedUrl, File file) throws IOException;
 
     @Value
-    class Organization {
-        String name;
+    class Access {
         String apiKey;
         Optional<String> endpoint;
     }

@@ -82,26 +82,51 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             String authorizationValue = event.getHeaders().getOrDefault(AUTHORIZATION_HEADER, "");
             String authorizationValueLower = authorizationValue.toLowerCase();
 
-            // TODO
-
-            ImmutableSet<String> organizationNames;
+            final String identifier;
+            final String userEmail;
+            final String principalId;
+            final ImmutableSet<String> organizationNames;
+            final ImmutableSet<String> queueWhitelist;
+            final Optional<String> usageKey;
             if (authorizationValueLower.startsWith("cognito ")) {
+
+                // Parse authorization as Cognito JWT Access Token
                 String accessToken = authorizationValue.substring(8);
                 VerifiedCognitoJwt verifiedCognitoJwt = cognitoJwtVerifier.verify(accessToken)
                         .orElseThrow(() -> new ApiGatewayUnauthorized("Cognito JWT verification failed"));
+
+                // Extract access info
+                userEmail = verifiedCognitoJwt.getUserEmail();
+                principalId = verifiedCognitoJwt.getUserEmail();
                 organizationNames = verifiedCognitoJwt.getGroupNames();
-                // TODO
+                queueWhitelist = ImmutableSet.of();
+                usageKey = apiAccessStore.getUsageKey(verifiedCognitoJwt.getUsageKeyType(), verifiedCognitoJwt.getUserEmail(), organizationNames);
+                identifier = "user " + verifiedCognitoJwt.getUserEmail() + " via cognito JWT";
+
             } else if (authorizationValueLower.startsWith("apikey ")) {
+
+                // Parse authorization as our API Key
                 String apiKeyStr = authorizationValue.substring(7);
                 ApiAccess apiAccess = apiAccessStore.getApiAccessByApiKey(apiKeyStr, true)
                         .orElseThrow(() -> new ApiGatewayUnauthorized("invalid apikey found"));
-                String principalId = apiAccess.getOrganizationName();
-                organizationNames = verifiedCognitoJwt.getGroupNames();
-                // TODO
+
+                // Extract access info
+                userEmail = apiAccess.getOwnerEmail();
+                principalId = apiAccess.getPrincipalId();
+                organizationNames = ImmutableSet.of(apiAccess.getOrganizationName());
+                queueWhitelist = apiAccess.getQueueWhitelist();
+                usageKey = apiAccessStore.getUsageKey(apiAccess.getUsageKeyType(), apiAccess.getOwnerEmail(), ImmutableSet.of(apiAccess.getOrganizationName()));
+                switch (apiAccess.getOwnerType()) {
+                    case USER -> identifier = "user " + apiAccess.getOwnerEmail() + " via apikey";
+                    case TASK ->
+                            identifier = "task " + apiAccess.getOwnerTaskId() + " version " + apiAccess.getOwnerTaskVersion() + " via apikey";
+                    default ->
+                            identifier = apiAccess.getOwnerType() + " owner email " + apiAccess.getOwnerEmail() + " via apikey";
+                }
+
             } else {
                 throw new ApiGatewayUnauthorized("Client unauthorized: No valid authorization scheme found");
             }
-
 
             // Extract endpoint info
             Arn methodArn = Arn.fromString(event.getMethodArn());
@@ -112,13 +137,16 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             String stage = event.getRequestContext().getStage();
 
             // Send back allow policy
-            log.info("Client authorized for account id {}", apiAccess.getAccountId());
-            PolicyDocument policyDocument = generatePolicyDocument(region, awsAccountId, restApiId, stage, organizationNames);
+            log.info("Client authorized for {}", identifier);
+            PolicyDocument policyDocument = generatePolicyDocument(region, awsAccountId, restApiId, stage, organizationNames, queueWhitelist);
             return new AuthPolicy(
                     principalId,
                     policyDocument,
-                    apiAccess.getUsageKey(),
-                    Map.of(AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", organizationNames)));
+                    usageKey,
+                    Map.of(
+                            AuthorizerConstants.CONTEXT_KEY_USER_EMAIL, userEmail,
+                            AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", organizationNames)
+                    ));
         } catch (ApiGatewayUnauthorized ex) {
             log.info("Client unauthorized: {}", ex.getReason());
             throw ex;
@@ -157,28 +185,30 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                                 Statement.getExecuteApiArn(region, awsAccountId, restApiId, stage,
                                         HttpMethod.ALL, Optional.of(resourcePath)))
                         .collect(ImmutableSet.toImmutableSet()));
-        final ImmutableSet<String> arnMatchers;
 
-        String organizationNameSanitized = sanitizeArnInjection(apiKey.getOrganizationName());
-        if (apiKey.getQueueWhitelist().isEmpty()) {
-            // Allow all paths under account
-            arnMatchers = getResourcePathsForOrganization(organizationNameSanitized)
-                    .map(resourcePath -> Statement.getExecuteApiArn(region, awsAccountId, restApiId, stage,
-                            HttpMethod.ALL, Optional.of(resourcePath)))
-                    .collect(ImmutableSet.toImmutableSet());
-        } else {
-            // Allow only paths under own account under whitelisted target queues
-            // If you need to add a non-target path, this is where you would add an exception
-            arnMatchers = queueWhitelist().stream()
-                    // Sanitize to prevent injection
-                    .map(Authorizer::sanitizeArnInjection)
-                    // Get resource paths specific to the queue target, not for all of account
-                    .flatMap(queue -> getResourcePathsForAccountAndTarget(organizationNameSanitized, queue))
-                    .map(resourcePath -> Statement.getExecuteApiArn(region, awsAccountId, restApiId, stage,
-                            HttpMethod.ALL, Optional.of(resourcePath)))
-                    .collect(ImmutableSet.toImmutableSet());
+        final ImmutableSet.Builder<String> arnMatchersBuilder = ImmutableSet.builder();
+        for (String organizationName : organizationNames) {
+            String organizationNameSanitized = sanitizeArnInjection(organizationName);
+            if (queueWhitelist.isEmpty()) {
+                // Allow all paths under account
+                arnMatchersBuilder.addAll(getResourcePathsForOrganization(organizationNameSanitized)
+                        .map(resourcePath -> Statement.getExecuteApiArn(region, awsAccountId, restApiId, stage,
+                                HttpMethod.ALL, Optional.of(resourcePath)))
+                        .collect(ImmutableSet.toImmutableSet()));
+            } else {
+                // Allow only paths under own account under whitelisted target queues
+                // If you need to add a non-target path, this is where you would add an exception
+                arnMatchersBuilder.addAll(queueWhitelist.stream()
+                        // Sanitize to prevent injection
+                        .map(Authorizer::sanitizeArnInjection)
+                        // Get resource paths specific to the queue target, not for all of account
+                        .flatMap(queue -> getResourcePathsForAccountAndTarget(organizationNameSanitized, queue))
+                        .map(resourcePath -> Statement.getExecuteApiArn(region, awsAccountId, restApiId, stage,
+                                HttpMethod.ALL, Optional.of(resourcePath)))
+                        .collect(ImmutableSet.toImmutableSet()));
+            }
         }
-        accountAndTargetStatement.addCondition("StringNotLike", "aws:PrincipalArn", arnMatchers);
+        accountAndTargetStatement.addCondition("StringNotLike", "aws:PrincipalArn", arnMatchersBuilder.build());
         policyDocument.addStatement(accountAndTargetStatement);
 
         return policyDocument;

@@ -9,8 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 @ApplicationScoped
 public class AuthorizerConstants {
 
+    public static final String CONTEXT_KEY_USER_EMAIL = "userEmail";
+    /** Value will hold comma delimited list of organization names */
     public static final String CONTEXT_KEY_ORGANIZATION_NAMES = "organizationName";
-    public static final String CONTEXT_KEY_APIKEY_VALUE = "apiKey";
 
     private AuthorizerConstants() {
         // Disallow ctor

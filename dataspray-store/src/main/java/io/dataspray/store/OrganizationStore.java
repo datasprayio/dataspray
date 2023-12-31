@@ -29,33 +29,24 @@ import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
 
-import java.util.List;
-import java.util.Optional;
-
 public interface OrganizationStore {
 
-    void addUser(String email, String organizationName);
+    // TODO
+//    void addUser(String email, String organizationName);
 
-    void removeUser(String email, String organizationName);
+    // TODO
+//    void removeUser(String email, String organizationName);
 
-    /**
-     * Create an organization for a user if they're not part of any organization yet.
-     */
-    List<Organization> getOrCreateOrganizationForUser(String email);
+    ImmutableSet<Organization> getOrganizationsForUser(String email);
 
-    Optional<Organization> getOrganization(String organizationName);
+    // TODO
+//    Optional<Organization> getOrganization(String organizationName);
 
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
     class Organization {
         @NonNull
-        String accountId;
-
-        @NonNull
-        String email;
-
-        @NonNull
-        ImmutableSet<String> enabledStreamNames;
+        String name;
     }
 }

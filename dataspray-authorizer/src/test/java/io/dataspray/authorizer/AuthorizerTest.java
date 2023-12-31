@@ -54,17 +54,19 @@ class AuthorizerTest extends AuthorizerBase {
 
     @Override
     protected ApiAccess createApiAccess(
-            String accountId,
+            String organizationName,
             ApiAccessStore.UsageKeyType usageKeyType,
-            String description,
             Optional<ImmutableSet<String>> queueWhitelistOpt,
             Optional<Instant> expiryOpt) {
 
         ApiAccess apiAccess = new ApiAccess(
                 keygenUtil.generateSecureApiKey(API_KEY_LENGTH),
-                accountId,
-                usageKeyType.getId(),
-                description,
+                organizationName,
+                ApiAccessStore.OwnerType.USER,
+                "user@example.com",
+                null,
+                null,
+                usageKeyType,
                 queueWhitelistOpt.orElseGet(ImmutableSet::of),
                 expiryOpt.map(Instant::getEpochSecond).orElse(null));
 

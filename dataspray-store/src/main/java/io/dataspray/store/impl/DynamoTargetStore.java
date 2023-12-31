@@ -65,19 +65,20 @@ public class DynamoTargetStore implements TargetStore {
 
         // Check cache first
         if (useCache) {
-            Targets targets = targetsByOrganizationNameCache.getIfPresent(apiKey);
+            Targets targets = targetsByOrganizationNameCache.getIfPresent(organizationName);
             if (targets != null) {
                 return targets;
             }
         }
 
         // Fetch from DB
-        Targets targets = apiAccessSchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
-                .tableName(apiAccessSchema.tableName())
-                .key(apiAccessSchema.primaryKey(Map.of(
-                        "apiKey", apiKey)))
-                .consistentRead(!useCache)
-                .build()).item());
+        Targets targets = targetsSchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
+                        .tableName(targetsSchema.tableName())
+                        .key(targetsSchema.primaryKey(Map.of(
+                                "organizationName", organizationName)))
+                        .consistentRead(!useCache)
+                        .build())
+                .item());
         // Construct default if not found
         if (targets == null) {
             targets = Targets.builder()

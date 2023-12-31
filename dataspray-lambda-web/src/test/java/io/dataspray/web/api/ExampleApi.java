@@ -32,6 +32,6 @@ public interface ExampleApi {
     String ping();
 
     @GET
-    @Path("/organization-name")
-    String organizationName();
+    @Path("/user-email")
+    String userEmail();
 }

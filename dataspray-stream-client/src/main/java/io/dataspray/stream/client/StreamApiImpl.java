@@ -47,20 +47,20 @@ import java.util.Map;
 public class StreamApiImpl implements StreamApi {
 
     @Override
-    public IngestApi ingest(Organization organization) {
+    public IngestApi ingest(Access access) {
         io.dataspray.stream.ingest.client.ApiClient apiClient = new io.dataspray.stream.ingest.client.ApiClient();
-        organization.getEndpoint().ifPresent(apiClient::setBasePath);
+        access.getEndpoint().ifPresent(apiClient::setBasePath);
         apiClient.setHttpClient(getHttpClient(false, false));
-        apiClient.setApiKey(organization.getApiKey());
+        apiClient.setApiKey(access.getApiKey());
         return new IngestApi(apiClient);
     }
 
     @Override
-    public ControlApi control(Organization organization) {
+    public ControlApi control(Access access) {
         io.dataspray.stream.control.client.ApiClient apiClient = new io.dataspray.stream.control.client.ApiClient();
-        organization.getEndpoint().ifPresent(apiClient::setBasePath);
+        access.getEndpoint().ifPresent(apiClient::setBasePath);
         apiClient.setHttpClient(getHttpClient(false, false));
-        apiClient.setApiKey(organization.getApiKey());
+        apiClient.setApiKey(access.getApiKey());
         return new ControlApi(apiClient);
     }
 

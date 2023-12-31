@@ -32,6 +32,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Value;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
+import software.amazon.awssdk.services.lambda.model.Runtime;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,12 +41,13 @@ public interface LambdaDeployer {
 
     DeployedVersion deployVersion(
             String organizationName,
+            String userEmail,
             Optional<String> apiEndpointOpt,
             String taskId,
             String codeUrl,
             String handler,
-            ImmutableSet<String> inputQueueNames,
-            String runtimeStr,
+            ImmutableSet<String> queueNames,
+            Runtime runtime,
             boolean switchToImmediately);
 
     void switchVersion(String organizationName, String taskId, String version);

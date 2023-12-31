@@ -24,7 +24,6 @@ package io.dataspray.store;
 
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.singletable.DynamoTable;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -38,11 +37,10 @@ import lombok.ToString;
 import lombok.Value;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static io.dataspray.singletable.TableType.Gsi;
 import static io.dataspray.singletable.TableType.Primary;
 
@@ -51,12 +49,30 @@ public interface ApiAccessStore {
     String TRIAL_USAGE_PLAN_NAME = "trial-usage-plan";
     long TRIAL_USAGE_PLAN_VERSION = 1;
 
-    ApiAccess createApiAccess(
+    ApiAccess createApiAccessForUser(
             String organizationName,
+            String userEmail,
             UsageKeyType usageKeyType,
-            String description,
             Optional<ImmutableSet<String>> queueWhitelistOpt,
             Optional<Instant> expiryOpt);
+
+    /**
+     * Returns an Api Key value without persisting any changes to database. Use
+     * {@link ApiAccessStore#createApiAccessForTask} to persist the Api Access.
+     * <br />
+     * For tasks, the value needs to be embedded in the function, and only after the function is published,
+     * we are able to see the task version and persist the Api Key.
+     */
+    String generateApiKey();
+
+    ApiAccess createApiAccessForTask(
+            String apiKey,
+            String organizationName,
+            String userEmail,
+            String taskId,
+            String taskVersion,
+            UsageKeyType usageKeyType,
+            Optional<ImmutableSet<String>> queueWhitelistOpt);
 
     ImmutableSet<ApiAccess> getApiAccessesByOrganizationName(String organizationName);
 
@@ -64,9 +80,15 @@ public interface ApiAccessStore {
 
     void revokeApiKey(String apiKey);
 
+    void revokeApiKeysForTaskId(String organizationName, String taskId);
+
+    void revokeApiKeyForTaskVersion(String organizationName, String taskId, String taskVersion);
+
     UsageKey getOrCreateUsageKeyForOrganization(String organizationName);
 
     void getAllUsageKeys(Consumer<ImmutableList<UsageKey>> batchConsumer);
+
+    Optional<String> getUsageKey(UsageKeyType type, String userEmail, ImmutableSet<String> organizationNames);
 
     @Value
     @AllArgsConstructor
@@ -84,16 +106,21 @@ public interface ApiAccessStore {
         @NonNull
         String organizationName;
 
-//        TODO add differentiation on who owns this api key:
-//         1/ processor and version
-//         2/ user of an organization
-        TODO
+        @NonNull
+        OwnerType ownerType;
+
+        /** For ownerType=USER shows user email. For ownerType=TASK, shows email of user that created task. */
+        @NonNull
+        String ownerEmail;
+
+        /** For ownerType=TASK, the task ID */
+        String ownerTaskId;
+
+        /** For ownerType=TASK, the task version. */
+        String ownerTaskVersion;
 
         @NonNull
-        Long usageKeyTypeId;
-
-        @NonNull
-        String description;
+        UsageKeyType usageKeyType;
 
         @NonNull
         ImmutableSet<String> queueWhitelist;
@@ -101,29 +128,16 @@ public interface ApiAccessStore {
         @Nullable
         Long ttlInEpochSec;
 
-        public UsageKeyType getUsageKeyType() {
-            return UsageKeyType.BY_ID.get(usageKeyTypeId);
-        }
-
-        /**
-         * @return The usage key which is used to identify the usage of the API key.
-         */
-        public Optional<String> getUsageKey() {
-            switch (getUsageKeyType()) {
-                case UNLIMITED:
-                    return Optional.empty();
-                case ORGANIZATION_WIDE:
-                    // Share usage key across all API keys on the same account.
-                    // Let's just use the account ID as usage key since it's not a secret.
-                    return Optional.of(getUsageKeyType().getId() + "-" + organizationName);
-                default:
-                    throw new IllegalStateException("Unknown usage key type: " + getUsageKeyType());
-            }
-        }
-
         public boolean isTtlNotExpired() {
             return ttlInEpochSec == null
                    || ttlInEpochSec >= Instant.now().getEpochSecond();
+        }
+
+        public String getPrincipalId() {
+            return switch (ownerType) {
+                case USER -> ownerEmail;
+                case TASK -> checkNotNull(ownerTaskId);
+            };
         }
     }
 
@@ -151,17 +165,22 @@ public interface ApiAccessStore {
         String usageKeyId;
     }
 
+    enum OwnerType {
+        /** API Key used by user scripts or workflows */
+        USER,
+        /** API Key used by a task */
+        TASK
+    }
+
     @Getter
+    @AllArgsConstructor
     enum UsageKeyType {
+        /** No Usage Key */
         UNLIMITED(0),
-        ORGANIZATION_WIDE(1);
+        /** Usage Key shared for entire organization */
+        ORGANIZATION(1),
+        /** Usage Key shared globally */
+        GLOBAL(2);
         private final long id;
-
-        UsageKeyType(long id) {
-            this.id = id;
-        }
-
-        public static final ImmutableMap<Long, UsageKeyType> BY_ID = Arrays.stream(values())
-                .collect(ImmutableMap.toImmutableMap(UsageKeyType::getId, Function.identity()));
     }
 }

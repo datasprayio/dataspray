@@ -23,7 +23,7 @@
 package io.dataspray.runner;
 
 import com.google.common.base.Strings;
-import io.dataspray.stream.client.StreamApi;
+import io.dataspray.stream.client.StreamApi.Access;
 import io.dataspray.stream.client.StreamApiImpl;
 import io.dataspray.stream.ingest.client.ApiException;
 import io.dataspray.stream.ingest.client.IngestApi;
@@ -42,7 +42,7 @@ public class RawCoordinatorImpl implements RawCoordinator {
     public static final String DATASPRAY_ENDPOINT_ENV = "dataspray_endpoint";
     private static volatile RawCoordinatorImpl INSTANCE;
 
-    volatile Optional<IngestApi> ingestApiOpt;
+    private volatile Optional<IngestApi> ingestApiOpt;
 
     private RawCoordinatorImpl() {
     }
@@ -64,6 +64,7 @@ public class RawCoordinatorImpl implements RawCoordinator {
             case DATASPRAY:
                 sendToDataSpray(data, storeName, streamName);
                 break;
+            case KAFKA:
             default:
                 log.error("Store type not supported: {}", storeType);
                 throw new RuntimeException("Store type not supported: " + storeType);
@@ -73,7 +74,7 @@ public class RawCoordinatorImpl implements RawCoordinator {
     private void sendToDataSpray(byte[] data, String storeName, String streamName) {
 
         try {
-            ingestApi.message(storeName, streamName, data);
+            getIngestApi().message(storeName, streamName, data);
         } catch (ApiException ex) {
             log.error("Failed to send message to DataSpray for customer {} stream {}", storeName, streamName);
             throw new RuntimeException("Failed to send message to DataSpray for customer " + storeName + " stream " + streamName, ex);
@@ -101,8 +102,7 @@ public class RawCoordinatorImpl implements RawCoordinator {
                     // Fetch endpoint
                     Optional<String> endpointOpt = Optional.ofNullable(Strings.emptyToNull(System.getenv(DATASPRAY_ENDPOINT_ENV)));
 
-                    ingestApiOpt = Optional.of(new StreamApiImpl().ingest(new StreamApi.Organization(
-                            organizationName,
+                    ingestApiOpt = Optional.of(new StreamApiImpl().ingest(new Access(
                             apiKey,
                             endpointOpt)));
                 }

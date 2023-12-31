@@ -61,7 +61,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
     @Override
     @SneakyThrows
     public void statusAll(Organization organization, Project project) {
-        streamApi.control(apiKey).statusAll()
+        streamApi.control(organization.toAccess()).statusAll(organization.getName())
                 .getTasks()
                 .forEach(this::printStatus);
     }
@@ -74,7 +74,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 .noneMatch(processorName::equals)) {
             throw new RuntimeException("Task not found: " + processorName);
         }
-        TaskStatus status = streamApi.control(apiKey).status(processorName);
+        TaskStatus status = streamApi.control(organization.toAccess()).status(organization.getName(), processorName);
         printStatus(status);
     }
 
@@ -94,8 +94,8 @@ public class StreamRuntimeImpl implements StreamRuntime {
         }
 
         // Deploy
-        String codeUrl = upload(apiKey, project, processorName, codeZipFile);
-        String publishedVersion = publish(apiKey, project, processorName, codeUrl, activateVersion);
+        String codeUrl = upload(organization, project, processorName, codeZipFile);
+        String publishedVersion = publish(organization, project, processorName, codeUrl, activateVersion);
     }
 
     @Override
@@ -108,7 +108,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
         // First get S3 upload presigned url
         log.info("Requesting permission to upload {}", codeZipFile);
-        UploadCodeResponse uploadCodeResponse = streamApi.control(apiKey).uploadCode(new UploadCodeRequest()
+        UploadCodeResponse uploadCodeResponse = streamApi.control(organization.toAccess()).uploadCode(new UploadCodeRequest()
                 .taskId(processor.getTaskId())
                 .contentLengthBytes(codeZipFile.length()));
 
@@ -136,7 +136,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 processor.getInputStreams().stream().map(StreamLink::getStreamName).collect(Collectors.toSet()),
                 processor.getOutputStreams().stream().map(StreamLink::getStreamName).collect(Collectors.toSet()),
                 handler);
-        TaskVersion deployedVersion = streamApi.control(apiKey).deployVersion(processor.getTaskId(), new DeployRequest()
+        TaskVersion deployedVersion = streamApi.control(organization.toAccess()).deployVersion(organization.getName(), processor.getTaskId(), new DeployRequest()
                 .runtime(DeployRequest.RuntimeEnum.JAVA21)
                 .handler(handler)
                 .inputQueueNames(processor.getInputStreams().stream()
@@ -164,7 +164,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
         // Switch to this version
         log.info("Activating version {} for task {}", version, processorName);
-        TaskStatus taskStatus = streamApi.control(apiKey).activateVersion(processor.getTaskId(), version);
+        TaskStatus taskStatus = streamApi.control(organization.toAccess()).activateVersion(organization.getName(), processor.getTaskId(), version);
         log.info("Version active!");
 
         return taskStatus;
@@ -178,7 +178,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 "Not yet implemented: %s", processor.getTarget());
 
         log.info("Pausing {}", processor.getTaskId());
-        TaskStatus taskStatus = streamApi.control(apiKey).pause(processor.getTaskId());
+        TaskStatus taskStatus = streamApi.control(organization.toAccess()).pause(organization.getName(), processor.getTaskId());
         log.info("Task set to be paused");
         printStatus(taskStatus);
 
@@ -193,7 +193,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 "Not yet implemented: %s", processor.getTarget());
 
         log.info("Resuming {}", processor.getTaskId());
-        TaskStatus taskStatus = streamApi.control(apiKey).resume(processor.getTaskId());
+        TaskStatus taskStatus = streamApi.control(organization.toAccess()).resume(organization.getName(), processor.getTaskId());
         log.info("Task set to be resumed");
         printStatus(taskStatus);
 
@@ -207,7 +207,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
 
-        TaskVersions versions = streamApi.control(apiKey).getVersions(processor.getTaskId());
+        TaskVersions versions = streamApi.control(organization.toAccess()).getVersions(organization.getName(), processor.getTaskId());
         printVersions(versions);
 
         return versions;
@@ -220,7 +220,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
 
-        TaskStatus status = streamApi.control(apiKey).delete(processor.getTaskId());
+        TaskStatus status = streamApi.control(organization.toAccess()).delete(organization.getName(), processor.getTaskId());
 
         printStatus(status);
 

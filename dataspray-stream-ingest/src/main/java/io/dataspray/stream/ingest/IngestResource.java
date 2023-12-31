@@ -32,6 +32,7 @@ import io.dataspray.web.resource.AbstractResource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import lombok.SneakyThrows;
@@ -67,8 +68,10 @@ public class IngestResource extends AbstractResource implements IngestApi {
     @SneakyThrows
     public void message(String organizationName, String targetName, InputStream messageInputStream) {
 
+        // Sanity check to see if we are authorized
+        getUserEmail().orElseThrow(ForbiddenException::new);
+
         // Fetch target definition
-        // We assume we are already authenticated and authorized to ingest since we are behind API Gateway
         Target target = targetStore.getTarget(organizationName, targetName, true)
                 // If target is not found and default targets are disabled, throw not found
                 .orElseThrow(() -> {

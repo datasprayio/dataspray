@@ -22,16 +22,19 @@
 
 package io.dataspray.core;
 
+import io.dataspray.stream.client.StreamApi.Access;
 import io.dataspray.stream.control.client.model.TaskStatus;
 import io.dataspray.stream.control.client.model.TaskVersions;
+import lombok.Value;
 
 import java.io.File;
+import java.util.Optional;
 
 public interface StreamRuntime {
 
     void statusAll(Organization organization, Project project);
 
-    void status(String dataSprayApiKey, Project project, String processorName);
+    void status(Organization organization, Project project, String processorName);
 
     void deploy(Organization organization, Project project, String processorName, boolean activateVersion);
 
@@ -49,4 +52,14 @@ public interface StreamRuntime {
 
     TaskStatus delete(Organization organization, Project project, String processorName);
 
+    @Value
+    class Organization {
+        String name;
+        String apiKey;
+        Optional<String> endpoint;
+
+        public Access toAccess() {
+            return new Access(apiKey, endpoint);
+        }
+    }
 }

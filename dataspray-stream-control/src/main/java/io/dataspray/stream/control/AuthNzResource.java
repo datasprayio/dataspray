@@ -199,11 +199,9 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
     }
 
     /**
-     * Once a user is confirmed, we can trigger other events such as creating an account for that user.
+     * Once a user is confirmed, we can trigger other events here.
      */
     private SignUpResponse signUpConfirmed(String email) {
-
-        accountStore.getOrCreateOrganizationForUser(email);
 
         return SignUpResponse.builder()
                 .confirmed(true)
