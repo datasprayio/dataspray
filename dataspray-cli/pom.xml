@@ -118,6 +118,11 @@
                         <phase>package</phase>
                     </execution>
                 </executions>
+                <configuration>
+                    <properties>
+                        <quarkus.package.type>uber-jar</quarkus.package.type>
+                    </properties>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

@@ -59,8 +59,6 @@
         <aws.cdk.4j.version>2.2.5</aws.cdk.4j.version>
         <sqlite4java>1.0.392</sqlite4java>
 
-        <!-- Whether to package modules as native or jar. For production/staging profiles set to true by default -->
-        <native>false</native>
         <lambda-native.phase>package</lambda-native.phase>
         <lambda-native.container-build>false</lambda-native.container-build>
         <lambda-native-it.phase>none</lambda-native-it.phase>
