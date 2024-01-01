@@ -32,7 +32,7 @@
 Ensure you installed all dependencies and run the following command:
 
 ```bash
-mvn clean deploy -DdnsDomain=example.com [-DdnsParentZoneId=Z104162015L8HFMCRVJ9Y]
+mvn clean deploy -Pselfhost -DdnsDomain=example.com [-DdnsParentZoneId=Z104162015L8HFMCRVJ9Y]
 ```
 
 _Note: The Certificate creation step will wait and appear stuck until domain is validated via DNS. See the "Setup DNS"

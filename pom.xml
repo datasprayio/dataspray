@@ -514,15 +514,8 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <message>Install SDKMan and run `sdk env` to switch java version</message>
                                     <version>${java.version}</version>
                                 </requireJavaVersion>
-                                <requireJavaVendor>
-                                    <message>Install SDKMan and run `sdk env` to switch java version</message>
-                                    <includes>
-                                        <include>GraalVM Community</include>
-                                    </includes>
-                                </requireJavaVendor>
                             </rules>
                         </configuration>
                     </execution>
@@ -587,22 +580,22 @@
                     <artifactId>native-maven-plugin</artifactId>
                     <version>0.9.28</version>
                     <extensions>true</extensions>
-                    <!--                    <executions>-->
-                    <!--                        <execution>-->
-                    <!--                            <id>build-native</id>-->
-                    <!--                            <goals>-->
-                    <!--                                <goal>build</goal>-->
-                    <!--                            </goals>-->
-                    <!--                            <phase>package</phase>-->
-                    <!--                        </execution>-->
-                    <!--                        <execution>-->
-                    <!--                            <id>test-native</id>-->
-                    <!--                            <goals>-->
-                    <!--                                <goal>test</goal>-->
-                    <!--                            </goals>-->
-                    <!--                            <phase>test</phase>-->
-                    <!--                        </execution>-->
-                    <!--                    </executions>-->
+                    <executions>
+                        <execution>
+                            <id>build-native</id>
+                            <goals>
+                                <goal>build</goal>
+                            </goals>
+                            <phase>package</phase>
+                        </execution>
+                        <execution>
+                            <id>test-native</id>
+                            <goals>
+                                <goal>test</goal>
+                            </goals>
+                            <phase>test</phase>
+                        </execution>
+                    </executions>
                     <configuration>
                         <agent>
                             <!-- Docs https://graalvm.github.io/native-build-tools/latest/maven-plugin.html#agent-support-configuring-options -->
@@ -780,12 +773,6 @@
     <profiles>
         <profile>
             <id>production</id>
-            <activation>
-                <property>
-                    <name>production</name>
-                    <value>true</value>
-                </property>
-            </activation>
             <build>
                 <plugins>
                     <plugin>
@@ -793,20 +780,15 @@
                         <artifactId>maven-enforcer-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>enforce-production-profile</id>
+                                <id>enforce-production</id>
                                 <goals>
                                     <goal>enforce</goal>
                                 </goals>
                                 <configuration>
                                     <rules>
-                                        <requireProperty>
-                                            <message>Activate profile using -Dprofile rather than -Pprofile</message>
-                                            <property>production</property>
-                                            <regex>true</regex>
-                                        </requireProperty>
-                                        <requireProfile>
-                                            <id>native</id>
-                                        </requireProfile>
+                                        <requireActiveProfile>
+                                            <profiles>native</profiles>
+                                        </requireActiveProfile>
                                     </rules>
                                 </configuration>
                             </execution>
@@ -817,12 +799,6 @@
         </profile>
         <profile>
             <id>staging</id>
-            <activation>
-                <property>
-                    <name>staging</name>
-                    <value>true</value>
-                </property>
-            </activation>
             <build>
                 <plugins>
                     <plugin>
@@ -830,20 +806,15 @@
                         <artifactId>maven-enforcer-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>enforce-staging-profile</id>
+                                <id>enforce-staging</id>
                                 <goals>
                                     <goal>enforce</goal>
                                 </goals>
                                 <configuration>
                                     <rules>
-                                        <requireProperty>
-                                            <message>Activate profile using -Dprofile rather than -Pprofile</message>
-                                            <property>staging</property>
-                                            <regex>true</regex>
-                                        </requireProperty>
-                                        <requireProfile>
-                                            <id>native</id>
-                                        </requireProfile>
+                                        <requireActiveProfile>
+                                            <profiles>native</profiles>
+                                        </requireActiveProfile>
                                     </rules>
                                 </configuration>
                             </execution>
@@ -853,13 +824,11 @@
             </build>
         </profile>
         <profile>
+            <id>selfhost</id>
+        </profile>
+
+        <profile>
             <id>native</id>
-            <activation>
-                <property>
-                    <name>native</name>
-                    <value>true</value>
-                </property>
-            </activation>
             <build>
                 <plugins>
                     <plugin>
@@ -867,18 +836,17 @@
                         <artifactId>maven-enforcer-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>enforce-staging-profile</id>
+                                <id>enforce-native</id>
                                 <goals>
                                     <goal>enforce</goal>
                                 </goals>
                                 <configuration>
                                     <rules>
-                                        <requireProperty>
-                                            <!-- This is especially important as we activate other profiles on the absence of the property native -->
-                                            <message>Activate profile using -Dprofile rather than -Pprofile</message>
-                                            <property>native</property>
-                                            <regex>true</regex>
-                                        </requireProperty>
+                                        <requireJavaVendor>
+                                            <includes>
+                                                <include>GraalVM Community</include>
+                                            </includes>
+                                        </requireJavaVendor>
                                     </rules>
                                 </configuration>
                             </execution>
@@ -887,6 +855,7 @@
                 </plugins>
             </build>
         </profile>
+
         <profile>
             <id>macos</id>
             <activation>

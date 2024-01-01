@@ -40,6 +40,9 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <stackEnv>TEST</stackEnv>
+
         <awsProfile/>
         <dnsDomain/>
         <dnsSubdomain/>
@@ -245,9 +248,6 @@
         </profile>
         <profile>
             <id>selfhost</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
             <properties>
                 <stackEnv>SELFHOST</stackEnv>
                 <dnsSubdomain>dataspray</dnsSubdomain>

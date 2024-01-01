@@ -54,4 +54,4 @@ jobs:
           aws configure set region ${{ secrets.AWS_DEFAULT_REGION }} --profile dataspray
       - name: Maven build
         timeout-minutes: 60
-        run: AWS_PROFILE=dataspray mvn -B clean deploy -Pnative -P${{ github.event.inputs.environment || 'staging' }}
+        run: AWS_PROFILE=dataspray mvn -B clean deploy -Pnative,${{ github.event.inputs.environment || 'staging' }}

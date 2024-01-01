@@ -36,4 +36,4 @@ jobs:
           scour --version
       - name: Maven build
         timeout-minutes: 30
-        run: mvn -B install -Dnative
+        run: mvn -B install -Pnative
