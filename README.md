@@ -89,3 +89,21 @@ sdk env install
 brew install nvm
 nvm install
 ```
+
+## Deployment
+
+<details>
+  <summary>Staging</summary>
+
+Commits to `master` branch are automatically deployed to staging environment using Github Actions.
+
+</details>
+
+<details>
+  <summary>Production</summary>
+
+```shell
+mvn clean deploy -Dproduction -Dnative
+```
+
+</details>

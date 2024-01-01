@@ -225,6 +225,7 @@
             <id>production</id>
             <properties>
                 <stackEnv>PRODUCTION</stackEnv>
+                <native>true</native>
                 <awsProfile>dataspray</awsProfile>
                 <dnsDomain>dataspray.io</dnsDomain>
                 <sesEmail>support@dataspray.io</sesEmail>
@@ -234,6 +235,7 @@
             <id>staging</id>
             <properties>
                 <stackEnv>STAGING</stackEnv>
+                <native>true</native>
                 <awsProfile>dataspray</awsProfile>
                 <dnsDomain>dataspray.io</dnsDomain>
                 <dnsSubdomain>staging</dnsSubdomain>

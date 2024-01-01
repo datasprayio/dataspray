@@ -94,10 +94,6 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
             <plugin>
@@ -143,4 +139,26 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>native</id>
+            <properties>
+                <quarkus.package.type>native</quarkus.package.type>
+            </properties>
+        </profile>
+        <profile>
+            <id>native-not</id>
+            <activation>
+                <property>
+                    <name>native</name>
+                    <value>!true</value>
+                </property>
+            </activation>
+            <properties>
+                <!-- IT tests don't work against non-native https://github.com/quarkusio/quarkus/issues/27362#issuecomment-1409237447 -->
+                <skipITs>true</skipITs>
+            </properties>
+        </profile>
+    </profiles>
 </project>

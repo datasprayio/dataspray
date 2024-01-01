@@ -59,6 +59,8 @@
         <aws.cdk.4j.version>2.2.5</aws.cdk.4j.version>
         <sqlite4java>1.0.392</sqlite4java>
 
+        <!-- Whether to package modules as native or jar. For production/staging profiles set to true by default -->
+        <native>false</native>
         <lambda-native.phase>package</lambda-native.phase>
         <lambda-native.container-build>false</lambda-native.container-build>
         <lambda-native-it.phase>none</lambda-native-it.phase>
@@ -502,6 +504,43 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-general</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <message>Install SDKMan and run `sdk env` to switch maven version</message>
+                                    <version>3.9.6</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <message>Install SDKMan and run `sdk env` to switch java version</message>
+                                    <version>${java.version}</version>
+                                </requireJavaVersion>
+                                <requireJavaVendor>
+                                    <message>Install SDKMan and run `sdk env` to switch java version</message>
+                                    <includes>
+                                        <include>GraalVM Community</include>
+                                    </includes>
+                                </requireJavaVendor>
+                                <requireEnvironmentVariable>
+                                    <message>Install NVM and run `nvm use` to switch Node/NPM version</message>
+                                    <regexMessage>Install NVM and run `nvm use` to switch Node/NPM version
+                                    </regexMessage>
+                                    <variableName>NVM_BIN</variableName>
+                                    <regex>.*\/v18\.16\.1\/.*</regex>
+                                </requireEnvironmentVariable>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.2.2</version>
                 <configuration>
@@ -535,7 +574,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
-                    <version>3.0.0</version>
+                    <version>3.1.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -740,11 +779,125 @@
                         <skip>true</skip>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>3.3.0</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
 
     <profiles>
+        <profile>
+            <id>production</id>
+            <activation>
+                <property>
+                    <name>production</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-production-profile</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <message>Activate profile using -Dprofile rather than -Pprofile</message>
+                                            <name>production</name>
+                                            <value>true</value>
+                                        </requireProperty>
+                                        <requireProfile>
+                                            <id>native</id>
+                                        </requireProfile>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>staging</id>
+            <activation>
+                <property>
+                    <name>staging</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-staging-profile</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <message>Activate profile using -Dprofile rather than -Pprofile</message>
+                                            <name>staging</name>
+                                            <value>true</value>
+                                        </requireProperty>
+                                        <requireProfile>
+                                            <id>native</id>
+                                        </requireProfile>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>native</id>
+            <activation>
+                <property>
+                    <name>native</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-staging-profile</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <!-- This is especially important as we activate other profiles on the absence of the property native -->
+                                            <message>Activate profile using -Dprofile rather than -Pprofile</message>
+                                            <name>native</name>
+                                            <value>true</value>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>macos</id>
             <activation>
