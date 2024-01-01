@@ -801,8 +801,8 @@
                                     <rules>
                                         <requireProperty>
                                             <message>Activate profile using -Dprofile rather than -Pprofile</message>
-                                            <name>production</name>
-                                            <value>true</value>
+                                            <property>production</property>
+                                            <regex>true</regex>
                                         </requireProperty>
                                         <requireProfile>
                                             <id>native</id>
@@ -838,8 +838,8 @@
                                     <rules>
                                         <requireProperty>
                                             <message>Activate profile using -Dprofile rather than -Pprofile</message>
-                                            <name>staging</name>
-                                            <value>true</value>
+                                            <property>staging</property>
+                                            <regex>true</regex>
                                         </requireProperty>
                                         <requireProfile>
                                             <id>native</id>
@@ -876,8 +876,8 @@
                                         <requireProperty>
                                             <!-- This is especially important as we activate other profiles on the absence of the property native -->
                                             <message>Activate profile using -Dprofile rather than -Pprofile</message>
-                                            <name>native</name>
-                                            <value>true</value>
+                                            <property>native</property>
+                                            <regex>true</regex>
                                         </requireProperty>
                                     </rules>
                                 </configuration>
