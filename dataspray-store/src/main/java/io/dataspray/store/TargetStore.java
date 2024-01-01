@@ -23,7 +23,8 @@
 package io.dataspray.store;
 
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.SerializedName;
 import io.dataspray.singletable.DynamoTable;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -34,7 +35,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 
-import java.util.List;
 import java.util.Optional;
 
 import static io.dataspray.singletable.TableType.Primary;
@@ -61,7 +61,7 @@ public interface TargetStore {
 
     Optional<Target> getTarget(String organizationName, String targetName, boolean useCache);
 
-    Targets updateTargets(String organizationName, Targets targets);
+    Targets updateTargets(Targets targets);
 
     /**
      * <b>Organization target definitions.</b>
@@ -97,7 +97,8 @@ public interface TargetStore {
         Target undefinedTarget;
 
         @NonNull
-        ImmutableMap<String, Target> targets;
+        @Builder.Default
+        ImmutableSet<Target> targets = ImmutableSet.of();
 
         /**
          * For a target with no definition, whether to ingest it with default configuration.
@@ -115,7 +116,9 @@ public interface TargetStore {
          */
         @NonNull
         public Optional<Target> getTarget(String target) {
-            return Optional.ofNullable(targets.get(target))
+            return targets.stream()
+                    .filter(t -> t.getName().equals(target))
+                    .findFirst()
                     // If undefined, see if we allow undefined targets
                     .or(() -> isAllowUndefinedTargets()
                             // We do, let's see if we have an organization-wide default configuration for undefined targets
@@ -152,14 +155,16 @@ public interface TargetStore {
          */
         @NonNull
         @SerializedName("b")
-        Optional<Batch> batch;
+        @Builder.Default
+        Optional<Batch> batch = Optional.empty();
 
         /**
          * Whether this target should send data for stream processing (e.g. SQS queues).
          */
         @NonNull
         @SerializedName("s")
-        List<Stream> streams;
+        @Builder.Default
+        ImmutableList<Stream> streams = ImmutableList.of();
     }
 
     /**

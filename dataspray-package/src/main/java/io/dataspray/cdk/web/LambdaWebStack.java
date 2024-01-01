@@ -27,6 +27,7 @@ import io.dataspray.cdk.template.BaseStack;
 import io.dataspray.common.DeployEnvironment;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.Value;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.services.lambda.Architecture;
@@ -36,15 +37,25 @@ import software.amazon.awscdk.services.lambda.SingletonFunction;
 import software.amazon.awscdk.services.lambda.eventsources.ApiEventSource;
 import software.constructs.Construct;
 
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 @Getter
 public abstract class LambdaWebStack extends BaseStack {
 
-    private static final boolean IS_NATIVE = true;
     private static final String QUARKUS_LAMBDA_HANDLER = "io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest";
+    /**
+     * For custom runtime lambda, filename that is expected to be inside the uploaded zip file
+     *
+     * @see <a
+     * href="https://docs.aws.amazon.com/lambda/latest/dg/runtimes-walkthrough.html#runtimes-walkthrough-function">Create
+     * a function</a>
+     */
+    private static final String CUSTOM_RUNTIME_BOOTSTRAP_FILENAME = "bootstrap";
 
     private final String functionName;
     private final SingletonFunction function;
@@ -78,7 +89,7 @@ public abstract class LambdaWebStack extends BaseStack {
                 .code(Code.fromAsset(codeZip))
                 .memorySize(memorySize)
                 .timeout(Duration.seconds(30));
-        if (IS_NATIVE) {
+        if (detectIsNative(codeZip)) {
             functionBuilder
                     .architecture(detectNativeArch())
                     // PROVIDED does not support arm64
@@ -93,11 +104,27 @@ public abstract class LambdaWebStack extends BaseStack {
             functionBuilder
                     // For JVM default to ARM as it's cheaper
                     .architecture(Architecture.ARM_64)
-                    // TODO Switch to JAVA_21 once AWS SDK Lambda version is bumped by Quarkus
-                    .runtime(Runtime.JAVA_17)
+                    .runtime(Runtime.JAVA_21)
                     .handler(jvmHandler);
         }
         return functionBuilder.build();
+    }
+
+    /**
+     * Detects whether the provided zip file is a native image or JAR file.
+     */
+    @SneakyThrows
+    private static boolean detectIsNative(String codeZip) {
+        try (ZipFile zipFile = new ZipFile(codeZip)) {
+            Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
+            while (zipEntries.hasMoreElements()) {
+                String fileName = zipEntries.nextElement().getName();
+                if (CUSTOM_RUNTIME_BOOTSTRAP_FILENAME.equals(fileName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static Architecture detectNativeArch() {

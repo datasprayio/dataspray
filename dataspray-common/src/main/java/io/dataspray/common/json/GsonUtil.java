@@ -26,6 +26,7 @@ import com.dampcake.gson.immutable.ImmutableAdapterFactory;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -38,9 +39,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import lombok.extern.slf4j.Slf4j;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Optional;
 
 @Slf4j
 @ApplicationScoped
@@ -72,6 +75,7 @@ public class GsonUtil {
                             .registerTypeAdapterFactory(new NonnullAdapterFactory())
                             .registerTypeAdapter(Instant.class, new InstantTypeConverter())
                             .registerTypeAdapter(LocalDate.class, new LocalDateTypeConverter())
+                            .registerTypeAdapter(Optional.class, new JavaOptionalTypeConverter<>())
                             .registerTypeAdapterFactory(ExplicitNull.get())
                             .create();
                 }
@@ -117,6 +121,27 @@ public class GsonUtil {
         @Override
         public LocalDate deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
             return LocalDate.parse(json.getAsString());
+        }
+    }
+
+    private static class JavaOptionalTypeConverter<T>
+            implements JsonSerializer<Optional<T>>, JsonDeserializer<Optional<T>> {
+
+        @Override
+        public Optional<T> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+                throws JsonParseException {
+            final JsonArray asJsonArray = json.getAsJsonArray();
+            final JsonElement jsonElement = asJsonArray.get(0);
+            final T value = context.deserialize(jsonElement, ((ParameterizedType) typeOfT).getActualTypeArguments()[0]);
+            return Optional.ofNullable(value);
+        }
+
+        @Override
+        public JsonElement serialize(Optional<T> src, Type typeOfSrc, JsonSerializationContext context) {
+            final JsonElement element = context.serialize(src.orElse(null));
+            final JsonArray result = new JsonArray();
+            result.add(element);
+            return result;
         }
     }
 }

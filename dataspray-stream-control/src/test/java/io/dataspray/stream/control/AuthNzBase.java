@@ -230,7 +230,7 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
             assertNotNull(signInResponse.getChallengeTotpCode());
 
             // Submit TOTP code
-            // TODO Disabled until MOTO supports the underlying endpoint https://github.com/getmoto/moto/pull/7136/files
+            // TODO Disabled until MOTO releases bug to support the underlying endpoint https://github.com/getmoto/moto/pull/7136/files in 4.2.13
             /* signInResponse = request(SignInResponse.class, Given.builder()
                     .method(HttpMethod.POST)
                     .path("/sign-in/totp")

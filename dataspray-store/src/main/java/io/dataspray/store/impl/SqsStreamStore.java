@@ -38,6 +38,7 @@ import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.services.sqs.model.SqsException;
 
 import java.util.Base64;
 import java.util.Base64.Encoder;
@@ -89,12 +90,16 @@ public class SqsStreamStore implements StreamStore {
 
         try {
             sendMessage(organizationName, streamName, messageStr);
-        } catch (QueueDoesNotExistException ex) {
-            // If the queue does not exist, create it
-            createStream(organizationName, streamName);
+        } catch (SqsException ex) {
+            if (isQueueDoesNotExist(ex)) {
+                // If the queue does not exist, create it
+                createStream(organizationName, streamName);
 
-            // and retry
-            sendMessage(organizationName, streamName, messageStr);
+                // and retry
+                sendMessage(organizationName, streamName, messageStr);
+            } else {
+                throw ex;
+            }
         }
     }
 
@@ -112,8 +117,12 @@ public class SqsStreamStore implements StreamStore {
                     .queueName(getAwsQueueName(organizationName, streamName))
                     .build());
             return true;
-        } catch (QueueDoesNotExistException ex) {
-            return false;
+        } catch (SqsException ex) {
+            if (isQueueDoesNotExist(ex)) {
+                return false;
+            }
+
+            throw ex;
         }
     }
 
@@ -124,8 +133,11 @@ public class SqsStreamStore implements StreamStore {
                     .queueUrl(getAwsQueueUrl(organizationName, queueName))
                     .attributeNames(fetchAttributes)
                     .build()).attributes());
-        } catch (QueueDoesNotExistException ex) {
-            return Optional.empty();
+        } catch (SqsException ex) {
+            if (isQueueDoesNotExist(ex)) {
+                return Optional.empty();
+            }
+            throw ex;
         }
     }
 
@@ -141,15 +153,15 @@ public class SqsStreamStore implements StreamStore {
         customerLog.info("Created new queue " + streamName, organizationName);
     }
 
-    public String getAwsQueueUrl(String customerId, String queueName) {
+    public String getAwsQueueUrl(String organizationName, String queueName) {
         return "https://sqs." + awsRegion + ".amazonaws.com/"
                + awsAccountId + "/"
-               + getAwsQueueName(customerId, queueName);
+               + getAwsQueueName(organizationName, queueName);
     }
 
     @Override
-    public String getAwsQueueName(String organizationName, String streamName) {
-        return CUSTOMER_QUEUE_PREFIX + organizationName + "-" + streamName;
+    public String getAwsQueueName(String organizationName, String queueName) {
+        return CUSTOMER_QUEUE_PREFIX + organizationName + "-" + queueName;
     }
 
     @Override
@@ -158,5 +170,11 @@ public class SqsStreamStore implements StreamStore {
         return awsQueueName.startsWith(prefix)
                 ? Optional.of(awsQueueName.substring(prefix.length()))
                 : Optional.empty();
+    }
+
+    private boolean isQueueDoesNotExist(SqsException ex) {
+        return ex instanceof QueueDoesNotExistException
+               // Moto behavior: need to match against the message, is not an instance of QueueDoesNotExistException
+               || ex.getMessage().contains("The specified queue does not exist");
     }
 }

@@ -44,7 +44,7 @@ paths:
     $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1deploy'
   /organization/{organizationName}/control/task/{taskId}/versions:
     $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1versions'
-  /organization/{organizationName}/control//task/{taskId}/activate:
+  /organization/{organizationName}/control/task/{taskId}/activate:
     $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1activate'
   /organization/{organizationName}/control/task/{taskId}/pause:
     $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1pause'

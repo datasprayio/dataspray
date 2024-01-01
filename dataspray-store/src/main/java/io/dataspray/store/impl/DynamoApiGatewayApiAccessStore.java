@@ -79,8 +79,8 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
 
     private TableSchema<ApiAccess> apiAccessSchema;
     private IndexSchema<ApiAccess> apiAccessByOrganizationSchema;
-    private TableSchema<UsageKey> usageKeySchema;
-    private IndexSchema<UsageKey> usageKeyByOrganizationSchema;
+    private TableSchema<UsageKey> usageKeyByApiKeySchema;
+    private IndexSchema<UsageKey> usageKeyScanAllSchema;
     private Cache<String, Optional<ApiAccess>> apiAccessByApiKeyCache;
 
     @Startup
@@ -92,8 +92,8 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
 
         apiAccessSchema = singleTable.parseTableSchema(ApiAccess.class);
         apiAccessByOrganizationSchema = singleTable.parseGlobalSecondaryIndexSchema(1, ApiAccess.class);
-        usageKeySchema = singleTable.parseTableSchema(UsageKey.class);
-        usageKeyByOrganizationSchema = singleTable.parseGlobalSecondaryIndexSchema(1, UsageKey.class);
+        usageKeyByApiKeySchema = singleTable.parseTableSchema(UsageKey.class);
+        usageKeyScanAllSchema = singleTable.parseGlobalSecondaryIndexSchema(1, UsageKey.class);
     }
 
     @Override
@@ -134,7 +134,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
 
         // Create Api Gateway Usage Key for this organization if it doesn't exist yet
         if (UsageKeyType.ORGANIZATION.equals(apiAccess.getUsageKeyType())) {
-            getOrCreateUsageKeyForOrganization(apiAccess.getOrganizationName());
+            getOrCreateUsageKey(apiAccess.getApiKey());
         }
 
         // Add api key in dynamo
@@ -225,13 +225,13 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public UsageKey getOrCreateUsageKeyForOrganization(String organizationName) {
+    public UsageKey getOrCreateUsageKey(String apiKey) {
 
         // Lookup mapping from dynamo
-        Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
-                .tableName(usageKeySchema.tableName())
-                .key(usageKeySchema.primaryKey(Map.of(
-                        "organizationName", organizationName)))
+        Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeyByApiKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
+                .tableName(usageKeyByApiKeySchema.tableName())
+                .key(usageKeyByApiKeySchema.primaryKey(Map.of(
+                        "apiKey", apiKey)))
                 .build()).item()));
 
         // Return existing key
@@ -239,11 +239,9 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
             return usageKeyOpt.get();
         }
 
-        // Create a new API Gateway API Key
-        String apiKey = getUsageKey(UsageKeyType.ORGANIZATION, Optional.empty(), ImmutableSet.of(organizationName))
-                .orElseThrow();
+        // Create a new API Gateway Usage Key
         CreateApiKeyResponse createApiKeyResponse = apiGatewayClient.createApiKey(CreateApiKeyRequest.builder()
-                .name(organizationName)
+                .name(apiKey)
                 .value(apiKey)
                 .enabled(true).build());
         CreateUsagePlanKeyResponse createUsagePlanKeyResponse = apiGatewayClient.createUsagePlanKey(CreateUsagePlanKeyRequest.builder()
@@ -252,10 +250,10 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
                 .usagePlanId(usagePlanId).build());
 
         // Store mapping in dynamo
-        UsageKey usageKey = new UsageKey(organizationName, createApiKeyResponse.id());
+        UsageKey usageKey = new UsageKey(apiKey, createApiKeyResponse.id());
         dynamo.putItem(PutItemRequest.builder()
-                .tableName(usageKeySchema.tableName())
-                .item(usageKeySchema.toAttrMap(usageKey))
+                .tableName(usageKeyByApiKeySchema.tableName())
+                .item(usageKeyByApiKeySchema.toAttrMap(usageKey))
                 .build());
 
         return usageKey;
@@ -267,7 +265,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         do {
             ShardPageResult<UsageKey> result = singleTable.fetchShardNextPage(
                     dynamo,
-                    usageKeyByOrganizationSchema,
+                    usageKeyScanAllSchema,
                     cursorOpt,
                     100);
             cursorOpt = result.getCursorOpt();

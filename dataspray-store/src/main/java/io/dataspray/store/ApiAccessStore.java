@@ -44,6 +44,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static io.dataspray.singletable.TableType.Gsi;
 import static io.dataspray.singletable.TableType.Primary;
 
+/**
+ * Access management by API Keys.
+ * <p>
+ * Api keys can be used created by users with custom scope. Api keys are also used by tasks specific to a particular
+ * published function version that is scoped to the outputs it produces
+ * <p>
+ * Terminology:
+ * <ul>
+ *     <li>Api Key - a unique string that is used to identify a user or task</li>
+ *     <li>Usage Key - API Gateway's concept of "API key" that contains value of Api Key as well as a Usage Key ID</li>
+ *     <li>Usage Key ID - API Gateway's "API key" identifier. Fetching a Usage Key can only be done by identifier, hence we need to store a mapping of api key to usage key id in dynamo</li>
+ * </ul>
+ */
 public interface ApiAccessStore {
 
     String TRIAL_USAGE_PLAN_NAME = "trial-usage-plan";
@@ -84,7 +97,7 @@ public interface ApiAccessStore {
 
     void revokeApiKeyForTaskVersion(String organizationName, String taskId, String taskVersion);
 
-    UsageKey getOrCreateUsageKeyForOrganization(String organizationName);
+    UsageKey getOrCreateUsageKey(String apiKey);
 
     void getAllUsageKeys(Consumer<ImmutableList<UsageKey>> batchConsumer);
 
@@ -150,17 +163,18 @@ public interface ApiAccessStore {
     @AllArgsConstructor
     @EqualsAndHashCode
     @Builder(toBuilder = true)
-    @DynamoTable(type = Primary, partitionKeys = "organizationName", rangePrefix = "usageKeyByOrganizationName")
-    @DynamoTable(type = Gsi, indexNumber = 1, shardKeys = {"organizationName"}, shardCount = 10, rangePrefix = "usageKeys", rangeKeys = "organizationName")
+    @DynamoTable(type = Primary, partitionKeys = "apiKey", rangePrefix = "usageKeyByApiKey")
+    @DynamoTable(type = Gsi, indexNumber = 1, shardKeys = "apiKey", shardCount = 10, rangePrefix = "allUsageKeys", rangeKeys = "apiKey")
     @RegisterForReflection
     class UsageKey {
-        @NonNull
-        String organizationName;
 
-        // TODO:
-        // - We want to store not only organization, but also global api keys, make this a mapping between usageKeyValue and usageKeyId
-        // - Fix up naming convention of usagePlan, usageKey and apiKey.
-        TODO
+        /**
+         * Typically a deterministic api key constructed from relevant parts such as organization name.
+         * <br />
+         * See {@link ApiAccessStore#getUsageKey} for the format of this Api Key.
+         */
+        @NonNull
+        String apiKey;
 
         /**
          * Unique Amazon ID for a given api key.

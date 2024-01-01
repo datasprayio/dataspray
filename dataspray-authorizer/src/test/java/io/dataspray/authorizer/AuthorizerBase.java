@@ -147,7 +147,7 @@ abstract class AuthorizerBase {
         event.setMethodArn("arn:aws:execute-api:us-east-1:123456789012:abcdef123/default/$connect");
         event.setHeaders(ImmutableMap.of(HttpHeaders.AUTHORIZATION, "apikey " + apiKey));
         event.setRequestContext(APIGatewayCustomAuthorizerEvent.RequestContext.builder()
-                .withAccountId("000000000001") // AWS account id
+                .withAccountId("100000000001") // AWS account id
                 .withApiId("api-id")
                 .withStage("stage")
                 .build());

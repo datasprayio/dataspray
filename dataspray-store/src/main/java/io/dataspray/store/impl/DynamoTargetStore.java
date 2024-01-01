@@ -22,6 +22,7 @@
 
 package io.dataspray.store.impl;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import io.dataspray.singletable.Expression;
@@ -40,18 +41,21 @@ import java.util.Optional;
 
 public class DynamoTargetStore implements TargetStore {
 
-    private static final int INITIAL_VERSION = 0;
+    public static final int INITIAL_VERSION = 0;
 
     @Inject
+    @VisibleForTesting
     public DynamoDbClient dynamo;
     @Inject
+    @VisibleForTesting
     public SingleTable singleTable;
 
     private TableSchema<Targets> targetsSchema;
     private Cache<String, Targets> targetsByOrganizationNameCache;
 
     @Startup
-    void init() {
+    @VisibleForTesting
+    public void init() {
         targetsByOrganizationNameCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(Duration.ofMinutes(1))
                 .softValues()
@@ -99,7 +103,7 @@ public class DynamoTargetStore implements TargetStore {
     }
 
     @Override
-    public Targets updateTargets(String organizationName, Targets targets) {
+    public Targets updateTargets(Targets targets) {
 
         // To prevent concurrent modification, we check that the database entry matches our
         // expected version using dynamo conditions
@@ -127,7 +131,7 @@ public class DynamoTargetStore implements TargetStore {
                 .build());
 
         // Update cache
-        targetsByOrganizationNameCache.put(organizationName, targetsVersionBumped);
+        targetsByOrganizationNameCache.put(targets.getOrganizationName(), targetsVersionBumped);
 
         // Return targets with version bumped
         return targetsVersionBumped;

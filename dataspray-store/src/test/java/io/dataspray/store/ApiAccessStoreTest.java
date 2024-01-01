@@ -101,7 +101,7 @@ public class ApiAccessStoreTest {
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
 
-        assertTrue(usageKeyExists(organizationName));
+        assertTrue(usageKeyExists(apiAccess1.getApiKey()));
         assertEquals(Set.of("queue1", "queue2"), apiAccess1.getQueueWhitelist());
         assertTrue(apiAccess1.isTtlNotExpired());
 
@@ -113,7 +113,7 @@ public class ApiAccessStoreTest {
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
 
-        assertTrue(usageKeyExists(organizationName));
+        assertTrue(usageKeyExists(apiAccess2.getApiKey()));
     }
 
     @Test
@@ -121,7 +121,7 @@ public class ApiAccessStoreTest {
         Assertions.assertThrows(IllegalArgumentException.class, () ->
                 apiAccessStore.createApiAccessForUser(
                         UUID.randomUUID().toString(),
-                        UUID.randomUUID().toString() + "@example.com",
+                        UUID.randomUUID() + "@example.com",
                         UsageKeyType.UNLIMITED,
                         Optional.empty(),
                         Optional.of(Instant.now().minusSeconds(10))));
@@ -215,22 +215,22 @@ public class ApiAccessStoreTest {
 
     @Test
     public void testUsageKeyCreateGet() throws Exception {
-        String accountId1 = UUID.randomUUID().toString();
-        UsageKey usageKey1 = apiAccessStore.getOrCreateUsageKeyForOrganization(accountId1);
-        assertEquals(accountId1, usageKey1.getOrganizationName());
+        String apiKey1 = UUID.randomUUID().toString();
+        UsageKey usageKey1 = apiAccessStore.getOrCreateUsageKey(apiKey1);
+        assertEquals(apiKey1, usageKey1.getApiKey());
 
-        String accountId2 = UUID.randomUUID().toString();
-        UsageKey usageKey2a = apiAccessStore.getOrCreateUsageKeyForOrganization(accountId2);
-        UsageKey usageKey2b = apiAccessStore.getOrCreateUsageKeyForOrganization(accountId2);
-        assertEquals(accountId2, usageKey2a.getOrganizationName());
-        assertEquals(accountId2, usageKey2b.getOrganizationName());
+        String apiKey2 = UUID.randomUUID().toString();
+        UsageKey usageKey2a = apiAccessStore.getOrCreateUsageKey(apiKey2);
+        UsageKey usageKey2b = apiAccessStore.getOrCreateUsageKey(apiKey2);
+        assertEquals(apiKey2, usageKey2a.getApiKey());
+        assertEquals(apiKey2, usageKey2b.getApiKey());
         assertEquals(usageKey2a.getUsageKeyId(), usageKey2b.getUsageKeyId());
     }
 
     @Test
     public void testUsageKeyScan() throws Exception {
-        UsageKey usageKey1 = apiAccessStore.getOrCreateUsageKeyForOrganization(UUID.randomUUID().toString());
-        UsageKey usageKey2 = apiAccessStore.getOrCreateUsageKeyForOrganization(UUID.randomUUID().toString());
+        UsageKey usageKey1 = apiAccessStore.getOrCreateUsageKey(UUID.randomUUID().toString());
+        UsageKey usageKey2 = apiAccessStore.getOrCreateUsageKey(UUID.randomUUID().toString());
 
         Set<UsageKey> allUsageKeys = Sets.newHashSet();
         apiAccessStore.getAllUsageKeys(allUsageKeys::addAll);
@@ -272,12 +272,12 @@ public class ApiAccessStoreTest {
         return apiAccess;
     }
 
-    private boolean usageKeyExists(String organizationName) {
+    private boolean usageKeyExists(String apiKey) {
         TableSchema<UsageKey> usageKeySchema = singleTable.parseTableSchema(UsageKey.class);
         Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
                 .tableName(usageKeySchema.tableName())
                 .key(usageKeySchema.primaryKey(Map.of(
-                        "organizationName", organizationName)))
+                        "apiKey", apiKey)))
                 .build()).item()));
         return usageKeyOpt.isPresent();
     }

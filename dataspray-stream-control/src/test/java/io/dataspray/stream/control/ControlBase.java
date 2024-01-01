@@ -26,12 +26,12 @@ import com.google.common.collect.ImmutableList;
 import io.dataspray.common.test.aws.AbstractLambdaTest;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.stream.client.StreamApiImpl;
+import io.dataspray.stream.control.client.model.DeployRequest;
+import io.dataspray.stream.control.client.model.TaskStatus;
+import io.dataspray.stream.control.client.model.TaskStatuses;
 import io.dataspray.stream.control.client.model.TaskVersion;
+import io.dataspray.stream.control.client.model.UploadCodeRequest;
 import io.dataspray.stream.control.client.model.UploadCodeResponse;
-import io.dataspray.stream.control.model.DeployRequest;
-import io.dataspray.stream.control.model.TaskStatus;
-import io.dataspray.stream.control.model.TaskStatuses;
-import io.dataspray.stream.control.model.UploadCodeRequest;
 import io.quarkus.test.common.QuarkusTestResource;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.Response;
@@ -70,9 +70,9 @@ public abstract class ControlBase extends AbstractLambdaTest {
         UploadCodeResponse uploadCodeResponse = request(UploadCodeResponse.class, Given.builder()
                 .method(HttpMethod.PUT)
                 .path("/organization/" + getOrganizationName() + "/control/code/upload")
-                .body(UploadCodeRequest.builder()
+                .body(new UploadCodeRequest()
                         .taskId(taskId)
-                        .contentLengthBytes(12L).build())
+                        .contentLengthBytes(12L))
                 .build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
@@ -87,12 +87,12 @@ public abstract class ControlBase extends AbstractLambdaTest {
         TaskVersion taskVersion = request(TaskVersion.class, Given.builder()
                 .method(HttpMethod.PATCH)
                 .path("/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy")
-                .body(DeployRequest.builder()
+                .body(new DeployRequest()
                         .codeUrl(uploadCodeResponse.getCodeUrl())
                         .handler("io.dataspray.Runner")
                         .inputQueueNames(List.of("queue1"))
                         .runtime(DeployRequest.RuntimeEnum.JAVA11)
-                        .switchToNow(false).build())
+                        .switchToNow(false))
                 .build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
@@ -104,12 +104,12 @@ public abstract class ControlBase extends AbstractLambdaTest {
                 .method(HttpMethod.PATCH)
                 .path("/organization/" + getOrganizationName() + "/control/task/" + taskId + "/activate")
                 .query(Map.of("version", List.of("1")))
-                .body(DeployRequest.builder()
+                .body(new DeployRequest()
                         .codeUrl(uploadCodeResponse.getCodeUrl())
                         .handler("io.dataspray.Runner")
                         .inputQueueNames(List.of("queue1"))
                         .runtime(DeployRequest.RuntimeEnum.JAVA11)
-                        .switchToNow(false).build())
+                        .switchToNow(false))
                 .build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
@@ -144,9 +144,9 @@ public abstract class ControlBase extends AbstractLambdaTest {
         UploadCodeResponse uploadCodeResponse2 = request(UploadCodeResponse.class, Given.builder()
                 .method(HttpMethod.PUT)
                 .path("/organization/" + getOrganizationName() + "/control/code/upload")
-                .body(UploadCodeRequest.builder()
+                .body(new UploadCodeRequest()
                         .taskId(taskId)
-                        .contentLengthBytes(12L).build())
+                        .contentLengthBytes(12L))
                 .build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
@@ -162,12 +162,12 @@ public abstract class ControlBase extends AbstractLambdaTest {
         TaskVersion taskVersion2 = request(TaskVersion.class, Given.builder()
                 .method(HttpMethod.PATCH)
                 .path("/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy")
-                .body(DeployRequest.builder()
+                .body(new DeployRequest()
                         .codeUrl(uploadCodeResponse2.getCodeUrl())
                         .handler("io.dataspray.Runner")
                         .inputQueueNames(List.of("queue2"))
                         .runtime(DeployRequest.RuntimeEnum.NODEJS14_X)
-                        .switchToNow(true).build())
+                        .switchToNow(true))
                 .build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
@@ -181,14 +181,13 @@ public abstract class ControlBase extends AbstractLambdaTest {
                 .build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
-        assertEquals(
-                TaskStatuses.builder()
+        assertEquals(new TaskStatuses()
                         .tasks(ImmutableList.of(
-                                TaskStatus.builder()
+                                new TaskStatus()
                                         .taskId(taskId)
                                         .version("2")
                                         .status(TaskStatus.StatusEnum.RUNNING)
-                                        .lastUpdateStatus(TaskStatus.LastUpdateStatusEnum.SUCCESSFUL).build())).build(),
+                                        .lastUpdateStatus(TaskStatus.LastUpdateStatusEnum.SUCCESSFUL))),
                 filterStatusAll(taskStatuses, taskId));
 
         // Delete
@@ -207,10 +206,9 @@ public abstract class ControlBase extends AbstractLambdaTest {
      * Filters response value to include only status from given task id
      */
     private static TaskStatuses filterStatusAll(TaskStatuses taskStatuses, String taskId) {
-        return taskStatuses.toBuilder()
+        return taskStatuses
                 .tasks(taskStatuses.getTasks().stream()
                         .filter(ts -> ts.getTaskId().equals(taskId))
-                        .collect(ImmutableList.toImmutableList()))
-                .build();
+                        .collect(ImmutableList.toImmutableList()));
     }
 }
