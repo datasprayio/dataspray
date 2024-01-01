@@ -513,10 +513,6 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <requireMavenVersion>
-                                    <message>Install SDKMan and run `sdk env` to switch maven version</message>
-                                    <version>3.9.6</version>
-                                </requireMavenVersion>
                                 <requireJavaVersion>
                                     <message>Install SDKMan and run `sdk env` to switch java version</message>
                                     <version>${java.version}</version>
