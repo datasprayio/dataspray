@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2023 Matus Faro
+  ~ Copyright 2024 Matus Faro
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy
   ~ of this software and associated documentation files (the "Software"), to deal
@@ -605,10 +605,16 @@
                         <buildArgs combine.children="append">
                             <buildArg>--no-fallback</buildArg>
                             <buildArg>--verbose</buildArg>
+                            <!-- Without this, we have:
+                                 Error: Class-path entry file:///Users/matus/.m2/repository/org/graalvm/sdk/graal-sdk/23.0.1/graal-sdk-23.0.1.jar contains class org.graalvm.nativeimage.impl.RuntimeProxyCreationSupport. This class is part of the image builder itself (in jrt:/org.graalvm.nativeimage) and must not be passed via -cp. This can be caused by a fat-jar that illegally includes svm.jar (or graal-sdk.jar) due to its build-time dependency on it. As a workaround, -H:+AllowDeprecatedBuilderClassesOnImageClasspath allows turning this error into a warning. Note that this option is deprecated and will be removed in a future version.
+                                 For some reason the native-image command classpath contains test resources including dataspray-common-test dependencies which pulls in the graal sdk -->
+                            <buildArg>-H:+AllowDeprecatedBuilderClassesOnImageClasspath</buildArg>
                             <!-- Include resource bundles here -->
                             <!-- You may want to whitelist from the list in target/native/agent-output/test/session-*/resource-config.json -->
                             <buildArg>-H:IncludeResourceBundles='net.sourceforge.argparse4j.internal.ArgumentParserImpl'
                             </buildArg>
+                            <!-- Required for IncludeResourceBundles above -->
+                            <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
                         </buildArgs>
                     </configuration>
                 </plugin>
