@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2023 Matus Faro
+  ~ Copyright 2024 Matus Faro
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy
   ~ of this software and associated documentation files (the "Software"), to deal
@@ -40,8 +40,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mainClass>io.dataspray.core.cli.Cli</mainClass>
-        <!--        <executable-suffix/>-->
-        <!--        <distribution.directory>${project.build.directory}/distributions</distribution.directory>-->
+        <quarkus.package.type>uber-jar</quarkus.package.type>
         <skipNative/>
     </properties>
 
@@ -118,11 +117,6 @@
                         <phase>package</phase>
                     </execution>
                 </executions>
-                <configuration>
-                    <properties>
-                        <quarkus.package.type>uber-jar</quarkus.package.type>
-                    </properties>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
