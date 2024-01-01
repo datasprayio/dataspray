@@ -32,6 +32,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'graalvm-community'
+          cache: 'maven'
       - uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
