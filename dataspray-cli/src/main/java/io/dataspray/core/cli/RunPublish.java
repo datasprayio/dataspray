@@ -22,6 +22,7 @@
 
 package io.dataspray.core.cli;
 
+import com.google.common.base.Strings;
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
 import io.dataspray.core.StreamRuntime;
@@ -31,6 +32,8 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+
+import java.util.Optional;
 
 @Slf4j
 @Command(/* Debugging use only */ hidden = true, name = "publish", description = "second step of deploy command; prefer to use deploy instead; publish new version of task with previously uploaded code")
@@ -43,6 +46,8 @@ public class RunPublish implements Runnable {
     boolean skipActivate;
     @Parameters(arity = "1", paramLabel = "<code_url>", description = "code url to publish returned from running the upload command")
     private String codeUrl;
+    @Option(names = {"-o", "--organization"}, description = "Organization name")
+    private String organizationName;
 
     @Inject
     CommandUtil commandUtil;
@@ -57,6 +62,6 @@ public class RunPublish implements Runnable {
     public void run() {
         Project project = codegen.loadProject();
         commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                streamRuntime.publish(cliConfig.getDataSprayApiKey(), project, selectedTaskId, codeUrl, !skipActivate));
+                streamRuntime.publish(cliConfig.getOrganization(Optional.ofNullable(Strings.emptyToNull(organizationName))), project, selectedTaskId, codeUrl, !skipActivate));
     }
 }

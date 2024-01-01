@@ -82,6 +82,7 @@ public class BaseApiStack extends BaseStack {
     private final String authorizerFunctionName;
     private final SingletonFunction authorizerFunction;
     private final Role roleApiGatewayInvoke;
+    private final String apiFqdn;
     private final Certificate certificate;
     private final SpecRestApi restApi;
     private final RecordSet recordSetA;
@@ -120,7 +121,7 @@ public class BaseApiStack extends BaseStack {
         // Set domain name for API Gateway
         String fqdn = DnsStack.createFqdn(this, getDeployEnv());
         String apiSubdomain = setServerUrlDomain(openApiSpec, fqdn);
-        String apiFqdn = Fn.join(".", List.of(apiSubdomain, fqdn));
+        apiFqdn = Fn.join(".", List.of(apiSubdomain, fqdn));
         IHostedZone dnsZone = getOptions().getDnsStack().getDnsZone(this, fqdn);
 
         certificate = Certificate.Builder.create(this, getConstructId("cert"))

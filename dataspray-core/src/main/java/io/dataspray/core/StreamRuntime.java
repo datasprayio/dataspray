@@ -22,30 +22,44 @@
 
 package io.dataspray.core;
 
+import io.dataspray.stream.client.StreamApi.Access;
 import io.dataspray.stream.control.client.model.TaskStatus;
 import io.dataspray.stream.control.client.model.TaskVersions;
+import lombok.Value;
 
 import java.io.File;
+import java.util.Optional;
 
 public interface StreamRuntime {
 
-    void statusAll(String apiKey, Project project);
+    void statusAll(Organization organization, Project project);
 
-    void status(String dataSprayApiKey, Project project, String processorName);
+    void status(Organization organization, Project project, String processorName);
 
-    void deploy(String apiKey, Project project, String processorName, boolean activateVersion);
+    void deploy(Organization organization, Project project, String processorName, boolean activateVersion);
 
-    String upload(String apiKey, Project project, String processorName, File codeZipFile);
+    String upload(Organization organization, Project project, String processorName, File codeZipFile);
 
-    String publish(String apiKey, Project project, String processorName, String codeUrl, boolean activateVersion);
+    String publish(Organization organization, Project project, String processorName, String codeUrl, boolean activateVersion);
 
-    TaskStatus activateVersion(String apiKey, Project project, String processorName, String version);
+    TaskStatus activateVersion(Organization organization, Project project, String processorName, String version);
 
-    TaskStatus pause(String apiKey, Project project, String processorName);
+    TaskStatus pause(Organization organization, Project project, String processorName);
 
-    TaskStatus resume(String apiKey, Project project, String processorName);
+    TaskStatus resume(Organization organization, Project project, String processorName);
 
-    TaskVersions listVersions(String apiKey, Project project, String processorName);
+    TaskVersions listVersions(Organization organization, Project project, String processorName);
 
-    TaskStatus delete(String apiKey, Project project, String processorName);
+    TaskStatus delete(Organization organization, Project project, String processorName);
+
+    @Value
+    class Organization {
+        String name;
+        String apiKey;
+        Optional<String> endpoint;
+
+        public Access toAccess() {
+            return new Access(apiKey, endpoint);
+        }
+    }
 }

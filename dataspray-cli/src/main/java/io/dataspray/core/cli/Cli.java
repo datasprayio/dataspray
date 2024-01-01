@@ -37,7 +37,7 @@ import picocli.CommandLine.Spec;
                 Init.class,
                 Install.class,
                 Run.class,
-                Login.class,
+                Env.class,
         }
 )
 public class Cli {

@@ -34,23 +34,23 @@ paths:
     $ref: 'paths-authnz.yaml#/~1apikey'
   /apikey/{apiKeyId}:
     $ref: 'paths-authnz.yaml#/~1apikey~1{apiKeyId}'
-  /code/upload:
-    $ref: 'paths-control.yaml#/~1code~1upload'
-  /control/status:
-    $ref: 'paths-control.yaml#/~1control~1status'
-  /control/task/{taskId}/status/:
-    $ref: 'paths-control.yaml#/~1control~1task~1{taskId}~1status~1'
-  /control/task/{taskId}/deploy:
-    $ref: 'paths-control.yaml#/~1control~1task~1{taskId}~1deploy'
-  /control/task/{taskId}/versions:
-    $ref: 'paths-control.yaml#/~1control~1task~1{taskId}~1versions'
-  /control/task/{taskId}/activate:
-    $ref: 'paths-control.yaml#/~1control~1task~1{taskId}~1activate'
-  /control/task/{taskId}/pause:
-    $ref: 'paths-control.yaml#/~1control~1task~1{taskId}~1pause'
-  /control/task/{taskId}/resume:
-    $ref: 'paths-control.yaml#/~1control~1task~1{taskId}~1resume'
-  /control/task/{taskId}/delete:
-    $ref: 'paths-control.yaml#/~1control~1task~1{taskId}~1delete'
-  /account/{accountId}/target/{targetId}/message:
-    $ref: 'paths-ingest.yaml#/~1account~1{accountId}~1target~1{targetId}~1message'
+  /organization/{organizationName}/control/code/upload:
+    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1code~1upload'
+  /organization/{organizationName}/control/status:
+    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1status'
+  /organization/{organizationName}/control/task/{taskId}/status/:
+    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1status~1'
+  /organization/{organizationName}/control/task/{taskId}/deploy:
+    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1deploy'
+  /organization/{organizationName}/control/task/{taskId}/versions:
+    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1versions'
+  /organization/{organizationName}/control/task/{taskId}/activate:
+    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1activate'
+  /organization/{organizationName}/control/task/{taskId}/pause:
+    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1pause'
+  /organization/{organizationName}/control/task/{taskId}/resume:
+    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1resume'
+  /organization/{organizationName}/control/task/{taskId}/delete:
+    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1delete'
+  /organization/{organizationName}/target/{targetId}/message:
+    $ref: 'paths-ingest.yaml#/~1organization~1{organizationName}~1target~1{targetId}~1message'

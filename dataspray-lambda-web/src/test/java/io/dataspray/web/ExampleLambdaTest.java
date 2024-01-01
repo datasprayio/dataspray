@@ -39,17 +39,16 @@ public class ExampleLambdaTest extends AbstractLambdaTest {
 
     @Getter
     @AllArgsConstructor
-    private enum TestType {
-        CUSTOMER_ID(Given.builder()
-                .path("/api/customer-id")
-                .accountId("1234")
+    public enum TestType {
+        PING(Given.builder()
+                .path("/api/ping")
                 .build(),
-                "1234"),
-        CUSTOMER_API_KEY(Given.builder()
-                .path("/api/customer-api-key")
-                .apiKeyValue("FA2A7539-CC86-4DB7-9718-DA40A3928CAE")
+                "OK"),
+        USER_EMAIL(Given.builder()
+                .path("/api/user-email")
+                .userEmail("expected.email@example.com")
                 .build(),
-                "FA2A7539-CC86-4DB7-9718-DA40A3928CAE");
+                "expected.email@example.com");
 
         private final Given given;
         private final String expectedBody;

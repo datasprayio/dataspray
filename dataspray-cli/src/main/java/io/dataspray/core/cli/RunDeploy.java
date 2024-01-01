@@ -22,6 +22,7 @@
 
 package io.dataspray.core.cli;
 
+import com.google.common.base.Strings;
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
 import io.dataspray.core.StreamRuntime;
@@ -30,6 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
+
+import java.util.Optional;
 
 @Slf4j
 @Command(name = "deploy", description = "Single command to upload, publish and switch")
@@ -40,6 +43,8 @@ public class RunDeploy implements Runnable {
     private String taskId;
     @Option(names = "--skip-activate", description = "deploy without activating version; use activate command to start using the deployed version")
     boolean skipActivate;
+    @Option(names = {"-o", "--organization"}, description = "Organization name")
+    private String organizationName;
 
     @Inject
     CommandUtil commandUtil;
@@ -54,6 +59,6 @@ public class RunDeploy implements Runnable {
     public void run() {
         Project project = codegen.loadProject();
         commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                streamRuntime.deploy(cliConfig.getDataSprayApiKey(), project, selectedTaskId, !skipActivate));
+                streamRuntime.deploy(cliConfig.getOrganization(Optional.ofNullable(Strings.emptyToNull(organizationName))), project, selectedTaskId, !skipActivate));
     }
 }

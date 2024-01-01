@@ -23,18 +23,17 @@
 package io.dataspray.web.resource;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.quarkus.amazon.lambda.http.model.AwsProxyRequest;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.Provider;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -42,14 +41,6 @@ import java.util.function.Predicate;
 @Path("/")
 @Provider
 public abstract class AbstractResource {
-
-    public static final String API_GATEWAY_API_KEY_ID_HEADER_NAME = "";
-
-    /** Can be supplied via header, query param */
-    public static final String API_TOKEN_HEADER_NAME = "x-api-key";
-    public static final String API_TOKEN_QUERY_NAME = "api_key";
-    public static final String API_TOKEN_COOKIE_NAME = "x-api-key";
-    public static final String API_TOKEN_AUTHORIZATION_TYPE = "bearer";
 
     @Context
     protected com.amazonaws.services.lambda.runtime.Context lambdaContext;
@@ -62,32 +53,31 @@ public abstract class AbstractResource {
     @Context
     protected UriInfo uriInfo;
 
-    protected String getCustomerId() {
-        return proxyRequest.getRequestContext().getAuthorizer().getContextValue(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID);
+    /**
+     * Retrieve user email as passed in via context from Cognito Authorizer function.
+     * <p>
+     * May be empty if authorizer did not process this request, most likely as this API endpoint is open to public.
+     */
+    protected Optional<String> getUserEmail() {
+        return Optional.ofNullable(Strings.emptyToNull(proxyRequest
+                .getRequestContext()
+                .getAuthorizer()
+                .getContextValue(AuthorizerConstants.CONTEXT_KEY_USER_EMAIL)));
     }
 
-    protected String getCustomerApiKey() {
-        return proxyRequest.getRequestContext().getAuthorizer().getContextValue(AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE);
-    }
-
-    protected Optional<String> getAuthKey() {
-        // First check api header
-        return headers.getRequestHeader(API_TOKEN_HEADER_NAME).stream().findFirst()
+    /**
+     * Retrieve user organization names as passed in via context from Cognito Authorizer function.
+     * <p>
+     * May be empty if authorizer did not process this request, most likely as this API endpoint is open to public.
+     */
+    protected ImmutableSet<String> getOrganizationNames() {
+        return Optional.ofNullable(Strings.emptyToNull(proxyRequest
+                        .getRequestContext()
+                        .getAuthorizer()
+                        .getContextValue(AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES)))
+                .stream()
+                .flatMap(names -> ImmutableSet.copyOf(names.split(",")).stream())
                 .filter(Predicate.not(Strings::isNullOrEmpty))
-                // Then check authorization header
-                .or(() -> {
-                    List<String> authorizationHeaderValues = headers.getRequestHeader(HttpHeaders.AUTHORIZATION);
-                    if (authorizationHeaderValues.size() != 2
-                        || !API_TOKEN_AUTHORIZATION_TYPE.equalsIgnoreCase(authorizationHeaderValues.get(0))
-                        || Strings.isNullOrEmpty(authorizationHeaderValues.get(1))) {
-                        return Optional.empty();
-                    }
-                    return Optional.of(authorizationHeaderValues.get(1));
-                })
-                .or(() -> Optional.ofNullable(headers.getCookies().get(API_TOKEN_COOKIE_NAME))
-                        .map(Cookie::getValue))
-                // Then check query param
-                .or(() -> Optional.ofNullable(uriInfo.getQueryParameters().get(API_TOKEN_QUERY_NAME))
-                        .flatMap(values -> values.stream().findFirst()));
+                .collect(ImmutableSet.toImmutableSet());
     }
 }

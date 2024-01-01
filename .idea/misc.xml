@@ -29,12 +29,6 @@
         <option value="$PROJECT_DIR$/dataspray-common-test/pom.xml" />
       </list>
     </option>
-    <option name="ignoredFiles">
-      <set>
-        <option value="$PROJECT_DIR$/dataspray-backend/pom.xml" />
-        <option value="$PROJECT_DIR$/dataspray-site-dashboard/pom.xml" />
-      </set>
-    </option>
     <option name="workspaceImportForciblyTurnedOn" value="true" />
   </component>
   <component name="NullableNotNullManager">

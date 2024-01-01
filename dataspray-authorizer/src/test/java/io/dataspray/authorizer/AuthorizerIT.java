@@ -27,10 +27,10 @@ import io.dataspray.common.json.GsonUtil;
 import io.dataspray.common.test.aws.MotoInstance;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
-import io.dataspray.store.impl.ApiAccessStore;
-import io.dataspray.store.impl.ApiAccessStore.ApiAccess;
-import io.dataspray.store.impl.DynamoApiGatewayApiAccessStore;
+import io.dataspray.store.ApiAccessStore;
+import io.dataspray.store.ApiAccessStore.ApiAccess;
 import io.dataspray.store.SingleTableProvider;
+import io.dataspray.store.impl.DynamoApiGatewayApiAccessStore;
 import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import lombok.extern.slf4j.Slf4j;
@@ -60,21 +60,23 @@ class AuthorizerIT extends AuthorizerBase {
 
     /**
      * Since an integration test cannot inject resources even for test setup, this method re-implements
-     * {@link DynamoApiGatewayApiAccessStore#createApiAccess} to add an API key entry in Dynamo.
+     * {@link DynamoApiGatewayApiAccessStore#createApiAccessForUser} to add an API key entry in Dynamo.
      */
     @Override
     protected ApiAccessStore.ApiAccess createApiAccess(
-            String accountId,
+            String organizationName,
             ApiAccessStore.UsageKeyType usageKeyType,
-            String description,
             Optional<ImmutableSet<String>> queueWhitelistOpt,
             Optional<Instant> expiryOpt) {
 
         ApiAccess apiAccess = new ApiAccess(
                 new KeygenUtil().generateSecureApiKey(DynamoApiGatewayApiAccessStore.API_KEY_LENGTH),
-                accountId,
-                usageKeyType.getId(),
-                description,
+                organizationName,
+                ApiAccessStore.OwnerType.USER,
+                "user@example.com",
+                null,
+                null,
+                usageKeyType,
                 queueWhitelistOpt.orElse(ImmutableSet.of()),
                 expiryOpt.map(Instant::getEpochSecond).orElse(null));
         TableSchema<ApiAccess> apiKeySchema = singleTable.parseTableSchema(ApiAccess.class);

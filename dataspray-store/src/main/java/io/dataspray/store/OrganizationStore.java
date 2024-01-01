@@ -20,37 +20,33 @@
  * SOFTWARE.
  */
 
-package io.dataspray.core.cli;
+package io.dataspray.store;
 
-import com.google.common.base.Strings;
-import jakarta.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Option;
 
-import java.util.Optional;
-import java.util.function.Predicate;
+import com.google.common.collect.ImmutableSet;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Value;
 
-@Slf4j
-@Command(name = "login",
-        description = "Set your API key")
-public class Login implements Runnable {
-    @Mixin
-    LoggingMixin loggingMixin;
+public interface OrganizationStore {
 
-    @Option(names = {"-a", "--apiKey"}, description = "DataSpray API Key")
-    String apiKey;
+    // TODO
+//    void addUser(String email, String organizationName);
 
-    @Inject
-    CliConfig cliConfig;
+    // TODO
+//    void removeUser(String email, String organizationName);
 
-    @Override
-    public void run() {
-        cliConfig.setDataSprayApiKey(Optional.ofNullable(Strings.emptyToNull(this.apiKey))
-                .or(() -> Optional.ofNullable(System.console().readPassword("Enter value for --apiKey (DataSpray API Key): "))
-                        .map(String::valueOf)
-                        .filter(Predicate.not(String::isBlank)))
-                .orElseThrow(() -> new RuntimeException("Need to supply api key")));
+    ImmutableSet<Organization> getOrganizationsForUser(String email);
+
+    // TODO
+//    Optional<Organization> getOrganization(String organizationName);
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    class Organization {
+        @NonNull
+        String name;
     }
 }

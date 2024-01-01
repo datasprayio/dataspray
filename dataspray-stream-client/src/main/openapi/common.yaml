@@ -3,9 +3,10 @@
 components:
   securitySchemes:
     Authorizer:
-      type: apiKey
+      type: http
       in: header
       name: Authorization
+      scheme: apikey
   responses:
     Ok:
       description: >-

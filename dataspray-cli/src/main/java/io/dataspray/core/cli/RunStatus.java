@@ -22,6 +22,7 @@
 
 package io.dataspray.core.cli;
 
+import com.google.common.base.Strings;
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
 import io.dataspray.core.StreamRuntime;
@@ -39,6 +40,8 @@ public class RunStatus implements Runnable {
     LoggingMixin loggingMixin;
     @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id to deploy; otherwise all tasks are used if ran from root directory or specific task if ran from within a task directory")
     private String taskId;
+    @Option(names = {"-o", "--organization"}, description = "Organization name")
+    private String organizationName;
 
     @Inject
     Codegen codegen;
@@ -52,9 +55,9 @@ public class RunStatus implements Runnable {
         Project project = codegen.loadProject();
         Optional<String> activeProcessor = Optional.ofNullable(taskId).or(project::getActiveProcessor);
         if (activeProcessor.isEmpty()) {
-            streamRuntime.statusAll(cliConfig.getDataSprayApiKey(), project);
+            streamRuntime.statusAll(cliConfig.getOrganization(Optional.ofNullable(Strings.emptyToNull(organizationName))), project);
         } else {
-            streamRuntime.status(cliConfig.getDataSprayApiKey(), project, activeProcessor.get());
+            streamRuntime.status(cliConfig.getOrganization(Optional.ofNullable(Strings.emptyToNull(organizationName))), project, activeProcessor.get());
         }
     }
 }

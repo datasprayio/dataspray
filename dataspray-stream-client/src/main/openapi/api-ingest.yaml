@@ -13,12 +13,10 @@ security:
 components:
   securitySchemes:
     Authorizer:
-      type: apiKey
-      in: header
-      name: Authorization
+      $ref: 'common.yaml#/components/securitySchemes/Authorizer'
 
 paths:
   /ping:
     $ref: 'paths-health.yaml#/~1ping'
-  /account/{accountId}/target/{targetId}/message:
-    $ref: 'paths-ingest.yaml#/~1account~1{accountId}~1target~1{targetId}~1message'
+  /organization/{organizationName}/target/{targetId}/message:
+    $ref: 'paths-ingest.yaml#/~1organization~1{organizationName}~1target~1{targetId}~1message'

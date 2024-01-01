@@ -22,19 +22,26 @@
 
 package io.dataspray.store;
 
-import io.dataspray.store.AccountStore.EtlRetention;
-import software.amazon.awssdk.services.glue.model.DataFormat;
+import jakarta.ws.rs.core.MediaType;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
-public interface EtlStore {
+import java.util.Map;
+import java.util.Optional;
 
-    void putRecord(String customerId,
-                   String targetId,
-                   byte[] jsonBytes,
-                   EtlRetention retention);
+public interface StreamStore {
 
-    void setTableDefinition(String customerId,
-                            String targetId,
-                            DataFormat dataFormat,
-                            String schemaDefinition,
-                            EtlRetention retention);
+    void submit(String organizationName, String streamName, byte[] messageBytes, MediaType contentType);
+
+    /** Check whether queue exists */
+    boolean streamExists(String organizationName, String streamName);
+
+    /** Check queue attributes */
+    Optional<Map<QueueAttributeName, String>> queueAttributes(String organizationName, String queueName, QueueAttributeName... fetchAttributes);
+
+    void createStream(String organizationName, String streamName);
+
+    /** Converts user supplied queue name to AWS queue name */
+    String getAwsQueueName(String organizationName, String streamName);
+
+    Optional<String> extractStreamNameFromAwsQueueName(String organizationName, String awsQueueName);
 }

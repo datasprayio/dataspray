@@ -81,13 +81,12 @@ public class AuthNzStack extends BaseStack {
                         .tempPasswordValidity(Duration.days(1)).build())
                 .signInCaseSensitive(false)
                 .signInAliases(SignInAliases.builder()
-                        .preferredUsername(true)
-                        .username(true)
                         .email(true).build())
                 .deviceTracking(DeviceTracking.builder()
                         .deviceOnlyRememberedOnUserPrompt(true)
                         .challengeRequiredOnNewDevice(true).build())
-                .accountRecovery(AccountRecovery.EMAIL_ONLY)
+                // Don't allow recovery, contact support
+                .accountRecovery(AccountRecovery.NONE)
                 .keepOriginal(KeepOriginalAttrs.builder()
                         .email(true).build())
                 .advancedSecurityMode(AdvancedSecurityMode.OFF)
@@ -123,6 +122,7 @@ public class AuthNzStack extends BaseStack {
                         .build())
                 .userPool(userPool)
                 .userPoolClientName("authnz")
+                .enableTokenRevocation(true)
                 .generateSecret(false)
                 .build();
     }

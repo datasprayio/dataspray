@@ -22,14 +22,23 @@
 
 package io.dataspray.stream.ingest;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.json.GsonUtil;
 import io.dataspray.common.test.aws.AbstractLambdaTest;
+import io.dataspray.common.test.aws.MotoInstance;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
-import io.dataspray.store.AccountStore;
-import io.dataspray.store.impl.DynamoApiGatewayApiAccessStore;
-import io.dataspray.store.impl.FirehoseS3AthenaEtlStore;
-import io.dataspray.store.impl.SqsQueueStore;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.store.SingleTableProvider;
+import io.dataspray.store.TargetStore.Batch;
+import io.dataspray.store.TargetStore.BatchRetention;
+import io.dataspray.store.TargetStore.Stream;
+import io.dataspray.store.TargetStore.Target;
+import io.dataspray.store.TargetStore.Targets;
+import io.dataspray.store.impl.DynamoTargetStore;
+import io.dataspray.store.impl.FirehoseS3AthenaBatchStore;
+import io.dataspray.store.impl.SqsStreamStore;
 import io.quarkus.test.common.QuarkusTestResource;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.Response;
@@ -58,14 +67,17 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import static io.dataspray.store.impl.FirehoseS3AthenaEtlStore.*;
+import static io.dataspray.store.impl.FirehoseS3AthenaBatchStore.*;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Slf4j
 @QuarkusTestResource(MotoLifecycleManager.class)
 public abstract class IngestBase extends AbstractLambdaTest {
+
+    MotoInstance motoInstance;
 
     protected abstract DynamoDbClient getDynamoClient();
 
@@ -79,13 +91,35 @@ public abstract class IngestBase extends AbstractLambdaTest {
 
     @Test
     public void test() throws Exception {
-        String customerId = "B41B7CC9-BD31-46E3-8CD1-52B6A2BC203C";
         String targetId = "registration";
         String bucketName = "io-dataspray-etl";
         String firehoseName = "dataspray-ingest-etl";
 
-        // Setup account
-        DynamoApiGatewayApiAccessStore apiAccessStore = new DynamoApiGatewayApiAccessStore();
+        // Setup Target store
+        SingleTable singleTable = SingleTable.builder()
+                .tablePrefix(SingleTableProvider.TABLE_PREFIX_DEFAULT)
+                .overrideGson(GsonUtil.get())
+                .build();
+        DynamoTargetStore dynamoTargetStore = new DynamoTargetStore();
+        dynamoTargetStore.dynamo = getDynamoClient();
+        dynamoTargetStore.singleTable = singleTable;
+        dynamoTargetStore.init();
+
+        // Setup target to perform batch and stream processing
+        dynamoTargetStore.updateTargets(Targets.builder()
+                .organizationName(getOrganizationName())
+                .version(DynamoTargetStore.INITIAL_VERSION)
+                .targets(ImmutableSet.of(
+                        Target.builder()
+                                .name(targetId)
+                                .batch(Optional.of(Batch.builder()
+                                        .retention(BatchRetention.YEAR).build()))
+                                .streams(ImmutableList.of(
+                                        Stream.builder()
+                                                .name(targetId)
+                                                .build()))
+                                .build()))
+                .build());
 
         // Setup code bucket
         try {
@@ -103,7 +137,7 @@ public abstract class IngestBase extends AbstractLambdaTest {
                 .extendedS3DestinationConfiguration(ExtendedS3DestinationConfiguration.builder()
                         .bucketARN("arn:aws:s3:::" + bucketName)
                         .compressionFormat(CompressionFormat.ZIP)
-                        .prefix(FirehoseS3AthenaEtlStore.ETL_BUCKET_PREFIX)
+                        .prefix(FirehoseS3AthenaBatchStore.ETL_BUCKET_PREFIX)
                         .bufferingHints(BufferingHints.builder()
                                 .intervalInSeconds(0).build())
                         .build())
@@ -116,27 +150,29 @@ public abstract class IngestBase extends AbstractLambdaTest {
         // Submit data to Ingest Resource
         request(Given.builder()
                 .method(HttpMethod.POST)
-                .path("/account/" + customerId + "/target/" + targetId + "/message")
+                .path("/organization/" + getOrganizationName() + "/target/" + targetId + "/message")
                 .contentType(APPLICATION_JSON_TYPE)
                 .body(body)
                 .build())
                 .assertStatusCode(Response.Status.NO_CONTENT.getStatusCode());
 
         // Assert message is in queue
-        String queueUrl = "https://sqs.us-east-1.amazonaws.com/479823472389/"
-                          + SqsQueueStore.CUSTOMER_QUEUE_PREFIX + customerId + "-" + targetId;
+        String queueUrl = "https://sqs." + motoInstance.getRegion() + ".amazonaws.com/"
+                          + motoInstance.getAwsAccountId() + "/"
+                          + SqsStreamStore.CUSTOMER_QUEUE_PREFIX + getOrganizationName() + "-" + targetId;
+        log.info("Asserting message from queue {}", queueUrl);
         List<Message> messages = getSqsClient().receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(queueUrl)
                 .maxNumberOfMessages(10).build()).messages();
         assertEquals(1, messages.size());
-        assertEquals(bodyStr, messages.get(0).body());
+        assertEquals(bodyStr, messages.getFirst().body());
 
         // Assert message is in S3
         ListObjectsV2Response objects = getS3Client().listObjectsV2(ListObjectsV2Request.builder()
                 .bucket(bucketName)
                 .build());
         assertEquals(1, objects.keyCount());
-        String objectKey = objects.contents().get(0).key();
+        String objectKey = objects.contents().getFirst().key();
         log.info("Found object key {}", objectKey);
         ResponseInputStream<GetObjectResponse> objectStream = getS3Client().getObject(GetObjectRequest.builder()
                 .bucket(bucketName)
@@ -149,8 +185,8 @@ public abstract class IngestBase extends AbstractLambdaTest {
         log.info("Object content {}", objectJson);
         assertEquals(ImmutableMap.builder()
                 .putAll(body)
-                .put(ETL_PARTITION_KEY_RETENTION, AccountStore.EtlRetention.DEFAULT.name())
-                .put(ETL_PARTITION_KEY_ACCOUNT, customerId)
+                .put(ETL_PARTITION_KEY_RETENTION, BatchRetention.YEAR.name())
+                .put(ETL_PARTITION_KEY_ORGANIZATION, getOrganizationName())
                 .put(ETL_PARTITION_KEY_TARGET, targetId)
                 .build(), objectJson);
     }

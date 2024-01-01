@@ -20,18 +20,21 @@
  * SOFTWARE.
  */
 
-package io.dataspray.web.api;
+package io.dataspray.store;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
+import io.dataspray.store.TargetStore.BatchRetention;
+import software.amazon.awssdk.services.glue.model.DataFormat;
 
-@Path("/")
-public interface ExampleApi {
-    @GET
-    @Path("/ping")
-    String ping();
+public interface BatchStore {
 
-    @GET
-    @Path("/user-email")
-    String userEmail();
+    void putRecord(String customerId,
+                   String targetId,
+                   byte[] jsonBytes,
+                   BatchRetention retention);
+
+    void setTableDefinition(String customerId,
+                            String targetId,
+                            DataFormat dataFormat,
+                            String schemaDefinition,
+                            BatchRetention retention);
 }

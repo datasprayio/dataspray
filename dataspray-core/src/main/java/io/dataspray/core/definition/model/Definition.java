@@ -136,7 +136,7 @@ public class Definition extends Item {
     @Getter
     @AllArgsConstructor
     public enum Version {
-        @SerializedName("V1.0.0")
-        V_1_0_0
+        @SerializedName("V0.0.0")
+        V_0_0_0
     }
 }

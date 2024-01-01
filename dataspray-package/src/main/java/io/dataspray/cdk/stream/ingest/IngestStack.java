@@ -25,7 +25,7 @@ package io.dataspray.cdk.stream.ingest;
 import com.google.common.collect.ImmutableList;
 import io.dataspray.cdk.web.LambdaWebStack;
 import io.dataspray.common.DeployEnvironment;
-import io.dataspray.store.AccountStore;
+import io.dataspray.store.TargetStore;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.Duration;
@@ -48,8 +48,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.dataspray.store.impl.FirehoseS3AthenaEtlStore.*;
-import static io.dataspray.store.impl.SqsQueueStore.CUSTOMER_QUEUE_WILDCARD;
+import static io.dataspray.store.impl.FirehoseS3AthenaBatchStore.*;
+import static io.dataspray.store.impl.SqsStreamStore.CUSTOMER_QUEUE_WILDCARD;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
@@ -84,18 +84,18 @@ public class IngestStack extends LambdaWebStack {
                 .autoDeleteObjects(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 // Add different expiry for each retention prefix
-                .lifecycleRules(Arrays.stream(AccountStore.EtlRetention.values()).map(retention -> LifecycleRule.builder()
-                        .id(retention.name())
-                        .expiration(Duration.days(retention.getExpirationInDays()))
-                        .prefix(ETL_BUCKET_RETENTION_PREFIX + retention.name())
+                .lifecycleRules(Arrays.stream(TargetStore.BatchRetention.values()).map(batchRetention -> LifecycleRule.builder()
+                        .id(batchRetention.name())
+                        .expiration(Duration.days(batchRetention.getExpirationInDays()))
+                        .prefix(ETL_BUCKET_RETENTION_PREFIX + batchRetention.name())
                         .build()).collect(Collectors.toList()))
                 // Move objects to archive after inactivity to save costs
-                .intelligentTieringConfigurations(Arrays.stream(AccountStore.EtlRetention.values())
+                .intelligentTieringConfigurations(Arrays.stream(TargetStore.BatchRetention.values())
                         // Only makes sense for data stored for more than 4 months (migrated after 3)
-                        .filter(retention -> retention.getExpirationInDays() > 120)
-                        .map(retention -> IntelligentTieringConfiguration.builder()
-                                .name(retention.name())
-                                .prefix(ETL_BUCKET_RETENTION_PREFIX_PREFIX + retention.name())
+                        .filter(batchRetention -> batchRetention.getExpirationInDays() > 120)
+                        .map(batchRetention -> IntelligentTieringConfiguration.builder()
+                                .name(batchRetention.name())
+                                .prefix(ETL_BUCKET_RETENTION_PREFIX_PREFIX + batchRetention.name())
                                 .archiveAccessTierTime(Duration.days(90))
                                 .deepArchiveAccessTierTime(Duration.days(180))
                                 .build()).collect(Collectors.toList()))
@@ -126,7 +126,7 @@ public class IngestStack extends LambdaWebStack {
                                         "ParameterValue", "JQ-1.6"),
                                 Map.of("ParameterName", "MetadataExtractionQuery",
                                         "ParameterValue", "{" +
-                                                          Stream.of(ETL_PARTITION_KEY_RETENTION, ETL_PARTITION_KEY_ACCOUNT, ETL_PARTITION_KEY_TARGET)
+                                                          Stream.of(ETL_PARTITION_KEY_RETENTION, ETL_PARTITION_KEY_ORGANIZATION, ETL_PARTITION_KEY_TARGET)
                                                                   .map(key -> key + ":." + key)
                                                                   .collect(Collectors.joining(","))
                                                           + "}"))))));

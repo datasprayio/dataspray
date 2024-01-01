@@ -1,4 +1,4 @@
-# Enable auto-env through the sdkman_auto_env config
-# Add key=value pairs of SDKs to use below
+# If bumped, also bump maven-enforcer-plugin in parent pom.xml
 java=21-graalce
-maven=3.9.5
+# If bumped, also bump maven-enforcer-plugin in parent pom.xml
+maven=3.9.6

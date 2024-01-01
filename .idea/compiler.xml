@@ -34,9 +34,6 @@
         <module name="dataspray-site" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="dataspray-site-dashboard" target="21" />
-      <module name="dataspray-site-landing" target="21" />
-    </bytecodeTargetLevel>
+    <bytecodeTargetLevel target="21" />
   </component>
 </project>

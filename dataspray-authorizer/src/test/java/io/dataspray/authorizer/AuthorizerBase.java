@@ -27,8 +27,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
-import io.dataspray.store.impl.ApiAccessStore;
-import io.dataspray.store.impl.ApiAccessStore.ApiAccess;
+import io.dataspray.store.ApiAccessStore;
+import io.dataspray.store.ApiAccessStore.ApiAccess;
 import io.quarkus.test.common.QuarkusTestResource;
 import jakarta.ws.rs.core.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
@@ -52,7 +52,8 @@ abstract class AuthorizerBase {
         UNAUTHORIZED_NONE,
         UNAUTHORIZED_EXPIRED,
         AUTHORIZED_UNLIMITED,
-        AUTHORIZED_LIMITED_ACCOUNT_WIDE,
+        AUTHORIZED_LIMITED_ORGANIZATION,
+        AUTHORIZED_LIMITED_GLOBAL,
         AUTHORIZED_QUEUE_WHITELIST,
     }
 
@@ -65,14 +66,16 @@ abstract class AuthorizerBase {
         switch (testType) {
             case UNAUTHORIZED_EXPIRED:
             case AUTHORIZED_UNLIMITED:
-            case AUTHORIZED_LIMITED_ACCOUNT_WIDE:
+            case AUTHORIZED_LIMITED_ORGANIZATION:
+            case AUTHORIZED_LIMITED_GLOBAL:
             case AUTHORIZED_QUEUE_WHITELIST:
                 apiAccessOpt = Optional.of(createApiAccess(
                         "fd376965-10d2-43b3-a16c-35d3d8f0455a",
-                        testType == TestType.AUTHORIZED_LIMITED_ACCOUNT_WIDE
-                                ? ApiAccessStore.UsageKeyType.ACCOUNT_WIDE
-                                : ApiAccessStore.UsageKeyType.UNLIMITED,
-                        "test key",
+                        switch (testType) {
+                            case AUTHORIZED_LIMITED_ORGANIZATION -> ApiAccessStore.UsageKeyType.ORGANIZATION;
+                            case AUTHORIZED_LIMITED_GLOBAL -> ApiAccessStore.UsageKeyType.GLOBAL;
+                            default -> ApiAccessStore.UsageKeyType.UNLIMITED;
+                        },
                         testType == TestType.AUTHORIZED_QUEUE_WHITELIST
                                 ? Optional.of(ImmutableSet.of("whitelisted-queue-1", "whitelisted-queue-2"))
                                 : Optional.empty(),
@@ -91,7 +94,6 @@ abstract class AuthorizerBase {
                     .contentType("application/json")
                     .accept("application/json")
                     .body(createEvent(
-                            apiAccessOpt.map(ApiAccess::getAccountId).orElse(UUID.randomUUID().toString()),
                             apiAccessOpt.map(ApiAccess::getApiKey).orElse(UUID.randomUUID().toString())))
                     .when()
                     .post()
@@ -106,14 +108,19 @@ abstract class AuthorizerBase {
                             .body(equalTo("{\"errorType\":\"io.dataspray.authorizer.ApiGatewayUnauthorized\",\"errorMessage\":\"Unauthorized\"}"));
                     break;
                 case AUTHORIZED_UNLIMITED:
-                case AUTHORIZED_LIMITED_ACCOUNT_WIDE:
+                case AUTHORIZED_LIMITED_ORGANIZATION:
+                case AUTHORIZED_LIMITED_GLOBAL:
                 case AUTHORIZED_QUEUE_WHITELIST:
                     ApiAccess apiAccess = apiAccessOpt.get();
                     response.statusCode(200)
-                            .body("principalId", equalTo(apiAccess.getAccountId()))
-                            .body("usageIdentifierKey", equalTo(apiAccessOpt.flatMap(ApiAccess::getUsageKey).orElse(null)))
-                            .body("context." + AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID, equalTo(apiAccess.getAccountId()))
-                            .body("context." + AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE, equalTo(apiAccess.getApiKey()))
+                            .body("principalId", equalTo(apiAccess.getPrincipalId()))
+                            .body("usageIdentifierKey", equalTo(switch (apiAccess.getUsageKeyType()) {
+                                case ORGANIZATION -> "dataspray-usage-key-1-" + apiAccess.getOrganizationName();
+                                case GLOBAL -> "dataspray-usage-key-2-GLOBAL";
+                                case UNLIMITED -> null;
+                            }))
+                            .body("context." + AuthorizerConstants.CONTEXT_KEY_USER_EMAIL, equalTo(apiAccess.getOwnerEmail()))
+                            .body("context." + AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, equalTo(apiAccess.getOrganizationName()))
                             .body("policyDocument", jsonStringEqualTo(ResourceUtil.getTestResource(
                                     testType == TestType.AUTHORIZED_QUEUE_WHITELIST
                                             ? "io/dataspray/authorizer/AuthorizerEndpointBase/authorized-queue-whitelist.json"
@@ -130,18 +137,17 @@ abstract class AuthorizerBase {
      * Dynamo, let the concrete tests handle the differences.
      */
     protected abstract ApiAccess createApiAccess(
-            String accountId,
+            String organizationName,
             ApiAccessStore.UsageKeyType usageKeyType,
-            String description,
             Optional<ImmutableSet<String>> queueWhitelistOpt,
             Optional<Instant> expiryOpt);
 
-    static APIGatewayCustomAuthorizerEvent createEvent(String accountId, String apiKey) {
+    static APIGatewayCustomAuthorizerEvent createEvent(String apiKey) {
         APIGatewayCustomAuthorizerEvent event = new APIGatewayCustomAuthorizerEvent();
         event.setMethodArn("arn:aws:execute-api:us-east-1:123456789012:abcdef123/default/$connect");
-        event.setHeaders(ImmutableMap.of(HttpHeaders.AUTHORIZATION, "bearer " + apiKey));
+        event.setHeaders(ImmutableMap.of(HttpHeaders.AUTHORIZATION, "apikey " + apiKey));
         event.setRequestContext(APIGatewayCustomAuthorizerEvent.RequestContext.builder()
-                .withAccountId(accountId)
+                .withAccountId("100000000001") // AWS account id
                 .withApiId("api-id")
                 .withStage("stage")
                 .build());

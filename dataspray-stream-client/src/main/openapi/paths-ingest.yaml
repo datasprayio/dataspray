@@ -5,12 +5,12 @@ components:
     Message:
       type: object
 
-/account/{accountId}/target/{targetId}/message:
+/organization/{organizationName}/target/{targetId}/message:
   post:
     operationId: message
     tags: [ Ingest ]
     parameters:
-      - name: accountId
+      - name: organizationName
         in: path
         required: true
         schema:

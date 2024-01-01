@@ -48,6 +48,10 @@ import static org.hamcrest.CoreMatchers.equalTo;
 @Slf4j
 public abstract class AbstractLambdaTest {
 
+    protected String getOrganizationName() {
+        return "my-org";
+    }
+
     protected AwsResponse<Void> request(Given given) {
         return request(Void.class, given);
     }
@@ -74,9 +78,9 @@ public abstract class AbstractLambdaTest {
         request.getRequestContext().setResourcePath(given.getPath());
         request.getRequestContext().setHttpMethod(given.getMethod());
         request.getRequestContext().setAuthorizer(new ApiGatewayAuthorizerContext());
-        request.getRequestContext().getAuthorizer().setPrincipalId(given.getAccountId());
-        request.getRequestContext().getAuthorizer().setContextValue(AuthorizerConstants.CONTEXT_KEY_ACCOUNT_ID, given.getAccountId());
-        request.getRequestContext().getAuthorizer().setContextValue(AuthorizerConstants.CONTEXT_KEY_APIKEY_VALUE, given.getApiKeyValue());
+        request.getRequestContext().getAuthorizer().setPrincipalId(given.getUserEmail());
+        request.getRequestContext().getAuthorizer().setContextValue(AuthorizerConstants.CONTEXT_KEY_USER_EMAIL, String.join(",", given.getUserEmail()));
+        request.getRequestContext().getAuthorizer().setContextValue(AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", getOrganizationName()));
         Response response = RestAssured.given()
                 .contentType("application/json")
                 .accept("application/json")
@@ -112,9 +116,7 @@ public abstract class AbstractLambdaTest {
         MediaType contentType;
         Object body;
         @Builder.Default
-        String accountId = "123456";
-        @Builder.Default
-        String apiKeyValue = "B41B7CC9-BD31-46E3-8CD1-52B6A2BC203C";
+        String userEmail = "user@example.com";
     }
 
 

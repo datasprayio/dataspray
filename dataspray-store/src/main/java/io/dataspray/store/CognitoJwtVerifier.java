@@ -22,26 +22,34 @@
 
 package io.dataspray.store;
 
-import jakarta.ws.rs.core.MediaType;
-import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.google.common.collect.ImmutableSet;
+import io.dataspray.store.ApiAccessStore.UsageKeyType;
+import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.annotation.Nonnull;
+import lombok.NonNull;
+import lombok.Value;
 
-import java.util.Map;
 import java.util.Optional;
 
-public interface QueueStore {
+/**
+ * JWT Verifier and parser for Cognito tokens.
+ */
+public interface CognitoJwtVerifier {
 
-    void submit(String customerId, String queueName, byte[] messageBytes, MediaType contentType);
+    Optional<VerifiedCognitoJwt> verify(String accessToken) throws JWTVerificationException;
 
-    /** Check whether queue exists */
-    boolean queueExists(String customerId, String queueName);
+    @Value
+    @RegisterForReflection
+    class VerifiedCognitoJwt {
 
-    /** Check queue attributes */
-    Optional<Map<QueueAttributeName, String>> queueAttributes(String customerId, String queueName, QueueAttributeName... fetchAttributes);
+        @Nonnull
+        String userEmail;
 
-    void createQueue(String customerId, String queueName);
+        @Nonnull
+        ImmutableSet<String> groupNames;
 
-    /** Converts user supplied queue name to AWS queue name */
-    String getAwsQueueName(String customerId, String queueName);
-
-    Optional<String> extractQueueNameFromAwsQueueName(String customerId, String awsQueueName);
+        @NonNull
+        UsageKeyType usageKeyType;
+    }
 }

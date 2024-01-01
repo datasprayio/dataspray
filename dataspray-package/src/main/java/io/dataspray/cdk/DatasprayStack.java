@@ -33,10 +33,11 @@ import io.dataspray.cdk.stream.ingest.IngestStack;
 import io.dataspray.cdk.web.BaseApiStack;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.SingleTableProvider;
-import io.dataspray.store.impl.CognitoAccountStore;
+import io.dataspray.store.impl.CognitoUserStore;
 import io.dataspray.store.impl.DynamoApiGatewayApiAccessStore;
-import io.dataspray.store.impl.FirehoseS3AthenaEtlStore;
+import io.dataspray.store.impl.FirehoseS3AthenaBatchStore;
 import io.dataspray.store.impl.LambdaDeployerImpl;
+import io.dataspray.stream.control.ControlResource;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
@@ -96,11 +97,12 @@ public class DatasprayStack {
         // which will be picked up by Quarkus' @ConfigProperty
         for (SingletonFunction function : functions) {
             setConfigProperty(function, DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME, deployEnv.name());
-            setConfigProperty(function, CognitoAccountStore.USER_POOL_ID_PROP_NAME, authNzStack.getUserPool().getUserPoolId());
-            setConfigProperty(function, CognitoAccountStore.USER_POOL_APP_CLIENT_ID_PROP_NAME, authNzStack.getUserPoolClient().getUserPoolClientId());
+            setConfigProperty(function, ControlResource.DATASPRAY_API_ENDPOINT_PROP_NAME, baseApiStack.getApiFqdn());
+            setConfigProperty(function, CognitoUserStore.USER_POOL_ID_PROP_NAME, authNzStack.getUserPool().getUserPoolId());
+            setConfigProperty(function, CognitoUserStore.USER_POOL_APP_CLIENT_ID_PROP_NAME, authNzStack.getUserPoolClient().getUserPoolClientId());
             setConfigProperty(function, SingleTableProvider.TABLE_PREFIX_PROP_NAME, singleTableStack.getSingleTableTable().getTableName());
-            setConfigProperty(function, FirehoseS3AthenaEtlStore.ETL_BUCKET_PROP_NAME, ingestStack.getBucketEtlName());
-            setConfigProperty(function, FirehoseS3AthenaEtlStore.FIREHOSE_STREAM_NAME_PROP_NAME, ingestStack.getFirehoseName());
+            setConfigProperty(function, FirehoseS3AthenaBatchStore.ETL_BUCKET_PROP_NAME, ingestStack.getBucketEtlName());
+            setConfigProperty(function, FirehoseS3AthenaBatchStore.FIREHOSE_STREAM_NAME_PROP_NAME, ingestStack.getFirehoseName());
             setConfigProperty(function, LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME, controlStack.getCustomerFunctionPermissionBoundaryManagedPolicyName());
             setConfigProperty(function, LambdaDeployerImpl.CODE_BUCKET_NAME_PROP_NAME, controlStack.getBucketCodeName());
             setConfigProperty(function, DynamoApiGatewayApiAccessStore.USAGE_PLAN_ID_PROP_NAME, baseApiStack.getActiveUsagePlan().getUsagePlanId());

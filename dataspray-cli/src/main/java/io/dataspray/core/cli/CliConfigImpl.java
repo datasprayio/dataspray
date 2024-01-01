@@ -23,10 +23,12 @@
 package io.dataspray.core.cli;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import io.dataspray.core.StreamRuntime.Organization;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.configuration2.AbstractConfiguration;
 import org.apache.commons.configuration2.INIConfiguration;
+import org.apache.commons.configuration2.SubnodeConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 
 import java.io.File;
@@ -39,32 +41,90 @@ import java.util.Optional;
 @Slf4j
 @ApplicationScoped
 public class CliConfigImpl implements CliConfig {
-    public static final String PROFILE_ENV_NAME = "DST_PROFILE";
+    public static final String ORGANIZATION_ENV_NAME = "DST_ORG";
     private static final String CONFIG_FILE = System.getProperty("user.home", "~") + File.separator + ".dst";
-    private static final String PROPERTY_DATASPRAY_API_KEY = "api_key";
+    private static final String PROPERTY_DEFAULT_ORGANIZATION = "default";
+    private static final String PROPERTY_API_KEY = "api_key";
+    private static final String PROPERTY_ENDPOINT = "endpoint";
 
     private Optional<INIConfiguration> iniCacheOpt = Optional.empty();
 
-    @Override
-    public String getDataSprayApiKey() {
-        return Optional.ofNullable(Strings.emptyToNull(getConfig().getString(PROPERTY_DATASPRAY_API_KEY)))
-                .orElseThrow(() -> new RuntimeException("Need to setup your API key first"));
+    public ConfigState getConfigState() {
+        return new ConfigState(
+                CONFIG_FILE,
+                getDefaultOrganization(),
+                getRootConfig().getSections().stream()
+                        .map(this::getOrganization)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .collect(ImmutableList.toImmutableList()));
     }
 
     @Override
-    public void setDataSprayApiKey(String apiKey) {
-        writeProperty(PROPERTY_DATASPRAY_API_KEY, apiKey);
+    public Organization getOrganization(Optional<String> organizationFromParameterOpt) {
+
+        // Find api key from organization defined in parameter
+        if (organizationFromParameterOpt.isPresent()) {
+            return getOrganization(organizationFromParameterOpt.get())
+                    .orElseThrow(() -> new RuntimeException("No API key found for organization " + organizationFromParameterOpt.get()));
+        }
+
+        // Find api key from organization defined in environment variable
+        Optional<String> organizationFromEnvOpt = Optional.ofNullable(Strings.emptyToNull(System.getenv(ORGANIZATION_ENV_NAME)));
+        if (organizationFromEnvOpt.isPresent()) {
+            return getOrganization(organizationFromEnvOpt.get())
+                    .orElseThrow(() -> new RuntimeException("No API key found for organization " + organizationFromParameterOpt.get() + " defined in environment variable " + ORGANIZATION_ENV_NAME));
+        }
+
+        // Find api key from organization defined as default in config
+        Optional<String> organizationFromConfigDefault = Optional.ofNullable(Strings.emptyToNull(getRootConfig().getString(PROPERTY_DEFAULT_ORGANIZATION)));
+        if (organizationFromConfigDefault.isPresent()) {
+            return getOrganization(organizationFromConfigDefault.get())
+                    .orElseThrow(() -> new RuntimeException("No API key found for organization " + organizationFromParameterOpt.get() + " defined as default in config"));
+        }
+
+        throw new RuntimeException("No API key found. Please login first.");
+    }
+
+    /**
+     * This has a limitation at the moment. You cannot have two organizations with the same name across two different
+     * endpoints.
+     */
+    private Optional<Organization> getOrganization(String organizationName) {
+        SubnodeConfiguration config = getOrganizationConfig(organizationName);
+
+        Optional<String> apiKeyOpt = Optional.ofNullable(Strings.emptyToNull(config.getString(PROPERTY_API_KEY)));
+        if (apiKeyOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Optional<String> endpointOpt = Optional.ofNullable(Strings.emptyToNull(config.getString(PROPERTY_ENDPOINT)));
+
+        return Optional.of(new Organization(
+                organizationName,
+                apiKeyOpt.get(),
+                endpointOpt));
+    }
+
+    @Override
+    public void setOrganization(String organizationName, String apiKey, Optional<String> endpointOpt) {
+        SubnodeConfiguration organizationConfig = getOrganizationConfig(organizationName);
+        organizationConfig.setProperty(PROPERTY_API_KEY, apiKey);
+        endpointOpt.ifPresent(endpoint -> organizationConfig.setProperty(PROPERTY_ENDPOINT, endpoint));
+        save();
         log.info("Saved your API key to {}", CONFIG_FILE);
     }
 
-    private Optional<String> getProfileName() {
-        return Optional.ofNullable(Strings.emptyToNull(System.getenv(PROFILE_ENV_NAME)));
+    @Override
+    public Optional<String> getDefaultOrganization() {
+        return Optional.ofNullable(Strings.emptyToNull(getRootConfig().getString(PROPERTY_DEFAULT_ORGANIZATION)));
     }
 
-    private AbstractConfiguration getProfileConfig(INIConfiguration ini) {
-        return getProfileName()
-                .map(name -> (AbstractConfiguration) ini.getSection(name))
-                .orElse(ini);
+    @Override
+    public void setDefaultOrganization(String organizationName) {
+        getRootConfig().setProperty(PROPERTY_DEFAULT_ORGANIZATION, organizationName);
+        save();
+        log.info("Saved organization {} as default", organizationName);
     }
 
     private INIConfiguration readConfig() {
@@ -81,7 +141,7 @@ public class CliConfigImpl implements CliConfig {
         return ini;
     }
 
-    private AbstractConfiguration getConfig() {
+    private INIConfiguration getRootConfig() {
         if (!iniCacheOpt.isPresent()) {
             synchronized (this) {
                 if (!iniCacheOpt.isPresent()) {
@@ -89,22 +149,22 @@ public class CliConfigImpl implements CliConfig {
                 }
             }
         }
-        return getProfileConfig(iniCacheOpt.get());
+        return iniCacheOpt.get();
     }
 
-    private void writeProperty(String key, Object value) {
-        synchronized (this) {
-            INIConfiguration ini = iniCacheOpt.orElse(readConfig());
+    private SubnodeConfiguration getOrganizationConfig(String organizationName) {
+        return getRootConfig().getSection(organizationName);
+    }
 
-            getProfileConfig(ini).setProperty(key, value);
+    private void save() {
+        INIConfiguration ini = iniCacheOpt.orElse(readConfig());
 
-            try (FileWriter writer = new FileWriter(CONFIG_FILE, false)) {
-                ini.write(writer);
-            } catch (IOException | ConfigurationException ex) {
-                throw new RuntimeException("Failed to write property " + key + " to config file " + CONFIG_FILE, ex);
-            }
-
-            iniCacheOpt = Optional.of(ini);
+        try (FileWriter writer = new FileWriter(CONFIG_FILE, false)) {
+            ini.write(writer);
+        } catch (IOException | ConfigurationException ex) {
+            throw new RuntimeException("Failed to write changes to config file " + CONFIG_FILE, ex);
         }
+
+        iniCacheOpt = Optional.of(ini);
     }
 }

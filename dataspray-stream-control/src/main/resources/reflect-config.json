@@ -4655,7 +4655,7 @@
     "name": "io.dataspray.store.NoopCustomerLogger"
   },
   {
-    "name": "io.dataspray.store.QueueStore"
+    "name": "io.dataspray.store.StreamStore"
   },
   {
     "name": "io.dataspray.store.SingleTableProvider",
@@ -4675,7 +4675,7 @@
     "name": "io.dataspray.store.SingleTenantAccountStore"
   },
   {
-    "name": "io.dataspray.store.SqsQueueStore",
+    "name": "io.dataspray.store.SqsStreamStore",
     "fields": [
       {
         "name": "awsAccountId"

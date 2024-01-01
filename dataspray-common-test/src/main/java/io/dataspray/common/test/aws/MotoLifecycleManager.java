@@ -49,7 +49,7 @@ public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager
     @Override
     public final Map<String, String> start() {
         String region = "us-east-1";
-        long awsAccountId = 479823472389L;
+        long awsAccountId = 100000000001L;
         String awsAccessKey = UUID.randomUUID().toString();
         String awsSecretKey = UUID.randomUUID().toString();
         // Setup Moto container

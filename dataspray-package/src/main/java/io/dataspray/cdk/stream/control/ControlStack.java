@@ -27,7 +27,7 @@ import io.dataspray.cdk.store.AuthNzStack;
 import io.dataspray.cdk.web.LambdaWebStack;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.impl.LambdaDeployerImpl;
-import io.dataspray.store.impl.SqsQueueStore;
+import io.dataspray.store.impl.SqsStreamStore;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.Duration;
@@ -81,7 +81,7 @@ public class ControlStack extends LambdaWebStack {
                                         "sqs:DeleteMessage",
                                         "sqs:GetQueueAttributes"))
                                 .resources(ImmutableList.of(
-                                        "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + SqsQueueStore.CUSTOMER_QUEUE_WILDCARD))
+                                        "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + SqsStreamStore.CUSTOMER_QUEUE_WILDCARD))
                                 .build()))
                 .build();
 
@@ -153,7 +153,7 @@ public class ControlStack extends LambdaWebStack {
                         "sqs:GetQueueAttributes",
                         "sqs:GetQueueUrl"))
                 .resources(ImmutableList.of(
-                        "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + SqsQueueStore.CUSTOMER_QUEUE_WILDCARD))
+                        "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + SqsStreamStore.CUSTOMER_QUEUE_WILDCARD))
                 .build());
 
         getFunction().addToRolePolicy(PolicyStatement.Builder.create()

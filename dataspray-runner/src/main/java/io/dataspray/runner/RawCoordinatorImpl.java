@@ -23,20 +23,26 @@
 package io.dataspray.runner;
 
 import com.google.common.base.Strings;
+import io.dataspray.stream.client.StreamApi.Access;
 import io.dataspray.stream.client.StreamApiImpl;
 import io.dataspray.stream.ingest.client.ApiException;
 import io.dataspray.stream.ingest.client.IngestApi;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Optional;
+
 @Slf4j
 public class RawCoordinatorImpl implements RawCoordinator {
 
-    public static final String DATASPRAY_DEFAULT_STORE_NAME = "default";
     /** Matches {@link io.dataspray.store.LambdaDeployerImpl.DATASPRAY_API_KEY_ENV} */
     public static final String DATASPRAY_API_KEY_ENV = "dataspray_api_key";
-    /** Matches {@link io.dataspray.store.LambdaDeployerImpl.DATASPRAY_CUSTOMER_ID_ENV} */
-    public static final String DATASPRAY_CUSTOMER_ID_ENV = "dataspray_customer_id";
+    /** Matches {@link io.dataspray.store.LambdaDeployerImpl.DATASPRAY_ORGANIZATION_NAME_ENV} */
+    public static final String DATASPRAY_ORGANIZATION_NAME_ENV = "dataspray_organization_name";
+    /** Matches {@link io.dataspray.store.LambdaDeployerImpl.DATASPRAY_ENDPOINT_ENV} */
+    public static final String DATASPRAY_ENDPOINT_ENV = "dataspray_endpoint";
     private static volatile RawCoordinatorImpl INSTANCE;
+
+    private volatile Optional<IngestApi> ingestApiOpt;
 
     private RawCoordinatorImpl() {
     }
@@ -58,6 +64,7 @@ public class RawCoordinatorImpl implements RawCoordinator {
             case DATASPRAY:
                 sendToDataSpray(data, storeName, streamName);
                 break;
+            case KAFKA:
             default:
                 log.error("Store type not supported: {}", storeType);
                 throw new RuntimeException("Store type not supported: " + storeType);
@@ -65,24 +72,42 @@ public class RawCoordinatorImpl implements RawCoordinator {
     }
 
     private void sendToDataSpray(byte[] data, String storeName, String streamName) {
-        String apiKey = System.getenv(DATASPRAY_API_KEY_ENV);
-        if (Strings.isNullOrEmpty(apiKey)) {
-            log.error("DataSpray API key not found using env var {}", DATASPRAY_API_KEY_ENV);
-            throw new RuntimeException("DataSpray API key not found using env var: " + DATASPRAY_API_KEY_ENV);
-        }
-        if (DATASPRAY_DEFAULT_STORE_NAME.equals(storeName)) {
-            storeName = System.getenv(DATASPRAY_CUSTOMER_ID_ENV);
-            if (Strings.isNullOrEmpty(storeName)) {
-                log.error("DataSpray Customer ID not found using env var {}", DATASPRAY_CUSTOMER_ID_ENV);
-                throw new RuntimeException("DataSpray Customer ID not found using env var: " + DATASPRAY_CUSTOMER_ID_ENV);
-            }
-        }
-        IngestApi ingestApi = new StreamApiImpl().ingest(apiKey);
+
         try {
-            ingestApi.message(storeName, streamName, data);
+            getIngestApi().message(storeName, streamName, data);
         } catch (ApiException ex) {
             log.error("Failed to send message to DataSpray for customer {} stream {}", storeName, streamName);
             throw new RuntimeException("Failed to send message to DataSpray for customer " + storeName + " stream " + streamName, ex);
         }
+    }
+
+    private IngestApi getIngestApi() {
+        if (ingestApiOpt.isEmpty()) {
+            synchronized (this) {
+                if (ingestApiOpt.isEmpty()) {
+                    // Fetch api key
+                    String apiKey = System.getenv(DATASPRAY_API_KEY_ENV);
+                    if (Strings.isNullOrEmpty(apiKey)) {
+                        log.error("DataSpray API key not found using env var {}", DATASPRAY_API_KEY_ENV);
+                        throw new RuntimeException("DataSpray API key not found using env var: " + DATASPRAY_API_KEY_ENV);
+                    }
+
+                    // Fetch organization name
+                    String organizationName = System.getenv(DATASPRAY_ORGANIZATION_NAME_ENV);
+                    if (Strings.isNullOrEmpty(organizationName)) {
+                        log.error("DataSpray organization name not found using env var {}", DATASPRAY_ORGANIZATION_NAME_ENV);
+                        throw new RuntimeException("DataSpray organization name not found using env var: " + DATASPRAY_ORGANIZATION_NAME_ENV);
+                    }
+
+                    // Fetch endpoint
+                    Optional<String> endpointOpt = Optional.ofNullable(Strings.emptyToNull(System.getenv(DATASPRAY_ENDPOINT_ENV)));
+
+                    ingestApiOpt = Optional.of(new StreamApiImpl().ingest(new Access(
+                            apiKey,
+                            endpointOpt)));
+                }
+            }
+        }
+        return ingestApiOpt.get();
     }
 }

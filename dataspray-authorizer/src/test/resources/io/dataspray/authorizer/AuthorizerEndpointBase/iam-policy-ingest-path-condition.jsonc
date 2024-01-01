@@ -4,44 +4,44 @@
 // https://policysim.aws.amazon.com/home/index.jsp?#
 // Create a new inline policy and paste the content of this file.
 // Then select "API Gateway" with Invoke method (and another one for testing denial)
-// Then set the aws:principalarn global setting to "arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/account/a2/target/t2"
+// Then set the aws:principalarn global setting to "arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/organization/a2/target/t2"
 // The following should pass:
 // - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/some/other/path
-// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/account/a/target/t/message
-// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/account/a/target/t
-// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/account/a2/target/t/message
-// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/account/a2/target/t
-// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/account/a2/target/t2/message
-// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/account/a2/target/t2
+// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/organization/a/target/t/message
+// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/organization/a/target/t
+// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/organization/a2/target/t/message
+// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/organization/a2/target/t
+// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/organization/a2/target/t2/message
+// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/organization/a2/target/t2
 // The following should fail:
-// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/account/a/target/t2/message
-// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/account/a/target/t2
-// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/account/a3/target/t/message
-// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/account/a3/target/t
-// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/account/a/target/t3/message
-// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/account/a/target/t3
+// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/organization/a/target/t2/message
+// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/organization/a/target/t2
+// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/organization/a3/target/t/message
+// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/organization/a3/target/t
+// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/organization/a/target/t3/message
+// - arn:aws:execute-api:us-east-2:111122223333:api-id/stage-name/GET/v1/organization/a/target/t3
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "execute-api:Invoke",
-      "Effect": "Allow",
-      "Resource": "arn:aws:execute-api:*:*:*"
-    },
-    {
-      "Action": "execute-api:Invoke",
-      "Effect": "Deny",
-      "Resource": "arn:aws:execute-api:*:*:*/account/*/target/*",
-      "Condition": {
-        "StringNotLike": {
-          "aws:PrincipalArn": [
-            "arn:aws:execute-api:*:*:*/account/a/target/t/*",
-            "arn:aws:execute-api:*:*:*/account/a/target/t",
-            "arn:aws:execute-api:*:*:*/account/a2/*",
-            "arn:aws:execute-api:*:*:*/account/a2"
-          ]
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": "execute-api:Invoke",
+            "Effect": "Allow",
+            "Resource": "arn:aws:execute-api:*:*:*"
+        },
+        {
+            "Action": "execute-api:Invoke",
+            "Effect": "Deny",
+            "Resource": "arn:aws:execute-api:*:*:*/organization/*/target/*",
+            "Condition": {
+                "StringNotLike": {
+                    "aws:PrincipalArn": [
+                        "arn:aws:execute-api:*:*:*/organization/a/target/t/*",
+                        "arn:aws:execute-api:*:*:*/organization/a/target/t",
+                        "arn:aws:execute-api:*:*:*/organization/a2/*",
+                        "arn:aws:execute-api:*:*:*/organization/a2"
+                    ]
+                }
+            }
         }
-      }
-    }
-  ]
+    ]
 }

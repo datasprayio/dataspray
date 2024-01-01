@@ -25,8 +25,8 @@ package io.dataspray.authorizer;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
-import io.dataspray.store.impl.ApiAccessStore;
-import io.dataspray.store.impl.ApiAccessStore.ApiAccess;
+import io.dataspray.store.ApiAccessStore;
+import io.dataspray.store.ApiAccessStore.ApiAccess;
 import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -54,17 +54,19 @@ class AuthorizerTest extends AuthorizerBase {
 
     @Override
     protected ApiAccess createApiAccess(
-            String accountId,
+            String organizationName,
             ApiAccessStore.UsageKeyType usageKeyType,
-            String description,
             Optional<ImmutableSet<String>> queueWhitelistOpt,
             Optional<Instant> expiryOpt) {
 
         ApiAccess apiAccess = new ApiAccess(
                 keygenUtil.generateSecureApiKey(API_KEY_LENGTH),
-                accountId,
-                usageKeyType.getId(),
-                description,
+                organizationName,
+                ApiAccessStore.OwnerType.USER,
+                "user@example.com",
+                null,
+                null,
+                usageKeyType,
                 queueWhitelistOpt.orElseGet(ImmutableSet::of),
                 expiryOpt.map(Instant::getEpochSecond).orElse(null));
 
