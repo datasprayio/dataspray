@@ -103,7 +103,7 @@ Commits to `master` branch are automatically deployed to staging environment usi
   <summary>Production</summary>
 
 ```shell
-mvn clean deploy -Dproduction -Dnative
+mvn clean deploy -Pproduction,native
 ```
 
 </details>
