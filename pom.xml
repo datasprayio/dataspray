@@ -523,13 +523,6 @@
                                         <include>GraalVM Community</include>
                                     </includes>
                                 </requireJavaVendor>
-                                <requireEnvironmentVariable>
-                                    <message>Install NVM and run `nvm use` to switch Node/NPM version</message>
-                                    <regexMessage>Install NVM and run `nvm use` to switch Node/NPM version
-                                    </regexMessage>
-                                    <variableName>NVM_BIN</variableName>
-                                    <regex>.*\/v18\.16\.1\/.*</regex>
-                                </requireEnvironmentVariable>
                             </rules>
                         </configuration>
                     </execution>
