@@ -1,4 +1,4 @@
 # If bumped, also bump maven-enforcer-plugin in parent pom.xml
-java=21-graalce
+java=21.0.1-graalce
 # If bumped, also bump maven-enforcer-plugin in parent pom.xml
 maven=3.9.6

@@ -529,6 +529,7 @@
                             <!-- Allows to fetch package version using getClass().getPackage().getImplementationVersion() -->
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                            <addClasspath>true</addClasspath>
                         </manifest>
                     </archive>
                 </configuration>
@@ -570,53 +571,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
                     <version>3.3.0</version>
-                </plugin>
-                <plugin>
-                    <!-- Enables GraalVM agent during unit tests -->
-                    <!-- https://blogs.oracle.com/developers/post/building-cross-platform-native-images-with-graalvm -->
-                    <groupId>org.graalvm.buildtools</groupId>
-                    <artifactId>native-maven-plugin</artifactId>
-                    <version>0.9.28</version>
-                    <extensions>true</extensions>
-                    <executions>
-                        <execution>
-                            <id>build-native</id>
-                            <goals>
-                                <goal>build</goal>
-                            </goals>
-                            <phase>package</phase>
-                        </execution>
-                        <execution>
-                            <id>test-native</id>
-                            <goals>
-                                <goal>test</goal>
-                            </goals>
-                            <phase>test</phase>
-                        </execution>
-                    </executions>
-                    <configuration>
-                        <agent>
-                            <!-- Docs https://graalvm.github.io/native-build-tools/latest/maven-plugin.html#agent-support-configuring-options -->
-                            <enabled>true</enabled>
-                        </agent>
-                        <metadataRepository>
-                            <enabled>true</enabled>
-                        </metadataRepository>
-                        <buildArgs combine.children="append">
-                            <buildArg>--no-fallback</buildArg>
-                            <buildArg>--verbose</buildArg>
-                            <!-- Without this, we have:
-                                 Error: Class-path entry file:///Users/matus/.m2/repository/org/graalvm/sdk/graal-sdk/23.0.1/graal-sdk-23.0.1.jar contains class org.graalvm.nativeimage.impl.RuntimeProxyCreationSupport. This class is part of the image builder itself (in jrt:/org.graalvm.nativeimage) and must not be passed via -cp. This can be caused by a fat-jar that illegally includes svm.jar (or graal-sdk.jar) due to its build-time dependency on it. As a workaround, -H:+AllowDeprecatedBuilderClassesOnImageClasspath allows turning this error into a warning. Note that this option is deprecated and will be removed in a future version.
-                                 For some reason the native-image command classpath contains test resources including dataspray-common-test dependencies which pulls in the graal sdk -->
-                            <buildArg>-H:+AllowDeprecatedBuilderClassesOnImageClasspath</buildArg>
-                            <!-- Include resource bundles here -->
-                            <!-- You may want to whitelist from the list in target/native/agent-output/test/session-*/resource-config.json -->
-                            <buildArg>-H:IncludeResourceBundles='net.sourceforge.argparse4j.internal.ArgumentParserImpl'
-                            </buildArg>
-                            <!-- Required for IncludeResourceBundles above -->
-                            <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
-                        </buildArgs>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
