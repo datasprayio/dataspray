@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,29 +22,17 @@
 
 package io.dataspray.authorizer;
 
-import com.google.common.collect.ImmutableSet;
 import io.dataspray.singletable.SingleTable;
-import io.dataspray.singletable.TableSchema;
-import io.dataspray.store.ApiAccessStore;
-import io.dataspray.store.ApiAccessStore.ApiAccess;
 import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
-
-import java.time.Instant;
-import java.util.Optional;
-
-import static io.dataspray.store.impl.DynamoApiGatewayApiAccessStore.API_KEY_LENGTH;
 
 @Slf4j
 @QuarkusTest
 class AuthorizerTest extends AuthorizerBase {
 
-    @Inject
-    ApiAccessStore apiAccessStore;
     @Inject
     DynamoDbClient dynamo;
     @Inject
@@ -52,29 +40,19 @@ class AuthorizerTest extends AuthorizerBase {
     @Inject
     KeygenUtil keygenUtil;
 
+
     @Override
-    protected ApiAccess createApiAccess(
-            String organizationName,
-            ApiAccessStore.UsageKeyType usageKeyType,
-            Optional<ImmutableSet<String>> queueWhitelistOpt,
-            Optional<Instant> expiryOpt) {
+    protected SingleTable getSingleTable() {
+        return singleTable;
+    }
 
-        ApiAccess apiAccess = new ApiAccess(
-                keygenUtil.generateSecureApiKey(API_KEY_LENGTH),
-                organizationName,
-                ApiAccessStore.OwnerType.USER,
-                "user@example.com",
-                null,
-                null,
-                usageKeyType,
-                queueWhitelistOpt.orElseGet(ImmutableSet::of),
-                expiryOpt.map(Instant::getEpochSecond).orElse(null));
+    @Override
+    protected DynamoDbClient getDynamo() {
+        return dynamo;
+    }
 
-        TableSchema<ApiAccess> apiAccessSchema = singleTable.parseTableSchema(ApiAccess.class);
-        dynamo.putItem(PutItemRequest.builder()
-                .tableName(apiAccessSchema.tableName())
-                .item(apiAccessSchema.toAttrMap(apiAccess)).build());
-
-        return apiAccess;
+    @Override
+    protected KeygenUtil getKeygenUtil() {
+        return keygenUtil;
     }
 }

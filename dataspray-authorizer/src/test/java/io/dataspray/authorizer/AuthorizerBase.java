@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,19 +27,25 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.ApiAccessStore.ApiAccess;
+import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.test.common.QuarkusTestResource;
 import jakarta.ws.rs.core.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
 import static io.dataspray.common.test.JsonMatcher.jsonStringEqualTo;
+import static io.dataspray.store.impl.DynamoApiGatewayApiAccessStore.API_KEY_LENGTH;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -132,15 +138,37 @@ abstract class AuthorizerBase {
         }
     }
 
-    /**
-     * Since in tests we can inject our in-memory store but in native image integration tests we need to put item into
-     * Dynamo, let the concrete tests handle the differences.
-     */
-    protected abstract ApiAccess createApiAccess(
+    private ApiAccess createApiAccess(
             String organizationName,
             ApiAccessStore.UsageKeyType usageKeyType,
             Optional<ImmutableSet<String>> queueWhitelistOpt,
-            Optional<Instant> expiryOpt);
+            Optional<Instant> expiryOpt) {
+
+        ApiAccess apiAccess = new ApiAccess(
+                getKeygenUtil().generateSecureApiKey(API_KEY_LENGTH),
+                organizationName,
+                ApiAccessStore.OwnerType.USER,
+                "user@example.com",
+                null,
+                null,
+                usageKeyType,
+                queueWhitelistOpt.orElseGet(ImmutableSet::of),
+                expiryOpt.map(Instant::getEpochSecond).orElse(null));
+
+        TableSchema<ApiAccess> apiAccessSchema = getSingleTable().parseTableSchema(ApiAccess.class);
+        getDynamo().putItem(PutItemRequest.builder()
+                .tableName(apiAccessSchema.tableName())
+                .item(apiAccessSchema.toAttrMap(apiAccess)).build());
+
+        return apiAccess;
+
+    }
+
+    protected abstract SingleTable getSingleTable();
+
+    protected abstract DynamoDbClient getDynamo();
+
+    protected abstract KeygenUtil getKeygenUtil();
 
     static APIGatewayCustomAuthorizerEvent createEvent(String apiKey) {
         APIGatewayCustomAuthorizerEvent event = new APIGatewayCustomAuthorizerEvent();
