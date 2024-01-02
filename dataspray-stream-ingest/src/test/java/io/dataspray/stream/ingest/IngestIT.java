@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,6 @@
 
 package io.dataspray.stream.ingest;
 
-import io.dataspray.common.test.aws.MotoInstance;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -32,8 +31,6 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 
 @QuarkusIntegrationTest
 public class IngestIT extends IngestBase {
-
-    MotoInstance motoInstance;
 
     @Override
     protected DynamoDbClient getDynamoClient() {
