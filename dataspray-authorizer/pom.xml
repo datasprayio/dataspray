@@ -111,6 +111,11 @@
                 </executions>
             </plugin>
             <plugin>
+                <!-- This is defined here to run AFTER quarkus-maven-plugin bound to the same phase -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+            </plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <executions>
