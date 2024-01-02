@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,9 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static io.dataspray.singletable.TableType.Primary;
 import static io.dataspray.store.TargetStore.BatchRetention.THREE_MONTHS;
@@ -98,7 +100,7 @@ public interface TargetStore {
 
         @NonNull
         @Builder.Default
-        ImmutableSet<Target> targets = ImmutableSet.of();
+        Set<Target> targets = ImmutableSet.of();
 
         /**
          * For a target with no definition, whether to ingest it with default configuration.
@@ -164,7 +166,7 @@ public interface TargetStore {
         @NonNull
         @SerializedName("s")
         @Builder.Default
-        ImmutableList<Stream> streams = ImmutableList.of();
+        List<Stream> streams = ImmutableList.of();
     }
 
     /**
@@ -212,6 +214,7 @@ public interface TargetStore {
 
     @Getter
     @AllArgsConstructor
+    @RegisterForReflection
     enum BatchRetention {
         DAY(1),
         WEEK(7),
