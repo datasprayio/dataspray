@@ -833,7 +833,8 @@
                     Instead let's build both, test against Mach-O, and package up the linux executable.
                 -->
                 <!-- Delay creating as we won't be using this in ITs -->
-                <lambda-native.phase>install</lambda-native.phase>
+                <!-- TODO this should ideally be in install phase before the install plugin executes because right now this gets executed even if ITs fail and skipped if ITs are skipped -->
+                <lambda-native.phase>verify</lambda-native.phase>
                 <!-- Run this instead to use it in integration tests -->
                 <lambda-native-it.phase>package</lambda-native-it.phase>
                 <!-- Build linux executable using Docker container -->
