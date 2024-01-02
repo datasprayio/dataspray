@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -184,6 +184,7 @@ public interface ApiAccessStore {
         String usageKeyId;
     }
 
+    @RegisterForReflection
     enum OwnerType {
         /** API Key used by user scripts or workflows */
         USER,
@@ -193,6 +194,7 @@ public interface ApiAccessStore {
 
     @Getter
     @AllArgsConstructor
+    @RegisterForReflection
     enum UsageKeyType {
         /** No Usage Key */
         UNLIMITED(0),
