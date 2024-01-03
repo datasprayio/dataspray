@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -54,7 +54,7 @@ public class ControlStack extends LambdaWebStack {
     public ControlStack(Construct parent, DeployEnvironment deployEnv, String codeZip, AuthNzStack authNzStack) {
         super(parent, Options.builder()
                 .deployEnv(deployEnv)
-                .functionName("control" + deployEnv.getSuffix())
+                .functionName("control")
                 .codeZip(codeZip)
                 .build());
 
