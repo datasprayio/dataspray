@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@ public interface OrganizationStore {
     // TODO
 //    void removeUser(String email, String organizationName);
 
-    ImmutableSet<Organization> getOrganizationsForUser(String email);
+    ImmutableSet<Organization> getOrganizationsForUser(String username);
 
     // TODO
 //    Optional<Organization> getOrganization(String organizationName);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,10 +45,10 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
     CognitoIdentityProviderClient cognitoClient;
 
     @Override
-    public ImmutableSet<Organization> getOrganizationsForUser(String email) {
+    public ImmutableSet<Organization> getOrganizationsForUser(String username) {
         return cognitoClient.adminListGroupsForUserPaginator(AdminListGroupsForUserRequest.builder()
                         .userPoolId(userPoolId)
-                        .username(email).build())
+                        .username(username).build())
                 .groups()
                 .stream()
                 .map(group -> new Organization(group.groupName()))

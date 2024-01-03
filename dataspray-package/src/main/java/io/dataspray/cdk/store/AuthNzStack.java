@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,10 @@
 
 package io.dataspray.cdk.store;
 
+import com.google.common.collect.ImmutableMap;
 import io.dataspray.cdk.template.BaseStack;
 import io.dataspray.common.DeployEnvironment;
+import io.dataspray.store.impl.CognitoUserStore;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.CfnCondition;
@@ -34,6 +36,7 @@ import software.amazon.awscdk.services.cognito.AccountRecovery;
 import software.amazon.awscdk.services.cognito.AdvancedSecurityMode;
 import software.amazon.awscdk.services.cognito.AuthFlow;
 import software.amazon.awscdk.services.cognito.AutoVerifiedAttrs;
+import software.amazon.awscdk.services.cognito.BooleanAttribute;
 import software.amazon.awscdk.services.cognito.CfnUserPool;
 import software.amazon.awscdk.services.cognito.DeviceTracking;
 import software.amazon.awscdk.services.cognito.KeepOriginalAttrs;
@@ -91,6 +94,13 @@ public class AuthNzStack extends BaseStack {
                 .accountRecovery(AccountRecovery.NONE)
                 .keepOriginal(KeepOriginalAttrs.builder()
                         .email(true).build())
+                .customAttributes(ImmutableMap.of(
+                        CognitoUserStore.USER_ATTRIBUTE_TOS_AGREED, BooleanAttribute.Builder.create()
+                                .mutable(true)
+                                .build(),
+                        CognitoUserStore.USER_ATTRIBUTE_MARKETING_AGREED, BooleanAttribute.Builder.create()
+                                .mutable(true)
+                                .build()))
                 .advancedSecurityMode(AdvancedSecurityMode.OFF)
                 .build();
         CfnUserPool userPoolCfn = (CfnUserPool) requireNonNull(userPool.getNode().getDefaultChild());

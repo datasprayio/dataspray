@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,8 +38,8 @@ import {useAuth} from "../../../common/dashboard/auth/auth";
 const Page: NextPageWithLayout = () => {
     const router = useRouter();
     const [error, setError] = useState<React.ReactNode>();
-    const email = router.query.email?.toString() || '';
-    const password = router.query.email?.toString();
+    const username = router.query.username?.toString() || '';
+    const password = router.query.password?.toString();
     const {signUpConfirmCode} = useAuth();
 
     return (
@@ -54,7 +54,7 @@ const Page: NextPageWithLayout = () => {
                             code: yup.number().required('Provide a code from your email.'),
                         })
                     )}
-                    onSubmit={(values) => signUpConfirmCode(email, values.code, password, setError, router.push)}
+                    onSubmit={(values) => signUpConfirmCode(username, values.code, password, setError, router.push)}
                 >
                     {({
                         isSubmitting,

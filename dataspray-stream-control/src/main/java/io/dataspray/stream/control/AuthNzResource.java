@@ -32,6 +32,7 @@ import io.dataspray.store.UserStore.CognitoProperties;
 import io.dataspray.stream.control.model.ApiKeyWithSecret;
 import io.dataspray.stream.control.model.ApiKeys;
 import io.dataspray.stream.control.model.AuthResult;
+import io.dataspray.stream.control.model.ChallengeConfirmCode;
 import io.dataspray.stream.control.model.ChallengePasswordChange;
 import io.dataspray.stream.control.model.ChallengeTotpCode;
 import io.dataspray.stream.control.model.SignInChallengePasswordChangeRequest;
@@ -65,8 +66,10 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.TooManyFail
 import software.amazon.awssdk.services.cognitoidentityprovider.model.TooManyRequestsException;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.UserNotConfirmedException;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.UserNotFoundException;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.UsernameExistsException;
 
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Slf4j
 @ApplicationScoped
@@ -77,7 +80,7 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
     @Inject
     UserStore userStore;
     @Inject
-    OrganizationStore accountStore;
+    OrganizationStore organizationStore;
     @Inject
     EmailValidator emailValidator;
 
@@ -103,6 +106,20 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
 
     @Override
     public SignUpResponse signUp(SignUpRequest request) {
+
+        // Validate TOS agreed
+        if (!request.getTosAgreed()) {
+            return SignUpResponse.builder()
+                    .errorMsg("You must agree to the Terms of Service.")
+                    .build();
+        }
+
+        // Validate username
+        if (!Pattern.matches(UserStore.USERNAME_VALIDATION, request.getUsername())) {
+            return SignUpResponse.builder()
+                    .errorMsg("Username contains invalid characters.")
+                    .build();
+        }
 
         // Validate email address
         EmailValidResult emailValidationResult = emailValidator.check(request.getEmail());
@@ -130,6 +147,10 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
                     request.getPassword(),
                     request.getTosAgreed(),
                     request.getMarketingAgreed());
+        } catch (UsernameExistsException ex) {
+            return SignUpResponse.builder()
+                    .errorMsg("Username already exists.")
+                    .build();
         } catch (TooManyRequestsException ex) {
             throw new ClientErrorException(429, ex);
         } catch (NotAuthorizedException ex) {
@@ -154,7 +175,9 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
         if (!Boolean.TRUE.equals(response.userConfirmed())
             || response.codeDeliveryDetails() != null) {
             return SignUpResponse.builder()
-                    .codeRequired(true)
+                    .codeRequired(ChallengeConfirmCode.builder()
+                            .username(request.getUsername())
+                            .build())
                     .build();
         }
 
@@ -164,7 +187,7 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
     @Override
     public SignUpResponse signUpConfirmCode(SignUpConfirmCodeRequest request) {
         try {
-            userStore.signupConfirmCode(request.getEmail(), request.getCode());
+            userStore.signupConfirmCode(request.getUsername(), request.getCode());
         } catch (TooManyRequestsException ex) {
             throw new ClientErrorException(429, ex);
         } catch (NotAuthorizedException ex) {
@@ -184,9 +207,9 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
                     .build();
         } catch (ExpiredCodeException ex) {
             try {
-                userStore.signupResendCode(request.getEmail());
+                userStore.signupResendCode(request.getUsername());
             } catch (Exception ex2) {
-                log.error("During sign-up, failed to resend code for email {}", request.getEmail(), ex2);
+                log.error("During sign-up, failed to resend code for email {}", request.getUsername(), ex2);
                 return SignUpResponse.builder()
                         .confirmed(false)
                         .errorMsg("Code has already expired, failed to send another code.")
@@ -224,16 +247,34 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
             throw new ClientErrorException(429, ex);
         } catch (UserNotFoundException ex) {
             return SignInResponse.builder()
-                    .errorMsg("Email not found.")
+                    .errorMsg("Account was not found")
                     .build();
         } catch (UserNotConfirmedException ex) {
+
+            // Fetch username since we don't know what it is
+            String username;
             try {
-                userStore.signupResendCode(request.getEmail());
+                username = userStore.getUser(request.getUsernameOrEmail())
+                        .username();
             } catch (Exception ex2) {
-                log.error("During sign-in, failed to resend code for email {}", request.getEmail(), ex2);
+                log.error("During sign-in, got user not confirmed, but when tried to fetch user failed to get user by {}", request.getUsernameOrEmail(), ex2);
+                return SignInResponse.builder()
+                        .errorMsg("Failed to retrieve account. Try signing-up again")
+                        .build();
             }
+
+            // Try to re-send code
+            try {
+                userStore.signupResendCode(username);
+            } catch (Exception ex2) {
+                log.error("During sign-in, got user not confirmed, but failed to resend code for username {}", request.getUsernameOrEmail(), ex2);
+            }
+
+            // Ask user to confirm code
             return SignInResponse.builder()
-                    .codeRequired(true)
+                    .codeRequired(ChallengeConfirmCode.builder()
+                            .username(username)
+                            .build())
                     .build();
         }
 
@@ -250,7 +291,7 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
     public SignInResponse signInChallengeTotpCode(SignInChallengeTotpCodeRequest request) {
         AdminRespondToAuthChallengeResponse response;
         try {
-            response = userStore.signinChallengeTotpCode(request.getSession(), request.getEmail(), request.getCode());
+            response = userStore.signinChallengeTotpCode(request.getSession(), request.getUsername(), request.getCode());
         } catch (TooManyRequestsException ex) {
             throw new ClientErrorException(429, ex);
         }

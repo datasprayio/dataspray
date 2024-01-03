@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@ const Page: NextPageWithLayout = () => {
     const router = useRouter();
     const routerOnFollow = useRouterOnFollow();
     const [error, setError] = useState<React.ReactNode>();
-    const email = router.query.email?.toString() || '';
+    const username = router.query.username?.toString() || '';
     const session = router.query.session?.toString() || '';
     const to = router.query.to?.toString();
     const {signInPasswordChange} = useAuth();
@@ -57,7 +57,7 @@ const Page: NextPageWithLayout = () => {
                             password: yup.string().required('Password is required.'),
                         })
                     )}
-                    onSubmit={(values) => signInPasswordChange(email, session, values.password, to, setError, router.push)}
+                    onSubmit={(values) => signInPasswordChange(username, session, values.password, to, setError, router.push)}
                 >
                     {({
                         isSubmitting,

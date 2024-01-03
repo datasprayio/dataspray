@@ -27,7 +27,15 @@ components:
         errorMsg:
           type: string
         codeRequired:
-          type: boolean
+          $ref: '#/components/schemas/ChallengeConfirmCode'
+    ChallengeConfirmCode:
+      description: The user has to provide a code sent to the email/phone
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          type: string
     SignUpConfirmCodeRequest:
       type: object
       required:
@@ -64,7 +72,7 @@ components:
         challengePasswordChange:
           $ref: '#/components/schemas/ChallengePasswordChange'
         codeRequired:
-          type: boolean
+          $ref: '#/components/schemas/ChallengeConfirmCode'
     AuthResult:
       type: object
       required:

@@ -30,6 +30,8 @@ import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeRequest;
@@ -55,9 +57,9 @@ public class CognitoUserStore implements UserStore {
     public static final String USER_POOL_ID_PROP_NAME = "aws.cognito.user-pool.id";
     public static final String USER_POOL_APP_CLIENT_ID_PROP_NAME = "aws.cognito.user-pool.client.id";
     private static final String ACCOUNT_STREAM_NAMES_ATTRIBUTE = "streams";
-    private static final String USER_ATTRIBUTE_EMAIL = "email";
-    private static final String USER_ATTRIBUTE_TOS_AGREED = "custom:tos-agreed";
-    private static final String USER_ATTRIBUTE_MARKETING_AGREED = "custom:marketing-agreed";
+    public static final String USER_ATTRIBUTE_EMAIL = "email";
+    public static final String USER_ATTRIBUTE_TOS_AGREED = "custom:tos-agreed";
+    public static final String USER_ATTRIBUTE_MARKETING_AGREED = "custom:marketing-agreed";
 
     @ConfigProperty(name = USER_POOL_ID_PROP_NAME)
     String userPoolId;
@@ -94,7 +96,7 @@ public class CognitoUserStore implements UserStore {
         }
         return cognitoClient.signUp(SignUpRequest.builder()
                 .clientId(userPoolClientId)
-                .username(email)
+                .username(username)
                 .userAttributes(attrsBuilder.build())
                 .password(password)
                 .build());
@@ -117,6 +119,14 @@ public class CognitoUserStore implements UserStore {
                 .build());
     }
 
+    @Override
+    public AdminGetUserResponse getUser(String usernameOrEmail) {
+        return cognitoClient.adminGetUser(AdminGetUserRequest.builder()
+                .userPoolId(userPoolId)
+                .username(usernameOrEmail)
+                .build());
+    }
+
     /**
      * Start sign-in.
      *
@@ -125,18 +135,13 @@ public class CognitoUserStore implements UserStore {
      */
     @Override
     public AdminInitiateAuthResponse signin(String usernameOrEmail, String password) {
-        ImmutableMap.Builder<String, String> authParametersBuilder = ImmutableMap.<String, String>builder()
-                .put("PASSWORD", password);
-        if (usernameOrEmail.contains("@")) {
-            authParametersBuilder.put("EMAIL", usernameOrEmail);
-        } else {
-            authParametersBuilder.put("USERNAME", usernameOrEmail);
-        }
         return cognitoClient.adminInitiateAuth(AdminInitiateAuthRequest.builder()
                 .authFlow(AuthFlowType.ADMIN_USER_PASSWORD_AUTH)
                 .userPoolId(userPoolId)
                 .clientId(userPoolClientId)
-                .authParameters(authParametersBuilder.build())
+                .authParameters(ImmutableMap.of(
+                        "USERNAME", usernameOrEmail,
+                        "PASSWORD", password))
                 .build());
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -53,6 +53,7 @@ const Page: NextPageWithLayout = () => {
             <main>
                 <CloudscapeFormik
                     initialValues={{
+                        username: "",
                         email: "",
                         password: "",
                         tosAgree: false,
@@ -60,7 +61,8 @@ const Page: NextPageWithLayout = () => {
                     }}
                     validationSchema={(
                         yup.object().shape({
-                            email: yup.string().email('Email is not valid.').required('Username is required.'),
+                            username: yup.string().required('Username is required.'),
+                            email: yup.string().email('Email is not valid.').required('Email is required.'),
                             password: yup.string().required('Password is required.'),
                             tosAgree: yup.bool().isTrue('Please read and agree to continue.'),
                             marketingAgree: yup.bool().required('Please decide whether you want to receive marketing emails.'),
@@ -98,7 +100,21 @@ const Page: NextPageWithLayout = () => {
                                         <Input
                                             type="text"
                                             name="email"
-                                            placeholder="name@example.com"
+                                            placeholder="matus@example.com"
+                                            onChangeNative={handleChange}
+                                            onBlurNative={handleBlur}
+                                            value={values?.email}
+                                            autoFocus
+                                        />
+                                    </FormField>
+                                    <FormField
+                                        label="Username"
+                                        errorText={errors?.username}
+                                    >
+                                        <Input
+                                            type="text"
+                                            name="username"
+                                            placeholder="Matus"
                                             onChangeNative={handleChange}
                                             onBlurNative={handleBlur}
                                             value={values?.email}

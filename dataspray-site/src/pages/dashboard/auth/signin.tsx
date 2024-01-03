@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,7 @@ const Page: NextPageWithLayout = () => {
     const routerOnFollow = useRouterOnFollow();
     const [error, setError] = useState<React.ReactNode>()
     const to = router.query.to?.toString();
+    const usernameOrEmail = router.query.usernameOrEmail?.toString();
     const {signIn} = useAuth();
 
     return (
@@ -53,14 +54,12 @@ const Page: NextPageWithLayout = () => {
             <main>
                 <CloudscapeFormik
                     initialValues={{
-                        email: "",
-                        password: "",
-                        tosAgree: false,
-                        marketingAgree: false,
+                        usernameOrEmail: usernameOrEmail || '',
+                        password: '',
                     }}
                     validationSchema={(
                         yup.object().shape({
-                            email: yup.string().email('Email is not valid.').required('Username is required.'),
+                            usernameOrEmail: yup.string().required('Username or email is required.'),
                             password: yup.string().required('Password is required.'),
                         })
                     )}
@@ -89,16 +88,16 @@ const Page: NextPageWithLayout = () => {
                             >
                                 <SpaceBetween direction="vertical" size="l">
                                     <FormField
-                                        label="Email"
-                                        errorText={errors?.email}
+                                        label="Username or email"
+                                        errorText={errors?.usernameOrEmail}
                                     >
                                         <Input
                                             type="text"
-                                            name="email"
-                                            placeholder="name@example.com"
+                                            name="usernameOrEmail"
+                                            placeholder="matus"
                                             onChangeNative={handleChange}
                                             onBlurNative={handleBlur}
-                                            value={values?.email}
+                                            value={values?.usernameOrEmail}
                                             autoFocus
                                         />
                                     </FormField>

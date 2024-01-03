@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,7 @@ import {useAuth} from "../../../common/dashboard/auth/auth";
 const Page: NextPageWithLayout = () => {
     const router = useRouter();
     const [error, setError] = useState<React.ReactNode>();
-    const email = router.query.email?.toString() || '';
+    const username = router.query.username?.toString() || '';
     const to = router.query.to?.toString();
     const session = router.query.session?.toString() || '';
     const {signInConfirmTotp} = useAuth();
@@ -55,7 +55,7 @@ const Page: NextPageWithLayout = () => {
                             code: yup.number().required('Provide a code from your two-factor device.'),
                         })
                     )}
-                    onSubmit={(values) => signInConfirmTotp(email, session, values.code, to, setError, router.push)}
+                    onSubmit={(values) => signInConfirmTotp(username, session, values.code, to, setError, router.push)}
                 >
                     {({
                         isSubmitting,

@@ -81,7 +81,7 @@ public interface ApiAccessStore {
     ApiAccess createApiAccessForTask(
             String apiKey,
             String organizationName,
-            String userEmail,
+            String username,
             String taskId,
             String taskVersion,
             UsageKeyType usageKeyType,

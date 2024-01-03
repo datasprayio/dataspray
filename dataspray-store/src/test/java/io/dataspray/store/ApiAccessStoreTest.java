@@ -92,10 +92,10 @@ public class ApiAccessStoreTest {
     @Test
     public void testSetUsageAccountWide() throws Exception {
         String organizationName = UUID.randomUUID().toString();
-        String userEmail = UUID.randomUUID().toString() + "@example.com";
+        String username = UUID.randomUUID().toString();
         ApiAccess apiAccess1 = apiAccessStore.createApiAccessForUser(
                 organizationName,
-                userEmail,
+                username,
                 // Should cause a fetch miss for usage key, then create it
                 UsageKeyType.ORGANIZATION,
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
@@ -107,7 +107,7 @@ public class ApiAccessStoreTest {
 
         ApiAccess apiAccess2 = apiAccessStore.createApiAccessForUser(
                 organizationName,
-                userEmail,
+                username,
                 // Should fetch the previously created usage key
                 UsageKeyType.ORGANIZATION,
                 Optional.of(ImmutableSet.of("queue1", "queue2")),

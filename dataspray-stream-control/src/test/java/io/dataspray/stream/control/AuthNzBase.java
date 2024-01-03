@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,8 @@ package io.dataspray.stream.control;
 import io.dataspray.common.test.aws.AbstractLambdaTest;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.store.UserStore.CognitoProperties;
+import io.dataspray.store.impl.CognitoUserStore;
+import io.dataspray.stream.control.model.ChallengeConfirmCode;
 import io.dataspray.stream.control.model.SignInRequest;
 import io.dataspray.stream.control.model.SignInResponse;
 import io.dataspray.stream.control.model.SignUpConfirmCodeRequest;
@@ -39,12 +41,15 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import software.amazon.awssdk.services.apigateway.ApiGatewayClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AliasAttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AssociateSoftwareTokenRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AssociateSoftwareTokenResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeDataType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.CreateUserPoolClientRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.CreateUserPoolRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.DeviceConfigurationType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.PasswordPolicyType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.SchemaAttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SetUserMfaPreferenceRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SoftwareTokenMfaSettingsType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.UserPoolClientType;
@@ -84,6 +89,19 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
                         .poolName("userpool-" + UUID.randomUUID())
                         .mfaConfiguration(UserPoolMfaType.OPTIONAL)
                         .autoVerifiedAttributes(VerifiedAttributeType.EMAIL)
+                        .aliasAttributes(AliasAttributeType.EMAIL, AliasAttributeType.PREFERRED_USERNAME)
+                        .schema(
+                                SchemaAttributeType.builder()
+                                        .attributeDataType(AttributeDataType.BOOLEAN)
+                                        .name(CognitoUserStore.USER_ATTRIBUTE_TOS_AGREED)
+                                        .mutable(true).build(),
+                                SchemaAttributeType.builder()
+                                        .attributeDataType(AttributeDataType.BOOLEAN)
+                                        .name(CognitoUserStore.USER_ATTRIBUTE_MARKETING_AGREED)
+                                        .mutable(true).build(),
+                                SchemaAttributeType.builder()
+                                        .name(CognitoUserStore.USER_ATTRIBUTE_EMAIL)
+                                        .required(true).build())
                         .policies(UserPoolPolicyType.builder()
                                 .passwordPolicy(PasswordPolicyType.builder()
                                         .minimumLength(8)
@@ -127,7 +145,8 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
     @ParameterizedTest
     @EnumSource(TestType.class)
     public void test(TestType testType) throws Exception {
-        String email = "abc@example.com";
+        String username = UUID.randomUUID().toString();
+        String email = username + "@example.com";
         String password;
         switch (testType) {
             case PASSWORD_POLICY -> password = "hunter2";
@@ -139,6 +158,7 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
                 .method(HttpMethod.PUT)
                 .path("/sign-up")
                 .body(SignUpRequest.builder()
+                        .username(username)
                         .email(email)
                         .password(password)
                         .tosAgreed(true)
@@ -157,7 +177,9 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
             default -> {
                 assertEquals(Optional.empty(), Optional.ofNullable(signUpResponse.getErrorMsg()));
                 assertNotEquals(Boolean.TRUE, signUpResponse.getConfirmed());
-                assertEquals(Boolean.TRUE, signUpResponse.getCodeRequired());
+                assertEquals(ChallengeConfirmCode.builder()
+                        .username(username)
+                        .build(), signUpResponse.getCodeRequired());
             }
         }
 
@@ -166,7 +188,7 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
                 .method(HttpMethod.PUT)
                 .path("/sign-up/code")
                 .body(SignUpConfirmCodeRequest.builder()
-                        .email(email)
+                        .username(username)
                         .code("123")
                         .build())
                 .build())
@@ -176,12 +198,12 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
         assertNotEquals(Boolean.TRUE, signUpResponse.getCodeRequired());
         assertEquals(Boolean.TRUE, signUpResponse.getConfirmed());
 
-        // Sign in
+        // Sign in using username
         SignInResponse signInResponse = request(SignInResponse.class, Given.builder()
                 .method(HttpMethod.POST)
                 .path("/sign-in")
                 .body(SignInRequest.builder()
-                        .email(email)
+                        .usernameOrEmail(username)
                         .password(password)
                         .build())
                 .build())
@@ -215,11 +237,13 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
                     .build());
 
             // Sign in again and expect MFA
-            signInResponse = request(SignInResponse.class, Given.builder()
+            // TODO Disabled since Moto doesn't currently send USERNAME as a ChallengeParameters for SOFTWARE_TOKEN_MFA challenge
+            /* signInResponse = request(SignInResponse.class, Given.builder()
                     .method(HttpMethod.POST)
                     .path("/sign-in")
                     .body(SignInRequest.builder()
-                            .email(email)
+                            // TODO Try using email here instead of username; unfortunately Moto currently doesn't support AliasAttributes
+                            .usernameOrEmail(username)
                             .password(password)
                             .build())
                     .build())
@@ -227,7 +251,7 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
                     .getBody();
             assertEquals(Optional.empty(), Optional.ofNullable(signInResponse.getErrorMsg()));
             assertNull(signInResponse.getResult());
-            assertNotNull(signInResponse.getChallengeTotpCode());
+            assertNotNull(signInResponse.getChallengeTotpCode()); */
 
             // Submit TOTP code
             // TODO Disabled until MOTO releases bug to support the underlying endpoint https://github.com/getmoto/moto/pull/7136/files in 4.2.13

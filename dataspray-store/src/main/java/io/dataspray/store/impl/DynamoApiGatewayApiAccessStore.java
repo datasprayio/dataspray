@@ -116,12 +116,12 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public ApiAccess createApiAccessForTask(String apiKey, String organizationName, String userEmail, String taskId, String taskVersion, UsageKeyType usageKeyType, Optional<ImmutableSet<String>> queueWhitelistOpt) {
+    public ApiAccess createApiAccessForTask(String apiKey, String organizationName, String username, String taskId, String taskVersion, UsageKeyType usageKeyType, Optional<ImmutableSet<String>> queueWhitelistOpt) {
         return createApiAccess(new ApiAccess(
                 apiKey,
                 organizationName,
                 OwnerType.TASK,
-                userEmail,
+                username,
                 taskId,
                 taskVersion,
                 usageKeyType,

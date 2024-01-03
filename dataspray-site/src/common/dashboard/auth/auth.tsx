@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -85,6 +85,7 @@ const refreshTokenIfNecessary = (authResult?: AuthResult) => {
 const signUp = async (
     onSignIn: (response: AuthResult) => void,
     values: {
+        username: string,
         email: string,
         password: string,
         marketingAgree: boolean,
@@ -96,6 +97,7 @@ const signUp = async (
     try {
         const signupResponse = await getClientAuth().signUp({
             signUpRequest: {
+                username: values.username,
                 email: values.email,
                 password: values.password,
                 marketingAgreed: values.marketingAgree,
@@ -113,7 +115,7 @@ const signUp = async (
 
 const signUpConfirmCode = async (
     onSignIn: (response: AuthResult) => void,
-    email: string,
+    username: string,
     code: string,
     password: string | undefined,
     setError: (error: string) => void,
@@ -121,10 +123,10 @@ const signUpConfirmCode = async (
 ): Promise<void> => {
     try {
         const signupResponse = await getClientAuth().signUpConfirmCode({
-            signUpConfirmCodeRequest: {email, code}
+            signUpConfirmCodeRequest: {username, code}
         });
 
-        await handleSignupResponse(onSignIn, signupResponse, email, password, setError, routerPush);
+        await handleSignupResponse(onSignIn, signupResponse, username, password, setError, routerPush);
     } catch (e: any) {
         console.error('Failed to confirm code', e ?? 'Unknown error')
         setError(e?.message || ('Failed to confirm code: ' + (e || 'Unknown error')))
@@ -134,7 +136,7 @@ const signUpConfirmCode = async (
 const handleSignupResponse = async (
     onSignIn: (response: AuthResult) => void,
     signupResponse: SignUpResponse,
-    email: string,
+    username: string,
     password: string | undefined,
     setError: (error: string) => void,
     routerPush: Router['push'],
@@ -146,7 +148,12 @@ const handleSignupResponse = async (
         // Attempt to sign in if we still remember the password
         // The password is only kept as router state so it's lost on refresh
         if (password) {
-            const authResult = await signIn(onSignIn, {email, password}, undefined, setError, routerPush)
+            const authResult = await signIn(
+                onSignIn,
+                {usernameOrEmail: username, password},
+                undefined,
+                setError,
+                routerPush)
             if (authResult) {
                 return; // All good, signed up, signed in, and already redirect
             }
@@ -156,7 +163,7 @@ const handleSignupResponse = async (
         // On sign-in error or when we don't remember the password, redirect to login page
         await routerPush(...urlWithHiddenParams({
             pathname: '/dashboard/auth/signin',
-            query: {email},
+            query: {usernameOrEmail: username},
         }))
         return;
     }
@@ -166,7 +173,7 @@ const handleSignupResponse = async (
         await routerPush(...urlWithHiddenParams({
             pathname: '/dashboard/auth/confirm-email',
             query: {
-                email: email,
+                username: signupResponse.codeRequired.username,
                 password: password,
             },
         }, 'password'))
@@ -186,34 +193,32 @@ const handleSignupResponse = async (
 const signIn = async (
     onSignIn: (response: AuthResult) => void,
     values: {
-        email: string,
+        usernameOrEmail: string,
         password: string,
     },
     to: string | undefined,
     setError: (error: string) => void,
     routerPush: Router['push'],
 ): Promise<AuthResult | undefined> => {
-
-    let signInResponse: SignInResponse;
     try {
-        signInResponse = await getClientAuth().signIn({
+        const signInResponse = await getClientAuth().signIn({
             signInRequest: {
-                email: values.email,
+                usernameOrEmail: values.usernameOrEmail,
                 password: values.password,
             }
         });
+
+        return await handleSignInResponse(onSignIn, signInResponse, values.password, to, setError, routerPush);
     } catch (e: any) {
         console.error('Failed to sign in', e ?? 'Unknown error')
         setError(e?.message || ('Failed to sign in: ' + (e || 'Unknown error')))
         return;
     }
-
-    return await handleSignInResponse(onSignIn, signInResponse, values.email, values.password, to, setError, routerPush);
 }
 
 const signInConfirmTotp = async (
     onSignIn: (response: AuthResult) => void,
-    email: string,
+    username: string,
     session: string,
     code: string,
     to: string | undefined,
@@ -221,48 +226,44 @@ const signInConfirmTotp = async (
     routerPush: Router['push'],
 ): Promise<AuthResult | undefined> => {
 
-    let signInResponse: SignInResponse;
     try {
-        signInResponse = await getClientAuth().signInChallengeTotpCode({
-            signInChallengeTotpCodeRequest: {email, code, session}
+        const signInResponse = await getClientAuth().signInChallengeTotpCode({
+            signInChallengeTotpCodeRequest: {username, code, session}
         });
+
+        return await handleSignInResponse(onSignIn, signInResponse, undefined, to, setError, routerPush);
     } catch (e: any) {
         console.error('Failed to confirm TOTP code', e ?? 'Unknown error')
         setError(e?.message || ('Failed to sign in: ' + (e || 'Unknown error')))
         return;
     }
-
-    return await handleSignInResponse(onSignIn, signInResponse, email, undefined, to, setError, routerPush);
 }
 
 const signInPasswordChange = async (
     onSignIn: (response: AuthResult) => void,
-    email: string,
+    username: string,
     session: string,
     newPassword: string,
     to: string | undefined,
     setError: (error: string) => void,
     routerPush: Router['push'],
 ): Promise<AuthResult | undefined> => {
-
-    let signInResponse: SignInResponse;
     try {
-        signInResponse = await getClientAuth().signInChallengePasswordChange({
-            signInChallengePasswordChangeRequest: {email, session, newPassword}
+        const signInResponse = await getClientAuth().signInChallengePasswordChange({
+            signInChallengePasswordChangeRequest: {username, session, newPassword}
         });
+
+        return await handleSignInResponse(onSignIn, signInResponse, undefined, to, setError, routerPush);
     } catch (e: any) {
         console.error('Failed to change password', e ?? 'Unknown error')
         setError(e?.message || ('Failed to change password: ' + (e || 'Unknown error')))
         return;
     }
-
-    return await handleSignInResponse(onSignIn, signInResponse, email, undefined, to, setError, routerPush);
 }
 
 const handleSignInResponse = async (
     onSignIn: (response: AuthResult) => void,
     signInResponse: SignInResponse,
-    email: string,
     password: string | undefined,
     to: string | undefined,
     setError: (error: string) => void,
@@ -273,7 +274,10 @@ const handleSignInResponse = async (
     if (signInResponse.codeRequired) {
         await routerPush(...urlWithHiddenParams({
             pathname: '/dashboard/auth/confirm-email',
-            query: {email, password},
+            query: {
+                username: signInResponse.codeRequired.username,
+                password
+            },
         }, 'password'))
         return;
     }
@@ -283,7 +287,7 @@ const handleSignInResponse = async (
         await routerPush(...urlWithHiddenParams({
             pathname: '/dashboard/auth/password-change',
             query: {
-                email,
+                username: signInResponse.challengePasswordChange.username,
                 session: signInResponse.challengePasswordChange.session,
             },
         }))
@@ -296,7 +300,7 @@ const handleSignInResponse = async (
             pathname: '/dashboard/auth/totp',
             query: {
                 to,
-                email,
+                username: signInResponse.challengeTotpCode.username,
                 session: signInResponse.challengeTotpCode.session,
             },
         }))
