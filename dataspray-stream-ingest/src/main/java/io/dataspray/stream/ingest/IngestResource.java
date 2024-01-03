@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -69,7 +69,7 @@ public class IngestResource extends AbstractResource implements IngestApi {
     public void message(String organizationName, String targetName, InputStream messageInputStream) {
 
         // Sanity check to see if we are authorized
-        getUserEmail().orElseThrow(ForbiddenException::new);
+        getUsername().orElseThrow(ForbiddenException::new);
 
         // Fetch target definition
         Target target = targetStore.getTarget(organizationName, targetName, true)

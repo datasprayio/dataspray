@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
 package io.dataspray.store.impl;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import io.dataspray.store.UserStore;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -35,6 +36,7 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespon
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AssociateSoftwareTokenRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AssociateSoftwareTokenResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ChallengeNameType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSignUpRequest;
@@ -53,6 +55,9 @@ public class CognitoUserStore implements UserStore {
     public static final String USER_POOL_ID_PROP_NAME = "aws.cognito.user-pool.id";
     public static final String USER_POOL_APP_CLIENT_ID_PROP_NAME = "aws.cognito.user-pool.client.id";
     private static final String ACCOUNT_STREAM_NAMES_ATTRIBUTE = "streams";
+    private static final String USER_ATTRIBUTE_EMAIL = "email";
+    private static final String USER_ATTRIBUTE_TOS_AGREED = "custom:tos-agreed";
+    private static final String USER_ATTRIBUTE_MARKETING_AGREED = "custom:marketing-agreed";
 
     @ConfigProperty(name = USER_POOL_ID_PROP_NAME)
     String userPoolId;
@@ -69,28 +74,46 @@ public class CognitoUserStore implements UserStore {
      * href="https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_SignUp.html">SignUp</a>
      */
     @Override
-    public SignUpResponse signup(String email, String password) {
+    public SignUpResponse signup(String username, String email, String password, boolean tosAgreed, boolean marketingAgreed) {
+        ImmutableSet.Builder<AttributeType> attrsBuilder = ImmutableSet.<AttributeType>builder()
+                .add(AttributeType.builder()
+                        .name(USER_ATTRIBUTE_EMAIL)
+                        .value(email)
+                        .build());
+        if (tosAgreed) {
+            attrsBuilder.add(AttributeType.builder()
+                    .name(USER_ATTRIBUTE_TOS_AGREED)
+                    .value("true")
+                    .build());
+        }
+        if (marketingAgreed) {
+            attrsBuilder.add(AttributeType.builder()
+                    .name(USER_ATTRIBUTE_MARKETING_AGREED)
+                    .value("true")
+                    .build());
+        }
         return cognitoClient.signUp(SignUpRequest.builder()
                 .clientId(userPoolClientId)
                 .username(email)
+                .userAttributes(attrsBuilder.build())
                 .password(password)
                 .build());
     }
 
     @Override
-    public ConfirmSignUpResponse signupConfirmCode(String email, String code) {
+    public ConfirmSignUpResponse signupConfirmCode(String username, String code) {
         return cognitoClient.confirmSignUp(ConfirmSignUpRequest.builder()
                 .clientId(userPoolClientId)
-                .username(email)
+                .username(username)
                 .confirmationCode(code)
                 .build());
     }
 
     @Override
-    public ResendConfirmationCodeResponse signupResendCode(String email) {
+    public ResendConfirmationCodeResponse signupResendCode(String username) {
         return cognitoClient.resendConfirmationCode(ResendConfirmationCodeRequest.builder()
                 .clientId(userPoolClientId)
-                .username(email)
+                .username(username)
                 .build());
     }
 
@@ -101,14 +124,19 @@ public class CognitoUserStore implements UserStore {
      * href="https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminInitiateAuth.html">AdminInitiateAuth</a>
      */
     @Override
-    public AdminInitiateAuthResponse signin(String email, String password) {
+    public AdminInitiateAuthResponse signin(String usernameOrEmail, String password) {
+        ImmutableMap.Builder<String, String> authParametersBuilder = ImmutableMap.<String, String>builder()
+                .put("PASSWORD", password);
+        if (usernameOrEmail.contains("@")) {
+            authParametersBuilder.put("EMAIL", usernameOrEmail);
+        } else {
+            authParametersBuilder.put("USERNAME", usernameOrEmail);
+        }
         return cognitoClient.adminInitiateAuth(AdminInitiateAuthRequest.builder()
                 .authFlow(AuthFlowType.ADMIN_USER_PASSWORD_AUTH)
                 .userPoolId(userPoolId)
                 .clientId(userPoolClientId)
-                .authParameters(ImmutableMap.of(
-                        "USERNAME", email,
-                        "PASSWORD", password))
+                .authParameters(authParametersBuilder.build())
                 .build());
     }
 
@@ -169,23 +197,23 @@ public class CognitoUserStore implements UserStore {
     }
 
     @Override
-    public AdminRespondToAuthChallengeResponse signinChallengeNewPassword(String session, String email, String newPassword) {
+    public AdminRespondToAuthChallengeResponse signinChallengeNewPassword(String session, String username, String newPassword) {
         return signinChallenge(session, ChallengeNameType.NEW_PASSWORD_REQUIRED, ImmutableMap.of(
-                "USERNAME", email,
+                "USERNAME", username,
                 "NEW_PASSWORD", newPassword));
     }
 
     @Override
-    public AdminRespondToAuthChallengeResponse signinChallengeTotpCode(String session, String email, String code) {
+    public AdminRespondToAuthChallengeResponse signinChallengeTotpCode(String session, String username, String code) {
         return signinChallenge(session, ChallengeNameType.SOFTWARE_TOKEN_MFA, ImmutableMap.of(
-                "USERNAME", email,
+                "USERNAME", username,
                 "SOFTWARE_TOKEN_MFA_CODE", code));
     }
 
     @Override
-    public AdminRespondToAuthChallengeResponse signinChallengeTotpSetup(String session, String email, String verifySoftwareTokenSession) {
+    public AdminRespondToAuthChallengeResponse signinChallengeTotpSetup(String session, String username, String verifySoftwareTokenSession) {
         return signinChallenge(session, ChallengeNameType.MFA_SETUP, ImmutableMap.of(
-                "USERNAME", email,
+                "USERNAME", username,
                 "SESSION", verifySoftwareTokenSession));
     }
 

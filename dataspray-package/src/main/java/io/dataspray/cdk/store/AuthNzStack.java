@@ -81,6 +81,8 @@ public class AuthNzStack extends BaseStack {
                         .tempPasswordValidity(Duration.days(1)).build())
                 .signInCaseSensitive(false)
                 .signInAliases(SignInAliases.builder()
+                        .preferredUsername(true)
+                        .username(true)
                         .email(true).build())
                 .deviceTracking(DeviceTracking.builder()
                         .deviceOnlyRememberedOnUserPrompt(true)

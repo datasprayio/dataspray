@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -78,8 +78,8 @@ public abstract class AbstractLambdaTest {
         request.getRequestContext().setResourcePath(given.getPath());
         request.getRequestContext().setHttpMethod(given.getMethod());
         request.getRequestContext().setAuthorizer(new ApiGatewayAuthorizerContext());
-        request.getRequestContext().getAuthorizer().setPrincipalId(given.getUserEmail());
-        request.getRequestContext().getAuthorizer().setContextValue(AuthorizerConstants.CONTEXT_KEY_USER_EMAIL, String.join(",", given.getUserEmail()));
+        request.getRequestContext().getAuthorizer().setPrincipalId(given.getUsername());
+        request.getRequestContext().getAuthorizer().setContextValue(AuthorizerConstants.CONTEXT_KEY_USERNAME, String.join(",", given.getUsername()));
         request.getRequestContext().getAuthorizer().setContextValue(AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", getOrganizationName()));
         Response response = RestAssured.given()
                 .contentType("application/json")
@@ -116,7 +116,7 @@ public abstract class AbstractLambdaTest {
         MediaType contentType;
         Object body;
         @Builder.Default
-        String userEmail = "user@example.com";
+        String username = "username";
     }
 
 

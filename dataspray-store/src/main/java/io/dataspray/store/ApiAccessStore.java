@@ -64,7 +64,7 @@ public interface ApiAccessStore {
 
     ApiAccess createApiAccessForUser(
             String organizationName,
-            String userEmail,
+            String username,
             UsageKeyType usageKeyType,
             Optional<ImmutableSet<String>> queueWhitelistOpt,
             Optional<Instant> expiryOpt);
@@ -101,7 +101,7 @@ public interface ApiAccessStore {
 
     void getAllUsageKeys(Consumer<ImmutableList<UsageKey>> batchConsumer);
 
-    Optional<String> getUsageKey(UsageKeyType type, Optional<String> userEmailOpt, ImmutableSet<String> organizationNames);
+    Optional<String> getUsageKey(UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames);
 
     @Value
     @AllArgsConstructor
@@ -122,9 +122,9 @@ public interface ApiAccessStore {
         @NonNull
         OwnerType ownerType;
 
-        /** For ownerType=USER shows user email. For ownerType=TASK, shows email of user that created task. */
+        /** For ownerType=USER shows user's username. For ownerType=TASK, shows username of user that deployed the task. */
         @NonNull
-        String ownerEmail;
+        String ownerUsername;
 
         /** For ownerType=TASK, the task ID */
         String ownerTaskId;
@@ -148,7 +148,7 @@ public interface ApiAccessStore {
 
         public String getPrincipalId() {
             return switch (ownerType) {
-                case USER -> ownerEmail;
+                case USER -> ownerUsername;
                 case TASK -> checkNotNull(ownerTaskId);
             };
         }

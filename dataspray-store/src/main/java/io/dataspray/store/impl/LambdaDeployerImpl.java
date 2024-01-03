@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -156,7 +156,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     @Override
     public DeployedVersion deployVersion(
             String organizationName,
-            String userEmail,
+            String username,
             Optional<String> apiEndpointOpt,
             String taskId,
             String codeUrl,
@@ -321,7 +321,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         ApiAccess apiAccess = apiAccessStore.createApiAccessForTask(
                 apiKey,
                 organizationName,
-                userEmail,
+                username,
                 taskId,
                 publishedVersion,
                 ApiAccessStore.UsageKeyType.ORGANIZATION,

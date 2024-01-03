@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -74,16 +74,16 @@ public class ApiAccessStoreTest {
     @Test
     public void testSet() throws Exception {
         String organizationName = UUID.randomUUID().toString();
-        String userEmail = UUID.randomUUID().toString() + "@example.com";
+        String username = UUID.randomUUID().toString();
         ApiAccess apiAccess = apiAccessStore.createApiAccessForUser(
                 organizationName,
-                userEmail,
+                username,
                 UsageKeyType.UNLIMITED,
                 Optional.empty(),
                 Optional.empty());
 
         assertEquals(organizationName, apiAccess.getOrganizationName());
-        assertEquals(userEmail, apiAccess.getOwnerEmail());
+        assertEquals(username, apiAccess.getOwnerUsername());
         assertEquals(UsageKeyType.UNLIMITED, apiAccess.getUsageKeyType());
         assertEquals(Set.of(), apiAccess.getQueueWhitelist());
         assertTrue(apiAccess.isTtlNotExpired());
@@ -171,7 +171,7 @@ public class ApiAccessStoreTest {
 
         ApiAccess apiAccess2 = apiAccessStore.createApiAccessForUser(
                 apiAccess.getOrganizationName(),
-                apiAccess.getOwnerEmail(),
+                apiAccess.getOwnerUsername(),
                 UsageKeyType.UNLIMITED,
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));

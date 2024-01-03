@@ -20,20 +20,10 @@
  * SOFTWARE.
  */
 
-package io.dataspray.web.resource;
+import type {MDXComponents} from 'mdx/types'
 
-
-import io.dataspray.web.api.ExampleApi;
-
-public class ExampleResource extends AbstractResource implements ExampleApi {
-
-    @Override
-    public String ping() {
-        return "OK";
-    }
-
-    @Override
-    public String username() {
-        return getUsername().orElseThrow();
+export function useMDXComponents(components: MDXComponents): MDXComponents {
+    return {
+        ...components,
     }
 }

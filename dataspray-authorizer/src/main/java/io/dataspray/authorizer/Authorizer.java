@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -83,8 +83,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             String authorizationValueLower = authorizationValue.toLowerCase();
 
             final String identifier;
-            final String userEmail;
-            final String principalId;
+            final String username;
             final ImmutableSet<String> organizationNames;
             final ImmutableSet<String> queueWhitelist;
             final Optional<String> usageKey;
@@ -96,12 +95,11 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                         .orElseThrow(() -> new ApiGatewayUnauthorized("Cognito JWT verification failed"));
 
                 // Extract access info
-                userEmail = verifiedCognitoJwt.getUserEmail();
-                principalId = verifiedCognitoJwt.getUserEmail();
+                username = verifiedCognitoJwt.getUsername();
                 organizationNames = verifiedCognitoJwt.getGroupNames();
                 queueWhitelist = ImmutableSet.of();
-                usageKey = apiAccessStore.getUsageKey(verifiedCognitoJwt.getUsageKeyType(), Optional.of(verifiedCognitoJwt.getUserEmail()), organizationNames);
-                identifier = "user " + verifiedCognitoJwt.getUserEmail() + " via cognito JWT";
+                usageKey = apiAccessStore.getUsageKey(verifiedCognitoJwt.getUsageKeyType(), Optional.of(verifiedCognitoJwt.getUsername()), organizationNames);
+                identifier = "user " + verifiedCognitoJwt.getUsername() + " via cognito JWT";
 
             } else if (authorizationValueLower.startsWith("apikey ")) {
 
@@ -111,17 +109,16 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                         .orElseThrow(() -> new ApiGatewayUnauthorized("invalid apikey found"));
 
                 // Extract access info
-                userEmail = apiAccess.getOwnerEmail();
-                principalId = apiAccess.getPrincipalId();
+                username = apiAccess.getOwnerUsername();
                 organizationNames = ImmutableSet.of(apiAccess.getOrganizationName());
                 queueWhitelist = apiAccess.getQueueWhitelist();
-                usageKey = apiAccessStore.getUsageKey(apiAccess.getUsageKeyType(), Optional.of(apiAccess.getOwnerEmail()), ImmutableSet.of(apiAccess.getOrganizationName()));
+                usageKey = apiAccessStore.getUsageKey(apiAccess.getUsageKeyType(), Optional.of(apiAccess.getOwnerUsername()), ImmutableSet.of(apiAccess.getOrganizationName()));
                 switch (apiAccess.getOwnerType()) {
-                    case USER -> identifier = "user " + apiAccess.getOwnerEmail() + " via apikey";
+                    case USER -> identifier = "user " + apiAccess.getOwnerUsername() + " via apikey";
                     case TASK ->
                             identifier = "task " + apiAccess.getOwnerTaskId() + " version " + apiAccess.getOwnerTaskVersion() + " via apikey";
                     default ->
-                            identifier = apiAccess.getOwnerType() + " owner email " + apiAccess.getOwnerEmail() + " via apikey";
+                            identifier = apiAccess.getOwnerType() + " owner email " + apiAccess.getOwnerUsername() + " via apikey";
                 }
 
             } else {
@@ -140,11 +137,11 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             log.info("Client authorized for {}", identifier);
             PolicyDocument policyDocument = generatePolicyDocument(region, awsAccountId, restApiId, stage, organizationNames, queueWhitelist);
             return new AuthPolicy(
-                    principalId,
+                    username,
                     policyDocument,
                     usageKey,
                     Map.of(
-                            AuthorizerConstants.CONTEXT_KEY_USER_EMAIL, userEmail,
+                            AuthorizerConstants.CONTEXT_KEY_USERNAME, username,
                             AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", organizationNames)
                     ));
         } catch (ApiGatewayUnauthorized ex) {

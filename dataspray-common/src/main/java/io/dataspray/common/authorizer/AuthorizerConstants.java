@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 @ApplicationScoped
 public class AuthorizerConstants {
 
-    public static final String CONTEXT_KEY_USER_EMAIL = "userEmail";
+    public static final String CONTEXT_KEY_USERNAME = "username";
     /** Value will hold comma delimited list of organization names */
     public static final String CONTEXT_KEY_ORGANIZATION_NAMES = "organizationName";
 

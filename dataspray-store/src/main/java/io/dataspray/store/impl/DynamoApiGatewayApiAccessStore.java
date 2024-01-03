@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -97,12 +97,12 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public ApiAccess createApiAccessForUser(String organizationName, String userEmail, UsageKeyType usageKeyType, Optional<ImmutableSet<String>> queueWhitelistOpt, Optional<Instant> expiryOpt) {
+    public ApiAccess createApiAccessForUser(String organizationName, String username, UsageKeyType usageKeyType, Optional<ImmutableSet<String>> queueWhitelistOpt, Optional<Instant> expiryOpt) {
         return createApiAccess(new ApiAccess(
                 keygenUtil.generateSecureApiKey(API_KEY_LENGTH),
                 organizationName,
                 OwnerType.USER,
-                userEmail,
+                username,
                 null,
                 null,
                 usageKeyType,
@@ -274,17 +274,17 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public Optional<String> getUsageKey(UsageKeyType type, Optional<String> userEmailOpt, ImmutableSet<String> organizationNames) {
+    public Optional<String> getUsageKey(UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames) {
 
         // For organization wide usage key, find the organization name
         Optional<String> organizationNameOpt = Optional.empty();
         if (UsageKeyType.ORGANIZATION.equals(type)) {
             if (organizationNames.isEmpty()) {
                 type = UsageKeyType.GLOBAL;
-                log.info("User {} is not part of any organization, falling back to dataspray-wide usage key", userEmailOpt);
+                log.info("User {} is not part of any organization, falling back to dataspray-wide usage key", usernameOpt);
             } else if (organizationNames.size() > 1) {
                 organizationNameOpt = Optional.of(organizationNames.stream().sorted().findFirst().get());
-                log.info("User {} is part of multiple organizations, using usage key for {} out of {}", userEmailOpt, organizationNameOpt, organizationNames);
+                log.info("User {} is part of multiple organizations, using usage key for {} out of {}", usernameOpt, organizationNameOpt, organizationNames);
             } else {
                 // Only part of one organization, use it
                 organizationNameOpt = Optional.of(organizationNames.iterator().next());

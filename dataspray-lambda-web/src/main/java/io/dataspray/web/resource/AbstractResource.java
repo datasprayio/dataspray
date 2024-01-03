@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -54,15 +54,15 @@ public abstract class AbstractResource {
     protected UriInfo uriInfo;
 
     /**
-     * Retrieve user email as passed in via context from Cognito Authorizer function.
+     * Retrieve username as passed in via context from Cognito Authorizer function.
      * <p>
      * May be empty if authorizer did not process this request, most likely as this API endpoint is open to public.
      */
-    protected Optional<String> getUserEmail() {
+    protected Optional<String> getUsername() {
         return Optional.ofNullable(Strings.emptyToNull(proxyRequest
                 .getRequestContext()
                 .getAuthorizer()
-                .getContextValue(AuthorizerConstants.CONTEXT_KEY_USER_EMAIL)));
+                .getContextValue(AuthorizerConstants.CONTEXT_KEY_USERNAME)));
     }
 
     /**

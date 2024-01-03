@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -68,8 +68,6 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.UserNotFoun
 
 import java.util.Optional;
 
-import static com.google.common.base.Preconditions.checkState;
-
 @Slf4j
 @ApplicationScoped
 public class AuthNzResource extends AbstractResource implements AuthNzApi {
@@ -126,7 +124,12 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
         // Sign up
         software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse response;
         try {
-            response = userStore.signup(request.getEmail(), request.getPassword());
+            response = userStore.signup(
+                    request.getUsername(),
+                    request.getEmail(),
+                    request.getPassword(),
+                    request.getTosAgreed(),
+                    request.getMarketingAgreed());
         } catch (TooManyRequestsException ex) {
             throw new ClientErrorException(429, ex);
         } catch (NotAuthorizedException ex) {
@@ -155,7 +158,7 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
                     .build();
         }
 
-        return signUpConfirmed(request.getEmail());
+        return signUpConfirmed();
     }
 
     @Override
@@ -195,13 +198,13 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
                     .build();
         }
 
-        return signUpConfirmed(request.getEmail());
+        return signUpConfirmed();
     }
 
     /**
      * Once a user is confirmed, we can trigger other events here.
      */
-    private SignUpResponse signUpConfirmed(String email) {
+    private SignUpResponse signUpConfirmed() {
 
         return SignUpResponse.builder()
                 .confirmed(true)
@@ -212,7 +215,7 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
     public SignInResponse signIn(SignInRequest request) {
         AdminInitiateAuthResponse response;
         try {
-            response = userStore.signin(request.getEmail(), request.getPassword());
+            response = userStore.signin(request.getUsernameOrEmail(), request.getPassword());
         } catch (NotAuthorizedException ex) {
             return SignInResponse.builder()
                     .errorMsg("You are not authorized.")
@@ -235,10 +238,11 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
         }
 
         return signinResponseHandleChallengeAndResult(
-                request.getEmail(),
                 Optional.ofNullable(response.challengeName()),
                 Optional.ofNullable(response.session()),
-                Optional.ofNullable(response.authenticationResult()));
+                Optional.ofNullable(response.authenticationResult()),
+                Optional.ofNullable(response.challengeParameters())
+                        .flatMap(challengeParameters -> Optional.ofNullable(challengeParameters.get("USER_ID_FOR_SRP"))));
 
     }
 
@@ -252,10 +256,11 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
         }
 
         return signinResponseHandleChallengeAndResult(
-                request.getEmail(),
                 Optional.ofNullable(response.challengeName()),
                 Optional.of(response.session()),
-                Optional.ofNullable(response.authenticationResult()));
+                Optional.ofNullable(response.authenticationResult()),
+                Optional.ofNullable(response.challengeParameters())
+                        .flatMap(challengeParameters -> Optional.ofNullable(challengeParameters.get("USER_ID_FOR_SRP"))));
     }
 
     @Override
@@ -264,51 +269,54 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
         try {
             response = userStore.signinChallengeNewPassword(
                     request.getSession(),
-                    request.getEmail(),
+                    request.getUsername(),
                     request.getNewPassword());
         } catch (TooManyRequestsException ex) {
             throw new ClientErrorException(429, ex);
         }
 
         return signinResponseHandleChallengeAndResult(
-                request.getEmail(),
                 Optional.ofNullable(response.challengeName()),
                 Optional.of(response.session()),
-                Optional.ofNullable(response.authenticationResult()));
+                Optional.ofNullable(response.authenticationResult()),
+                Optional.ofNullable(response.challengeParameters())
+                        .flatMap(challengeParameters -> Optional.ofNullable(challengeParameters.get("USER_ID_FOR_SRP"))));
     }
 
     private SignInResponse signinResponseHandleChallengeAndResult(
-            String email,
             Optional<ChallengeNameType> challengeNameOpt,
             Optional<String> sessionOpt,
-            Optional<AuthenticationResultType> authenticationResultOpt) {
+            Optional<AuthenticationResultType> authenticationResultOpt,
+            Optional<String> challengeUsernameOpt) {
 
         if (challengeNameOpt.isPresent()) {
             ChallengeNameType challengeName = challengeNameOpt.get();
-            checkState(sessionOpt.isPresent(), "Session is expected for challenge response: " + challengeName);
-            String session = sessionOpt.get();
+            String session = sessionOpt.orElseThrow(() -> new IllegalStateException("Session is expected for challenge response: " + challengeName));
+            String username = challengeUsernameOpt.orElseThrow(() -> new IllegalStateException("Username is expected for challenge response: " + challengeName));
 
             switch (challengeName) {
                 case SOFTWARE_TOKEN_MFA:
                     return SignInResponse.builder()
                             .challengeTotpCode(ChallengeTotpCode.builder()
                                     .session(session)
+                                    .username(username)
                                     .build())
                             .build();
                 case NEW_PASSWORD_REQUIRED:
                     return SignInResponse.builder()
                             .challengePasswordChange(ChallengePasswordChange.builder()
                                     .session(session)
+                                    .username(username)
                                     .build())
                             .build();
                 case MFA_SETUP:
-                    log.error("MFA setup is not yet supported as part of sign-in flow. email {}", email);
+                    log.error("MFA setup is not yet supported as part of sign-in flow. username {}", username);
                     return SignInResponse.builder()
                             .errorMsg("MFA setup is not yet supported as part of sign-in flow.")
                             .build();
                 case SMS_MFA:
                 case SELECT_MFA_TYPE:
-                    log.error("SMS MFA setup is not yet supported. email {}", email);
+                    log.error("SMS MFA setup is not yet supported. username {}", username);
                     return SignInResponse.builder()
                             .errorMsg("SMS MFA not supported yet.")
                             .build();

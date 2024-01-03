@@ -3,11 +3,14 @@ components:
     SignUpRequest:
       type: object
       required:
+        - username
         - email
         - password
         - tosAgreed
         - marketingAgreed
       properties:
+        username:
+          type: string
         email:
           type: string
         password:
@@ -28,10 +31,10 @@ components:
     SignUpConfirmCodeRequest:
       type: object
       required:
-        - email
+        - username
         - code
       properties:
-        email:
+        username:
           type: string
         code:
           type: string
@@ -39,10 +42,10 @@ components:
     SignInRequest:
       type: object
       required:
-        - email
+        - usernameOrEmail
         - password
       properties:
-        email:
+        usernameOrEmail:
           type: string
         password:
           type: string
@@ -80,8 +83,11 @@ components:
       type: object
       required:
         - session
+        - username
       properties:
         session:
+          type: string
+        username:
           type: string
     ChallengePasswordChange:
       description: The user has to set a new password
@@ -91,14 +97,16 @@ components:
       properties:
         session:
           type: string
+        username:
+          type: string
     SignInChallengeTotpCodeRequest:
       type: object
       required:
-        - email
+        - username
         - session
         - code
       properties:
-        email:
+        username:
           type: string
         session:
           type: string
@@ -107,11 +115,11 @@ components:
     SignInChallengePasswordChangeRequest:
       type: object
       required:
-        - email
+        - username
         - session
         - newPassword
       properties:
-        email:
+        username:
           type: string
         session:
           type: string

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -44,11 +44,11 @@ public class ExampleLambdaTest extends AbstractLambdaTest {
                 .path("/api/ping")
                 .build(),
                 "OK"),
-        USER_EMAIL(Given.builder()
-                .path("/api/user-email")
-                .userEmail("expected.email@example.com")
+        USERNAME(Given.builder()
+                .path("/api/username")
+                .username("expected.username")
                 .build(),
-                "expected.email@example.com");
+                "expected.username");
 
         private final Given given;
         private final String expectedBody;

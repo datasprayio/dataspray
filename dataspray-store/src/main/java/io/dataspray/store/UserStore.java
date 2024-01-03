@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,13 +36,13 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifySoftw
 
 public interface UserStore {
 
-    SignUpResponse signup(String email, String password);
+    SignUpResponse signup(String username, String email, String password, boolean tosAgreed, boolean marketingAgreed);
 
-    ConfirmSignUpResponse signupConfirmCode(String email, String code);
+    ConfirmSignUpResponse signupConfirmCode(String username, String code);
 
-    ResendConfirmationCodeResponse signupResendCode(String email);
+    ResendConfirmationCodeResponse signupResendCode(String username);
 
-    AdminInitiateAuthResponse signin(String email, String password);
+    AdminInitiateAuthResponse signin(String usernameOrEmail, String password);
 
     AssociateSoftwareTokenResponse associateSoftwareTokenGivenSession(String session);
 
@@ -52,11 +52,11 @@ public interface UserStore {
 
     VerifySoftwareTokenResponse verifySoftwareTokenGivenAccessToken(String accessToken, String friendlyDeviceName, String code);
 
-    AdminRespondToAuthChallengeResponse signinChallengeNewPassword(String session, String email, String newPassword);
+    AdminRespondToAuthChallengeResponse signinChallengeNewPassword(String session, String username, String newPassword);
 
-    AdminRespondToAuthChallengeResponse signinChallengeTotpCode(String session, String email, String code);
+    AdminRespondToAuthChallengeResponse signinChallengeTotpCode(String session, String username, String code);
 
-    AdminRespondToAuthChallengeResponse signinChallengeTotpSetup(String session, String email, String verifySoftwareTokenSession);
+    AdminRespondToAuthChallengeResponse signinChallengeTotpSetup(String session, String username, String verifySoftwareTokenSession);
 
     void validateAccessToken(String accessToken);
 

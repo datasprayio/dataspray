@@ -125,7 +125,7 @@ abstract class AuthorizerBase {
                                 case GLOBAL -> "dataspray-usage-key-2-GLOBAL";
                                 case UNLIMITED -> null;
                             }))
-                            .body("context." + AuthorizerConstants.CONTEXT_KEY_USER_EMAIL, equalTo(apiAccess.getOwnerEmail()))
+                            .body("context." + AuthorizerConstants.CONTEXT_KEY_USERNAME, equalTo(apiAccess.getOwnerUsername()))
                             .body("context." + AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, equalTo(apiAccess.getOrganizationName()))
                             .body("policyDocument", jsonStringEqualTo(ResourceUtil.getTestResource(
                                     testType == TestType.AUTHORIZED_QUEUE_WHITELIST

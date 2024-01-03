@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,7 @@
  */
 
 import * as Api from "../../client";
+import {HTTPHeaders} from "../../client";
 import {isCsr} from "../util/isoUtil";
 
 // Recommended way to create a constructor type
@@ -29,7 +30,7 @@ type BaseAPIConstructor<T> = { new(conf: Api.Configuration): T };
 
 const clientCache = new Map<BaseAPIConstructor<any>, Api.BaseAPI>();
 var confCache: Api.Configuration;
-var apiKey: string = '';
+var headers: HTTPHeaders = {};
 
 const getClient = <T extends Api.BaseAPI>(ctor: BaseAPIConstructor<T>): T => {
     var client: T = clientCache.get(ctor) as T;
@@ -49,10 +50,12 @@ const getClientConfiguration = (): Api.Configuration => {
                 throw new Error("SSR fetch is disabled");
             }
         const basePath = Api.BASE_PATH;
-        const apiKeyGetter = (headerName: string) => "Authorization".toUpperCase() === headerName.toUpperCase()
-            ? apiKey : '';
 
-        confCache = new Api.Configuration({fetchApi, basePath, apiKey: apiKeyGetter})
+        confCache = new Api.Configuration({
+            fetchApi,
+            basePath,
+            headers,
+        })
     }
     return confCache;
 }
@@ -66,6 +69,9 @@ export const getClientAuth = (): Api.AuthNZApiInterface => getClient(Api.AuthNZA
 export const getClientHealth = (): Api.HealthApiInterface => getClient(Api.HealthApi);
 /**
  * Set the API key to be used by the client. Takes effect immediately for existing clients.
- * @param newApiKey
  */
-export const setApiKey = (newApiKey: string) => apiKey = newApiKey
+export const setApiKey = (apiKey: string) => headers['Authorization'] = `apikey ${apiKey}`;
+/**
+ * Set the Cognito access token to be used by the client. Takes effect immediately for existing clients.
+ */
+export const setAccessToken = (accessToken: string) => headers['Authorization'] = `cognito ${accessToken}`;

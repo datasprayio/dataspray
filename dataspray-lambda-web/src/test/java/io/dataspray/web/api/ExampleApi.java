@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,6 @@ public interface ExampleApi {
     String ping();
 
     @GET
-    @Path("/user-email")
-    String userEmail();
+    @Path("/username")
+    String username();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -80,7 +80,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
     public TaskVersion deployVersion(String organizationName, String taskId, DeployRequest deployRequest) {
         DeployedVersion deployedVersion = deployer.deployVersion(
                 organizationName,
-                getUserEmail().orElseThrow(),
+                getUsername().orElseThrow(),
                 datasprayApiEndpoint,
                 taskId,
                 deployRequest.getCodeUrl(),
