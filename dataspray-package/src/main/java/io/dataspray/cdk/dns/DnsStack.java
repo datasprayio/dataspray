@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,6 @@ import java.util.List;
 @Getter
 public class DnsStack extends BaseStack {
 
-    private final RecordSet parentZoneDelegatingSubdomainRecordSet;
     private final String dnsZoneId;
 
     public DnsStack(Construct parent, DeployEnvironment deployEnv) {
@@ -72,7 +71,7 @@ public class DnsStack extends BaseStack {
                 .zoneName(dnsDomainParam.getValueAsString())
                 .build());
         // Delegating subdomain record
-        parentZoneDelegatingSubdomainRecordSet = NsRecord.Builder.create(this, getConstructId("recordset-delegating-subdomain"))
+        RecordSet parentZoneDelegatingSubdomainRecordSet = NsRecord.Builder.create(this, getConstructId("recordset-delegating-subdomain"))
                 .zone(parentZone)
                 .recordName(dnsSubdomainParam.getValueAsString())
                 .values(dnsZone.getHostedZoneNameServers())

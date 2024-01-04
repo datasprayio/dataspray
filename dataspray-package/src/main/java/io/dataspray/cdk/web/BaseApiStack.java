@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -80,9 +80,9 @@ import static com.google.common.base.Preconditions.checkState;
 public class BaseApiStack extends BaseStack {
 
     private final String authorizerFunctionName;
+    private final String openApiServerUrl;
     private final SingletonFunction authorizerFunction;
     private final Role roleApiGatewayInvoke;
-    private final String apiFqdn;
     private final Certificate certificate;
     private final SpecRestApi restApi;
     private final RecordSet recordSetA;
@@ -118,10 +118,18 @@ public class BaseApiStack extends BaseStack {
         // Add Lambda endpoints to OpenAPI spec
         ImmutableSet<LambdaWebStack> usedWebServices = addApiGatewayExtensionsToOpenapiSpec(openApiSpec);
 
-        // Set domain name for API Gateway
+        // Fetch server url from spec
+        Map<String, Object> serverObj = getServerObj(openApiSpec);
+        openApiServerUrl = getServerUrl(serverObj);
+
+        // Replace the domain in the server URL
         String fqdn = DnsStack.createFqdn(this, getDeployEnv());
-        String apiSubdomain = setServerUrlDomain(openApiSpec, fqdn);
-        apiFqdn = Fn.join(".", List.of(apiSubdomain, fqdn));
+        String serverUrl = openApiServerUrl.replace("dataspray.io", fqdn);
+        serverObj.put("url", serverUrl);
+
+        // Construct API subdomain and fqdn
+        String apiSubdomain = getApiSubdomain(openApiServerUrl);
+        String apiFqdn = Fn.join(".", List.of(apiSubdomain, fqdn));
         IHostedZone dnsZone = getOptions().getDnsStack().getDnsZone(this, fqdn);
 
         certificate = Certificate.Builder.create(this, getConstructId("cert"))
@@ -192,23 +200,35 @@ public class BaseApiStack extends BaseStack {
     }
 
     @SuppressWarnings("unchecked")
-    @SneakyThrows
-    private String setServerUrlDomain(Map<String, Object> openApiSpec, String domain) {
+    private Map<String, Object> getServerObj(Map<String, Object> openApiSpec) {
         List<Map<String, Object>> servers = (List<Map<String, Object>>) openApiSpec.get("servers");
         checkState(servers != null && servers.size() == 1);
-        Map<String, Object> server = servers.get(0);
+        return servers.getFirst();
+    }
 
-        String serverUrlStr = (String) server.get("url");
-        checkState(serverUrlStr.startsWith("https://"));
-        checkState(serverUrlStr.endsWith(".dataspray.io"));
+    private String getServerUrl(Map<String, Object> serverObj) {
+        String serverUrl = (String) serverObj.get("url");
+        checkState(serverUrl.startsWith("https://"));
+        checkState(serverUrl.endsWith(".dataspray.io"));
+        return serverUrl;
+    }
 
-        // Replace the domain in the server URL
-        String newServerUrlStr = serverUrlStr.replace("dataspray.io", domain);
+    private String getApiSubdomain(String serverUrl) {
+        return serverUrl.substring("https://".length(), serverUrl.length() - ".dataspray.io".length());
+    }
 
-        server.put("url", newServerUrlStr);
+    private String getApiFqdn(String apiSubdomain, String fqdn) {
+        return Fn.join(".", List.of(apiSubdomain, fqdn));
+    }
 
-        String apiSubdomain = serverUrlStr.substring("https://".length(), serverUrlStr.length() - ".dataspray.io".length());
-        return apiSubdomain;
+    /**
+     * The public getter has to re-construct the API fqdn as cross-stack usage of Conditions has a bug in CDK.
+     * See note on {@link DnsStack#createFqdn(Construct, DeployEnvironment)}.
+     */
+    public String getApiFqdn(final Construct scope) {
+        String fqdn = DnsStack.createFqdn(scope, getDeployEnv());
+        String apiSubdomain = getApiSubdomain(openApiServerUrl);
+        return getApiFqdn(apiSubdomain, fqdn);
     }
 
     /**

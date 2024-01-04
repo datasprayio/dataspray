@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -97,7 +97,7 @@ public class DatasprayStack {
         // which will be picked up by Quarkus' @ConfigProperty
         for (SingletonFunction function : functions) {
             setConfigProperty(function, DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME, deployEnv.name());
-            setConfigProperty(function, ControlResource.DATASPRAY_API_ENDPOINT_PROP_NAME, baseApiStack.getApiFqdn());
+            setConfigProperty(function, ControlResource.DATASPRAY_API_ENDPOINT_PROP_NAME, baseApiStack.getApiFqdn(function));
             setConfigProperty(function, CognitoUserStore.USER_POOL_ID_PROP_NAME, authNzStack.getUserPool().getUserPoolId());
             setConfigProperty(function, CognitoUserStore.USER_POOL_APP_CLIENT_ID_PROP_NAME, authNzStack.getUserPoolClient().getUserPoolClientId());
             setConfigProperty(function, SingleTableProvider.TABLE_PREFIX_PROP_NAME, singleTableStack.getSingleTableTable().getTableName());
