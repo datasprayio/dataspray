@@ -853,5 +853,35 @@
                 </failsafe.native-image-path>
             </properties>
         </profile>
+        <profile>
+            <id>macos-skipTests</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                </os>
+                <property>
+                    <name>!skipTests</name>
+                </property>
+            </activation>
+            <properties>
+                <!-- When tests are skipped, use original phase -->
+                <lambda-native.phase>package</lambda-native.phase>
+            </properties>
+        </profile>
+        <profile>
+            <id>macos-skipITs</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                </os>
+                <property>
+                    <name>!skipITs</name>
+                </property>
+            </activation>
+            <properties>
+                <!-- When tests are skipped, use original phase -->
+                <lambda-native.phase>package</lambda-native.phase>
+            </properties>
+        </profile>
     </profiles>
 </project>
