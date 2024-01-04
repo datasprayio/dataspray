@@ -58,8 +58,10 @@ public class CognitoUserStore implements UserStore {
     public static final String USER_POOL_APP_CLIENT_ID_PROP_NAME = "aws.cognito.user-pool.client.id";
     private static final String ACCOUNT_STREAM_NAMES_ATTRIBUTE = "streams";
     public static final String USER_ATTRIBUTE_EMAIL = "email";
+    /** Whether agreed to Terms of Service */
     public static final String USER_ATTRIBUTE_TOS_AGREED = "custom:tos-agreed";
-    public static final String USER_ATTRIBUTE_MARKETING_AGREED = "custom:marketing-agreed";
+    /** Whether agreed to marketing emails */
+    public static final String USER_ATTRIBUTE_MARKETING_AGREED = "custom:mktg-agreed";
 
     @ConfigProperty(name = USER_POOL_ID_PROP_NAME)
     String userPoolId;
