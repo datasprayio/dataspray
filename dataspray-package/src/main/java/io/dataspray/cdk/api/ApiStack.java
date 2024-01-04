@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package io.dataspray.cdk.web;
+package io.dataspray.cdk.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +33,7 @@ import com.google.common.collect.Sets;
 import io.dataspray.authorizer.Authorizer;
 import io.dataspray.cdk.dns.DnsStack;
 import io.dataspray.cdk.template.BaseStack;
+import io.dataspray.cdk.template.FunctionStack;
 import io.dataspray.common.DeployEnvironment;
 import lombok.Getter;
 import lombok.NonNull;
@@ -77,7 +78,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
 @Getter
-public class BaseApiStack extends BaseStack {
+public class ApiStack extends FunctionStack {
 
     private final String authorizerFunctionName;
     private final String openApiServerUrl;
@@ -90,13 +91,12 @@ public class BaseApiStack extends BaseStack {
     private final UsagePlan activeUsagePlan;
     private final Options options;
 
-    public BaseApiStack(Construct parent, Options options) {
+    public ApiStack(Construct parent, Options options) {
         super(parent, "api-gateway", options.getDeployEnv());
         this.options = options;
 
         authorizerFunctionName = "authorizer" + options.getDeployEnv().getSuffix();
-        authorizerFunction = LambdaWebStack.getSingletonFunctionBuilder(
-                this,
+        authorizerFunction = addSingletonFunction(
                 getConstructId("lambda"),
                 authorizerFunctionName,
                 options.getAuthorizerCodeZip(),
@@ -116,7 +116,7 @@ public class BaseApiStack extends BaseStack {
 
         Map<String, Object> openApiSpec = constructOpenApiForApiGateway();
         // Add Lambda endpoints to OpenAPI spec
-        ImmutableSet<LambdaWebStack> usedWebServices = addApiGatewayExtensionsToOpenapiSpec(openApiSpec);
+        ImmutableSet<ApiFunctionStack> usedWebServices = addApiGatewayExtensionsToOpenapiSpec(openApiSpec);
 
         // Fetch server url from spec
         Map<String, Object> serverObj = getServerObj(openApiSpec);
@@ -184,8 +184,8 @@ public class BaseApiStack extends BaseStack {
                 .build();
     }
 
-    private void addFunctionToApiGatewayPermission(LambdaWebStack webService) {
-        webService.getFunction().addPermission(getConstructId("gateway-to-lambda-permission"), Permission.builder()
+    private void addFunctionToApiGatewayPermission(ApiFunctionStack webService) {
+        webService.getApiFunction().addPermission(getConstructId("gateway-to-lambda-permission"), Permission.builder()
                 .sourceArn(restApi.arnForExecuteApi())
                 .principal(ServicePrincipal.Builder
                         .create("apigateway.amazonaws.com").build())
@@ -223,10 +223,10 @@ public class BaseApiStack extends BaseStack {
 
     /**
      * The public getter has to re-construct the API fqdn as cross-stack usage of Conditions has a bug in CDK.
-     * See note on {@link DnsStack#createFqdn(Construct, DeployEnvironment)}.
+     * See note on {@link DnsStack#createFqdn(BaseStack, DeployEnvironment)}.
      */
-    public String getApiFqdn(final Construct scope) {
-        String fqdn = DnsStack.createFqdn(scope, getDeployEnv());
+    public String getApiFqdn(final BaseStack stack) {
+        String fqdn = DnsStack.createFqdn(stack, getDeployEnv());
         String apiSubdomain = getApiSubdomain(openApiServerUrl);
         return getApiFqdn(apiSubdomain, fqdn);
     }
@@ -238,7 +238,7 @@ public class BaseApiStack extends BaseStack {
      */
     @SuppressWarnings("unchecked")
     @SneakyThrows
-    private ImmutableSet<LambdaWebStack> addApiGatewayExtensionsToOpenapiSpec(Map<String, Object> openApiSpec) {
+    private ImmutableSet<ApiFunctionStack> addApiGatewayExtensionsToOpenapiSpec(Map<String, Object> openApiSpec) {
         Map<String, Object> components = (Map<String, Object>) openApiSpec.get("components");
         if (components != null) {
             Map<String, Object> securitySchemes = (Map<String, Object>) components.get("securitySchemes");
@@ -265,7 +265,7 @@ public class BaseApiStack extends BaseStack {
                 }
             }
         }
-        Set<LambdaWebStack> usedWebServices = Sets.newHashSet();
+        Set<ApiFunctionStack> usedWebServices = Sets.newHashSet();
         Map<String, Object> paths = (Map<String, Object>) openApiSpec.get("paths");
         if (paths != null) {
             for (String path : ImmutableSet.copyOf(paths.keySet())) {
@@ -275,7 +275,7 @@ public class BaseApiStack extends BaseStack {
                         Map<String, Object> methodData = (Map<String, Object>) methods.get(method);
 
                         // Find the tag and corresponding function
-                        LambdaWebStack webService;
+                        ApiFunctionStack webService;
                         try {
                             String tag = ((List<String>) methodData.get("tags")).getFirst();
                             webService = getOptions().tagToWebService.get(tag);
@@ -314,7 +314,7 @@ public class BaseApiStack extends BaseStack {
                         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-integration.html
                         methodData.put("x-amazon-apigateway-integration", ImmutableMap.builder()
                                 .put("httpMethod", "POST")
-                                .put("uri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + webService.getFunctionName() + "/invocations")
+                                .put("uri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + webService.getApiFunctionName() + "/invocations")
                                 .put("responses", ImmutableMap.of(
                                         // Add cors support
                                         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/enable-cors-for-resource-using-swagger-importer-tool.html
@@ -392,7 +392,7 @@ public class BaseApiStack extends BaseStack {
         String openapiYamlPath;
         /** Mapping of which function to use for which endpoint (its tag name specifically) */
         @NonNull
-        ImmutableMap<String, ? extends LambdaWebStack> tagToWebService;
+        ImmutableMap<String, ? extends ApiFunctionStack> tagToWebService;
         @NonNull
         String authorizerCodeZip;
         @NonNull

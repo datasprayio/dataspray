@@ -51,11 +51,10 @@ public class DnsStack extends BaseStack {
 
         CfnParameter dnsDomainParam = createDnsDomainParam(this);
         CfnParameter dnsSubdomainParam = createDnsSubdomainParam(this, deployEnv);
-        CfnParameter dnsDomainZoneIdParam = CfnParameter.Builder.create(this, "dnsDomainZoneId")
+        CfnParameter dnsDomainZoneIdParam = getOrCreateParameter("dnsDomainZoneId", b -> b
                 .description("If using a subdomain (e.g. dataspray.example.com), enter the Route53 Hosted Zone Id for the parent domain (e.g. Z104162015L8HFMCRVJ9Y) if you wish to add a NS delegating record, otherwise leave this blank.")
                 .type("String")
-                .defaultValue("")
-                .build();
+                .defaultValue(""));
         String fqdn = createFqdn(this, dnsDomainParam, dnsSubdomainParam, deployEnv);
 
         // Cannot expose to other stacks, see getDnsZone() notes
@@ -108,20 +107,18 @@ public class DnsStack extends BaseStack {
                 .build());
     }
 
-    private static CfnParameter createDnsDomainParam(final Construct scope) {
-        return CfnParameter.Builder.create(scope, "dnsDomain")
+    private static CfnParameter createDnsDomainParam(final BaseStack stack) {
+        return stack.getOrCreateParameter("dnsDomain", b -> b
                 .description("Domain name for your app (e.g. example.com)")
                 .type("String")
-                .minLength(3)
-                .build();
+                .minLength(3));
     }
 
-    private static CfnParameter createDnsSubdomainParam(final Construct scope, DeployEnvironment deployEnv) {
-        return CfnParameter.Builder.create(scope, "dnsSubdomain")
+    private static CfnParameter createDnsSubdomainParam(final BaseStack stack, DeployEnvironment deployEnv) {
+        return stack.getOrCreateParameter("dnsSubdomain", b -> b
                 .description("Optional subdomain for your app (defaults to dataspray)")
                 .type("String")
-                .defaultValue(DeployEnvironment.SELFHOST.equals(deployEnv) ? "dataspray" : "")
-                .build();
+                .defaultValue(DeployEnvironment.SELFHOST.equals(deployEnv) ? "dataspray" : ""));
     }
 
     /**
@@ -135,21 +132,22 @@ public class DnsStack extends BaseStack {
      * <pre>Template error: Cannot use Fn::ImportValue in Conditions</pre>
      */
     public static String createFqdn(
-            final Construct scope,
+            final BaseStack stack,
             DeployEnvironment deployEnv) {
-        return createFqdn(scope, createDnsDomainParam(scope), createDnsSubdomainParam(scope, deployEnv), deployEnv);
+        return createFqdn(stack, createDnsDomainParam(stack), createDnsSubdomainParam(stack, deployEnv), deployEnv);
     }
 
     private static String createFqdn(
-            final Construct scope,
+            final BaseStack stack,
             CfnParameter dnsDomainParam,
             CfnParameter dnsSubdomainParam,
             DeployEnvironment deployEnv) {
         return Fn.conditionIf(
                 // If subdomain is empty
-                CfnCondition.Builder.create(scope, getGlobalConstructId("condition-empty-subdomain", deployEnv))
-                        .expression(Fn.conditionEquals(dnsSubdomainParam.getValueAsString(), ""))
-                        .build()
+                stack.getOrCreateConstruct(stack.getConstructId("condition-empty-subdomain"),
+                                id -> CfnCondition.Builder.create(stack, id)
+                                        .expression(Fn.conditionEquals(dnsSubdomainParam.getValueAsString(), ""))
+                                        .build())
                         .getLogicalId(),
                 // Then supply the domain only
                 dnsDomainParam.getValueAsString(),

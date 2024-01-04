@@ -24,13 +24,14 @@ package io.dataspray.cdk;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+import io.dataspray.cdk.api.ApiStack;
 import io.dataspray.cdk.dns.DnsStack;
 import io.dataspray.cdk.site.StaticSiteStack;
 import io.dataspray.cdk.store.AuthNzStack;
 import io.dataspray.cdk.store.SingleTableStack;
-import io.dataspray.cdk.stream.control.ControlStack;
-import io.dataspray.cdk.stream.ingest.IngestStack;
-import io.dataspray.cdk.web.BaseApiStack;
+import io.dataspray.cdk.stream.control.ControlFunctionStack;
+import io.dataspray.cdk.stream.ingest.IngestFunctionStack;
+import io.dataspray.cdk.template.FunctionStack;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.SingleTableProvider;
 import io.dataspray.store.impl.CognitoUserStore;
@@ -61,7 +62,7 @@ public class DatasprayStack {
         String staticSiteDir = args[4];
 
         // Keep track of all Lambdas in order to pass config properties to them
-        Set<SingletonFunction> functions = Sets.newHashSet();
+        Set<FunctionStack> functionStacks = Sets.newHashSet();
 
         // Frontend
         DnsStack dnsStack = new DnsStack(app, deployEnv);
@@ -74,13 +75,13 @@ public class DatasprayStack {
         SingleTableStack singleTableStack = new SingleTableStack(app, deployEnv);
         AuthNzStack authNzStack = new AuthNzStack(app, deployEnv);
 
-        IngestStack ingestStack = new IngestStack(app, deployEnv, ingestCodeZip);
-        functions.add(ingestStack.getFunction());
+        IngestFunctionStack ingestStack = new IngestFunctionStack(app, deployEnv, ingestCodeZip);
+        functionStacks.add(ingestStack);
 
-        ControlStack controlStack = new ControlStack(app, deployEnv, controlCodeZip, authNzStack);
-        functions.add(controlStack.getFunction());
+        ControlFunctionStack controlStack = new ControlFunctionStack(app, deployEnv, controlCodeZip, authNzStack);
+        functionStacks.add(controlStack);
 
-        BaseApiStack baseApiStack = new BaseApiStack(app, BaseApiStack.Options.builder()
+        ApiStack apiStack = new ApiStack(app, ApiStack.Options.builder()
                 .deployEnv(deployEnv)
                 .openapiYamlPath("target/openapi/api.yaml")
                 .tagToWebService(ImmutableMap.of(
@@ -91,30 +92,34 @@ public class DatasprayStack {
                 .authorizerCodeZip(authorizerCodeZip)
                 .dnsStack(dnsStack)
                 .build());
-        functions.add(baseApiStack.getAuthorizerFunction());
+        functionStacks.add(apiStack);
 
         // For dynamically-named resources such as S3 bucket names, pass the name as deployEnv vars directly to the lambdas
         // which will be picked up by Quarkus' @ConfigProperty
-        for (SingletonFunction function : functions) {
-            setConfigProperty(function, DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME, deployEnv.name());
-            setConfigProperty(function, ControlResource.DATASPRAY_API_ENDPOINT_PROP_NAME, baseApiStack.getApiFqdn(function));
-            setConfigProperty(function, CognitoUserStore.USER_POOL_ID_PROP_NAME, authNzStack.getUserPool().getUserPoolId());
-            setConfigProperty(function, CognitoUserStore.USER_POOL_APP_CLIENT_ID_PROP_NAME, authNzStack.getUserPoolClient().getUserPoolClientId());
-            setConfigProperty(function, SingleTableProvider.TABLE_PREFIX_PROP_NAME, singleTableStack.getSingleTableTable().getTableName());
-            setConfigProperty(function, FirehoseS3AthenaBatchStore.ETL_BUCKET_PROP_NAME, ingestStack.getBucketEtlName());
-            setConfigProperty(function, FirehoseS3AthenaBatchStore.FIREHOSE_STREAM_NAME_PROP_NAME, ingestStack.getFirehoseName());
-            setConfigProperty(function, LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME, controlStack.getCustomerFunctionPermissionBoundaryManagedPolicyName());
-            setConfigProperty(function, LambdaDeployerImpl.CODE_BUCKET_NAME_PROP_NAME, controlStack.getBucketCodeName());
-            setConfigProperty(function, DynamoApiGatewayApiAccessStore.USAGE_PLAN_ID_PROP_NAME, baseApiStack.getActiveUsagePlan().getUsagePlanId());
+        for (FunctionStack functionStack : functionStacks) {
+            for (SingletonFunction function : functionStack.getFunctions().values()) {
+                setConfigProperty(function, DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME, deployEnv.name());
+                setConfigProperty(function, ControlResource.DATASPRAY_API_ENDPOINT_PROP_NAME, apiStack.getApiFqdn(functionStack));
+                setConfigProperty(function, CognitoUserStore.USER_POOL_ID_PROP_NAME, authNzStack.getUserPool().getUserPoolId());
+                setConfigProperty(function, CognitoUserStore.USER_POOL_APP_CLIENT_ID_PROP_NAME, authNzStack.getUserPoolClient().getUserPoolClientId());
+                setConfigProperty(function, SingleTableProvider.TABLE_PREFIX_PROP_NAME, singleTableStack.getSingleTableTable().getTableName());
+                setConfigProperty(function, FirehoseS3AthenaBatchStore.ETL_BUCKET_PROP_NAME, ingestStack.getBucketEtlName());
+                setConfigProperty(function, FirehoseS3AthenaBatchStore.FIREHOSE_STREAM_NAME_PROP_NAME, ingestStack.getFirehoseName());
+                setConfigProperty(function, LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME, controlStack.getCustomerFunctionPermissionBoundaryManagedPolicyName());
+                setConfigProperty(function, LambdaDeployerImpl.CODE_BUCKET_NAME_PROP_NAME, controlStack.getBucketCodeName());
+                setConfigProperty(function, DynamoApiGatewayApiAccessStore.USAGE_PLAN_ID_PROP_NAME, apiStack.getActiveUsagePlan().getUsagePlanId());
+            }
         }
 
         app.synth();
     }
 
     private static void setConfigProperty(SingletonFunction function, String prop, String value) {
+        // Adjust a quarkus property to the environment variable format
         // https://quarkus.io/guides/config-reference#environment-variablespom.xml
         String propAsEnvVar = prop.replaceAll("[^a-zA-Z0-9]", "_").toUpperCase();
 
+        // Attach onto the function
         function.addEnvironment(propAsEnvVar, value);
     }
 

@@ -23,7 +23,7 @@
 package io.dataspray.cdk.stream.ingest;
 
 import com.google.common.collect.ImmutableList;
-import io.dataspray.cdk.web.LambdaWebStack;
+import io.dataspray.cdk.api.ApiFunctionStack;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.TargetStore;
 import lombok.Getter;
@@ -54,21 +54,21 @@ import static java.util.Objects.requireNonNull;
 
 @Slf4j
 @Getter
-public class IngestStack extends LambdaWebStack {
+public class IngestFunctionStack extends ApiFunctionStack {
 
     private final String bucketEtlName;
     private final Bucket bucketEtl;
     private final String firehoseName;
     private final DeliveryStream firehose;
 
-    public IngestStack(Construct parent, DeployEnvironment deployEnv, String codeZip) {
+    public IngestFunctionStack(Construct parent, DeployEnvironment deployEnv, String codeZip) {
         super(parent, Options.builder()
                 .deployEnv(deployEnv)
                 .functionName("ingest")
                 .codeZip(codeZip)
                 .build());
 
-        getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerIngestSqs"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -135,7 +135,7 @@ public class IngestStack extends LambdaWebStack {
                 "ExtendedS3DestinationConfiguration.DynamicPartitioningConfiguration",
                 Map.of("Enabled", Boolean.TRUE, "RetryOptions", Map.of(
                         "DurationInSeconds", 300L)));
-        getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "firehose:PutRecord"))

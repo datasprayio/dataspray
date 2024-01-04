@@ -23,8 +23,8 @@
 package io.dataspray.cdk.stream.control;
 
 import com.google.common.collect.ImmutableList;
+import io.dataspray.cdk.api.ApiFunctionStack;
 import io.dataspray.cdk.store.AuthNzStack;
-import io.dataspray.cdk.web.LambdaWebStack;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.impl.LambdaDeployerImpl;
 import io.dataspray.store.impl.SqsStreamStore;
@@ -42,7 +42,7 @@ import software.constructs.Construct;
 
 @Slf4j
 @Getter
-public class ControlStack extends LambdaWebStack {
+public class ControlFunctionStack extends ApiFunctionStack {
 
     /** Separated out to remove cyclic dependency */
     private final String customerFunctionPermissionBoundaryManagedPolicyName;
@@ -51,7 +51,7 @@ public class ControlStack extends LambdaWebStack {
     private final String bucketCodeName;
     private final Bucket bucketCode;
 
-    public ControlStack(Construct parent, DeployEnvironment deployEnv, String codeZip, AuthNzStack authNzStack) {
+    public ControlFunctionStack(Construct parent, DeployEnvironment deployEnv, String codeZip, AuthNzStack authNzStack) {
         super(parent, Options.builder()
                 .deployEnv(deployEnv)
                 .functionName("control")
@@ -95,7 +95,7 @@ public class ControlStack extends LambdaWebStack {
                         LifecycleRule.builder()
                                 .expiration(Duration.days(1)).build()))
                 .build();
-        getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CodeUploadBucket"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -104,7 +104,7 @@ public class ControlStack extends LambdaWebStack {
                 .resources(ImmutableList.of(bucketCode.getBucketArn() + "/*"))
                 .build());
 
-        getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerManagementLambda"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -135,7 +135,7 @@ public class ControlStack extends LambdaWebStack {
                         "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":event-source-mapping:*"))
                 .build());
         // Unfortunately not all permissions allow for resource-specific restrictions.
-        getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerManagementLambdaResourceWildcardActions"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -145,7 +145,7 @@ public class ControlStack extends LambdaWebStack {
                 .resources(ImmutableList.of("*"))
                 .build());
 
-        getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerManagementSqs"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -156,7 +156,7 @@ public class ControlStack extends LambdaWebStack {
                         "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + SqsStreamStore.CUSTOMER_QUEUE_WILDCARD))
                 .build());
 
-        getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerManagementIam"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(

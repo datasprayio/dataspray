@@ -105,11 +105,10 @@ public class AuthNzStack extends BaseStack {
                 .build();
         CfnUserPool userPoolCfn = (CfnUserPool) requireNonNull(userPool.getNode().getDefaultChild());
         // Decide to send email from Cognito or SES
-        emailWithParam = CfnParameter.Builder.create(this, "sesEmail")
+        emailWithParam = getOrCreateParameter("sesEmail", b -> b
                 .description("Email of your verified SES identity to use for sending and receiving emails. (e.g. support@example.com) Leave blank to use Cognito Email.")
                 .type("String")
-                .defaultValue("")
-                .build();
+                .defaultValue(""));
         // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cognito-userpool-emailconfiguration.html
         userPoolCfn.addPropertyOverride("EmailConfiguration", Fn.conditionIf(
                 CfnCondition.Builder.create(this, getConstructId("authnz-userpool-ses-or-cognito"))

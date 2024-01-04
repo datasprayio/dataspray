@@ -20,10 +20,10 @@
  * SOFTWARE.
  */
 
-package io.dataspray.cdk.web;
+package io.dataspray.cdk.template;
 
 import com.google.common.base.Charsets;
-import io.dataspray.cdk.template.BaseStack;
+import com.google.common.collect.Maps;
 import io.dataspray.common.DeployEnvironment;
 import lombok.Getter;
 import lombok.NonNull;
@@ -45,9 +45,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 @Getter
-public abstract class LambdaWebStack extends BaseStack {
+public abstract class FunctionStack extends BaseStack {
 
-    private static final String QUARKUS_LAMBDA_HANDLER = "io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest";
+    public static final String QUARKUS_LAMBDA_HANDLER = "io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest";
     /**
      * For custom runtime lambda, filename that is expected to be inside the uploaded zip file
      *
@@ -57,38 +57,37 @@ public abstract class LambdaWebStack extends BaseStack {
      */
     private static final String CUSTOM_RUNTIME_BOOTSTRAP_FILENAME = "bootstrap";
 
-    private final String functionName;
-    private final SingletonFunction function;
+    /**
+     * Exposing all function names and functions.
+     * <p>
+     * Function names are exposed separately to allow another stack to use the function name without having to depend on
+     * the function stack.
+     */
+    private final Map<String, SingletonFunction> functions = Maps.newHashMap();
 
-    public LambdaWebStack(Construct parent, Options options) {
-        super(parent, "web-" + options.getFunctionName(), options.getDeployEnv());
-
-        functionName = options.getFunctionName() + options.getDeployEnv().getSuffix();
-        function = getSingletonFunctionBuilder(
-                this,
-                getConstructId("lambda"),
-                functionName,
-                options.getCodeZip(),
-                options.getMemorySize(),
-                QUARKUS_LAMBDA_HANDLER);
+    public FunctionStack(Construct parent, String constructIdSuffix, DeployEnvironment deployEnv) {
+        super(parent, constructIdSuffix, deployEnv);
     }
 
     /**
      * Hybrid SingletonFunction of native or JVM code
      */
-    static SingletonFunction getSingletonFunctionBuilder(
-            Construct scope,
+    protected SingletonFunction addSingletonFunction(
             String constructId,
             String functionName,
             String codeZip,
-            int memorySize,
+            long memorySize,
             String jvmHandler) {
-        SingletonFunction.Builder functionBuilder = SingletonFunction.Builder.create(scope, constructId)
+
+        // Create the function builder
+        SingletonFunction.Builder functionBuilder = SingletonFunction.Builder.create(this, constructId)
                 .uuid(UUID.nameUUIDFromBytes(constructId.getBytes(Charsets.UTF_8)).toString())
                 .functionName(functionName)
                 .code(Code.fromAsset(codeZip))
                 .memorySize(memorySize)
                 .timeout(Duration.seconds(30));
+
+        // Lambda differences between a native image and JVM
         if (detectIsNative(codeZip)) {
             functionBuilder
                     .architecture(detectNativeArch())
@@ -107,7 +106,11 @@ public abstract class LambdaWebStack extends BaseStack {
                     .runtime(Runtime.JAVA_21)
                     .handler(jvmHandler);
         }
-        return functionBuilder.build();
+
+        // Finally construct the function
+        SingletonFunction function = functionBuilder.build();
+        this.functions.put(functionName, function);
+        return function;
     }
 
     /**

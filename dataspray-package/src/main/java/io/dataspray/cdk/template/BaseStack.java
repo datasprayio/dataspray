@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,9 +22,12 @@
 
 package io.dataspray.cdk.template;
 
+import com.google.common.collect.Maps;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.common.StringUtil;
 import lombok.Getter;
+import software.amazon.awscdk.CfnElement;
+import software.amazon.awscdk.CfnParameter;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
@@ -32,11 +35,16 @@ import software.amazon.awscdk.TagProps;
 import software.amazon.awscdk.Tags;
 import software.constructs.Construct;
 
+import java.util.Map;
+import java.util.function.Function;
+
 public abstract class BaseStack extends Stack {
 
     @Getter
     private final DeployEnvironment deployEnv;
     private final String baseConstructId;
+    private final Map<String, CfnParameter> parameters = Maps.newHashMap();
+    private final Map<String, CfnElement> constructs = Maps.newHashMap();
 
     public BaseStack(Construct parent, String constructIdSuffix, DeployEnvironment deployEnv) {
         super(parent,
@@ -64,15 +72,27 @@ public abstract class BaseStack extends Stack {
                 .build());
     }
 
-    protected String getConstructId(String name) {
+    public String getConstructId(String name) {
         return baseConstructId + "-" + name + deployEnv.getSuffix();
     }
 
-    public static String getGlobalConstructId(String name, DeployEnvironment deployEnv) {
-        return DeployEnvironment.RESOURCE_PREFIX + "global-" + name + deployEnv.getSuffix();
+    public String getConstructIdCamelCase(String name) {
+        return StringUtil.camelCase(getConstructId(name), true);
     }
 
-    protected String getConstructIdCamelCase(String name) {
-        return StringUtil.camelCase(getConstructId(name), true);
+    /**
+     * Utility method to get or create a new Stack parameter to ensure we don't create duplicates.
+     */
+    public CfnParameter getOrCreateParameter(String parameterName, Function<CfnParameter.Builder, CfnParameter.Builder> builder) {
+        return parameters.computeIfAbsent(parameterName,
+                k -> builder.apply(CfnParameter.Builder.create(this, parameterName)).build());
+    }
+
+    /**
+     * Utility method to get or create a new Stack parameter to ensure we don't create duplicates.
+     */
+    public <T extends CfnElement> T getOrCreateConstruct(String constructId, Function<String, T> supplier) {
+        //noinspection unchecked
+        return (T) constructs.computeIfAbsent(constructId, supplier);
     }
 }
