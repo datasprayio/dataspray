@@ -328,7 +328,7 @@ public class ApiStack extends FunctionStack {
                         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-integration.html
                         methodData.put("x-amazon-apigateway-integration", ImmutableMap.builder()
                                 .put("httpMethod", "POST")
-                                .put("uri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + apiFunctionStack.getApiFunctionName() + "/invocations")
+                                .put("uri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + endpointFunction.getApiFunctionName() + "/invocations")
                                 .put("responses", ImmutableMap.of(
                                         // Add cors support
                                         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/enable-cors-for-resource-using-swagger-importer-tool.html

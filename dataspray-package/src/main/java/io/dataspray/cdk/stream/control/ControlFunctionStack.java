@@ -172,5 +172,21 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         "arn:aws:iam::" + getAccount() + ":policy/" + LambdaDeployerImpl.CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "*",
                         "arn:aws:iam::" + getAccount() + ":role/" + LambdaDeployerImpl.CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER.apply(getDeployEnv()) + "*"))
                 .build());
+
+        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+                .sid(getConstructIdCamelCase("AuthnzCognitoUserPool"))
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "cognito-idp:AdminInitiateAuth",
+                        "cognito-idp:ConfirmSignUp",
+                        "cognito-idp:SignUp",
+                        "cognito-idp:AdminListGroupsForUser",
+                        "cognito-idp:AdminRespondToAuthChallenge",
+                        "cognito-idp:ResendConfirmationCode",
+                        "cognito-idp:AdminGetUser",
+                        "cognito-idp:AssociateSoftwareToken",
+                        "cognito-idp:VerifySoftwareToken"))
+                .resources(ImmutableList.of(authNzStack.getUserPool().getUserPoolArn()))
+                .build());
     }
 }
