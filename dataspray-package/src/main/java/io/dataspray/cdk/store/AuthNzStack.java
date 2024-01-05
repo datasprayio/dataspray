@@ -66,7 +66,7 @@ public class AuthNzStack extends BaseStack {
 
         userPool = UserPool.Builder.create(this, getConstructId("userpool"))
                 .userPoolName(getConstructId("userpool"))
-                .selfSignUpEnabled(false)
+                .selfSignUpEnabled(true)
                 .autoVerify(AutoVerifiedAttrs.builder()
                         .email(true).build())
                 .mfa(Mfa.OPTIONAL)
