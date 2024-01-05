@@ -121,6 +121,13 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
                     .build();
         }
 
+        // Pre-validate password as a parameter to Cognito, password policy will be evaluated by Cognito itself
+        // Password must match regex otherwise Cognito throws InvalidParameterException instead of InvalidPasswordException
+        if (!request.getPassword().matches("^[\\S]+.*[\\S]+$")) {
+            return SignUpResponse.builder()
+                    .errorMsg("Password is too short or contains spaces at the beginning or end.")
+                    .build();
+
         // Validate email address
         EmailValidResult emailValidationResult = emailValidator.check(request.getEmail());
         switch (emailValidationResult) {
@@ -153,10 +160,6 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
                     .build();
         } catch (TooManyRequestsException ex) {
             throw new ClientErrorException(429, ex);
-        } catch (NotAuthorizedException ex) {
-            return SignUpResponse.builder()
-                    .errorMsg("Email address appears to be a disposable email address, please contact support if this is a mistake.")
-                    .build();
         } catch (InvalidPasswordException ex) {
             return SignUpResponse.builder()
                     .errorMsg("Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character. Password cannot be a common password or have common patterns.")
