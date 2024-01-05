@@ -127,6 +127,7 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
             return SignUpResponse.builder()
                     .errorMsg("Password is too short or contains spaces at the beginning or end.")
                     .build();
+        }
 
         // Validate email address
         EmailValidResult emailValidationResult = emailValidator.check(request.getEmail());
