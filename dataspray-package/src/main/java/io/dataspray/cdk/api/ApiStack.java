@@ -337,7 +337,7 @@ public class ApiStack extends FunctionStack {
                                                 "responseParameters", ImmutableMap.of(
                                                         "method.response.header.Access-Control-Allow-Headers", "'" + ApiFunctionStack.CORS_ALLOW_HEADERS + "'",
                                                         "method.response.header.Access-Control-Allow-Methods", "'" + ApiFunctionStack.CORS_ALLOW_METHODS + "'",
-                                                        "method.response.header.Access-Control-Allow-Origin", "'" + endpointFunction.getCorsAllowedOrigin() + "'"),
+                                                        "method.response.header.Access-Control-Allow-Origin", "'" + endpointFunction.getCorsAllowOrigins(this) + "'"),
                                                 "responseTemplates", ImmutableMap.of(
                                                         "application/json", "{}"))))
                                 .put("passthroughBehavior", "when_no_match")
@@ -379,7 +379,7 @@ public class ApiStack extends FunctionStack {
                                                         "responseParameters", ImmutableMap.of(
                                                                 "method.response.header.Access-Control-Allow-Headers", "'" + ApiFunctionStack.CORS_ALLOW_HEADERS + "'",
                                                                 "method.response.header.Access-Control-Allow-Methods", "'" + ApiFunctionStack.CORS_ALLOW_METHODS + "'",
-                                                                "method.response.header.Access-Control-Allow-Origin", "'" + endpointFunctionOpt.get().getCorsAllowedOrigin() + "'"),
+                                                                "method.response.header.Access-Control-Allow-Origin", "'" + endpointFunctionOpt.get().getCorsAllowOrigins(this) + "'"),
                                                         "responseTemplates", ImmutableMap.of(
                                                                 "application/json", "{}"))))));
                     }

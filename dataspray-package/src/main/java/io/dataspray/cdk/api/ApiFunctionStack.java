@@ -25,6 +25,7 @@ package io.dataspray.cdk.api;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.cdk.DatasprayStack;
 import io.dataspray.cdk.dns.DnsStack;
+import io.dataspray.cdk.template.BaseStack;
 import io.dataspray.cdk.template.FunctionStack;
 import io.dataspray.common.DeployEnvironment;
 import lombok.Getter;
@@ -42,7 +43,7 @@ public abstract class ApiFunctionStack extends FunctionStack {
     private final ImmutableSet<String> apiTags;
     private final String apiFunctionName;
     private final SingletonFunction apiFunction;
-    private final String corsAllowedOrigin;
+    private final CorsOrigins corsOrigins;
 
     public ApiFunctionStack(Construct parent, Options options) {
         super(parent, "web-" + options.getFunctionName(), options.getDeployEnv());
@@ -58,14 +59,19 @@ public abstract class ApiFunctionStack extends FunctionStack {
 
         // Setup CORS using Quarkus Jakarta CORS filter
         // https://quarkus.io/guides/security-cors
-        corsAllowedOrigin = switch (options.getCorsOrigins()) {
-            case ANY -> "*";
-            case SITE -> DnsStack.createFqdn(this, options.getDeployEnv());
-        };
+        corsOrigins = options.getCorsOrigins();
+        String corsAllowedOrigin = getCorsAllowOrigins(this);
         DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors", "true");
         DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors.headers", CORS_ALLOW_HEADERS);
         DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors.methods", CORS_ALLOW_METHODS);
         DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors.origins", corsAllowedOrigin);
+    }
+
+    public String getCorsAllowOrigins(final BaseStack stack) {
+        return switch (corsOrigins) {
+            case ANY -> "*";
+            case SITE -> DnsStack.createFqdn(this, getDeployEnv());
+        };
     }
 
     @Value
