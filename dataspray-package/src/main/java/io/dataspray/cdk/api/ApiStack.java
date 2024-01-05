@@ -71,6 +71,8 @@ import software.constructs.Construct;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -271,21 +273,33 @@ public class ApiStack extends FunctionStack {
             for (String path : ImmutableSet.copyOf(paths.keySet())) {
                 Map<String, Object> methods = (Map<String, Object>) paths.get(path);
                 if (methods != null) {
+                    Optional<ApiFunctionStack> endpointFunctionOpt = Optional.empty();
                     for (String method : ImmutableSet.copyOf(methods.keySet())) {
                         Map<String, Object> methodData = (Map<String, Object>) methods.get(method);
 
-                        // Find the tag and corresponding function
-                        ApiFunctionStack webService;
+                        // Find tag for endpoint
+                        String tag;
                         try {
-                            String tag = ((List<String>) methodData.get("tags")).getFirst();
-                            webService = getOptions().tagToWebService.get(tag);
-                        } catch (NullPointerException | ClassCastException ex) {
+                            tag = ((List<String>) methodData.get("tags")).getFirst();
+                        } catch (NoSuchElementException | NullPointerException | ClassCastException ex) {
                             throw new IllegalStateException("Endpoint does not have a tag for path " + path + " and method " + method, ex);
                         }
-                        if (webService == null) {
-                            throw new IllegalStateException("No function found for path " + path + " and method " + method);
+
+                        // Find the corresponding function (by tag)
+                        final ApiFunctionStack endpointFunction;
+                        if (endpointFunctionOpt.isEmpty()) {
+                            endpointFunction = getOptions().getApiFunctions().stream()
+                                    .filter(f -> f.getApiTags().contains(tag))
+                                    .findAny()
+                                    .orElseThrow(() -> new IllegalStateException("No function found for path " + path + " and method " + method));
+                            endpointFunctionOpt = Optional.of(endpointFunction);
+                            usedWebServices.add(endpointFunction);
+                        } else {
+                            endpointFunction = endpointFunctionOpt.get();
+                            if (!endpointFunction.getApiTags().contains(tag)) {
+                                throw new IllegalStateException("Having different tags under same path " + path + " is not supported since we have a single Cors OPTIONS method");
+                            }
                         }
-                        usedWebServices.add(webService);
 
                         // Add cors headers to responses
                         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/enable-cors-for-resource-using-swagger-importer-tool.html
@@ -314,16 +328,16 @@ public class ApiStack extends FunctionStack {
                         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-integration.html
                         methodData.put("x-amazon-apigateway-integration", ImmutableMap.builder()
                                 .put("httpMethod", "POST")
-                                .put("uri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + webService.getApiFunctionName() + "/invocations")
+                                .put("uri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + apiFunctionStack.getApiFunctionName() + "/invocations")
                                 .put("responses", ImmutableMap.of(
                                         // Add cors support
                                         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/enable-cors-for-resource-using-swagger-importer-tool.html
                                         "default", ImmutableMap.of(
                                                 "statusCode", "200",
                                                 "responseParameters", ImmutableMap.of(
-                                                        "method.response.header.Access-Control-Allow-Headers", "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
-                                                        "method.response.header.Access-Control-Allow-Methods", "'*'",
-                                                        "method.response.header.Access-Control-Allow-Origin", "'*'"),
+                                                        "method.response.header.Access-Control-Allow-Headers", "'" + ApiFunctionStack.CORS_ALLOW_HEADERS + "'",
+                                                        "method.response.header.Access-Control-Allow-Methods", "'" + ApiFunctionStack.CORS_ALLOW_METHODS + "'",
+                                                        "method.response.header.Access-Control-Allow-Origin", "'" + endpointFunction.getCorsAllowedOrigin() + "'"),
                                                 "responseTemplates", ImmutableMap.of(
                                                         "application/json", "{}"))))
                                 .put("passthroughBehavior", "when_no_match")
@@ -331,7 +345,7 @@ public class ApiStack extends FunctionStack {
                                 .put("type", "aws_proxy")
                                 .build());
                     }
-                    if (!methods.containsKey("options")) {
+                    if (!methods.containsKey("options") && endpointFunctionOpt.isPresent()) {
                         // Add CORS support
                         // https://docs.aws.amazon.com/apigateway/latest/developerguide/enable-cors-for-resource-using-swagger-importer-tool.html
                         methods.put("options", ImmutableMap.of(
@@ -363,9 +377,9 @@ public class ApiStack extends FunctionStack {
                                                         "statusCode", "200",
                                                         "contentHandling", "CONVERT_TO_TEXT", // Fix binary data issues https://stackoverflow.com/a/63880956
                                                         "responseParameters", ImmutableMap.of(
-                                                                "method.response.header.Access-Control-Allow-Headers", "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
-                                                                "method.response.header.Access-Control-Allow-Methods", "'*'",
-                                                                "method.response.header.Access-Control-Allow-Origin", "'*'"),
+                                                                "method.response.header.Access-Control-Allow-Headers", "'" + ApiFunctionStack.CORS_ALLOW_HEADERS + "'",
+                                                                "method.response.header.Access-Control-Allow-Methods", "'" + ApiFunctionStack.CORS_ALLOW_METHODS + "'",
+                                                                "method.response.header.Access-Control-Allow-Origin", "'" + endpointFunctionOpt.get().getCorsAllowedOrigin() + "'"),
                                                         "responseTemplates", ImmutableMap.of(
                                                                 "application/json", "{}"))))));
                     }
@@ -390,9 +404,9 @@ public class ApiStack extends FunctionStack {
         DeployEnvironment deployEnv;
         @NonNull
         String openapiYamlPath;
-        /** Mapping of which function to use for which endpoint (its tag name specifically) */
+        /** Functions to include in the API, linked by the OpenAPI endpoint tag and the ApiFunctionStack.apiTags */
         @NonNull
-        ImmutableMap<String, ? extends ApiFunctionStack> tagToWebService;
+        ImmutableSet<ApiFunctionStack> apiFunctions;
         @NonNull
         String authorizerCodeZip;
         @NonNull

@@ -23,6 +23,7 @@
 package io.dataspray.cdk.stream.ingest;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import io.dataspray.cdk.api.ApiFunctionStack;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.TargetStore;
@@ -66,6 +67,9 @@ public class IngestFunctionStack extends ApiFunctionStack {
                 .deployEnv(deployEnv)
                 .functionName("ingest")
                 .codeZip(codeZip)
+                .apiTags(ImmutableSet.of("Ingest", "Health"))
+                // Allow calling Ingest from anywhere
+                .corsOrigins(CorsOrigins.ANY)
                 .build());
 
         getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()

@@ -22,7 +22,7 @@
 
 package io.dataspray.cdk;
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.dataspray.cdk.api.ApiStack;
 import io.dataspray.cdk.dns.DnsStack;
@@ -84,11 +84,7 @@ public class DatasprayStack {
         ApiStack apiStack = new ApiStack(app, ApiStack.Options.builder()
                 .deployEnv(deployEnv)
                 .openapiYamlPath("target/openapi/api.yaml")
-                .tagToWebService(ImmutableMap.of(
-                        "Ingest", ingestStack,
-                        "AuthNZ", controlStack,
-                        "Control", controlStack,
-                        "Health", ingestStack))
+                .apiFunctions(ImmutableSet.of(ingestStack, controlStack))
                 .authorizerCodeZip(authorizerCodeZip)
                 .dnsStack(dnsStack)
                 .build());
@@ -114,7 +110,7 @@ public class DatasprayStack {
         app.synth();
     }
 
-    private static void setConfigProperty(SingletonFunction function, String prop, String value) {
+    public static void setConfigProperty(SingletonFunction function, String prop, String value) {
         // Adjust a quarkus property to the environment variable format
         // https://quarkus.io/guides/config-reference#environment-variablespom.xml
         String propAsEnvVar = prop.replaceAll("[^a-zA-Z0-9]", "_").toUpperCase();

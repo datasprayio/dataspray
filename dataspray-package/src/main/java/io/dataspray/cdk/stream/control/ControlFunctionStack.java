@@ -23,6 +23,7 @@
 package io.dataspray.cdk.stream.control;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import io.dataspray.cdk.api.ApiFunctionStack;
 import io.dataspray.cdk.store.AuthNzStack;
 import io.dataspray.common.DeployEnvironment;
@@ -56,6 +57,8 @@ public class ControlFunctionStack extends ApiFunctionStack {
                 .deployEnv(deployEnv)
                 .functionName("control")
                 .codeZip(codeZip)
+                .apiTags(ImmutableSet.of("AuthNZ", "Control"))
+                .corsOrigins(CorsOrigins.SITE)
                 .build());
 
         customerFunctionPermissionBoundaryManagedPolicyName = getConstructId("customer-function-permission-boundary");

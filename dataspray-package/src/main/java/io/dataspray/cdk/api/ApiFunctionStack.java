@@ -22,6 +22,9 @@
 
 package io.dataspray.cdk.api;
 
+import com.google.common.collect.ImmutableSet;
+import io.dataspray.cdk.DatasprayStack;
+import io.dataspray.cdk.dns.DnsStack;
 import io.dataspray.cdk.template.FunctionStack;
 import io.dataspray.common.DeployEnvironment;
 import lombok.Getter;
@@ -33,12 +36,18 @@ import software.constructs.Construct;
 @Getter
 public abstract class ApiFunctionStack extends FunctionStack {
 
+    public static final String CORS_ALLOW_HEADERS = "Content-Type,X-Amz-Date,Authorization";
+    public static final String CORS_ALLOW_METHODS = "*";
+
+    private final ImmutableSet<String> apiTags;
     private final String apiFunctionName;
     private final SingletonFunction apiFunction;
+    private final String corsAllowedOrigin;
 
     public ApiFunctionStack(Construct parent, Options options) {
         super(parent, "web-" + options.getFunctionName(), options.getDeployEnv());
 
+        apiTags = options.getApiTags();
         apiFunctionName = options.getFunctionName() + options.getDeployEnv().getSuffix();
         apiFunction = addSingletonFunction(
                 getConstructId("lambda"),
@@ -46,6 +55,17 @@ public abstract class ApiFunctionStack extends FunctionStack {
                 options.getCodeZip(),
                 options.getMemorySize(),
                 QUARKUS_LAMBDA_HANDLER);
+
+        // Setup CORS using Quarkus Jakarta CORS filter
+        // https://quarkus.io/guides/security-cors
+        corsAllowedOrigin = switch (options.getCorsOrigins()) {
+            case ANY -> "*";
+            case SITE -> DnsStack.createFqdn(this, options.getDeployEnv());
+        };
+        DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors", "true");
+        DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors.headers", CORS_ALLOW_HEADERS);
+        DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors.methods", CORS_ALLOW_METHODS);
+        DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors.origins", corsAllowedOrigin);
     }
 
     @Value
@@ -54,10 +74,20 @@ public abstract class ApiFunctionStack extends FunctionStack {
         @NonNull
         DeployEnvironment deployEnv;
         @NonNull
+        ImmutableSet<String> apiTags;
+        @NonNull
         String functionName;
         @NonNull
         String codeZip;
         @lombok.Builder.Default
         int memorySize = 512;
+        @NonNull
+        @lombok.Builder.Default
+        CorsOrigins corsOrigins = CorsOrigins.ANY;
+
+    }
+
+    public enum CorsOrigins {
+        ANY, SITE
     }
 }
