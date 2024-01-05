@@ -68,9 +68,12 @@ public abstract class ApiFunctionStack extends FunctionStack {
     }
 
     public String getCorsAllowOrigins(final BaseStack stack) {
-        return switch (corsOrigins) {
-            case ANY -> "*";
-            case SITE -> DnsStack.createFqdn(stack, getDeployEnv());
+        return switch (getDeployEnv()) {
+            case STAGING, TEST -> "*";
+            default -> switch (corsOrigins) {
+                case ANY -> "*";
+                case SITE -> DnsStack.createFqdn(stack, getDeployEnv());
+            };
         };
     }
 
