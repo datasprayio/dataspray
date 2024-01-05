@@ -72,7 +72,7 @@ public abstract class ApiFunctionStack extends FunctionStack {
             case STAGING, TEST -> "*";
             default -> switch (corsOrigins) {
                 case ANY -> "*";
-                case SITE -> DnsStack.createFqdn(stack, getDeployEnv());
+                case SITE -> "https://" + DnsStack.createFqdn(stack, getDeployEnv());
             };
         };
     }
