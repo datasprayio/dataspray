@@ -23,6 +23,7 @@
 import * as Api from "../../client";
 import {HTTPHeaders} from "../../client";
 import {isCsr} from "../util/isoUtil";
+import {detectEnv, Environment} from "../util/detectEnv";
 
 // Recommended way to create a constructor type
 // https://www.typescriptlang.org/docs/handbook/2/generics.html#using-class-types-in-generics
@@ -43,14 +44,21 @@ const getClient = <T extends Api.BaseAPI>(ctor: BaseAPIConstructor<T>): T => {
 
 const getClientConfiguration = (): Api.Configuration => {
     if (!confCache) {
-
         const fetchApi = isCsr()
             ? window.fetch.bind(window)
             : async () => {
                 throw new Error("SSR fetch is disabled");
             }
-        const basePath = Api.BASE_PATH;
-
+        let basePath = Api.BASE_PATH;
+        switch (detectEnv()) {
+            case Environment.STAGING:
+            case Environment.LOCAL:
+                basePath = Api.BASE_PATH.replace("dataspray.io", "staging.dataspray.io");
+                break;
+            case Environment.SELF_HOST:
+                basePath = Api.BASE_PATH.replace("dataspray.io", window.location.host);
+                break;
+        }
         confCache = new Api.Configuration({
             fetchApi,
             basePath,

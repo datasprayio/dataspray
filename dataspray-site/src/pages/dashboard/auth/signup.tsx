@@ -89,7 +89,7 @@ const Page: NextPageWithLayout = () => {
                                                 onClick={e => handleSubmit()}>Submit</Button>
                                     </SpaceBetween>
                                 }
-                                header={<Header variant="h1">Form header</Header>}
+                                header={<Header variant="h1">Sign up</Header>}
                                 errorText={error}
                             >
                                 <SpaceBetween direction="vertical" size="l">
@@ -117,7 +117,7 @@ const Page: NextPageWithLayout = () => {
                                             placeholder="Matus"
                                             onChangeNative={handleChange}
                                             onBlurNative={handleBlur}
-                                            value={values?.email}
+                                            value={values?.username}
                                             autoFocus
                                         />
                                     </FormField>

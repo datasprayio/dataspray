@@ -121,7 +121,7 @@ const Page: NextPageWithLayout = () => {
                                                     fontSize="body-s"
                                                     onFollow={routerOnFollow}
                                                 >
-                                                    Already have an account?
+                                                    Don&apos;t have an account?
                                                 </Link>
                                             </>
                                         }
