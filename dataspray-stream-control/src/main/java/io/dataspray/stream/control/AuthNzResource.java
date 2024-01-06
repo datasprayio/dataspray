@@ -245,7 +245,7 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
             response = userStore.signin(request.getUsernameOrEmail(), request.getPassword());
         } catch (NotAuthorizedException ex) {
             return SignInResponse.builder()
-                    .errorMsg("You are not authorized.")
+                    .errorMsg("Incorrect username, email or password.")
                     .build();
         } catch (TooManyRequestsException ex) {
             throw new ClientErrorException(429, ex);
