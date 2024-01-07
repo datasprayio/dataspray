@@ -23,40 +23,57 @@
 import {getClientAuth} from "../client";
 import {urlWithHiddenParams} from "../../util/routerUtil";
 import {AuthResult, SignInResponse, SignUpResponse} from "../../../client";
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Router, useRouter} from "next/router";
 import {isCsr} from "../../util/isoUtil";
 
 
 export const useAuth = (redirect?: 'redirect-if-signed-in' | 'redirect-if-signed-out') => {
 
-    // Fetch auth result from persistent storage
-    const authResultFromStorage = useMemo(getResultFromStorage, []);
-
     // Keep auth result in memory
-    const [authResult, setAuthResult] = useState(authResultFromStorage)
-
-    // Refresh auth result if necessary
-    useEffect(() => refreshTokenIfNecessary(authResult), [authResult]);
+    const [authResult, setAuthResult] = useState<undefined | null | AuthResult>()
 
     // On sign in hook to update auth result
     const onSignIn = React.useCallback(async (result: AuthResult) => {
-        setAuthResult(result)
-        setResultToStorage(result)
+        setAuthResult(result);
+        setResultToStorage(result);
+    }, []);
+
+    // Load auth result from storage and refresh if necessary
+    const router = useRouter();
+    useEffect(() => {
+
+        // Fetch from storage inside useEffect to avoid SSR issues
+        const authResultFromStorage = getResultFromStorage();
+
+        // Emit null/result to indicate loading is complete
+        setAuthResult(authResultFromStorage);
+
+        // Refresh auth result if necessary
+        refreshTokenIfNecessary(authResultFromStorage);
+
     }, []);
 
     // Redirect if this page requests that user is signed in/out
-    const router = useRouter();
+    const redirected = useRef(false)
     useEffect(() => {
-        if (redirect === 'redirect-if-signed-in' && authResult) {
+        if (redirected.current || authResult === undefined) return
+
+        // Redirect if necessary
+        if (redirect === 'redirect-if-signed-in' && !!authResult) {
+            redirected.current = true
             router.push('/dashboard');
-        } else if (redirect === 'redirect-if-signed-out' && !authResult) {
+        } else if (redirect === 'redirect-if-signed-out' && authResult == null) {
+            redirected.current = true
             router.push({
                 pathname: '/dashboard/auth/signin',
                 query: {to: router.asPath},
             });
         }
-    }, [authResult, redirect, router]);
+
+        // router and redirect as a dep causes an infinite loop
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [authResult]);
 
     return useMemo(() => ({
         authResult,
@@ -72,27 +89,28 @@ export const useAuth = (redirect?: 'redirect-if-signed-in' | 'redirect-if-signed
 const AuthResultStorageKey = 'DATASPRAY_AUTH_TOKEN';
 const getResultFromStorage = () => {
     const token = isCsr() && window.sessionStorage.getItem(AuthResultStorageKey);
-    return token ? JSON.parse(token) as AuthResult : undefined;
+    return token ? JSON.parse(token) as AuthResult : null;
 }
 const setResultToStorage = (result: AuthResult) => {
-    isCsr() && window.sessionStorage.putItem(AuthResultStorageKey, JSON.stringify(result));
+    isCsr() && window.sessionStorage.setItem(AuthResultStorageKey, JSON.stringify(result));
 }
 
-const refreshTokenIfNecessary = (authResult?: AuthResult) => {
-    // TODO refresh token
+const refreshTokenIfNecessary = (authResult: AuthResult | null) => {
+    // TODO refresh token if necessary
+    // TODO setup future promise to refresh token
 }
 
 const signUp = async (
-    onSignIn: (response: AuthResult) => void,
-    values: {
-        username: string,
-        email: string,
-        password: string,
-        marketingAgree: boolean,
-        tosAgree: boolean,
-    },
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult) => void,
+        values: {
+            username: string,
+            email: string,
+            password: string,
+            marketingAgree: boolean,
+            tosAgree: boolean,
+        },
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<void> => {
     try {
         const signupResponse = await getClientAuth().signUp({
@@ -114,12 +132,12 @@ const signUp = async (
 
 
 const signUpConfirmCode = async (
-    onSignIn: (response: AuthResult) => void,
-    username: string,
-    code: string,
-    password: string | undefined,
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult) => void,
+        username: string,
+        code: string,
+        password: string | undefined,
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<void> => {
     try {
         const signupResponse = await getClientAuth().signUpConfirmCode({
@@ -134,12 +152,12 @@ const signUpConfirmCode = async (
 };
 
 const handleSignupResponse = async (
-    onSignIn: (response: AuthResult) => void,
-    signupResponse: SignUpResponse,
-    username: string,
-    password: string | undefined,
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult) => void,
+        signupResponse: SignUpResponse,
+        username: string,
+        password: string | undefined,
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<void> => {
 
     // All good, sign-up doesn't log in, attempt to login, or redirect to login page
@@ -149,11 +167,11 @@ const handleSignupResponse = async (
         // The password is only kept as router state so it's lost on refresh
         if (password) {
             const authResult = await signIn(
-                onSignIn,
-                {usernameOrEmail: username, password},
-                undefined,
-                setError,
-                routerPush)
+                    onSignIn,
+                    {usernameOrEmail: username, password},
+                    undefined,
+                    setError,
+                    routerPush)
             if (authResult) {
                 return; // All good, signed up, signed in, and already redirect
             }
@@ -191,14 +209,14 @@ const handleSignupResponse = async (
 }
 
 const signIn = async (
-    onSignIn: (response: AuthResult) => void,
-    values: {
-        usernameOrEmail: string,
-        password: string,
-    },
-    to: string | undefined,
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult) => void,
+        values: {
+            usernameOrEmail: string,
+            password: string,
+        },
+        to: string | undefined,
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<AuthResult | undefined> => {
     try {
         const signInResponse = await getClientAuth().signIn({
@@ -217,13 +235,13 @@ const signIn = async (
 }
 
 const signInConfirmTotp = async (
-    onSignIn: (response: AuthResult) => void,
-    username: string,
-    session: string,
-    code: string,
-    to: string | undefined,
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult) => void,
+        username: string,
+        session: string,
+        code: string,
+        to: string | undefined,
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<AuthResult | undefined> => {
 
     try {
@@ -240,13 +258,13 @@ const signInConfirmTotp = async (
 }
 
 const signInPasswordChange = async (
-    onSignIn: (response: AuthResult) => void,
-    username: string,
-    session: string,
-    newPassword: string,
-    to: string | undefined,
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult) => void,
+        username: string,
+        session: string,
+        newPassword: string,
+        to: string | undefined,
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<AuthResult | undefined> => {
     try {
         const signInResponse = await getClientAuth().signInChallengePasswordChange({
@@ -262,12 +280,12 @@ const signInPasswordChange = async (
 }
 
 const handleSignInResponse = async (
-    onSignIn: (response: AuthResult) => void,
-    signInResponse: SignInResponse,
-    password: string | undefined,
-    to: string | undefined,
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult) => void,
+        signInResponse: SignInResponse,
+        password: string | undefined,
+        to: string | undefined,
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<AuthResult | undefined> => {
 
     // Email confirmation necessary, redirect to ask for code
