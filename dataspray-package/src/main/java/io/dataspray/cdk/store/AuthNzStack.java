@@ -36,7 +36,6 @@ import software.amazon.awscdk.services.cognito.AccountRecovery;
 import software.amazon.awscdk.services.cognito.AdvancedSecurityMode;
 import software.amazon.awscdk.services.cognito.AuthFlow;
 import software.amazon.awscdk.services.cognito.AutoVerifiedAttrs;
-import software.amazon.awscdk.services.cognito.BooleanAttribute;
 import software.amazon.awscdk.services.cognito.CfnUserPool;
 import software.amazon.awscdk.services.cognito.DeviceTracking;
 import software.amazon.awscdk.services.cognito.KeepOriginalAttrs;
@@ -44,6 +43,7 @@ import software.amazon.awscdk.services.cognito.Mfa;
 import software.amazon.awscdk.services.cognito.MfaSecondFactor;
 import software.amazon.awscdk.services.cognito.PasswordPolicy;
 import software.amazon.awscdk.services.cognito.SignInAliases;
+import software.amazon.awscdk.services.cognito.StringAttribute;
 import software.amazon.awscdk.services.cognito.UserPool;
 import software.amazon.awscdk.services.cognito.UserPoolClient;
 import software.constructs.Construct;
@@ -95,10 +95,10 @@ public class AuthNzStack extends BaseStack {
                 .keepOriginal(KeepOriginalAttrs.builder()
                         .email(true).build())
                 .customAttributes(ImmutableMap.of(
-                        CognitoUserStore.USER_ATTRIBUTE_TOS_AGREED, BooleanAttribute.Builder.create()
+                        CognitoUserStore.USER_ATTRIBUTE_TOS_AGREED, StringAttribute.Builder.create()
                                 .mutable(true)
                                 .build(),
-                        CognitoUserStore.USER_ATTRIBUTE_MARKETING_AGREED, BooleanAttribute.Builder.create()
+                        CognitoUserStore.USER_ATTRIBUTE_MARKETING_AGREED, StringAttribute.Builder.create()
                                 .mutable(true)
                                 .build()))
                 .advancedSecurityMode(AdvancedSecurityMode.OFF)
