@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@ import Container from "@cloudscape-design/components/container";
 import styles from './AuthLayout.module.scss';
 import BaseLayout from "../../BaseLayout";
 import {useAuth} from "../auth/auth";
+import {AppLayout} from "@cloudscape-design/components";
 
 const AuthLayout = (props: {
     children: React.ReactNode,
@@ -33,13 +34,19 @@ const AuthLayout = (props: {
     useAuth('redirect-if-signed-in');
     return (
         <BaseLayout pageTitle={props.pageTitle}>
-            <div className={styles.page}>
-                <Container>
-                    <div className={styles.container}>
-                        {props.children}
+            <AppLayout
+                navigationHide
+                toolsHide
+                content={(
+                    <div className={styles.page}>
+                        <Container>
+                            <div className={styles.container}>
+                                {props.children}
+                            </div>
+                        </Container>
                     </div>
-                </Container>
-            </div>
+                )}
+            />
         </BaseLayout>
     )
 }

@@ -20,27 +20,10 @@
  * SOFTWARE.
  */
 
-import Head from 'next/head';
-import {NextPageWithLayout} from "../_app";
-import DashboardLayout from "../../common/dashboard/layout/DashboardLayout";
 
-const Page: NextPageWithLayout = () => {
-    return (
-        <>
-            <Head>
-                <title>Dashboard</title>
-            </Head>
-            <main>
-                Add content here
-            </main>
-        </>
-    )
+import {useReducer} from "react";
+
+export const useForceUpdate = () => {
+    const [, forceUpdate] = useReducer(x => x + 1, 0);
+    return forceUpdate;
 }
-
-Page.getLayout = (page) => (
-    <DashboardLayout
-        pageTitle='Home'
-    >{page}</DashboardLayout>
-)
-
-export default Page

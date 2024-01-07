@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,9 +22,10 @@
 
 import {AppLayout, TopNavigation} from "@cloudscape-design/components";
 import styles from './DashboardLayout.module.scss';
-import Navigation from "./Navigation";
 import BaseLayout from "../../BaseLayout";
 import {useAuth} from "../auth/auth";
+import {ModeIconButton} from "../../util/modeUtil";
+import Navigation from "./Navigation";
 
 export default function DashboardLayout(props: {
     children: React.ReactNode,
@@ -40,15 +41,21 @@ export default function DashboardLayout(props: {
                         title: props.pageTitle,
                         href: '/dashboard',
                     }}
+                    utilities={[
+                        {
+                            type: 'button',
+                            iconSvg: (<ModeIconButton/>),
+                        }
+                    ]}
                 />
             </div>
             {!!authResult && (
                 <AppLayout
                     headerSelector='#top-nav'
                     navigation={(<Navigation/>)}
+                    content={props.children}
                 />
             )}
-            {props.children}
         </BaseLayout>
     )
 }
