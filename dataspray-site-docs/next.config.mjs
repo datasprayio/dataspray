@@ -28,5 +28,12 @@ const withNextra = nextra({
 })
 
 export default withNextra({
-    reactStrictMode: true
+    ...(process.env.NEXTJS_OUTPUT && {
+        output: process.env.NEXTJS_OUTPUT,
+    }),
+    reactStrictMode: true,
+    images: {
+        // Disabled due to SSG
+        unoptimized: true,
+    },
 })
