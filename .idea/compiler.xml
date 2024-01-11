@@ -16,6 +16,7 @@
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
         </processorPath>
+        <module name="dataspray-site-landing" />
         <module name="dataspray-stream-ingest" />
         <module name="dataspray-stream-client" />
         <module name="dataspray-remote-workspace" />

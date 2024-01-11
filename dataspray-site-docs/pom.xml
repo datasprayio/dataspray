@@ -244,6 +244,16 @@
                         <phase>initialize</phase>
                     </execution>
                     <execution>
+                        <id>pnpm lint</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run lint</arguments>
+                        </configuration>
+                        <phase>test</phase>
+                    </execution>
+                    <execution>
                         <id>pnpm run build</id>
                         <goals>
                             <goal>pnpm</goal>

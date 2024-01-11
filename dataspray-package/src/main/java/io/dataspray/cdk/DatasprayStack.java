@@ -54,7 +54,7 @@ public class DatasprayStack {
     public static void main(String[] args) {
         App app = new App();
 
-        if (args.length != 5) {
+        if (args.length != 7) {
             log.error("Usage: DatasprayStack <deployEnv> <authorizerCodeZip> <controlCodeZip> <ingestCodeZip> <openNextDir>");
             System.exit(1);
         }

@@ -2,10 +2,13 @@
   "name": "dataspray-docs",
   "private": true,
   "scripts": {
-    "build": "next build",
-    "clean": "rimraf .next .turbo",
     "dev": "next",
-    "start": "next start"
+    "build": "pnpm run build:staticsite",
+    "build:opennext": "NEXTJS_OUTPUT=standalone open-next build --build-command 'pnpm run build:next'",
+    "build:next": "next build",
+    "build:staticsite": "NEXTJS_OUTPUT=export pnpm run build:next",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
     "next": "^14.0.4",
