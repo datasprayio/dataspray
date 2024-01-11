@@ -23,15 +23,16 @@
         <module name="dataspray-core" />
         <module name="dataspray-lambda-web" />
         <module name="dataspray-runner" />
+        <module name="dataspray-site-dashboard" />
         <module name="dataspray-lambda-web-test" />
         <module name="dataspray-common" />
         <module name="dataspray-common-test" />
+        <module name="dataspray-site-docs" />
         <module name="dataspray-cli" />
         <module name="dataspray-authorizer" />
         <module name="dataspray-resources" />
         <module name="dataspray-stream-control" />
         <module name="dataspray-package" />
-        <module name="dataspray-site" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="21" />

@@ -1,0 +1,6 @@
+
+**/.openapi-generator/*
+**/.openapi-generator-ignore
+.openapi-generator
+.openapi-generator-ignore
+**/README.md

@@ -1,0 +1,12 @@
+{
+  "Apis": {
+    "display": "children"
+  },
+  "---": {
+    "type": "separator",
+    "title": ""
+  },
+  "Models": {
+    "title": "Models"
+  }
+}

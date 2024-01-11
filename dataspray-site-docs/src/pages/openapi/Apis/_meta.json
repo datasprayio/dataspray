@@ -1,0 +1,6 @@
+{
+  "HealthApi": "Health",
+  "AuthNZApi": "Auth",
+  "ControlApi": "Control",
+  "IngestApi": "Ingest"
+}

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2023 Matus Faro
+  ~ Copyright 2024 Matus Faro
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy
   ~ of this software and associated documentation files (the "Software"), to deal
@@ -158,12 +158,32 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
-                                    <artifactId>dataspray-site</artifactId>
+                                    <artifactId>dataspray-site-landing</artifactId>
                                     <classifier>static-site</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/static-site/</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/site-landing-static/</outputDirectory>
+                                    <includes>**</includes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>io.dataspray</groupId>
+                                    <artifactId>dataspray-site-docs</artifactId>
+                                    <classifier>static-site</classifier>
+                                    <version>${project.version}</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/site-docs-static/</outputDirectory>
+                                    <includes>**</includes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>io.dataspray</groupId>
+                                    <artifactId>dataspray-site-dashboard</artifactId>
+                                    <classifier>static-site</classifier>
+                                    <version>${project.version}</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/site-dashboard-static/</outputDirectory>
                                     <includes>**</includes>
                                 </artifactItem>
                                 <artifactItem>
@@ -199,7 +219,9 @@
                                 <argument>${project.build.directory}/code-authorizer/function.zip</argument>
                                 <argument>${project.build.directory}/code-control/function.zip</argument>
                                 <argument>${project.build.directory}/code-ingest/function.zip</argument>
-                                <argument>${project.build.directory}/static-site</argument>
+                                <argument>${project.build.directory}/site-landing-static</argument>
+                                <argument>${project.build.directory}/site-docs-static</argument>
+                                <argument>${project.build.directory}/site-dashboard-static</argument>
                             </arguments>
                         </configuration>
                     </execution>

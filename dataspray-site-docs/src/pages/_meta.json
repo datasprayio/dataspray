@@ -1,0 +1,12 @@
+{
+  "index": "Introduction",
+  "architecture": "Architecture",
+  "getting-started": "Getting Started",
+  "--- reference": {
+    "type": "separator",
+    "title": "API Reference"
+  },
+  "openapi": {
+    "display": "children"
+  }
+}

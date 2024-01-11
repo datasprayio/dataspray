@@ -1,0 +1,43 @@
+{
+  "name": "dataspray",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev:dev": "next dev",
+    "dev": "concurrently -n NX,TS -c cyan,green \"next dev\" \"pnpm dev:ts --watch\"",
+    "dev:ts": "tsc --noEmit --incremental --preserveWatchOutput --pretty",
+    "build": "pnpm run build:staticsite",
+    "build:opennext": "NEXTJS_OUTPUT=standalone open-next build --build-command 'pnpm run build:next'",
+    "build:next": "next build",
+    "build:staticsite": "NEXTJS_OUTPUT=export pnpm run build:next",
+    "start": "pnpm run start:staticsite",
+    "start:staticsite": "serve out",
+    "start:next": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
+    "@fontsource/roboto": "^5.0.8",
+    "@mui/icons-material": "^5.14.1",
+    "@mui/material": "^5.14.2",
+    "@types/node": "^17.0.45",
+    "@types/node-fetch": "^2.6.10",
+    "next": "^14.0.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.47",
+    "@types/react-dom": "^18.2.18",
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.18.20",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "^14.0.4",
+    "inquirer": "^9.2.12",
+    "open-next": "^2.3.4",
+    "serve": "^14.2.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0"
+  }
+}

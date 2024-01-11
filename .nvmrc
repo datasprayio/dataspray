@@ -1,2 +1,2 @@
-18.16.1
-# If bumped, also bump maven-enforcer-plugin in parent pom.xml
+18.19.0
+# If bumped, also change property node.version in parent pom.xml

@@ -43,7 +43,7 @@
         <quarkus.version>3.6.4</quarkus.version>
         <aws.sdk.version>2.21.29</aws.sdk.version>
         <!-- If changed, also change in .node-version and .nvmrc -->
-        <node.version>v18.16.1</node.version>
+        <node.version>v18.19.0</node.version>
         <pnpm.version>v8.6.10</pnpm.version>
         <slf4j.version>2.0.7</slf4j.version>
         <logback.version>1.2.9</logback.version>
@@ -87,7 +87,9 @@
         <module>dataspray-authorizer</module>
         <module>dataspray-stream-control</module>
         <module>dataspray-stream-ingest</module>
-        <module>dataspray-site</module>
+        <module>dataspray-site-landing</module>
+        <module>dataspray-site-docs</module>
+        <module>dataspray-site-dashboard</module>
         <module>dataspray-package</module>
     </modules>
 
@@ -133,7 +135,7 @@
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
-                <artifactId>dataspray-site</artifactId>
+                <artifactId>dataspray-site-dashboard</artifactId>
                 <classifier>open-next</classifier>
                 <version>${project.version}</version>
             </dependency>
@@ -716,7 +718,7 @@
                 <plugin>
                     <groupId>org.openapitools</groupId>
                     <artifactId>openapi-generator-maven-plugin</artifactId>
-                    <version>6.5.0</version>
+                    <version>7.2.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-deploy-plugin</artifactId>

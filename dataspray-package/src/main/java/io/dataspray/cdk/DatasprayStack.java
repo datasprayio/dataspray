@@ -43,7 +43,10 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
 
+import java.util.Optional;
 import java.util.Set;
+
+import static io.dataspray.common.DeployEnvironment.SELFHOST;
 
 @Slf4j
 public class DatasprayStack {
@@ -59,17 +62,35 @@ public class DatasprayStack {
         String authorizerCodeZip = args[1];
         String controlCodeZip = args[2];
         String ingestCodeZip = args[3];
-        String staticSiteDir = args[4];
+        String staticSiteLandingDir = args[4];
+        String staticSiteDocsDir = args[5];
+        String staticSiteDashboardDir = args[6];
 
         // Keep track of all Lambdas in order to pass config properties to them
         Set<FunctionStack> functionStacks = Sets.newHashSet();
 
         // Frontend
         DnsStack dnsStack = new DnsStack(app, deployEnv);
+        if (!SELFHOST.equals(deployEnv)) {
+            new StaticSiteStack(app, deployEnv, StaticSiteStack.Options.builder()
+                    .identifier("site-landing")
+                    .dnsStack(dnsStack)
+                    .staticSiteDir(staticSiteLandingDir)
+                    .build());
+        }
         new StaticSiteStack(app, deployEnv, StaticSiteStack.Options.builder()
-                .identifier("site")
+                .identifier("site-docs")
+                .subdomain(Optional.of("docs"))
                 .dnsStack(dnsStack)
-                .staticSiteDir(staticSiteDir)
+                .staticSiteDir(staticSiteDocsDir)
+                .build());
+        new StaticSiteStack(app, deployEnv, StaticSiteStack.Options.builder()
+                .identifier("site-dashboard")
+                .subdomain(SELFHOST.equals(deployEnv)
+                        ? Optional.empty()
+                        : Optional.of("dashboard"))
+                .dnsStack(dnsStack)
+                .staticSiteDir(staticSiteDashboardDir)
                 .build());
 
         SingleTableStack singleTableStack = new SingleTableStack(app, deployEnv);

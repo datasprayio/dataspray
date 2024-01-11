@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="123dfbdb-cd63-4098-b3dc-d41a797d0b94" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.nvmrc" beforeDir="false" afterPath="$PROJECT_DIR$/../.nvmrc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../dataspray-package/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-package/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../dataspray-package/src/main/java/io/dataspray/cdk/DatasprayStack.java" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-package/src/main/java/io/dataspray/cdk/DatasprayStack.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../dataspray-remote-workspace/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-remote-workspace/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../dataspray-site-docs/openapi/template/markdown/README.mustache" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../dataspray-site-docs/openapi/template/markdown/api.mustache" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-docs/openapi/template/markdown/api.mustache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../dataspray-site-docs/openapi/template/markdown/model.mustache" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-docs/openapi/template/markdown/model.mustache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.eslintrc.json" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/.eslintrc.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/.idea/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/.idea/codeStyles/Project.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/.idea/codeStyles/codeStyleConfig.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/copyright/DataSpray.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/.idea/copyright/DataSpray.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/copyright/profiles_settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/.idea/copyright/profiles_settings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataspray-site.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/.idea/dataspray-site.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/jsLinters/eslint.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/.idea/jsLinters/eslint.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/watcherTasks.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/.idea/watcherTasks.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vscode/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/.vscode/settings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assembly-open-next.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/assembly-open-next.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assembly-static-site.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/assembly-static-site.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dataspray-site.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/dataspray-site-dashboard.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/next-env.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/next-env.d.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/next.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/next.config.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/patches/@cloudscape-design__components@3.0.478.patch" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/patches/@cloudscape-design__components@3.0.478.patch" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pnpm-lock.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/pnpm-lock.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/BaseLayout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/layout/BaseLayout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/dashboard/auth/auth.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/auth/auth.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/dashboard/client.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/dashboard/cognito.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/util/cognito.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/dashboard/layout/AuthLayout.module.scss" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/layout/AuthLayout.module.scss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/dashboard/layout/AuthLayout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/layout/AuthLayout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/dashboard/layout/DashboardLayout.module.scss" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/layout/DashboardLayout.module.scss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/dashboard/layout/DashboardLayout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/layout/DashboardLayout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/dashboard/layout/Navigation.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/layout/Navigation.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/icons/DarkModeIcon.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/icons/DarkModeIcon.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/icons/LightModeIcon.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/icons/LightModeIcon.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/landing/Block.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/landing/GradientTypography.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/util/CloudscapeFormik.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/util/CloudscapeFormik.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/util/detectEnv.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/util/detectEnv.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/util/isoUtil.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/util/isoUtil.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/util/loadExternal.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/util/loadExternal.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/util/modeUtil.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/util/modeUtil.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/util/routerUtil.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/util/routerUtil.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/util/typescriptUtil.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/util/typescriptUtil.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/util/useForceUpdate.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/util/useForceUpdate.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/util/useRouterOnFollow.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/util/useRouterOnFollow.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mdx-components.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/_app.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/pages/_app.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/dashboard/auth/confirm-email.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/pages/auth/confirm-email.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/dashboard/auth/password-change.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/pages/auth/password-change.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/dashboard/auth/signin.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/pages/auth/signin.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/dashboard/auth/signup.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/pages/auth/signup.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/dashboard/auth/totp.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/pages/auth/totp.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/dashboard/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/pages/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/dashboard/runtime.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/src/pages/runtime.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/docs/index.mdx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/index.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/../dataspray-site-dashboard/tsconfig.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../pom.xml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FormatOnSaveOptions">
+    <option name="myFormatOnlyChangedLines" value="true" />
+    <option name="myRunOnSave" value="true" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="OptimizeOnSaveOptions">
+    <option name="myRunOnSave" value="true" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="2YQD0lKS9vO7JacpQ6JMdk2f26V" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "/Users/matus/dev/dataspray/dataspray-site/src/common/icons",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.standard": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.standard": "",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "pnpm",
+    "settings.editor.selected.configurable": "actions.on.save",
+    "ts.external.directory.path": "/Users/matus/dev/dataspray/dataspray-site/node_modules/typescript/lib",
+    "update.copyright.on.save": "true",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/common/icons" />
+      <recent name="$PROJECT_DIR$/src/common" />
+      <recent name="$PROJECT_DIR$/src/common/util" />
+      <recent name="$PROJECT_DIR$/src/pages/dashboard/auth" />
+      <recent name="$PROJECT_DIR$/src/common/dashboard/layout" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/pages" />
+      <recent name="$PROJECT_DIR$/src/common/dashboard/auth" />
+      <recent name="$PROJECT_DIR$/src/common/util" />
+      <recent name="$PROJECT_DIR$/src/common/dashboard/layout" />
+      <recent name="$PROJECT_DIR$/src/pages/dashboard/auth" />
+    </key>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="123dfbdb-cd63-4098-b3dc-d41a797d0b94" name="Changes" comment="" />
+      <created>1700448688964</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1700448688964</updated>
+      <workItem from="1700448689987" duration="1003000" />
+      <workItem from="1700450895960" duration="753000" />
+      <workItem from="1700581987292" duration="8000" />
+      <workItem from="1700625787880" duration="1858000" />
+      <workItem from="1701039293093" duration="15026000" />
+      <workItem from="1701313267933" duration="36954000" />
+      <workItem from="1702067784363" duration="31928000" />
+      <workItem from="1704251824236" duration="28487000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

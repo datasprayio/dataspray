@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.Fn;
 import software.amazon.awscdk.services.certificatemanager.Certificate;
 import software.amazon.awscdk.services.certificatemanager.CertificateValidation;
 import software.amazon.awscdk.services.route53.ARecord;
@@ -44,6 +45,7 @@ import software.constructs.Construct;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -59,10 +61,13 @@ public class StaticSiteStack extends BaseStack {
         super(parent, options.getIdentifier(), deployEnv);
 
         String fqdn = DnsStack.createFqdn(this, deployEnv);
+        String siteFqdn = options.getSubdomain().isEmpty()
+                ? fqdn
+                : Fn.join(".", List.of(options.getSubdomain().get(), fqdn));
         IHostedZone dnsZone = options.getDnsStack().getDnsZone(this, fqdn);
 
-        certificate = Certificate.Builder.create(this, "cert")
-                .domainName(fqdn)
+        certificate = Certificate.Builder.create(this, getConstructId("cert"))
+                .domainName(siteFqdn)
                 .validation(CertificateValidation.fromDns(dnsZone))
                 .build();
 
@@ -74,7 +79,7 @@ public class StaticSiteStack extends BaseStack {
                 .distributionProps(NextjsExportS3DynamicRoutingDistributionProps.builder()
                         .certificate(certificate)
                         .enableIpv6(true)
-                        .domainNames(ImmutableList.of(fqdn))
+                        .domainNames(ImmutableList.of(siteFqdn))
                         .build())
                 .nextBuildDir(cwd.relativize(Paths.get(options.getStaticSiteDir(), ".next").toAbsolutePath()).toString())
                 .nextExportPath(cwd.relativize(Paths.get(options.getStaticSiteDir(), "out").toAbsolutePath()).toString())
@@ -82,14 +87,14 @@ public class StaticSiteStack extends BaseStack {
 
         recordSetA = ARecord.Builder.create(this, getConstructId("recordset-a"))
                 .zone(dnsZone)
-                .recordName(fqdn)
+                .recordName(siteFqdn)
                 .target(RecordTarget.fromAlias(new CloudFrontTarget(nextjs.getCloudfrontDistribution())))
                 .ttl(Duration.seconds(30))
                 .deleteExisting(false)
                 .build();
         recordSetAaaa = AaaaRecord.Builder.create(this, getConstructId("recordset-aaaa"))
                 .zone(dnsZone)
-                .recordName(fqdn)
+                .recordName(siteFqdn)
                 .target(RecordTarget.fromAlias(new CloudFrontTarget(nextjs.getCloudfrontDistribution())))
                 .ttl(Duration.seconds(30))
                 .deleteExisting(false)

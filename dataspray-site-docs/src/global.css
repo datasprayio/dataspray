@@ -1,0 +1,12 @@
+
+.show-on-dark {
+    html:not(.dark) & {
+        display: none;
+    }
+}
+
+.show-on-light {
+    html.dark & {
+        display: none;
+    }
+}

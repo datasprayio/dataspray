@@ -1,0 +1,1 @@
+{{#isPrimitiveType}}{{dataType}}{{/isPrimitiveType}}{{^isPrimitiveType}}{{#isFile}}{{dataType}}{{/isFile}}{{^isFile}}{{#generateModelDocs}}[{{dataType}}](../{{modelPackage}}/{{baseType}}.md){{/generateModelDocs}}{{^generateModelDocs}}{{dataType}}{{/generateModelDocs}}{{/isFile}}{{/isPrimitiveType}}
