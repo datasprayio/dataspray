@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2023 Matus Faro
+# Copyright 2024 Matus Faro
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@ LOGO_SMALL=$2
 LOGO_AND_TITLE_DARK=$3
 LOGO_AND_TITLE_LIGHT=$4
 
+SCOUR=scour
 SCOUR_OPTS=(
   --verbose \
   --shorten-ids \
@@ -43,23 +44,30 @@ SCOUR_OPTS=(
   --strip-xml-prolog \
   --strip-xml-space \
   --error-on-flowtext)
+
+CONVERT=convert
 CONVERT_OPTS=(
   -verbose \
   -background none)
+CONVERT_VERSION=$($CONVERT -version | head -n 1)
+if [[ ! $CONVERT_VERSION =~ ImageMagick\ 7 ]]; then
+  echo "ImageMagick version 7 is required, found $CONVERT_VERSION"
+  exit 1
+fi
 
 # Main logos
-scour -i "$LOGO_MASTER" -o logo.svg "${SCOUR_OPTS[@]}"
-convert "${CONVERT_OPTS[@]}" "$LOGO_MASTER" logo.png
-convert "${CONVERT_OPTS[@]}" "$LOGO_SMALL" logo-small.png
+$SCOUR -i "$LOGO_MASTER" -o logo.svg "${SCOUR_OPTS[@]}"
+$CONVERT "${CONVERT_OPTS[@]}" "$LOGO_MASTER" logo.png
+$CONVERT "${CONVERT_OPTS[@]}" "$LOGO_SMALL" logo-small.png
 
 # Logos with title
-convert "${CONVERT_OPTS[@]}" "$LOGO_AND_TITLE_DARK" logo-and-title-dark.png
-convert "${CONVERT_OPTS[@]}" "$LOGO_AND_TITLE_LIGHT" logo-and-title-light.png
+$CONVERT "${CONVERT_OPTS[@]}" "$LOGO_AND_TITLE_DARK" logo-and-title-dark.png
+$CONVERT "${CONVERT_OPTS[@]}" "$LOGO_AND_TITLE_LIGHT" logo-and-title-light.png
 
 # Web Icon
 
 # SVG
-scour -i "$LOGO_SMALL" -o favicon.svg "${SCOUR_OPTS[@]}"
+$SCOUR -i "$LOGO_SMALL" -o favicon.svg "${SCOUR_OPTS[@]}"
 
 # ICO
 # Sizes taken from https://dev.to/masakudamatsu/favicon-nightmare-how-to-maintain-sanity-3al7#22-creating-an-raw-ico-endraw-file
@@ -72,8 +80,8 @@ for SIZE in 16 32 48; do
   else
       SOURCE="$LOGO_MASTER"
   fi;
-  convert "${CONVERT_OPTS[@]}" -resize "$SIZE"x"$SIZE" "$SOURCE" "$DEST_SIZE_FILENAME"
+  $CONVERT "${CONVERT_OPTS[@]}" -resize "$SIZE"x"$SIZE" "$SOURCE" "$DEST_SIZE_FILENAME"
   SIZES_FILENAMES+=("$DEST_SIZE_FILENAME")
 done
-convert "${CONVERT_OPTS[@]}" -compress zip "${SIZES_FILENAMES[@]}" favicon.ico
+$CONVERT "${CONVERT_OPTS[@]}" -compress zip "${SIZES_FILENAMES[@]}" favicon.ico
 rm -f "${SIZES_FILENAMES[@]}"
