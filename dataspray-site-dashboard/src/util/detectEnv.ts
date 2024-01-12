@@ -14,9 +14,9 @@ export enum Environment {
 export function detectEnv(): Environment {
     if (envCache === undefined) {
         if (isCsr()) {
-            if (window.location.hostname === 'dataspray.io') {
+            if (window.location.hostname === 'dashboard.dataspray.io') {
                 envCache = Environment.PRODUCTION;
-            } else if (window.location.hostname === 'staging.dataspray.io') {
+            } else if (window.location.hostname === 'dashboard.staging.dataspray.io') {
                 envCache = Environment.STAGING;
             } else if (window.location.hostname === 'localhost') {
                 const paramsEnv = new URL(window.location.href).searchParams.get('env');
