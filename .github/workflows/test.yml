@@ -32,7 +32,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y imagemagick scour ghostscript
+          sudo apt-get install -y wget scour ghostscript
+          wget -O /usr/local/bin/convert https://github.com/ImageMagick/ImageMagick/releases/download/7.1.1-26/ImageMagick--clang-x86_64.AppImage
+          chmod a+x /usr/local/bin/convert
           convert -version
           scour --version
       - name: Maven build
