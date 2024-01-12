@@ -51,6 +51,8 @@ CONVERT_OPTS=(
   -background none)
 CONVERT_VERSION=$($CONVERT -version | head -n 1)
 if [[ ! $CONVERT_VERSION =~ ImageMagick\ 7 ]]; then
+  # ImageMagick 6 has an issue where logo text is incorrectly placed,
+  # particularly "spray" is shifted to the left right on top of "data".
   echo "ImageMagick version 7 is required, found $CONVERT_VERSION"
   exit 1
 fi
