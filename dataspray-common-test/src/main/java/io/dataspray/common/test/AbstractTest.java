@@ -40,14 +40,14 @@ public abstract class AbstractTest {
      * @return String
      */
     protected String getTestResource(String fileName) {
-        return new String(getTestResourceBytes(fileName));
+        return new String(getTestResourceBytes(fileName, this.getClass()));
     }
 
     @SneakyThrows
-    protected byte[] getTestResourceBytes(String fileName) {
-        String filePath = this.getClass().getCanonicalName().replace(".", File.separator)
+    protected byte[] getTestResourceBytes(String fileName, Class testClazz) {
+        String filePath = testClazz.getCanonicalName().replace(".", File.separator)
                           + File.separator + fileName;
-        try (var resource = this.getClass()
+        try (var resource = testClazz
                 .getClassLoader()
                 .getResourceAsStream(filePath)) {
             return checkNotNull(resource, "Test resource at %s not found", filePath).readAllBytes();

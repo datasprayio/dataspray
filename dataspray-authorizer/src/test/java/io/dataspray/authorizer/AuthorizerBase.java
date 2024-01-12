@@ -128,10 +128,11 @@ abstract class AuthorizerBase extends AbstractTest {
                             }))
                             .body("context." + AuthorizerConstants.CONTEXT_KEY_USERNAME, equalTo(apiAccess.getOwnerUsername()))
                             .body("context." + AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, equalTo(apiAccess.getOrganizationName()))
-                            .body("policyDocument", jsonStringEqualTo(getTestResource(
+                            .body("policyDocument", jsonStringEqualTo(new String(getTestResourceBytes(
                                     testType == TestType.AUTHORIZED_QUEUE_WHITELIST
                                             ? "authorized-queue-whitelist.json"
-                                            : "authorized.json")));
+                                            : "authorized.json",
+                                    AuthorizerBase.class))));
                     break;
                 default:
                     fail();

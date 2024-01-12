@@ -173,7 +173,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
         // The idea here is to allow all by default and only deny other accounts (except own account). This can also be
         // accomplished by allowing all except accounts and then allowing own account, having others implicitly denied.
         // To verify this works as expected, follow the guide and test against the policy simulator:
-        // dataspray-authorizer/src/test/resources/io/dataspray/authorizer/AuthorizerEndpointBase/iam-policy-ingest-path-condition.jsonc
+        // dataspray-authorizer/src/test/resources/io/dataspray/authorizer/AuthorizerBase/iam-policy-ingest-path-condition.jsonc
         Statement accountAndTargetStatement = new Statement()
                 .setEffect(Effect.DENY)
                 .setAction("execute-api:Invoke")
