@@ -130,8 +130,7 @@ public class ApiStack extends FunctionStack {
         serverObj.put("url", serverUrl);
 
         // Construct API subdomain and fqdn
-        String apiSubdomain = getApiSubdomain(openApiServerUrl);
-        String apiFqdn = Fn.join(".", List.of(apiSubdomain, fqdn));
+        String apiFqdn = Fn.join(".", List.of(getApiSubdomain(openApiServerUrl), fqdn));
         IHostedZone dnsZone = getOptions().getDnsStack().getDnsZone(this, fqdn);
 
         certificate = Certificate.Builder.create(this, getConstructId("cert"))
@@ -149,14 +148,16 @@ public class ApiStack extends FunctionStack {
                 .build();
         recordSetA = ARecord.Builder.create(this, getConstructId("recordset-a"))
                 .zone(dnsZone)
-                .recordName(apiSubdomain)
+                // Trailing dot to fix https://github.com/aws/aws-cdk/issues/26572
+                .recordName(apiFqdn + ".")
                 .target(RecordTarget.fromAlias(new ApiGateway(restApi)))
                 .ttl(Duration.seconds(30))
                 .deleteExisting(false)
                 .build();
         recordSetAaaa = AaaaRecord.Builder.create(this, getConstructId("recordset-aaaa"))
                 .zone(dnsZone)
-                .recordName(apiSubdomain)
+                // Trailing dot to fix https://github.com/aws/aws-cdk/issues/26572
+                .recordName(apiFqdn + ".")
                 .target(RecordTarget.fromAlias(new ApiGateway(restApi)))
                 .ttl(Duration.seconds(30))
                 .deleteExisting(false)

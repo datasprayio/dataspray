@@ -87,14 +87,16 @@ public class SsgNextSiteStack extends BaseStack {
 
         recordSetA = ARecord.Builder.create(this, getConstructId("recordset-a"))
                 .zone(dnsZone)
-                .recordName(siteFqdn)
+                // Trailing dot to fix https://github.com/aws/aws-cdk/issues/26572
+                .recordName(siteFqdn + ".")
                 .target(RecordTarget.fromAlias(new CloudFrontTarget(nextjs.getCloudfrontDistribution())))
                 .ttl(Duration.seconds(30))
                 .deleteExisting(false)
                 .build();
         recordSetAaaa = AaaaRecord.Builder.create(this, getConstructId("recordset-aaaa"))
                 .zone(dnsZone)
-                .recordName(siteFqdn)
+                // Trailing dot to fix https://github.com/aws/aws-cdk/issues/26572
+                .recordName(siteFqdn + ".")
                 .target(RecordTarget.fromAlias(new CloudFrontTarget(nextjs.getCloudfrontDistribution())))
                 .ttl(Duration.seconds(30))
                 .deleteExisting(false)

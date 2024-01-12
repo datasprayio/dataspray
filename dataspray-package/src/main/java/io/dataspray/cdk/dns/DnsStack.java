@@ -122,7 +122,11 @@ public class DnsStack extends BaseStack {
     }
 
     /**
-     * Creates FQDN as a reference made up of other parameters.
+     * Creates FQDN as a reference made up of other parameters. Excludes trailing dot.
+     * <table>
+     *     <tr><th>Return</th><th>Environment</th></tr>
+     *     <tr><td>dataspray.io</td><td>PRODUCTION</td></tr>
+     *     <tr><td>staging.dataspray.io</td><td>STAGING</td></tr>
      * <p>
      * Due <a href="https://github.com/aws/aws-cdk/issues/26560">to a bug in CDK</a>, we need to create the FQDN in each
      * stack. Particularly, the CfnCondition is not propagated
