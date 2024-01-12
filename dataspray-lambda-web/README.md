@@ -157,7 +157,7 @@ public class PingIT extends PingTest { }
 Create a CDK endpoint to create Lambda
 
 ```java
-public static void main(String[] args) {
+public static void main(String... args) {
     App app = new App();
     new LambdaBaseStack(app, Options.builder()
             .openapiYamlPath("target/openapi/api-ingest.yaml")

@@ -97,6 +97,12 @@
             <groupId>io.dataspray</groupId>
             <artifactId>next-export-cdk</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>io.dataspray</groupId>
+            <artifactId>aws-cdk</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

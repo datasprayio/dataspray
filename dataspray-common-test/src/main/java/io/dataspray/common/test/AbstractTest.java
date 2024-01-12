@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,18 +20,37 @@
  * SOFTWARE.
  */
 
-package io.dataspray.authorizer;
+package io.dataspray.common.test;
 
 import lombok.SneakyThrows;
 
-public class ResourceUtil {
+import java.io.File;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
+public abstract class AbstractTest {
+
+    /**
+     * Fetch a test resource given by name. Expected to be in "{testResources}/{package}/{testClass}/{fileName}"
+     * <p>
+     * If calling from a test class io.dataspray.web.ExampleLambdaTest for a resource data.json,
+     * the expected file should be under test resources in:
+     * io/dataspray/web/ExampleLambdaTest/data.json
+     *
+     * @return String
+     */
+    protected String getTestResource(String fileName) {
+        return new String(getTestResourceBytes(fileName));
+    }
 
     @SneakyThrows
-    public static String getTestResource(String resourceName) {
-        try (var resource = ResourceUtil.class
+    protected byte[] getTestResourceBytes(String fileName) {
+        String filePath = this.getClass().getCanonicalName().replace(".", File.separator)
+                          + File.separator + fileName;
+        try (var resource = this.getClass()
                 .getClassLoader()
-                .getResourceAsStream(resourceName)) {
-            return new String(resource.readAllBytes());
+                .getResourceAsStream(filePath)) {
+            return checkNotNull(resource, "Test resource at %s not found", filePath).readAllBytes();
         }
     }
 }

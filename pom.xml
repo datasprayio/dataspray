@@ -498,6 +498,12 @@
                 <version>${sqlite4java}</version>
                 <type>so</type>
             </dependency>
+
+            <dependency>
+                <groupId>io.dataspray</groupId>
+                <artifactId>aws-cdk</artifactId>
+                <version>${aws.cdk.4j.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,8 +25,15 @@ package io.dataspray.common.test.aws;
 import com.google.common.collect.ImmutableMap;
 import io.dataspray.common.NetworkUtil;
 import io.dataspray.common.test.TestResourceUtil;
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.Extension;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.InternetProtocol;
@@ -39,13 +46,37 @@ import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkState;
 
+/**
+ * Moto container with dual-mode support for running:
+ * 1/ as a Quarkus test resource using `@QuarkusTestResource(MotoLifecycleManager.class)`
+ * 2/ as an extension to Jupiter tests using `@ExtendWith(MotoLifecycleManager.class)`
+ */
 @Slf4j
-public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager {
+public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager, Extension, BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
 
     private static final String MOTO_VERSION = "4.2.12";
 
-    private Optional<MotoInstance> instanceOpt;
+    private Optional<MotoInstance> instanceOpt = Optional.empty();
 
+    /** Jupiter wrapper when used with {@link ExtendWith} */
+    @Override
+    public void beforeAll(ExtensionContext context) throws Exception {
+        start();
+    }
+
+    /** Jupiter wrapper when used with {@link ExtendWith} */
+    @Override
+    public void beforeEach(ExtensionContext context) throws Exception {
+        inject(context.getRequiredTestInstance());
+    }
+
+    /** Jupiter wrapper when used with {@link ExtendWith} */
+    @Override
+    public void afterAll(ExtensionContext context) throws Exception {
+        stop();
+    }
+
+    /** Quarkus wrapper when used with {@link QuarkusTestResource} */
     @Override
     public final Map<String, String> start() {
         String region = "us-east-1";
@@ -132,6 +163,7 @@ public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager
         return propsBuilder.build();
     }
 
+    /** Quarkus wrapper when used with {@link QuarkusTestResource} */
     @Override
     public final void stop() {
         instanceOpt
@@ -141,6 +173,7 @@ public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager
 
     /**
      * Injects an instance of {@link MotoInstance} into test
+     * Quarkus wrapper when used with {@link QuarkusTestResource}
      */
     @Override
     public void inject(Object testInstance) {

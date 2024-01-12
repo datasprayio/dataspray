@@ -35,7 +35,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>DataSpray Landing</name>
+    <name>DataSpray Site Landing</name>
     <url>https://dataspray.io</url>
 
     <dependencies>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,11 +41,11 @@ import java.util.List;
 
 @Slf4j
 @Getter
-public class OpenNextStack extends BaseStack {
+public class SsrNextSiteStack extends BaseStack {
 
     private final Nextjs nextjs;
 
-    public OpenNextStack(Construct parent, DeployEnvironment deployEnv, Options options) {
+    public SsrNextSiteStack(Construct parent, DeployEnvironment deployEnv, Options options) {
         super(parent, "site", deployEnv);
 
         String fqdn = DnsStack.createFqdn(this, deployEnv);

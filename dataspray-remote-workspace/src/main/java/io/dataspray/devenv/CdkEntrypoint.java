@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CdkEntrypoint {
     /** CDK entrypoint */
-    public static void main(String[] args) {
+    public static void main(String... args) {
         if (args.length != 2 || Strings.isNullOrEmpty(args[0])) {
             log.error("Usage: <stack_id> <ecr_image_tag>");
             System.exit(1);

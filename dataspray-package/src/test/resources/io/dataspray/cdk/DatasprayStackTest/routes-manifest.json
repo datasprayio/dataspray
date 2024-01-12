@@ -1,0 +1,72 @@
+{
+  "version": 3,
+  "pages404": true,
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "dynamicRoutes": [],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/auth/confirm-email",
+      "regex": "^/auth/confirm\\-email(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/auth/confirm\\-email(?:/)?$"
+    },
+    {
+      "page": "/auth/password-change",
+      "regex": "^/auth/password\\-change(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/auth/password\\-change(?:/)?$"
+    },
+    {
+      "page": "/auth/signin",
+      "regex": "^/auth/signin(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/auth/signin(?:/)?$"
+    },
+    {
+      "page": "/auth/signup",
+      "regex": "^/auth/signup(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/auth/signup(?:/)?$"
+    },
+    {
+      "page": "/auth/totp",
+      "regex": "^/auth/totp(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/auth/totp(?:/)?$"
+    },
+    {
+      "page": "/runtime",
+      "regex": "^/runtime(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/runtime(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "RSC",
+    "varyHeader": "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Url",
+    "prefetchHeader": "Next-Router-Prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSuffix": ".prefetch.rsc"
+  },
+  "rewrites": []
+}

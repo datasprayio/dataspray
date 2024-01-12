@@ -26,6 +26,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayCustomAuthorizerEv
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.authorizer.AuthorizerConstants;
+import io.dataspray.common.test.AbstractTest;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
@@ -52,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @Slf4j
 @QuarkusTestResource(MotoLifecycleManager.class)
-abstract class AuthorizerBase {
+abstract class AuthorizerBase extends AbstractTest {
 
     private enum TestType {
         UNAUTHORIZED_NONE,
@@ -127,10 +128,10 @@ abstract class AuthorizerBase {
                             }))
                             .body("context." + AuthorizerConstants.CONTEXT_KEY_USERNAME, equalTo(apiAccess.getOwnerUsername()))
                             .body("context." + AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, equalTo(apiAccess.getOrganizationName()))
-                            .body("policyDocument", jsonStringEqualTo(ResourceUtil.getTestResource(
+                            .body("policyDocument", jsonStringEqualTo(getTestResource(
                                     testType == TestType.AUTHORIZED_QUEUE_WHITELIST
-                                            ? "io/dataspray/authorizer/AuthorizerEndpointBase/authorized-queue-whitelist.json"
-                                            : "io/dataspray/authorizer/AuthorizerEndpointBase/authorized.json")));
+                                            ? "authorized-queue-whitelist.json"
+                                            : "authorized.json")));
                     break;
                 default:
                     fail();

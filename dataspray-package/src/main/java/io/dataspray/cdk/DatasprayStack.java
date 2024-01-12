@@ -26,7 +26,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.dataspray.cdk.api.ApiStack;
 import io.dataspray.cdk.dns.DnsStack;
-import io.dataspray.cdk.site.StaticSiteStack;
+import io.dataspray.cdk.site.SsgNextSiteStack;
 import io.dataspray.cdk.store.AuthNzStack;
 import io.dataspray.cdk.store.SingleTableStack;
 import io.dataspray.cdk.stream.control.ControlFunctionStack;
@@ -41,6 +41,7 @@ import io.dataspray.store.impl.LambdaDeployerImpl;
 import io.dataspray.stream.control.ControlResource;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.App;
+import software.amazon.awscdk.cxapi.CloudAssembly;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
 
 import java.util.Optional;
@@ -52,19 +53,23 @@ import static io.dataspray.common.DeployEnvironment.SELFHOST;
 public class DatasprayStack {
 
     public static void main(String[] args) {
+        synth(args);
+    }
+
+    public static CloudAssembly synth(String... args) {
         App app = new App();
 
         if (args.length != 7) {
-            log.error("Usage: DatasprayStack <deployEnv> <authorizerCodeZip> <controlCodeZip> <ingestCodeZip> <openNextDir>");
+            log.error("Usage: DatasprayStack <deployEnv> <authorizerCodeZip> <controlCodeZip> <ingestCodeZip> <siteLandingDir> <siteDocsDir> <siteDashboardDir>");
             System.exit(1);
         }
         DeployEnvironment deployEnv = DeployEnvironment.valueOf(args[0]);
         String authorizerCodeZip = args[1];
         String controlCodeZip = args[2];
         String ingestCodeZip = args[3];
-        String staticSiteLandingDir = args[4];
-        String staticSiteDocsDir = args[5];
-        String staticSiteDashboardDir = args[6];
+        String siteLandingDir = args[4];
+        String siteDocsDir = args[5];
+        String siteDashboardDir = args[6];
 
         // Keep track of all Lambdas in order to pass config properties to them
         Set<FunctionStack> functionStacks = Sets.newHashSet();
@@ -72,25 +77,25 @@ public class DatasprayStack {
         // Frontend
         DnsStack dnsStack = new DnsStack(app, deployEnv);
         if (!SELFHOST.equals(deployEnv)) {
-            new StaticSiteStack(app, deployEnv, StaticSiteStack.Options.builder()
+            new SsgNextSiteStack(app, deployEnv, SsgNextSiteStack.Options.builder()
                     .identifier("site-landing")
                     .dnsStack(dnsStack)
-                    .staticSiteDir(staticSiteLandingDir)
+                    .staticSiteDir(siteLandingDir)
                     .build());
         }
-        new StaticSiteStack(app, deployEnv, StaticSiteStack.Options.builder()
+        new SsgNextSiteStack(app, deployEnv, SsgNextSiteStack.Options.builder()
                 .identifier("site-docs")
                 .subdomain(Optional.of("docs"))
                 .dnsStack(dnsStack)
-                .staticSiteDir(staticSiteDocsDir)
+                .staticSiteDir(siteDocsDir)
                 .build());
-        new StaticSiteStack(app, deployEnv, StaticSiteStack.Options.builder()
+        new SsgNextSiteStack(app, deployEnv, SsgNextSiteStack.Options.builder()
                 .identifier("site-dashboard")
                 .subdomain(SELFHOST.equals(deployEnv)
                         ? Optional.empty()
                         : Optional.of("dashboard"))
                 .dnsStack(dnsStack)
-                .staticSiteDir(staticSiteDashboardDir)
+                .staticSiteDir(siteDashboardDir)
                 .build());
 
         SingleTableStack singleTableStack = new SingleTableStack(app, deployEnv);
@@ -128,7 +133,7 @@ public class DatasprayStack {
             }
         }
 
-        app.synth();
+        return app.synth();
     }
 
     public static void setConfigProperty(SingletonFunction function, String prop, String value) {

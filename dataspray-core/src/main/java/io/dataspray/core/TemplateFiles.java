@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -138,7 +138,7 @@ public class TemplateFiles {
         return getTemplate().getResourceName() + "-tree.json";
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String... args) throws Exception {
         if (args.length != 2) {
             throw new Exception("Invalid number of arguments");
         }

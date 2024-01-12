@@ -50,14 +50,14 @@ import java.util.Optional;
 
 @Slf4j
 @Getter
-public class StaticSiteStack extends BaseStack {
+public class SsgNextSiteStack extends BaseStack {
 
     private final Certificate certificate;
     private final NextjsExportS3DynamicRoutingSite nextjs;
     private final ARecord recordSetA;
     private final AaaaRecord recordSetAaaa;
 
-    public StaticSiteStack(Construct parent, DeployEnvironment deployEnv, Options options) {
+    public SsgNextSiteStack(Construct parent, DeployEnvironment deployEnv, Options options) {
         super(parent, options.getIdentifier(), deployEnv);
 
         String fqdn = DnsStack.createFqdn(this, deployEnv);
