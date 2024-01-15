@@ -1,5 +1,5 @@
 /*!
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
  */
 
 .topNav {
-  position: sticky;
-  top: 0;
-  z-index: 1002;
+  // Adds a border consistent with the AppLayout component. (Value copied exactly from there)
+  // This matters only during dark mode, suprised this isn't a default.
+  border-bottom: var(--border-divider-section-width-1061zr, 1px) solid var(--color-border-divider-default-j74lyz, #b6bec9);
 }

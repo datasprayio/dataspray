@@ -24,14 +24,12 @@ import * as React from "react";
 import Container from "@cloudscape-design/components/container";
 import styles from './AuthLayout.module.scss';
 import BaseLayout from "./BaseLayout";
-import {useAuth} from "../auth/auth";
 import {AppLayout} from "@cloudscape-design/components";
 
 const AuthLayout = (props: {
     children: React.ReactNode,
     pageTitle?: string,
 }) => {
-    useAuth('redirect-if-signed-in');
     return (
         <BaseLayout pageTitle={props.pageTitle}>
             <AppLayout

@@ -24,16 +24,58 @@ import {AuthResult, getClientAuth, SignInResponse, SignUpResponse} from "../api"
 import {urlWithHiddenParams} from "../util/routerUtil";
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Router, useRouter} from "next/router";
-import {isCsr} from "../util/isoUtil";
+import {isCsr, isSsr} from "../util/isoUtil";
+import {jwtDecode, JwtPayload} from "jwt-decode";
 
+interface CognitoAccessToken {
+    auth_time: number,
+    client_id: string,
+    device_key: string,
+    event_id: string,
+    exp: number,
+    iat: number,
+    iss: string,
+    jti: string,
+    origin_jti: string,
+    scope: string,
+    sub: string,
+    token_use: string,
+    username: string,
+}
 
-export const useAuth = (redirect?: 'redirect-if-signed-in' | 'redirect-if-signed-out') => {
+interface CognitoIdToken {
+    aud: string,
+    auth_time: number,
+    "cognito:username": string,
+    "custom:marketing-agreed": string,
+    "custom:tos-agreed": string,
+    email: string,
+    email_verified: boolean,
+    event_id: string,
+    exp: number,
+    iat: number,
+    iss: string,
+    jti: string,
+    origin_jti: string,
+    sub: string,
+    token_use: string,
+}
+
+export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed-out') => {
 
     // Keep auth result in memory
     const [authResult, setAuthResult] = useState<undefined | null | AuthResult>()
 
+    const accessToken = React.useMemo(() => {
+        return authResult ? jwtDecode(authResult.accessToken) as JwtPayload & CognitoAccessToken : undefined
+    }, [authResult]);
+
+    const idToken = React.useMemo(() => {
+        return authResult ? jwtDecode(authResult.idToken) as JwtPayload & CognitoIdToken : undefined
+    }, [authResult]);
+
     // On sign in hook to update auth result
-    const onSignIn = React.useCallback(async (result: AuthResult) => {
+    const onSignIn = React.useCallback((result: AuthResult | null) => {
         setAuthResult(result);
         setResultToStorage(result);
     }, []);
@@ -59,10 +101,10 @@ export const useAuth = (redirect?: 'redirect-if-signed-in' | 'redirect-if-signed
         if (redirected.current || authResult === undefined) return
 
         // Redirect if necessary
-        if (redirect === 'redirect-if-signed-in' && !!authResult) {
+        if (behavior === 'redirect-if-signed-in' && !!authResult) {
             redirected.current = true
             router.push('/');
-        } else if (redirect === 'redirect-if-signed-out' && authResult == null) {
+        } else if (behavior === 'redirect-if-signed-out' && authResult == null) {
             redirected.current = true
             router.push({
                 pathname: '/auth/signin',
@@ -76,12 +118,15 @@ export const useAuth = (redirect?: 'redirect-if-signed-in' | 'redirect-if-signed
 
     return useMemo(() => ({
         authResult,
+        accessToken,
+        idToken,
         signUp: (...args: OmitFirstArg<typeof signUp>) => signUp(onSignIn, ...args),
         signUpConfirmCode: (...args: OmitFirstArg<typeof signUpConfirmCode>) => signUpConfirmCode(onSignIn, ...args),
         signIn: (...args: OmitFirstArg<typeof signIn>) => signIn(onSignIn, ...args),
         signInConfirmTotp: (...args: OmitFirstArg<typeof signInConfirmTotp>) => signInConfirmTotp(onSignIn, ...args),
         signInPasswordChange: (...args: OmitFirstArg<typeof signInPasswordChange>) => signInPasswordChange(onSignIn, ...args),
-    }), [authResult, onSignIn]);
+        signOut: () => onSignIn(null),
+    }), [authResult, accessToken, idToken, onSignIn]);
 }
 
 // Persistent storage where to keep auth to persist through page refresh/load
@@ -90,8 +135,13 @@ const getResultFromStorage = () => {
     const token = isCsr() && window.sessionStorage.getItem(AuthResultStorageKey);
     return token ? JSON.parse(token) as AuthResult : null;
 }
-const setResultToStorage = (result: AuthResult) => {
-    isCsr() && window.sessionStorage.setItem(AuthResultStorageKey, JSON.stringify(result));
+const setResultToStorage = (result: AuthResult | null) => {
+    if (isSsr()) return;
+    if (result) {
+        window.sessionStorage.setItem(AuthResultStorageKey, JSON.stringify(result));
+    } else {
+        window.sessionStorage.removeItem(AuthResultStorageKey);
+    }
 }
 
 const refreshTokenIfNecessary = (authResult: AuthResult | null) => {

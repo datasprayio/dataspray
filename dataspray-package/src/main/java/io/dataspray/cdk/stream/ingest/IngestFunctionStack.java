@@ -68,8 +68,6 @@ public class IngestFunctionStack extends ApiFunctionStack {
                 .functionName("ingest")
                 .codeZip(codeZip)
                 .apiTags(ImmutableSet.of("Ingest", "Health"))
-                // Allow calling Ingest from anywhere
-                .corsOrigins(CorsOrigins.ANY)
                 .build());
 
         getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()

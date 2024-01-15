@@ -20,22 +20,25 @@
  * SOFTWARE.
  */
 
-import {NextPageWithLayout} from "./_app";
-import DashboardLayout from "../layout/DashboardLayout";
-import DashboardAppLayout from "../layout/DashboardAppLayout";
+import {NextPageWithLayout} from "../_app";
+import DashboardLayout from "../../layout/DashboardLayout";
+import {SplitPanel} from "@cloudscape-design/components";
+import DashboardAppLayout from "../../layout/DashboardAppLayout";
 
 const Page: NextPageWithLayout = () => {
     return (
-        <DashboardAppLayout
-            navigationItems={[
-                {type: 'link', text: 'Tasks', href: '/deployment/task'},
-            ]}
-            content={(
-                <>
-                    Add content here
-                </>
-            )}
-        />
+            <DashboardAppLayout
+                splitPanel={(
+                    <SplitPanel header='Tasks'>
+                        Add content here
+                    </SplitPanel>
+                )}
+                content={(
+                    <>
+                        Add content here
+                    </>
+                )}
+            />
     )
 }
 

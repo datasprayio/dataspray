@@ -43,7 +43,7 @@ const Page: NextPageWithLayout = () => {
     const router = useRouter();
     const routerOnFollow = useRouterOnFollow();
     const [error, setError] = useState<React.ReactNode>()
-    const {signUp} = useAuth();
+    const {signUp} = useAuth('redirect-if-signed-in');
 
     return (
         <>

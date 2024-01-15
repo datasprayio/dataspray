@@ -23,7 +23,6 @@
 package io.dataspray.cdk.site;
 
 import io.dataspray.cdk.dns.DnsStack;
-import io.dataspray.cdk.template.BaseStack;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.opennextcdk.Nextjs;
 import io.dataspray.opennextcdk.NextjsDefaultsProps;
@@ -33,20 +32,26 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.NotImplementedException;
 import software.amazon.awscdk.Fn;
 import software.amazon.awscdk.services.route53.IHostedZone;
 import software.constructs.Construct;
 
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Getter
-public class SsrNextSiteStack extends BaseStack {
+public class SsrNextSiteStack extends NextSiteStack {
 
     private final Nextjs nextjs;
 
     public SsrNextSiteStack(Construct parent, DeployEnvironment deployEnv, Options options) {
-        super(parent, "site", deployEnv);
+        super(parent, "site", deployEnv, options.getSubdomain());
+
+        if (options.getSubdomain().isPresent()) {
+            throw new NotImplementedException("Subdomains are not yet supported");
+        }
 
         String fqdn = DnsStack.createFqdn(this, deployEnv);
         IHostedZone dnsZone = options.getDnsStack().getDnsZone(this, fqdn);
@@ -80,5 +85,7 @@ public class SsrNextSiteStack extends BaseStack {
         DnsStack dnsStack;
         @NonNull
         String openNextDir;
+        @lombok.Builder.Default
+        Optional<String> subdomain = Optional.empty();
     }
 }

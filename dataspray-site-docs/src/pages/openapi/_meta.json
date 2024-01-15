@@ -7,6 +7,9 @@
     "title": ""
   },
   "Models": {
-    "title": "Models"
+    "title": "Models",
+    "theme": {
+      "collapsed": true
+    }
   }
 }

@@ -43,3 +43,32 @@ export function isProd(): boolean {
     return detectEnv() === Environment.PRODUCTION
         || detectEnv() === Environment.SELF_HOST;
 }
+
+export function getDocsUrl(): string {
+    switch (detectEnv()) {
+        case Environment.PRODUCTION:
+            return 'https://docs.dataspray.io';
+        case Environment.STAGING:
+            return 'https://docs.staging.dataspray.io';
+        case Environment.LOCAL:
+            return `http://docs.localhost:3000`;
+        case Environment.SELF_HOST:
+            return `https://docs.${window.location.host}}`;
+    }
+}
+
+export function getLandingUrl(): string {
+    switch (detectEnv()) {
+        case Environment.PRODUCTION:
+        case Environment.SELF_HOST:
+            return 'https://dataspray.io';
+        case Environment.STAGING:
+            return 'https://staging.dataspray.io';
+        case Environment.LOCAL:
+            return `http://localhost:3000`;
+    }
+}
+
+export function getFeedbackUrl(): string {
+    return 'https://product.dataspray.io';
+}

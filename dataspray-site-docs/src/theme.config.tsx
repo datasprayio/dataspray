@@ -38,9 +38,6 @@ const config: ThemeConfig = {
     project: {
         link: 'https://github.com/datasprayio/dataspray'
     },
-    sidebar: {
-        defaultMenuCollapseLevel: 1, // Collapse all by default
-    },
     docsRepositoryBase: 'https://github.com/datasprayio/dataspray/tree/master/dataspray-site-docs',
 }
 

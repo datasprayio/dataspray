@@ -44,7 +44,7 @@ const Page: NextPageWithLayout = () => {
     const [error, setError] = useState<React.ReactNode>()
     const to = router.query.to?.toString();
     const usernameOrEmail = router.query.usernameOrEmail?.toString();
-    const {signIn} = useAuth();
+    const {signIn} = useAuth('redirect-if-signed-in');
 
     return (
         <>

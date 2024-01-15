@@ -23,30 +23,20 @@
 import {SideNavigation, SideNavigationProps} from "@cloudscape-design/components";
 import {useRouterOnFollow} from "../util/useRouterOnFollow";
 import {useRouter} from "next/router";
+import {getDocsUrl} from "../util/detectEnv";
 
-const items: SideNavigationProps['items'] = [
+const HeaderItems: ReadonlyArray<SideNavigationProps.Item> = [
     {type: 'link', text: 'Home', href: '/'},
-    {
-        type: 'section', text: 'Explore', items: [
-            {type: 'link', text: 'Visual', href: '/explore/visual'},
-            {type: 'link', text: 'Query editor', href: '/explore/query-editor'},
-        ]
-    },
-    {
-        type: 'section', text: 'Deployment', items: [
-            {type: 'link', text: 'Tasks', href: '/deployment/task'},
-            {type: 'link', text: 'Queues', href: '/deployment/queues'},
-        ]
-    },
-    {
-        type: 'section', text: 'Development', items: [
-            {type: 'link', text: 'Visual', href: '/development/task'},
-            {type: 'link', text: 'Tasks', href: '/development/task'},
-        ]
-    },
+    {type: 'divider'},
+];
+const FooterItems: ReadonlyArray<SideNavigationProps.Item> = [
+    {type: 'divider'},
+    {type: 'link', external: true, text: 'Documentation', href: getDocsUrl()},
 ];
 
-export default function Navigation(props: {}) {
+export default function Navigation(props: {
+    items: Array<SideNavigationProps.Item>
+}) {
     const router = useRouter();
     const routerOnFollow = useRouterOnFollow();
 
@@ -54,7 +44,11 @@ export default function Navigation(props: {}) {
         <SideNavigation
             activeHref={router.pathname}
             header={{href: '/home/index.html', text: 'Service'}}
-            items={items}
+            items={[
+                ...HeaderItems,
+                ...(props.items),
+                ...FooterItems,
+            ]}
             onFollow={routerOnFollow}
         />
     )

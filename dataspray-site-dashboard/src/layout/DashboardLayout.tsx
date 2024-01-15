@@ -20,42 +20,92 @@
  * SOFTWARE.
  */
 
-import {AppLayout, TopNavigation} from "@cloudscape-design/components";
+import {TopNavigation} from "@cloudscape-design/components";
 import styles from './DashboardLayout.module.scss';
 import BaseLayout from "./BaseLayout";
 import {useAuth} from "../auth/auth";
-import {ModeIconButton} from "../util/modeUtil";
-import Navigation from "./Navigation";
+import {useMode} from "../util/modeUtil";
+import {getDocsUrl, getFeedbackUrl} from "../util/detectEnv";
+import {Mode} from "@cloudscape-design/global-styles";
+import React from "react";
+import DarkModeSvg from "../icons/DarkModeSvg";
+import LightModeSvg from "../icons/LightModeSvg";
+
+export const TopNavId = 'top-nav';
 
 export default function DashboardLayout(props: {
     children: React.ReactNode,
     pageTitle?: string,
 }) {
-    const {authResult} = useAuth('redirect-if-signed-out');
+    const {idToken, signOut} = useAuth('redirect-if-signed-out');
+    const {mode, toggle} = useMode();
     return (
         <BaseLayout pageTitle={props.pageTitle}>
-            <div id='top-nav' className={styles.topNav}>
-                <TopNavigation
-                    identity={{
-                        logo: {src: '/logo/logo-small.png', alt: 'Logo'},
-                        title: props.pageTitle,
-                        href: '/',
-                    }}
-                    utilities={[
-                        {
-                            type: 'button',
-                            iconSvg: (<ModeIconButton/>),
-                        }
-                    ]}
-                />
-            </div>
-            {!!authResult && (
-                <AppLayout
-                    headerSelector='#top-nav'
-                    navigation={(<Navigation/>)}
-                    content={props.children}
-                />
-            )}
+            <TopNavigation
+                id={TopNavId}
+                className={styles.topNav}
+                identity={{
+                    logo: {src: '/logo/logo-small.png', alt: 'Logo'},
+                    title: props.pageTitle,
+                    href: '/',
+                }}
+                utilities={[
+                    {
+                        type: 'button',
+                        onClick: toggle,
+                        iconSvg: (mode === Mode.Dark ? <DarkModeSvg/> : <LightModeSvg/>),
+                    },
+                    {
+                        type: "menu-dropdown",
+                        text: idToken?.["cognito:username"],
+                        description: idToken?.email,
+                        iconName: "user-profile",
+                        items: [
+                            {id: "profile", text: "Profile"},
+                            {
+                                id: "preferences",
+                                text: "Preferences"
+                            },
+                            {id: "security", text: "Security"},
+                            {
+                                id: "support-group",
+                                text: "Support",
+                                items: [
+                                    {
+                                        id: "documentation",
+                                        text: "Documentation",
+                                        iconName: "file",
+                                        href: getDocsUrl(),
+                                        external: true,
+                                        externalIconAriaLabel: " (opens in new tab)"
+                                    },
+                                    {
+                                        id: "support",
+                                        text: "Support",
+                                        iconName: "envelope",
+                                        href: "mailto:support@dataspray.io",
+                                        external: true,
+                                        externalIconAriaLabel: " (opens in new tab)"
+                                    },
+                                    {
+                                        id: "feedback",
+                                        text: "Feedback",
+                                        iconName: "bug",
+                                        href: getFeedbackUrl(),
+                                        external: true,
+                                        externalIconAriaLabel: " (opens in new tab)"
+                                    }
+                                ]
+                            },
+                            {
+                                id: "signout",
+                                text: "Sign out",
+                                href: "/auth/signout",
+                            }]
+                    },
+                ]}
+            />
+            {props.children}
         </BaseLayout>
     )
 }

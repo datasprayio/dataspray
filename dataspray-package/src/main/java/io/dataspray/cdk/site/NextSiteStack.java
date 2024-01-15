@@ -20,19 +20,25 @@
  * SOFTWARE.
  */
 
-import Icon from "@cloudscape-design/components/icon";
+package io.dataspray.cdk.site;
 
+import io.dataspray.cdk.template.BaseStack;
+import io.dataspray.common.DeployEnvironment;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import software.constructs.Construct;
 
-export default function DarkModeIcon(props: React.ComponentProps<typeof Icon>) {
-    return (
-        <Icon
-            {...props}
-            svg={(
-                <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24">
-                    <path fill='currentColor'
-                          d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"></path>
-                </svg>
-            )}
-        />
-    )
+import java.util.Optional;
+
+@Slf4j
+@Getter
+public class NextSiteStack extends BaseStack {
+
+    private final Optional<String> subdomainOpt;
+
+    public NextSiteStack(Construct parent, String constructIdSuffix, DeployEnvironment deployEnv, Optional<String> subdomainOpt) {
+        super(parent, constructIdSuffix, deployEnv);
+
+        this.subdomainOpt = subdomainOpt;
+    }
 }

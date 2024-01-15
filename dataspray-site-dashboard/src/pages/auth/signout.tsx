@@ -20,27 +20,35 @@
  * SOFTWARE.
  */
 
-import Head from 'next/head';
-import {NextPageWithLayout} from "./_app";
-import DashboardLayout from "../layout/DashboardLayout";
+import {useAuth} from "../../auth/auth";
+import * as React from "react";
+import {useEffect} from "react";
+import {useRouter} from "next/router";
+import {NextPageWithLayout} from "../_app";
+import AuthLayout from "../../layout/AuthLayout";
 
 const Page: NextPageWithLayout = () => {
-    return (
-        <>
-            <Head>
-                <title>Runtime</title>
-            </Head>
-            <main>
-                runtime
-            </main>
-        </>
-    )
+    const {signOut} = useAuth()
+    const router = useRouter();
+
+    useEffect(() => {
+
+        // Sign out and redirect to sign in page
+        signOut()
+        router.push('/auth/signin');
+
+        // Run only once
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Nothing to display
+    return null;
 }
 
 Page.getLayout = (page) => (
-    <DashboardLayout
-        pageTitle='Home'
-    >{page}</DashboardLayout>
+    <AuthLayout
+        pageTitle="Signing out..."
+    >{page}</AuthLayout>
 )
 
 export default Page

@@ -25,14 +25,18 @@ package io.dataspray.cdk.api;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.cdk.DatasprayStack;
 import io.dataspray.cdk.dns.DnsStack;
+import io.dataspray.cdk.site.NextSiteStack;
 import io.dataspray.cdk.template.BaseStack;
 import io.dataspray.cdk.template.FunctionStack;
 import io.dataspray.common.DeployEnvironment;
+import jakarta.annotation.Nullable;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 import software.amazon.awscdk.services.lambda.SingletonFunction;
 import software.constructs.Construct;
+
+import java.util.Optional;
 
 @Getter
 public abstract class ApiFunctionStack extends FunctionStack {
@@ -43,7 +47,6 @@ public abstract class ApiFunctionStack extends FunctionStack {
     private final ImmutableSet<String> apiTags;
     private final String apiFunctionName;
     private final SingletonFunction apiFunction;
-    private final CorsOrigins corsOrigins;
 
     public ApiFunctionStack(Construct parent, Options options) {
         super(parent, "web-" + options.getFunctionName(), options.getDeployEnv());
@@ -59,21 +62,19 @@ public abstract class ApiFunctionStack extends FunctionStack {
 
         // Setup CORS using Quarkus Jakarta CORS filter
         // https://quarkus.io/guides/security-cors
-        corsOrigins = options.getCorsOrigins();
-        String corsAllowedOrigin = getCorsAllowOrigins(this);
+        String corsAllowedOrigin = getCorsAllowOrigins(this, options);
         DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors", "true");
         DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors.headers", CORS_ALLOW_HEADERS);
         DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors.methods", CORS_ALLOW_METHODS);
         DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors.origins", corsAllowedOrigin);
     }
 
-    public String getCorsAllowOrigins(final BaseStack stack) {
+    public String getCorsAllowOrigins(final BaseStack stack, Options options) {
         return switch (getDeployEnv()) {
             case STAGING, TEST -> "*";
-            default -> switch (corsOrigins) {
-                case ANY -> "*";
-                case SITE -> "https://" + DnsStack.createFqdn(stack, getDeployEnv());
-            };
+            case PRODUCTION, SELFHOST -> Optional.ofNullable(options.corsForSite)
+                    .map(subdomain -> "https://" + subdomain + "." + DnsStack.createFqdn(stack, getDeployEnv()))
+                    .orElseGet(() -> "https://" + DnsStack.createFqdn(stack, getDeployEnv()));
         };
     }
 
@@ -90,13 +91,7 @@ public abstract class ApiFunctionStack extends FunctionStack {
         String codeZip;
         @lombok.Builder.Default
         int memorySize = 512;
-        @NonNull
-        @lombok.Builder.Default
-        CorsOrigins corsOrigins = CorsOrigins.ANY;
-
-    }
-
-    public enum CorsOrigins {
-        ANY, SITE
+        @Nullable
+        NextSiteStack corsForSite;
     }
 }

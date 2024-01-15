@@ -5,13 +5,15 @@
 
 | Name | Type | Notes |
 |------------ | ------------- | -------------|
-{{#parent}}
-{{#parentVars}}
-| **{{name}}** | {{#isPrimitiveType}}{{dataType}}{{/isPrimitiveType}}{{^isPrimitiveType}}[{{dataType}}]({{complexType}}.md){{/isPrimitiveType}} | {{description}} {{^required}}[optional] {{/required}}{{#readOnly}}[readonly] {{/readOnly}}{{#defaultValue}}[default to {{{.}}}]{{/defaultValue}} |
-{{/parentVars}}
-{{/parent}}
-{{#vars}}| **{{name}}** | {{#isPrimitiveType}}{{dataType}}{{/isPrimitiveType}}{{^isPrimitiveType}}[{{dataType}}]({{complexType}}.md){{/isPrimitiveType}} | {{description}} {{^required}}[optional] {{/required}}{{#readOnly}}[readonly] {{/readOnly}}{{#defaultValue}}[default to {{{.}}}]{{/defaultValue}} |
-{{/vars}}
+{{#allVars}}| **{{name}}** | {{#isEnum}}[{{datatypeWithEnum}}](#{{datatypeWithEnum}}){{/isEnum}} {{#isPrimitiveType}}{{dataType}}{{/isPrimitiveType}}{{^isPrimitiveType}}[{{dataType}}]({{complexType}}.md){{/isPrimitiveType}} | {{^required}}[optional] {{/required}}{{#readOnly}}[readonly]{{/readOnly}} {{description}} |
+{{/allVars}}
 
-    {{/model}}
+{{#allVars}}{{#isEnum}}## {{datatypeWithEnum}}
+
+| Constant |
+|------------|{{#allowableValues}}{{#values}}
+| {{ . }} |{{/values}}{{/allowableValues}}
+
+{{/isEnum}}{{/allVars}}
+{{/model}}
 {{/models}}

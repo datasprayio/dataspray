@@ -24,7 +24,6 @@ package io.dataspray.cdk.site;
 
 import com.google.common.collect.ImmutableList;
 import io.dataspray.cdk.dns.DnsStack;
-import io.dataspray.cdk.template.BaseStack;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.nextexportcdk.NextjsExportS3DynamicRoutingDistributionProps;
 import io.dataspray.nextexportcdk.NextjsExportS3DynamicRoutingSite;
@@ -50,7 +49,7 @@ import java.util.Optional;
 
 @Slf4j
 @Getter
-public class SsgNextSiteStack extends BaseStack {
+public class SsgNextSiteStack extends NextSiteStack {
 
     private final Certificate certificate;
     private final NextjsExportS3DynamicRoutingSite nextjs;
@@ -58,7 +57,7 @@ public class SsgNextSiteStack extends BaseStack {
     private final AaaaRecord recordSetAaaa;
 
     public SsgNextSiteStack(Construct parent, DeployEnvironment deployEnv, Options options) {
-        super(parent, options.getIdentifier(), deployEnv);
+        super(parent, options.getIdentifier(), deployEnv, options.getSubdomain());
 
         String fqdn = DnsStack.createFqdn(this, deployEnv);
         String siteFqdn = options.getSubdomain().isEmpty()

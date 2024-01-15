@@ -89,7 +89,7 @@ public class DatasprayStack {
                 .dnsStack(dnsStack)
                 .staticSiteDir(siteDocsDir)
                 .build());
-        new SsgNextSiteStack(app, deployEnv, SsgNextSiteStack.Options.builder()
+        SsgNextSiteStack dashboardSite = new SsgNextSiteStack(app, deployEnv, SsgNextSiteStack.Options.builder()
                 .identifier("site-dashboard")
                 .subdomain(SELFHOST.equals(deployEnv)
                         ? Optional.empty()
@@ -104,7 +104,7 @@ public class DatasprayStack {
         IngestFunctionStack ingestStack = new IngestFunctionStack(app, deployEnv, ingestCodeZip);
         functionStacks.add(ingestStack);
 
-        ControlFunctionStack controlStack = new ControlFunctionStack(app, deployEnv, controlCodeZip, authNzStack);
+        ControlFunctionStack controlStack = new ControlFunctionStack(app, deployEnv, controlCodeZip, authNzStack, dashboardSite);
         functionStacks.add(controlStack);
 
         ApiStack apiStack = new ApiStack(app, ApiStack.Options.builder()

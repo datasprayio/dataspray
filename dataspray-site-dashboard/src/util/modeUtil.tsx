@@ -23,10 +23,6 @@
 import {applyMode as applyModeCloudscape, Mode} from "@cloudscape-design/global-styles";
 import {isCsr, isSsr} from "./isoUtil";
 import React, {useState} from "react";
-import DarkModeIcon from "../icons/DarkModeIcon";
-import {Toggle} from "@cloudscape-design/components";
-import LightModeIcon from "../icons/LightModeIcon";
-import Button from "@cloudscape-design/components/button";
 
 const ModeStorageKey = 'DATASPRAY_MODE';
 let currentMode: Mode = Mode.Light;
@@ -55,21 +51,8 @@ const toggleMode = () => applyMode(currentMode === Mode.Dark ? Mode.Light : Mode
 const setPersistentMode = (mode: Mode) => isCsr() && window.localStorage.setItem(ModeStorageKey, mode);
 const getPersistentMode = (): Mode | undefined => isCsr() && window.localStorage.getItem(ModeStorageKey) as (Mode | null) || undefined;
 
+export const useMode = () => {
 
-export const ModeToggle = () => (
-    <ModeBase displayCmpt={ToggleDisplay}/>
-);
-export const ModeIconButton = () => (
-    <ModeBase displayCmpt={IconDisplay}/>
-);
-
-type DisplayProps = {
-    onChange: () => void,
-    mode: Mode | undefined,
-}
-const ModeBase = (props: {
-    displayCmpt: React.ComponentType<DisplayProps>,
-}) => {
     const [modeCache, setModeCache] = useState<Mode | undefined>(undefined);
 
     // Apply initial state of mode
@@ -90,29 +73,8 @@ const ModeBase = (props: {
         setModeCache(toggleMode());
     }, []);
 
-    const Cmpt = props.displayCmpt;
-    return (
-        <Cmpt onChange={onChange} mode={modeCache}/>
-    );
+    return {
+        mode: modeCache,
+        toggle: onChange,
+    };
 }
-
-const ToggleDisplay = (props: DisplayProps) => (
-    <Toggle
-        onChange={props.onChange}
-        checked={props.mode === Mode.Dark}
-    >
-        {props.mode === Mode.Dark ? (
-            <DarkModeIcon/>
-        ) : (
-            <LightModeIcon/>
-        )}
-    </Toggle>
-);
-
-const IconDisplay = (props: DisplayProps) => (
-    <Button
-        onClick={props.onChange}
-        iconSvg={props.mode === Mode.Dark ? <DarkModeIcon/> : <LightModeIcon/>}
-        variant="inline-icon"
-    />
-);

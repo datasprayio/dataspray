@@ -20,29 +20,22 @@
  * SOFTWARE.
  */
 
-import {NextPageWithLayout} from "./_app";
-import DashboardLayout from "../layout/DashboardLayout";
-import DashboardAppLayout from "../layout/DashboardAppLayout";
+import {AppLayout} from "@cloudscape-design/components";
+import Navigation from "./Navigation";
+import {TopNavId} from "./DashboardLayout";
+import {SideNavigationProps} from "@cloudscape-design/components/side-navigation/interfaces";
 
-const Page: NextPageWithLayout = () => {
+const DashboardAppLayout = (props: {
+    navigationItems?: Array<SideNavigationProps.Item>,
+} & React.ComponentProps<typeof AppLayout>) => {
+    const {navigationItems, ...appLayoutProps} = props;
     return (
-        <DashboardAppLayout
-            navigationItems={[
-                {type: 'link', text: 'Tasks', href: '/deployment/task'},
-            ]}
-            content={(
-                <>
-                    Add content here
-                </>
-            )}
+        <AppLayout
+            headerSelector={`#${TopNavId}`}
+            navigation={navigationItems && (<Navigation items={navigationItems} />)}
+            {...appLayoutProps}
         />
-    )
+    );
 }
 
-Page.getLayout = (page) => (
-    <DashboardLayout
-        pageTitle='Home'
-    >{page}</DashboardLayout>
-)
-
-export default Page
+export default DashboardAppLayout;
