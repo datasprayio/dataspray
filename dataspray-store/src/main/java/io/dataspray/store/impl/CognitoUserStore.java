@@ -45,6 +45,7 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSign
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSignUpResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ResendConfirmationCodeRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ResendConfirmationCodeResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.RevokeTokenRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifySoftwareTokenRequest;
@@ -225,11 +226,6 @@ public class CognitoUserStore implements UserStore {
                 "SESSION", verifySoftwareTokenSession));
     }
 
-    @Override
-    public void validateAccessToken(String accessToken) {
-        // TODO
-    }
-
     /**
      * Respond to challenge. Used for but not limited to:
      * <ul>
@@ -248,6 +244,25 @@ public class CognitoUserStore implements UserStore {
                 .session(session)
                 .challengeName(challengeName)
                 .challengeResponses(responses)
+                .build());
+    }
+
+    @Override
+    public AdminInitiateAuthResponse refreshToken(String refreshToken) {
+        return cognitoClient.adminInitiateAuth(AdminInitiateAuthRequest.builder()
+                .authFlow(AuthFlowType.REFRESH_TOKEN)
+                .userPoolId(userPoolId)
+                .clientId(userPoolClientId)
+                .authParameters(ImmutableMap.of(
+                        "REFRESH_TOKEN", refreshToken))
+                .build());
+    }
+
+    @Override
+    public void signout(String refreshToken) {
+        cognitoClient.revokeToken(RevokeTokenRequest.builder()
+                .clientId(userPoolClientId)
+                .token(refreshToken)
                 .build());
     }
 

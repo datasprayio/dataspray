@@ -140,11 +140,13 @@ components:
       properties:
         refreshToken:
           type: string
-    SignInRefreshTokenResponse:
+    SignOutRequest:
       type: object
+      required:
+        - refreshToken
       properties:
-        result:
-          $ref: '#/components/schemas/AuthResult'
+        refreshToken:
+          type: string
 
     ApiKey:
       type: object
@@ -280,7 +282,20 @@ components:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SignInRefreshTokenResponse'
+              $ref: '#/components/schemas/SignInResponse'
+/sign-out:
+  post:
+    operationId: signOut
+    tags: [ AuthNZ ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SignOutRequest'
+    responses:
+      '200':
+        description: Ok
 
 /apikeys:
   post:

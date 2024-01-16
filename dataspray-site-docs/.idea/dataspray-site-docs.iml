@@ -3,6 +3,10 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/.tmp" />
+      <excludeFolder url="file://$MODULE_DIR$/out" />
+      <excludeFolder url="file://$MODULE_DIR$/src/pages/openapi/.openapi-generator" />
+      <excludeFolder url="file://$MODULE_DIR$/src/pages/openapi/Apis" />
+      <excludeFolder url="file://$MODULE_DIR$/src/pages/openapi/Models" />
       <excludeFolder url="file://$MODULE_DIR$/temp" />
       <excludeFolder url="file://$MODULE_DIR$/tmp" />
     </content>

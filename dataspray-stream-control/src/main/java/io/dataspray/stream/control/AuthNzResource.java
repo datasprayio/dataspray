@@ -37,8 +37,10 @@ import io.dataspray.stream.control.model.ChallengePasswordChange;
 import io.dataspray.stream.control.model.ChallengeTotpCode;
 import io.dataspray.stream.control.model.SignInChallengePasswordChangeRequest;
 import io.dataspray.stream.control.model.SignInChallengeTotpCodeRequest;
+import io.dataspray.stream.control.model.SignInRefreshTokenRequest;
 import io.dataspray.stream.control.model.SignInRequest;
 import io.dataspray.stream.control.model.SignInResponse;
+import io.dataspray.stream.control.model.SignOutRequest;
 import io.dataspray.stream.control.model.SignUpConfirmCodeRequest;
 import io.dataspray.stream.control.model.SignUpRequest;
 import io.dataspray.stream.control.model.SignUpResponse;
@@ -384,6 +386,32 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
                         .idToken(authenticationResult.idToken())
                         .build())
                 .build();
+    }
+
+    @Override
+    public SignInResponse signInRefreshToken(SignInRefreshTokenRequest signInRefreshTokenRequest) {
+        AdminInitiateAuthResponse response;
+        try {
+            response = userStore.refreshToken(signInRefreshTokenRequest.getRefreshToken());
+        } catch (NotAuthorizedException ex) {
+            return SignInResponse.builder()
+                    .errorMsg("Expired session.")
+                    .build();
+        } catch (TooManyRequestsException ex) {
+            throw new ClientErrorException(429, ex);
+        }
+
+        return signinResponseHandleChallengeAndResult(
+                Optional.ofNullable(response.challengeName()),
+                Optional.ofNullable(response.session()),
+                Optional.ofNullable(response.authenticationResult()),
+                Optional.ofNullable(response.challengeParameters())
+                        .flatMap(challengeParameters -> Optional.ofNullable(challengeParameters.get("USER_ID_FOR_SRP"))));
+    }
+
+    @Override
+    public void signOut(SignOutRequest signOutRequest) {
+        userStore.signout(signOutRequest.getRefreshToken());
     }
 
     @VisibleForTesting

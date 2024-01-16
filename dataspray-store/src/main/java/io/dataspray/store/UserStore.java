@@ -67,7 +67,9 @@ public interface UserStore {
 
     AdminRespondToAuthChallengeResponse signinChallengeTotpSetup(String session, String username, String verifySoftwareTokenSession);
 
-    void validateAccessToken(String accessToken);
+    AdminInitiateAuthResponse refreshToken(String refreshToken);
+
+    void signout(String refreshToken);
 
     /**
      * Since Quarkus has no easy way to set properties on runtime from ta test, we need this endpoint to set them.

@@ -44,6 +44,7 @@ public abstract class ApiFunctionStack extends FunctionStack {
     public static final String CORS_ALLOW_HEADERS = "Content-Type,X-Amz-Date,Authorization";
     public static final String CORS_ALLOW_METHODS = "*";
 
+    private final Options options;
     private final ImmutableSet<String> apiTags;
     private final String apiFunctionName;
     private final SingletonFunction apiFunction;
@@ -51,6 +52,7 @@ public abstract class ApiFunctionStack extends FunctionStack {
     public ApiFunctionStack(Construct parent, Options options) {
         super(parent, "web-" + options.getFunctionName(), options.getDeployEnv());
 
+        this.options = options;
         apiTags = options.getApiTags();
         apiFunctionName = options.getFunctionName() + options.getDeployEnv().getSuffix();
         apiFunction = addSingletonFunction(
@@ -62,17 +64,17 @@ public abstract class ApiFunctionStack extends FunctionStack {
 
         // Setup CORS using Quarkus Jakarta CORS filter
         // https://quarkus.io/guides/security-cors
-        String corsAllowedOrigin = getCorsAllowOrigins(this, options);
+        String corsAllowedOrigin = getCorsAllowOrigins(this);
         DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors", "true");
         DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors.headers", CORS_ALLOW_HEADERS);
         DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors.methods", CORS_ALLOW_METHODS);
         DatasprayStack.setConfigProperty(apiFunction, "quarkus.http.cors.origins", corsAllowedOrigin);
     }
 
-    public String getCorsAllowOrigins(final BaseStack stack, Options options) {
+    public String getCorsAllowOrigins(final BaseStack stack) {
         return switch (getDeployEnv()) {
             case STAGING, TEST -> "*";
-            case PRODUCTION, SELFHOST -> Optional.ofNullable(options.corsForSite)
+            case PRODUCTION, SELFHOST -> options.getCorsForSite()
                     .map(subdomain -> "https://" + subdomain + "." + DnsStack.createFqdn(stack, getDeployEnv()))
                     .orElseGet(() -> "https://" + DnsStack.createFqdn(stack, getDeployEnv()));
         };
@@ -93,5 +95,9 @@ public abstract class ApiFunctionStack extends FunctionStack {
         int memorySize = 512;
         @Nullable
         NextSiteStack corsForSite;
+
+        public Optional<NextSiteStack> getCorsForSite() {
+            return Optional.ofNullable(corsForSite);
+        }
     }
 }

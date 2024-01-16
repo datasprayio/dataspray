@@ -28,6 +28,10 @@ paths:
     $ref: 'paths-authnz.yaml#/~1sign-in~1totp'
   /sign-in/password-change:
     $ref: 'paths-authnz.yaml#/~1sign-in~1password-change'
+  /sign-in/refresh:
+    $ref: 'paths-authnz.yaml#/~1sign-in~1refresh'
+  /sign-out:
+    $ref: 'paths-authnz.yaml#/~1sign-out'
   /apikeys:
     $ref: 'paths-authnz.yaml#/~1apikeys'
   /apikey:

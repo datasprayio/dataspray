@@ -125,7 +125,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
         signIn: (...args: OmitFirstArg<typeof signIn>) => signIn(onSignIn, ...args),
         signInConfirmTotp: (...args: OmitFirstArg<typeof signInConfirmTotp>) => signInConfirmTotp(onSignIn, ...args),
         signInPasswordChange: (...args: OmitFirstArg<typeof signInPasswordChange>) => signInPasswordChange(onSignIn, ...args),
-        signOut: () => onSignIn(null),
+        signOut: () => signOut(onSignIn, authResult?.refreshToken),
     }), [authResult, accessToken, idToken, onSignIn]);
 }
 
@@ -147,10 +147,11 @@ const setResultToStorage = (result: AuthResult | null) => {
 const refreshTokenIfNecessary = (authResult: AuthResult | null) => {
     // TODO refresh token if necessary
     // TODO setup future promise to refresh token
+    // TODO use signInRefresh()
 }
 
 const signUp = async (
-    onSignIn: (response: AuthResult) => void,
+    onSignIn: (response: AuthResult | null) => void,
     values: {
         username: string,
         email: string,
@@ -181,7 +182,7 @@ const signUp = async (
 
 
 const signUpConfirmCode = async (
-    onSignIn: (response: AuthResult) => void,
+    onSignIn: (response: AuthResult | null) => void,
     username: string,
     code: string,
     password: string | undefined,
@@ -201,7 +202,7 @@ const signUpConfirmCode = async (
 };
 
 const handleSignupResponse = async (
-    onSignIn: (response: AuthResult) => void,
+    onSignIn: (response: AuthResult | null) => void,
     signupResponse: SignUpResponse,
     username: string,
     password: string | undefined,
@@ -258,7 +259,7 @@ const handleSignupResponse = async (
 }
 
 const signIn = async (
-    onSignIn: (response: AuthResult) => void,
+    onSignIn: (response: AuthResult | null) => void,
     values: {
         usernameOrEmail: string,
         password: string,
@@ -284,7 +285,7 @@ const signIn = async (
 }
 
 const signInConfirmTotp = async (
-    onSignIn: (response: AuthResult) => void,
+    onSignIn: (response: AuthResult | null) => void,
     username: string,
     session: string,
     code: string,
@@ -307,7 +308,7 @@ const signInConfirmTotp = async (
 }
 
 const signInPasswordChange = async (
-    onSignIn: (response: AuthResult) => void,
+    onSignIn: (response: AuthResult | null) => void,
     username: string,
     session: string,
     newPassword: string,
@@ -329,7 +330,7 @@ const signInPasswordChange = async (
 }
 
 const handleSignInResponse = async (
-    onSignIn: (response: AuthResult) => void,
+    onSignIn: (response: AuthResult | null) => void,
     signInResponse: SignInResponse,
     password: string | undefined,
     to: string | undefined,
@@ -390,4 +391,43 @@ const handleSignInResponse = async (
     // All good, redirect to dashboard
     await routerPush(to || '/');
     return signInResponse.result;
+}
+
+const signInRefresh = async (
+    onSignIn: (response: AuthResult | null) => void,
+    refreshToken: string,
+    setError: (error: string) => void,
+    routerPush: Router['push'],
+): Promise<AuthResult | undefined> => {
+    try {
+        const signInResponse = await getClientAuth().signInRefreshToken({
+            signInRefreshTokenRequest: {refreshToken}
+        })
+
+        return await handleSignInResponse(onSignIn, signInResponse, undefined, undefined, setError, routerPush);
+    } catch (e: any) {
+        console.error('Failed to refresh session', e ?? 'Unknown error')
+        setError(e?.message || ('Failed to refresh session: ' + (e || 'Unknown error')))
+        return;
+    }
+}
+
+const signOut = async (
+    onSignIn: (response: AuthResult | null) => void,
+    refreshToken?: string,
+): Promise<undefined> => {
+
+    // Remove token from browser session
+    onSignIn(null);
+
+    // Invalidate tokens from server
+    if (refreshToken) {
+        try {
+            await getClientAuth().signOut({
+                signOutRequest: {refreshToken}
+            });
+        } catch (e: any) {
+            console.error('Failed to sign out', e ?? 'Unknown error')
+        }
+    }
 }
