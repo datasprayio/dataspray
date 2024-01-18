@@ -80,7 +80,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
         setResultToStorage(result);
     }, []);
 
-    // Load auth result from storage and refresh if necessary
+    // Load auth result from storage
     const router = useRouter();
     useEffect(() => {
 
@@ -90,10 +90,12 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
         // Emit null/result to indicate loading is complete
         setAuthResult(authResultFromStorage);
 
-        // Refresh auth result if necessary
-        refreshTokenIfNecessary(authResultFromStorage);
-
     }, []);
+
+    // Setup auto-refreshing of tokens
+    useEffect(() => {
+        refreshTokenIfNecessary(onSignIn, authResult, accessToken, idToken);
+    }, [accessToken, idToken]);
 
     // Redirect if this page requests that user is signed in/out
     const redirected = useRef(false)
@@ -144,10 +146,60 @@ const setResultToStorage = (result: AuthResult | null) => {
     }
 }
 
-const refreshTokenIfNecessary = (authResult: AuthResult | null) => {
-    // TODO refresh token if necessary
-    // TODO setup future promise to refresh token
-    // TODO use signInRefresh()
+var refreshingJti: string | undefined;
+const refreshTokenIfNecessary = (
+    onSignIn: (response: AuthResult | null) => void,
+    authResult?: AuthResult | null | undefined,
+    accessToken?: CognitoAccessToken,
+    idToken?: CognitoIdToken,
+) => {
+
+    // Only refresh if we have tokens and we're not already refreshing them
+    const jti = accessToken?.jti;
+    if (authResult && accessToken && idToken && refreshingJti !== jti) {
+
+        // Lock on refreshing
+        refreshingJti = jti;
+
+        // Figure out when to refresh
+        const nowInEpochSec = new Date().getTime() / 1000;
+        const issuedInEpochSec = Math.max(accessToken?.iat, idToken.iat);
+        const expiresInEpochSec = Math.min(accessToken?.exp, idToken.exp);
+        // Refresh when 59/60 of the lifetime of the token has passed
+        const refreshAtInEpochSec = issuedInEpochSec + (expiresInEpochSec - issuedInEpochSec) * 59 / 60;
+        const refreshInMs = (refreshAtInEpochSec - nowInEpochSec) * 1000;
+        console.debug(`Token ${jti} is ${Math.floor((nowInEpochSec - issuedInEpochSec) * 100 / (expiresInEpochSec - issuedInEpochSec))}% through its lifetime, refreshing in ${Math.floor(refreshInMs / 1000 / 60)}min`);
+
+        setTimeout(async () => {
+            if (jti !== refreshingJti) return;
+
+            try {
+                const signInResponse = await getClientAuth().signInRefreshToken({
+                    signInRefreshTokenRequest: {
+                        refreshToken: authResult.refreshToken,
+                    }
+                });
+
+                if (signInResponse.errorMsg) {
+                    console.error('Failed to refresh token', signInResponse.errorMsg)
+                    return;
+                }
+
+                if (!signInResponse.result) {
+                    console.error('Failed to refresh token with unknown error')
+                    return;
+                }
+
+                // Persist token
+                console.debug('Successfully refreshed token')
+                onSignIn(signInResponse.result);
+
+            } catch (e: any) {
+                console.error('Failed to refresh token', e ?? 'Unknown error')
+                return;
+            }
+        }, refreshInMs);
+    }
 }
 
 const signUp = async (

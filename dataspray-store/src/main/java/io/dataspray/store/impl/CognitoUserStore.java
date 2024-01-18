@@ -250,7 +250,7 @@ public class CognitoUserStore implements UserStore {
     @Override
     public AdminInitiateAuthResponse refreshToken(String refreshToken) {
         return cognitoClient.adminInitiateAuth(AdminInitiateAuthRequest.builder()
-                .authFlow(AuthFlowType.REFRESH_TOKEN)
+                .authFlow(AuthFlowType.REFRESH_TOKEN_AUTH)
                 .userPoolId(userPoolId)
                 .clientId(userPoolClientId)
                 .authParameters(ImmutableMap.of(

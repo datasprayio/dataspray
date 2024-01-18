@@ -47,7 +47,6 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.AssociateSo
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeDataType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.CreateUserPoolClientRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.CreateUserPoolRequest;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.DeviceConfigurationType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.PasswordPolicyType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SchemaAttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SetUserMfaPreferenceRequest;
@@ -110,10 +109,6 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
                                         .requireNumbers(true)
                                         .requireSymbols(true)
                                         .temporaryPasswordValidityDays(1).build())
-                                .build())
-                        .deviceConfiguration(DeviceConfigurationType.builder()
-                                .deviceOnlyRememberedOnUserPrompt(true)
-                                .challengeRequiredOnNewDevice(true)
                                 .build())
                         .build())
                 .userPool();

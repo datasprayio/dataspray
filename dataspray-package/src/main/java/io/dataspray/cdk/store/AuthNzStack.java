@@ -37,7 +37,6 @@ import software.amazon.awscdk.services.cognito.AdvancedSecurityMode;
 import software.amazon.awscdk.services.cognito.AuthFlow;
 import software.amazon.awscdk.services.cognito.AutoVerifiedAttrs;
 import software.amazon.awscdk.services.cognito.CfnUserPool;
-import software.amazon.awscdk.services.cognito.DeviceTracking;
 import software.amazon.awscdk.services.cognito.KeepOriginalAttrs;
 import software.amazon.awscdk.services.cognito.Mfa;
 import software.amazon.awscdk.services.cognito.MfaSecondFactor;
@@ -87,9 +86,6 @@ public class AuthNzStack extends BaseStack {
                         .preferredUsername(true)
                         .username(true)
                         .email(true).build())
-                .deviceTracking(DeviceTracking.builder()
-                        .deviceOnlyRememberedOnUserPrompt(true)
-                        .challengeRequiredOnNewDevice(true).build())
                 // Don't allow recovery, contact support
                 .accountRecovery(AccountRecovery.NONE)
                 .keepOriginal(KeepOriginalAttrs.builder()

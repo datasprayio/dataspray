@@ -289,7 +289,8 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
                 Optional.ofNullable(response.session()),
                 Optional.ofNullable(response.authenticationResult()),
                 Optional.ofNullable(response.challengeParameters())
-                        .flatMap(challengeParameters -> Optional.ofNullable(challengeParameters.get("USER_ID_FOR_SRP"))));
+                        .flatMap(challengeParameters -> Optional.ofNullable(challengeParameters.get("USER_ID_FOR_SRP"))),
+                Optional.empty());
 
     }
 
@@ -307,7 +308,8 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
                 Optional.of(response.session()),
                 Optional.ofNullable(response.authenticationResult()),
                 Optional.ofNullable(response.challengeParameters())
-                        .flatMap(challengeParameters -> Optional.ofNullable(challengeParameters.get("USER_ID_FOR_SRP"))));
+                        .flatMap(challengeParameters -> Optional.ofNullable(challengeParameters.get("USER_ID_FOR_SRP"))),
+                Optional.empty());
     }
 
     @Override
@@ -327,14 +329,16 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
                 Optional.of(response.session()),
                 Optional.ofNullable(response.authenticationResult()),
                 Optional.ofNullable(response.challengeParameters())
-                        .flatMap(challengeParameters -> Optional.ofNullable(challengeParameters.get("USER_ID_FOR_SRP"))));
+                        .flatMap(challengeParameters -> Optional.ofNullable(challengeParameters.get("USER_ID_FOR_SRP"))),
+                Optional.empty());
     }
 
     private SignInResponse signinResponseHandleChallengeAndResult(
             Optional<ChallengeNameType> challengeNameOpt,
             Optional<String> sessionOpt,
             Optional<AuthenticationResultType> authenticationResultOpt,
-            Optional<String> challengeUsernameOpt) {
+            Optional<String> challengeUsernameOpt,
+            Optional<String> refreshTokenOpt) {
 
         if (challengeNameOpt.isPresent()) {
             ChallengeNameType challengeName = challengeNameOpt.get();
@@ -382,7 +386,10 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
         return SignInResponse.builder()
                 .result(AuthResult.builder()
                         .accessToken(authenticationResult.accessToken())
-                        .refreshToken(authenticationResult.refreshToken())
+                        .refreshToken(Optional.ofNullable(authenticationResult.refreshToken())
+                                // When calling refresh endpoint, the refresh token is not returned so we need to use
+                                // the supplied one. If neither are present, something else is wrong here.
+                                .orElseGet(refreshTokenOpt::orElseThrow))
                         .idToken(authenticationResult.idToken())
                         .build())
                 .build();
@@ -394,6 +401,7 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
         try {
             response = userStore.refreshToken(signInRefreshTokenRequest.getRefreshToken());
         } catch (NotAuthorizedException ex) {
+            log.info("Failed to refresh token, not authorized", ex);
             return SignInResponse.builder()
                     .errorMsg("Expired session.")
                     .build();
@@ -406,7 +414,8 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
                 Optional.ofNullable(response.session()),
                 Optional.ofNullable(response.authenticationResult()),
                 Optional.ofNullable(response.challengeParameters())
-                        .flatMap(challengeParameters -> Optional.ofNullable(challengeParameters.get("USER_ID_FOR_SRP"))));
+                        .flatMap(challengeParameters -> Optional.ofNullable(challengeParameters.get("USER_ID_FOR_SRP"))),
+                Optional.of(signInRefreshTokenRequest.getRefreshToken()));
     }
 
     @Override
