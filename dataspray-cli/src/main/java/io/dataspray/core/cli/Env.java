@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -54,10 +54,10 @@ public class Env implements Runnable {
 
             // Header
             if (anyHaveEndpoint) {
-                log.info("\n{}\t{}\t{}", "Default", "Organization", "Endpoint");
+                log.info("{}\t{}\t{}", "Default", "Organization", "Endpoint");
                 log.info("---\t---\t---");
             } else {
-                log.info("\n{}\t{}", "Default", "Organization");
+                log.info("{}\t{}", "Default", "Organization");
                 log.info("---\t---");
             }
 
