@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -63,6 +63,10 @@ public class ContextUtil implements CustomContext {
                 return (Lambda) this::javaImportsFormat;
             case "trim":
                 return (Lambda) (frag, out) -> out.write(frag.execute().strip());
+            case "throw":
+                return (Lambda) (frag, out) -> {
+                    throw new RuntimeException(frag.execute());
+                };
             default:
                 return null;
         }

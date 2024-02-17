@@ -1,0 +1,23 @@
+{
+  "main": "src/index.ts",
+  "scripts": {
+    {{^processor.jsonStreams.empty}}
+        "build-json-types": "rm -rf src/types/* && {{#processor.jsonStreams}}json2ts --input ../{{{util.dataFormatsFolder}}}/{{{this.dataFormat.name}}}/ --output src/types/{{{this.dataFormat.name}}}.ts{{/processor.jsonStreams}}",
+    {{/processor.jsonStreams.empty}}
+    "prebuild": "rm -rf dist{{^processor.jsonStreams.empty}} && npm run build-json-types {{/processor.jsonStreams.empty}}",
+    "build": "esbuild src/index.ts --bundle --minify --sourcemap --platform=node --target=es2020 --outfile=dist/index.js",
+    "postbuild": "cd dist && zip -r index.zip index.js*"
+  },
+  "dependencies": {
+    "@types/node": "^20.11.16",
+    "dataspray-runner": "0.0.1"
+  },
+  "devDependencies": {
+    {{^processor.jsonStreams.empty}}
+    "json-schema-to-typescript": "13.1.2",
+    {{/processor.jsonStreams.empty}}
+    "@types/aws-lambda": "^8.10.131",
+    "esbuild": "^0.19.11",
+    "typescript": "^5.3.3"
+  }
+}

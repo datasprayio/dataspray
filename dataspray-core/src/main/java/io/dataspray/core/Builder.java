@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,23 @@
 
 package io.dataspray.core;
 
-public interface Builder {
-    void installAll(Project project);
+import com.google.common.collect.ImmutableSet;
+import io.dataspray.core.definition.model.Processor;
+import lombok.Value;
 
-    void install(Project project, String processorName);
+import java.io.File;
+import java.util.Optional;
+
+public interface Builder {
+    ImmutableSet<Artifact> buildAll(Project project);
+
+    Artifact build(Project project, String processorName);
+
+    Optional<Artifact> getBuiltArtifact(Project project, String processorName);
+
+    @Value
+    class Artifact {
+        Processor processor;
+        File codeZipFile;
+    }
 }

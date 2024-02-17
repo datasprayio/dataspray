@@ -1,0 +1,25 @@
+{
+  "name": "dataspray-client",
+  "version": "0.0.1",
+  "description": "Client library for DataSpray",
+  "author": {
+    "name": "Matus Faro",
+    "email": "matus@dataspray.io"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.11",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@types/node": "^20.11.16",
+    "node-fetch": "^3.3.2"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ]
+}

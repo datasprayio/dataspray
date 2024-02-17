@@ -39,7 +39,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <mainClass>io.dataspray.core.cli.Cli</mainClass>
+        <mainClass>io.dataspray.cli.Cli</mainClass>
         <quarkus.package.type>uber-jar</quarkus.package.type>
         <skipNative/>
     </properties>

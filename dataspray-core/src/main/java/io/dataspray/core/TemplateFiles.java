@@ -23,11 +23,17 @@
 package io.dataspray.core;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
 import io.dataspray.common.json.GsonUtil;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -37,33 +43,39 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
  * Given a template, we need to iterate over all template files and generate code. The template files may be on disk or
  * in resources. It is not easy to iterate all
  * resource files. This convenience wrapper allows us to iterate files wherever they are.
- *
+ * <p>
  * For more details: When resources are accessed from tests, the returned URL points to the disk location which is
  * easily walkable. Once bundled in a jar, a ZipFileSystem can be used but it doesn't work well with an executable
  * Jar file. Once we move to native executable, who knows what challenges lie ahead.
- *
+ * <p>
  * As a workaround, we generate the file structure for each template and read it during runtime to stream the files
  * as needed.
  */
+@Slf4j
 @Value
 public class TemplateFiles {
     Template template;
     transient Optional<Path> templateDirOpt;
+    transient ImmutableMap<TemplateType, ImmutableSet<TemplateFile>> filesByType;
+
 
     /**
      * Template files backed by bundled resources
      */
     TemplateFiles(Template template) {
-        this.template = template;
-        this.templateDirOpt = Optional.empty();
+        this(template, null);
     }
 
     /**
@@ -71,38 +83,98 @@ public class TemplateFiles {
      */
     TemplateFiles(Template template, Path templateDir) {
         this.template = template;
-        this.templateDirOpt = Optional.of(templateDir);
+        this.templateDirOpt = Optional.ofNullable(templateDir);
+        this.filesByType = walkFiles();
     }
 
-    public Stream<TemplateFile> stream() throws IOException {
+    @SneakyThrows
+    private ImmutableMap<TemplateType, ImmutableSet<TemplateFile>> walkFiles() {
+        EnumMap<TemplateType, Set<TemplateFile>> filesByType = new EnumMap<>(TemplateType.class);
+
+        ImmutableSet<TemplateFile> files;
         if (templateDirOpt.isEmpty()) {
             String treeFilePath = "template/" + getTreeFileName();
             try (Reader reader = new InputStreamReader(Resources.getResource(treeFilePath).openStream())) {
-                return GsonUtil.get()
+                files = GsonUtil.get()
                         .fromJson(reader, Tree.class)
                         .getPaths()
                         .stream()
                         .map(Path::of)
-                        .map(TemplateFile::new);
+                        .map(TemplateFile::new)
+                        .collect(ImmutableSet.toImmutableSet());
             }
         } else {
-            return Files.walk(templateDirOpt.get())
-                    .skip(1) // Skip self
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.getFileName().toString().endsWith(CodegenImpl.MUSTACHE_FILE_EXTENSION))
-                    .map(templateDirOpt.get()::relativize)
-                    .map(TemplateFile::new);
+            try (var walk = Files.walk(templateDirOpt.get())) {
+                files = walk
+                        .skip(1) // Skip self
+                        .filter(Files::isRegularFile)
+                        .map(templateDirOpt.get()::relativize)
+                        .map(TemplateFile::new)
+                        .collect(ImmutableSet.toImmutableSet());
+            }
         }
+
+        files.forEach(templateFile -> filesByType.computeIfAbsent(templateFile.getType(), type -> Sets.newHashSet())
+                .add(templateFile));
+
+        return ImmutableMap.copyOf(Maps.transformValues(filesByType, ImmutableSet::copyOf));
+    }
+
+    /**
+     * Returns a stream of template files sorted by the requesting type if provided.
+     */
+    public Stream<TemplateFile> stream(TemplateType... filterTypes) throws IOException {
+        return filterTypes.length == 0
+                // Return all as a stream
+                ? filesByType.values().stream()
+                .flatMap(Set::stream)
+                // Return only requested types preserving the order it was requested in
+                : Stream.of(filterTypes)
+                .map(filesByType::get)
+                .filter(Objects::nonNull)
+                .flatMap(Set::stream);
     }
 
     private TemplateFile apply(Path pathStr) {
         return new TemplateFile(pathStr);
     }
 
-    @Value
+    @Getter
     @AllArgsConstructor
+    public enum TemplateType {
+        INCLUDE(Optional.of(CodegenImpl.MUSTACHE_FILE_EXTENSION_INCLUDE)),
+        SAMPLE(Optional.of(CodegenImpl.MUSTACHE_FILE_EXTENSION_SAMPLE)),
+        REPLACE(Optional.of(CodegenImpl.MUSTACHE_FILE_EXTENSION_TEMPLATE)),
+        MERGE(Optional.of(CodegenImpl.MUSTACHE_FILE_EXTENSION_MERGE)),
+        UNKNOWN(Optional.empty());
+        private final Optional<String> mustacheFileExtension;
+
+        public static TemplateType classify(Path path) {
+            String fileName = path.getFileName().toString();
+
+            // Check for all extensions
+            for (TemplateType templateType : EnumSet.allOf(TemplateType.class)) {
+                if (templateType.getMustacheFileExtension().isEmpty()) {
+                    // Except unknown
+                    continue;
+                }
+                if (fileName.endsWith(templateType.getMustacheFileExtension().get())) {
+                    return templateType;
+                }
+            }
+            return UNKNOWN;
+        }
+    }
+
+    @Value
     public class TemplateFile {
         Path relativePath;
+        TemplateType type;
+
+        public TemplateFile(Path relativePath) {
+            this.relativePath = relativePath;
+            this.type = TemplateType.classify(relativePath);
+        }
 
         @SneakyThrows
         public InputStream openInputStream() {

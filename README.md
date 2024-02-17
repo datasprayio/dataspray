@@ -92,6 +92,8 @@ nvm install
 
 ## Deployment
 
+This section is for dataspray.io cloud deployment. For self-hosted, see section above.
+
 <details>
   <summary>Staging</summary>
 
@@ -104,6 +106,21 @@ Commits to `master` branch are automatically deployed to staging environment usi
 
 ```shell
 mvn clean deploy -Pproduction,native
+```
+
+</details>
+
+
+<details>
+  <summary>Libraries</summary>
+
+There are a few libraries that are deployed to various package repositories.
+
+- `dataspray-client-*` client libraries for controlling and using DataSpray
+- `dataspray-runner` supplementary packages for DataSpray streaming tasks
+
+```shell
+mvn clean deploy -Pdeploy-client -am -pl dataspray-api
 ```
 
 </details>

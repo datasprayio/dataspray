@@ -13,6 +13,9 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[release]') && (github.event_name != 'push' || contains(github.event.head_commit.message, '[skip deploy]'))"
     runs-on: ubuntu-latest
     steps:
+
+
+      # Common steps for all GH Actions
       - uses: actions/checkout@v3
       - name: Setup Java
         uses: graalvm/setup-graalvm@v1
@@ -37,6 +40,9 @@ jobs:
           chmod a+x /usr/local/bin/convert
           convert -version
           scour --version
+
+
+      # Test entire project
       - name: Maven build
         timeout-minutes: 30
-        run: mvn -B install -Pnative
+        run: MAVEN_ARGS="--batch-mode" make action-test

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,10 @@
 package io.dataspray.stream.control;
 
 import com.google.common.collect.ImmutableList;
+import io.dataspray.client.Access;
+import io.dataspray.client.DataSprayClient;
 import io.dataspray.common.test.aws.AbstractLambdaTest;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
-import io.dataspray.stream.client.StreamApiImpl;
 import io.dataspray.stream.control.client.model.DeployRequest;
 import io.dataspray.stream.control.client.model.TaskStatus;
 import io.dataspray.stream.control.client.model.TaskStatuses;
@@ -44,6 +45,7 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -79,7 +81,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
         assertTrue(uploadCodeResponse.getCodeUrl().startsWith("s3://io-dataspray-code-upload/customer/" + getOrganizationName() + "/task1-"), uploadCodeResponse.getCodeUrl());
 
         // Upload to S3
-        new StreamApiImpl().uploadCode(
+        DataSprayClient.get(new Access("", Optional.empty())).uploadCode(
                 uploadCodeResponse.getPresignedUrl(),
                 Files.writeString(Files.createTempFile(null, null), "test\n").toFile());
 
@@ -91,7 +93,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
                         .codeUrl(uploadCodeResponse.getCodeUrl())
                         .handler("io.dataspray.Runner")
                         .inputQueueNames(List.of("queue1"))
-                        .runtime(DeployRequest.RuntimeEnum.JAVA11)
+                        .runtime(DeployRequest.RuntimeEnum.JAVA21)
                         .switchToNow(false))
                 .build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
@@ -108,7 +110,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
                         .codeUrl(uploadCodeResponse.getCodeUrl())
                         .handler("io.dataspray.Runner")
                         .inputQueueNames(List.of("queue1"))
-                        .runtime(DeployRequest.RuntimeEnum.JAVA11)
+                        .runtime(DeployRequest.RuntimeEnum.JAVA21)
                         .switchToNow(false))
                 .build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
@@ -154,7 +156,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
         assertNotEquals(uploadCodeResponse.getPresignedUrl(), uploadCodeResponse2.getPresignedUrl());
 
         // Upload to S3
-        new StreamApiImpl().uploadCode(
+        DataSprayClient.get(new Access("", Optional.empty())).uploadCode(
                 uploadCodeResponse2.getPresignedUrl(),
                 Files.writeString(Files.createTempFile(null, null), "TEST\n").toFile());
 
@@ -166,7 +168,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
                         .codeUrl(uploadCodeResponse2.getCodeUrl())
                         .handler("io.dataspray.Runner")
                         .inputQueueNames(List.of("queue2"))
-                        .runtime(DeployRequest.RuntimeEnum.NODEJS14_X)
+                        .runtime(DeployRequest.RuntimeEnum.NODEJS20_X)
                         .switchToNow(true))
                 .build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())

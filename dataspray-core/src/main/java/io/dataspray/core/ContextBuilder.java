@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,14 +25,19 @@ package io.dataspray.core;
 import com.google.common.collect.ImmutableMap;
 import io.dataspray.core.definition.model.DataFormat;
 import io.dataspray.core.definition.model.Processor;
+import io.dataspray.common.VersionUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.UserConfig;
 
 @ApplicationScoped
 public class ContextBuilder {
 
     @Inject
     ContextUtil contextUtil;
+    @Inject
+    VersionUtil versionUtil;
 
     public DatasprayContext createForFilename(
             DatasprayContext parentContext,
@@ -67,7 +72,16 @@ public class ContextBuilder {
     private ImmutableMap.Builder<String, Object> createProjectBase(
             Project project) {
         return ImmutableMap.<String, Object>builder()
+                .put("datasprayVersion", versionUtil.getVersion())
                 .put("definition", project.getDefinition())
+                .put("git", createGit(project.getGit()))
                 .put("util", contextUtil);
+    }
+
+    private ImmutableMap<String, Object> createGit(Git git) {
+        UserConfig userConfig = git.getRepository().getConfig().get(UserConfig.KEY);
+        return ImmutableMap.of(
+                "authorName", userConfig.getAuthorName(),
+                "authorEmail", userConfig.getAuthorEmail());
     }
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2023 Matus Faro
+  ~ Copyright 2024 Matus Faro
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy
   ~ of this software and associated documentation files (the "Software"), to deal
@@ -52,11 +52,7 @@
         </dependency>
         <dependency>
             <groupId>io.dataspray</groupId>
-            <artifactId>dataspray-stream-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.dataspray</groupId>
-            <artifactId>dataspray-runner</artifactId>
+            <artifactId>dataspray-client</artifactId>
         </dependency>
 
         <dependency>
@@ -108,15 +104,18 @@
                         <goals>
                             <goal>java</goal>
                         </goals>
-                        <configuration>
-                            <mainClass>io.dataspray.core.TemplateFiles</mainClass>
-                            <arguments>
-                                <argument>${project.basedir}/src/main/resources/template/</argument>
-                                <argument>${project.build.directory}/generated-resources/template/</argument>
-                            </arguments>
-                        </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <mainClass>io.dataspray.core.TemplateFiles</mainClass>
+                    <arguments>
+                        <argument>${project.basedir}/src/main/resources/template/</argument>
+                        <argument>${project.build.directory}/generated-resources/template/</argument>
+                    </arguments>
+                    <!-- Quarkus Small Rye spawns a bunch of threads in io.smallrye.common.ref.References that won't
+                     gracefully shutdown on their own. -->
+                    <cleanupDaemonThreads>false</cleanupDaemonThreads>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>

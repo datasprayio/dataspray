@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 
 package io.dataspray.core.definition.model;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
@@ -29,5 +30,6 @@ import lombok.experimental.SuperBuilder;
 @Value
 @SuperBuilder(toBuilder = true)
 @EqualsAndHashCode(callSuper = true)
+@RegisterForReflection
 public class JavaProcessor extends Processor {
 }

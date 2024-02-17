@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,10 +29,10 @@ import jakarta.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,37 +50,40 @@ public class CodegenBuilderTest {
 
     private Path workingDir;
 
-    @BeforeEach
     @SneakyThrows
-    public void beforeEach() {
+    public void beforeEach(SampleProject sampleProject) {
         if (Path.of(System.getProperty("user.dir"), "target").toFile().isDirectory()) {
-            workingDir = Path.of(System.getProperty("user.dir"), "target", "codegen-tests");
+            workingDir = Path.of(System.getProperty("user.dir"), "target", "codegen-tests", sampleProject.name());
             FileUtils.deleteDirectory(workingDir.toFile());
             workingDir.toFile().mkdir();
             log.info("WorkingDir: {}", workingDir);
         } else {
-            workingDir = Files.createTempDirectory(CodegenBuilderTest.class.getSimpleName());
+            workingDir = Files.createTempDirectory(CodegenBuilderTest.class.getSimpleName() + "-" + sampleProject.name());
             workingDir.toFile().deleteOnExit();
         }
     }
 
-    @AfterEach
+    @BeforeEach
     @SneakyThrows
-    public void afterEach() {
-        Files.walk(workingDir)
-                .filter(Files::isRegularFile)
-                .forEach(p -> log.debug("Working dir file: {}", workingDir.relativize(p)));
-        workingDir.toFile().delete();
+    public void beforeEach() {
+        mockProcessIo.setup();
     }
 
-    @Test
+    @ParameterizedTest
+    @EnumSource(value = SampleProject.class, mode = EnumSource.Mode.INCLUDE, names = {"JAVA", "TYPESCRIPT"})
     @Timeout(value = 300)
-    public void test() throws Exception {
-        Project project = codegen.initProject(workingDir.toString(), "Test Project", SampleProject.CLOUD);
-        codegen.generateAll(project);
-        builder.installAll(project);
+    public void test(SampleProject sampleProject) throws Exception {
+        beforeEach(sampleProject);
+        Project project = codegen.initProject(workingDir.toString(), "Test Project " + sampleProject.name(), sampleProject);
+        generateAndBuildAll(project);
         log.info("And again");
+        generateAndBuildAll(project);
+    }
+
+    private void generateAndBuildAll(Project project) {
         codegen.generateAll(project);
-        builder.installAll(project);
+        builder.buildAll(project)
+                .forEach(artifact -> log.info("Built artifact {}",
+                        project.getPath().relativize(artifact.getCodeZipFile().toPath())));
     }
 }

@@ -42,8 +42,8 @@
         <!-- If changed, update aws.sdk.version -->
         <quarkus.version>3.6.4</quarkus.version>
         <aws.sdk.version>2.21.29</aws.sdk.version>
-        <!-- If changed, also change in .node-version and .nvmrc -->
-        <node.version>v18.19.0</node.version>
+        <!-- If changed, also change in .nvmrc and in site modules -->
+        <node.version>v20.11.0</node.version>
         <pnpm.version>v8.6.10</pnpm.version>
         <slf4j.version>2.0.7</slf4j.version>
         <logback.version>1.2.9</logback.version>
@@ -77,9 +77,7 @@
         <module>dataspray-resources</module>
         <module>dataspray-lambda-web-test</module>
         <module>dataspray-lambda-web</module>
-        <module>dataspray-stream-client</module>
-        <!-- Remote dev env coming soon... -->
-        <!--<module>dataspray-remote-workspace</module>-->
+        <module>dataspray-api</module>
         <module>dataspray-runner</module>
         <module>dataspray-core</module>
         <module>dataspray-cli</module>
@@ -87,9 +85,7 @@
         <module>dataspray-authorizer</module>
         <module>dataspray-stream-control</module>
         <module>dataspray-stream-ingest</module>
-        <module>dataspray-site-landing</module>
-        <module>dataspray-site-docs</module>
-        <module>dataspray-site-dashboard</module>
+        <module>dataspray-site</module>
         <module>dataspray-package</module>
     </modules>
 
@@ -100,9 +96,13 @@
     </scm>
 
     <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
         <repository>
-            <id>github</id>
-            <url>https://maven.pkg.github.com/datasprayio/dataspray</url>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
 
@@ -146,8 +146,8 @@
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
-                <artifactId>dataspray-stream-client</artifactId>
-                <version>${project.version}</version>
+                <artifactId>dataspray-client</artifactId>
+                <version>0.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
@@ -162,11 +162,6 @@
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.dataspray</groupId>
-                <artifactId>dataspray-runner</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -204,6 +199,7 @@
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-lambda-java-events</artifactId>
+                <!-- If changed, also update in pom-parent.xml.template.mustache -->
                 <version>3.11.1</version>
             </dependency>
             <dependency>
@@ -727,11 +723,32 @@
                     <version>7.2.0</version>
                 </plugin>
                 <plugin>
+                    <!-- Skipping default deploy plugin in lieu of nexus-staging-maven-plugin -->
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>3.0.0-M2</version>
                     <configuration>
                         <skip>true</skip>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.3.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.6.3</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>3.1.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nexus-staging-maven-plugin</artifactId>
+                    <version>1.6.13</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

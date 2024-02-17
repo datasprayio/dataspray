@@ -1,6 +1,7 @@
 package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
+import java.util.Base64;
 import lombok.SneakyThrows;
 {{^processor.avroInputStreams.empty}}
 import java.io.IOException;
@@ -32,37 +33,39 @@ public class Runner extends Entrypoint {
     {{/processor.jsonInputStreams.empty}}
 
     @Override
-    public void process(MessageMetadata metadata, byte[] data, RawCoordinator rawCoordinator) {
-        Coordinator coordinator = new CoordinatorImpl(rawCoordinator);
+    public void process(MessageMetadata metadata, String data, RawCoordinator rawCoordinator) {
+        Coordinator coordinator = new Coordinator(rawCoordinator);
         {{#processor.inputStreams}}if (StoreType.{{{storeType.name}}}.equals(metadata.getStoreType())
                 && "{{{storeName}}}".equals(metadata.getStoreName())
                 && "{{{streamName}}}".equals(metadata.getStreamName())) {
-            {{#dataFormat.isSerdeBinary}}
+            {{#dataFormat.isSerdeString}}
             processor.process{{{uniqueNameCamelUpper}}}(new MessageImpl(metadata, data), coordinator);
-            {{/dataFormat.isSerdeBinary}}
-            {{^dataFormat.isSerdeBinary}}
+            {{/dataFormat.isSerdeString}}
+            {{^dataFormat.isSerdeString}}
             processor.process{{{uniqueNameCamelUpper}}}(new MessageImpl(metadata, to{{{dataFormat.nameCamelUpper}}}(data)), coordinator);
-            {{/dataFormat.isSerdeBinary}}
+            {{/dataFormat.isSerdeString}}
         } else {{/processor.inputStreams}}{
             throw new RuntimeException("Received unexpected message from " + metadata.getStoreType() + " source " + metadata.getStoreName() + " stream " + metadata.getStreamName());
         }
     }
     {{#processor.inputStreams}}
+    {{^dataFormat.isSerdeString}}
 
     @SneakyThrows
     private {{{dataFormat.nameCamelUpper}}} to{{{dataFormat.nameCamelUpper}}}(byte[] data) {
-        {{#dataFormat.isSerdeString}}
-        return new String(data, StandardCharsets.UTF_8);
-        {{/dataFormat.isSerdeString}}
+        {{#dataFormat.isSerdeBinary}}
+        return Base64.getDecoder().decode(data);
+        {{/dataFormat.isSerdeBinary}}
         {{#dataFormat.isSerdeJson}}
-        return gson.fromJson(new String(data, StandardCharsets.UTF_8), {{{dataFormat.nameCamelUpper}}}.class);
+        return gson.fromJson(data, {{{dataFormat.nameCamelUpper}}}.class);
         {{/dataFormat.isSerdeJson}}
         {{#dataFormat.isSerdeProtobuf}}
-        return {{{dataFormat.nameCamelUpper}}}.parseFrom(data);
+        return {{{dataFormat.nameCamelUpper}}}.parseFrom(Base64.getDecoder().decode(data));
         {{/dataFormat.isSerdeProtobuf}}
         {{#dataFormat.isSerdeAvro}}
-        return {{{dataFormat.nameCamelUpper}}}.getDecoder().decode(data);
+        return {{{dataFormat.nameCamelUpper}}}.getDecoder().decode(Base64.getDecoder().decode(data));
         {{/dataFormat.isSerdeAvro}}
     }
+    {{/dataFormat.isSerdeString}}
     {{/processor.inputStreams}}
 }

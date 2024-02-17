@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,10 +26,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.jcabi.aspects.Cacheable;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.Nonnull;
-import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.NonFinal;
@@ -43,12 +42,11 @@ import java.util.List;
 @SuperBuilder(toBuilder = true)
 @EqualsAndHashCode(callSuper = true)
 @NonFinal
+@RegisterForReflection
 public class Processor extends Item {
     @Nonnull
     Target target;
 
-    @Getter
-    @AllArgsConstructor
     public enum Target {
         DATASPRAY
         // TODO SAMZA

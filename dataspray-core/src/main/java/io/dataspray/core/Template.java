@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,8 @@ public enum Template {
     DATA_FORMAT_PROTOBUF("data-format-protobuf"),
     DATA_FORMAT_AVRO("data-format-avro"),
 
-    JAVA("java");
+    JAVA("java"),
+    TYPESCRIPT("typescript");
 
     private final String resourceName;
 

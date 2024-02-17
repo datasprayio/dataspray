@@ -31,7 +31,6 @@
     </parent>
 
     <artifactId>dataspray-remote-workspace</artifactId>
-    <groupId>io.dataspray</groupId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 

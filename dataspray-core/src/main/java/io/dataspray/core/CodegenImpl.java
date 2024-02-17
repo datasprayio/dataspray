@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,11 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.TemplateLoader;
 import com.samskivert.mustache.MustacheException;
@@ -35,8 +40,11 @@ import io.dataspray.core.definition.model.DataFormat;
 import io.dataspray.core.definition.model.Definition;
 import io.dataspray.core.definition.model.Item;
 import io.dataspray.core.definition.model.JavaProcessor;
+import io.dataspray.core.definition.model.Processor;
+import io.dataspray.core.definition.model.TypescriptProcessor;
 import io.dataspray.core.definition.parser.DefinitionLoader;
 import io.dataspray.core.sample.SampleProject;
+import io.dataspray.common.json.GsonMergeUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.SneakyThrows;
@@ -74,11 +82,17 @@ public class CodegenImpl implements Codegen {
     public static final String TEMPLATES_FOLDER = ".template";
     public static final String MUSTACHE_FILE_EXTENSION = ".mustache";
     /** Template files, always overwritten unless overriden by user */
-    private static final String MUSTACHE_FILE_EXTENSION_TEMPLATE = ".template" + MUSTACHE_FILE_EXTENSION;
+    public static final String MUSTACHE_FILE_EXTENSION_TEMPLATE = ".template" + MUSTACHE_FILE_EXTENSION;
     /** Sample files, only written if they don't already exist, intended to be edited by user */
-    private static final String MUSTACHE_FILE_EXTENSION_SAMPLE = ".sample" + MUSTACHE_FILE_EXTENSION;
+    public static final String MUSTACHE_FILE_EXTENSION_SAMPLE = ".sample" + MUSTACHE_FILE_EXTENSION;
     /** Sub-templates intended to be included by other templates/samples. */
-    private static final String MUSTACHE_FILE_EXTENSION_INCLUDE = ".include" + MUSTACHE_FILE_EXTENSION;
+    public static final String MUSTACHE_FILE_EXTENSION_INCLUDE = ".include" + MUSTACHE_FILE_EXTENSION;
+    /**
+     * Templates that are merged into existing files. Such as applying fields into a JSON file.
+     * <p>
+     * Can be used with sample template to set initial file.
+     */
+    public static final String MUSTACHE_FILE_EXTENSION_MERGE = ".merge" + MUSTACHE_FILE_EXTENSION;
 
     @Inject
     DefinitionLoader definitionLoader;
@@ -86,6 +100,10 @@ public class CodegenImpl implements Codegen {
     FileTracker fileTracker;
     @Inject
     ContextBuilder contextBuilder;
+    @Inject
+    Gson gson;
+    @Inject
+    GsonMergeUtil gsonMergeUtil;
 
     private boolean schemasFolderGenerated = false;
 
@@ -98,8 +116,8 @@ public class CodegenImpl implements Codegen {
         File projectDir = projectPath.toFile();
 
         // Create project folder
-        if (!projectDir.mkdir()) {
-            throw new IOException("Folder already exists: " + projectPath);
+        if (!projectDir.mkdirs()) {
+            throw new IOException("Failed to create folder already exists: " + projectPath);
         }
         log.info("Created project folder " + projectPath);
 
@@ -161,9 +179,8 @@ public class CodegenImpl implements Codegen {
     public void generateAll(Project project) {
         project.getDefinition().getDataFormats()
                 .forEach(dataFormat -> generateDataFormat(project, dataFormat));
-        Optional.ofNullable(project.getDefinition().getJavaProcessors()).stream()
-                .flatMap(Collection::stream)
-                .forEach(processor -> generateJava(project, processor));
+        project.getDefinition().getProcessors()
+                .forEach(processor -> generate(project, processor));
     }
 
     @Override
@@ -193,24 +210,26 @@ public class CodegenImpl implements Codegen {
 
     @Override
     public void generate(Project project, String processorName) {
-        generateJava(project, Optional.ofNullable(project.getDefinition().getJavaProcessors()).stream()
+        generate(project, Optional.ofNullable(project.getDefinition().getProcessors()).stream()
                 .flatMap(Collection::stream)
                 .filter(p -> p.getName().equals(processorName))
                 .findAny()
-                .orElseThrow(() -> new RuntimeException("Cannot find java processor with name " + processorName)));
+                .orElseThrow(() -> new RuntimeException("Cannot find processor with name " + processorName)));
     }
 
-    private void generateJava(Project project, JavaProcessor processor) {
-        Path processorPath = createProcessorDir(project, processor.getNameDir());
-        codegen(project, processorPath, Template.JAVA, contextBuilder.createForProcessor(project, processor));
-    }
+    public void generate(Project project, Processor processor) {
+        Template template;
+        if (processor instanceof JavaProcessor) {
+            template = Template.JAVA;
+        } else if (processor instanceof TypescriptProcessor) {
+            template = Template.TYPESCRIPT;
+        } else {
+            throw new RuntimeException("Generation for processor " + processor.getName() + " type " + processor.getClass().getCanonicalName() + "not supported");
+        }
 
-    public static Path getProcessorDir(Project project, String nameDir) {
-        return project.getPath().resolve(nameDir);
-    }
-
-    private Path createProcessorDir(Project project, String nameDir) {
-        return createDir(getProcessorDir(project, nameDir));
+        Path processorPath = project.getProcessorDir(processor);
+        createDir(processorPath);
+        codegen(project, processorPath, template, contextBuilder.createForProcessor(project, processor));
     }
 
     private Path getDataFormatDir(Project project, DataFormat dataFormat) {
@@ -258,33 +277,32 @@ public class CodegenImpl implements Codegen {
             log.info("Created {} template folder {}", template.getResourceName(), templateInRepoDir);
         }
         log.info("Walking over template {}", template);
-        template.getFilesFromResources().stream()
-                .forEach(source -> {
-                    String sourceFileName = source.getRelativePath().getFileName().toString();
-                    Path destination = templateInRepoDir.resolve(source.getRelativePath());
-                    Path projectRelativePath = project.getPath().relativize(destination);
-                    // Check if file was previously tracked
-                    if (!trackedFiles.remove(projectRelativePath)) {
-                        // If not, attempt to track it now
-                        if (!fileTracker.trackFile(project, projectRelativePath)) {
-                            log.debug("Skipping file overriden by user {}", projectRelativePath);
-                            return;
-                        } else {
-                            log.debug("Creating generated file {}", projectRelativePath);
-                        }
-                    } else {
-                        log.debug("Overwriting generated file {}", projectRelativePath);
-                    }
-                    Optional.ofNullable(destination.toFile().getParentFile())
-                            .ifPresent(File::mkdirs);
+        template.getFilesFromResources().stream().forEach(source -> {
+            String sourceFileName = source.getRelativePath().getFileName().toString();
+            Path destination = templateInRepoDir.resolve(source.getRelativePath());
+            Path projectRelativePath = project.getPath().relativize(destination);
+            // Check if file was previously tracked
+            if (!trackedFiles.remove(projectRelativePath)) {
+                // If not, attempt to track it now
+                if (!fileTracker.trackFile(project, projectRelativePath)) {
+                    log.debug("Skipping file overriden by user {}", projectRelativePath);
+                    return;
+                } else {
+                    log.debug("Creating generated file {}", projectRelativePath);
+                }
+            } else {
+                log.debug("Overwriting generated file {}", projectRelativePath);
+            }
+            Optional.ofNullable(destination.toFile().getParentFile())
+                    .ifPresent(File::mkdirs);
 
-                    log.info("Copying template file {} to {}", sourceFileName, destination);
-                    try (InputStream sourceInputStream = source.openInputStream()) {
-                        Files.copy(sourceInputStream, destination, StandardCopyOption.REPLACE_EXISTING);
-                    } catch (IOException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                });
+            log.info("Copying template file {} to {}", sourceFileName, destination);
+            try (InputStream sourceInputStream = source.openInputStream()) {
+                Files.copy(sourceInputStream, destination, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
         // Remove files that were not generated this round but previously most likely by older template
         fileTracker.unlinkUntrackFiles(project, trackedFiles);
 
@@ -295,39 +313,50 @@ public class CodegenImpl implements Codegen {
     @SneakyThrows
     private void applyTemplate(Project project, TemplateFiles files, Path absoluteTemplatePath, Optional<Long> maxDepthOpt, DatasprayContext context) {
         Set<Path> trackedFiles = Sets.newHashSet(fileTracker.getTrackedFiles(project, Optional.of(absoluteTemplatePath), maxDepthOpt));
-        files.stream().forEach(item -> {
+        files.stream(
+                // First process samples if files don't exist
+                TemplateFiles.TemplateType.SAMPLE,
+                // Replace any files that need replacing
+                TemplateFiles.TemplateType.REPLACE,
+                // Finally merge existing files; may be combined with samples
+                TemplateFiles.TemplateType.MERGE
+        ).forEach(item -> {
             if (maxDepthOpt.isPresent() && (item.getRelativePath().getNameCount() - 1) > maxDepthOpt.get()) {
                 return;
             }
-            String templateFilename = item.getRelativePath().getFileName().toString();
-            boolean isSample = templateFilename.endsWith(MUSTACHE_FILE_EXTENSION_SAMPLE);
-            if (isSample || templateFilename.endsWith(MUSTACHE_FILE_EXTENSION_TEMPLATE)) {
-                Optional<ExpandedFile> expandedFileOpt = expandPath(project, item.getRelativePath(), context);
 
-                // Don't create file if expanding template evaluates to empty filename
-                if (!expandedFileOpt.isPresent()) {
-                    log.trace("Skipping creating template as the template indicated file should not be created {}", item.getRelativePath());
-                    return;
-                }
+            if (item.getType() == TemplateFiles.TemplateType.MERGE
+                && !item.getRelativePath().getFileName().toString().endsWith(".json" + CodegenImpl.MUSTACHE_FILE_EXTENSION_MERGE)) {
+                throw new RuntimeException("Cannot merge template file, only json is supported: " + item.getRelativePath());
+            }
 
-                // Retrieve final filename by stripping mustache suffix
-                String filenameWithoutSuffix = expandedFileOpt.get().getFilename()
-                        .substring(0, expandedFileOpt.get().getFilename().length()
-                                      - (isSample ? MUSTACHE_FILE_EXTENSION_SAMPLE : MUSTACHE_FILE_EXTENSION_TEMPLATE).length());
+            Optional<ExpandedFile> expandedFileOpt = expandPath(project, item.getRelativePath(), context);
 
-                // Retrieve final location of file of project
-                Path absoluteFilePath = absoluteTemplatePath
-                        .resolve(expandedFileOpt.get().getPath())
-                        .resolve(filenameWithoutSuffix);
-                Path projectToFilePath = project.getPath().relativize(absoluteFilePath);
+            // Don't create file if expanding template evaluates to empty filename
+            if (!expandedFileOpt.isPresent()) {
+                log.trace("Skipping creating template as the template indicated file should not be created {}", item.getRelativePath());
+                return;
+            }
 
-                // Throw if its a link, directory or something else
-                boolean fileExists = Files.exists(absoluteFilePath, LinkOption.NOFOLLOW_LINKS);
-                if (fileExists && !Files.isRegularFile(absoluteFilePath, LinkOption.NOFOLLOW_LINKS)) {
-                    throw new RuntimeException("Cannot create template file, not a regular file in its place: " + projectToFilePath);
-                }
+            // Retrieve final filename by stripping mustache suffix
+            String filenameWithoutSuffix = expandedFileOpt.get().getFilename()
+                    .substring(0, expandedFileOpt.get().getFilename().length()
+                                  - item.getType().getMustacheFileExtension().map(String::length).orElse(0));
 
-                if (!isSample) {
+            // Retrieve final location of file of project
+            Path absoluteFilePath = absoluteTemplatePath
+                    .resolve(expandedFileOpt.get().getPath())
+                    .resolve(filenameWithoutSuffix);
+            Path projectToFilePath = project.getPath().relativize(absoluteFilePath);
+
+            // Throw if its a link, directory or something else
+            boolean fileExists = Files.exists(absoluteFilePath, LinkOption.NOFOLLOW_LINKS);
+            if (fileExists && !Files.isRegularFile(absoluteFilePath, LinkOption.NOFOLLOW_LINKS)) {
+                throw new RuntimeException("Cannot create template file, not a regular file in its place: " + projectToFilePath);
+            }
+
+            switch (item.getType()) {
+                case REPLACE:
                     // Non-sample files are overwritten every time unless user explicitly excluded the file from gitignore
                     // Check if file was previously tracked
                     if (!trackedFiles.remove(projectToFilePath)) {
@@ -341,21 +370,75 @@ public class CodegenImpl implements Codegen {
                     } else {
                         log.debug("Overwriting previously generated file {}", projectToFilePath);
                     }
-                } else {
+                    break;
+                case SAMPLE:
                     // Sample files are not tracked using Git tracking, they are simply created if they don't exist.
                     // If they exist, it's assumed the user may have modified it for their own purposes.
                     if (fileExists) {
                         log.trace("Skipping creating sample file which already exists {}", projectToFilePath);
                         return;
                     }
+                    break;
+            }
+
+            Optional<String> resultFileOpt = runMustache(item, absoluteFilePath, context);
+            if (resultFileOpt.isEmpty()) {
+                return;
+            }
+
+            if (item.getType() == TemplateFiles.TemplateType.REPLACE
+                || item.getType() == TemplateFiles.TemplateType.SAMPLE
+                // If merging, but file doesn't exist, replace it
+                || (item.getType() == TemplateFiles.TemplateType.MERGE && !fileExists)) {
+
+                Optional.ofNullable(absoluteFilePath.getParent())
+                        .map(Path::toFile)
+                        .ifPresent(File::mkdirs);
+                try {
+                    Files.writeString(absoluteFilePath, resultFileOpt.get(), Charsets.UTF_8);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            } else if (item.getType() == TemplateFiles.TemplateType.MERGE) {
+                // Perform a merge
+                // First: read the original file
+                JsonObject originalFileJson;
+                try (var reader = Files.newBufferedReader(absoluteFilePath)) {
+                    originalFileJson = gson.fromJson(reader, JsonObject.class);
+                } catch (IOException | JsonIOException ex) {
+                    throw new RuntimeException("Failed to read file: " + absoluteFilePath, ex);
+                } catch (JsonSyntaxException ex) {
+                    throw new RuntimeException("Failed to parse file as JSON: " + absoluteFilePath, ex);
                 }
 
-                runMustache(item, absoluteFilePath, context);
-            } else if (templateFilename.endsWith(MUSTACHE_FILE_EXTENSION_INCLUDE)) {
-                // Skip sub-templates
-                log.trace("Skipping sub template files {}", item.getRelativePath());
-            } else {
-                log.warn("Skipping unexpected non-template file {}", item.getRelativePath());
+                // Second: Then parse the mustache template result file
+                JsonObject resultFileJson;
+                try {
+                    resultFileJson = gson.fromJson(resultFileOpt.get(), JsonObject.class);
+                } catch (JsonSyntaxException ex) {
+                    throw new RuntimeException("Failed to parse file as JSON: " + absoluteFilePath, ex);
+                }
+
+                // Merge the two Jsons with a custom conflict resolution
+                gsonMergeUtil.merge((String key, JsonObject leftObj, JsonElement leftVal, JsonElement rightVal) -> {
+                            // Handle merge conflicts
+                            if (rightVal.isJsonNull()) {
+                                // A null in template signals original value needs to be removed
+                                leftObj.remove(key);
+                            } else {
+                                // Otherwise template always replaces original
+                                leftObj.add(key, rightVal);
+                            }
+                        },
+                        originalFileJson,
+                        resultFileJson);
+
+                // Finally write out the merged Json back to the file
+                try (var writer = Files.newBufferedWriter(absoluteFilePath)) {
+                    gson.toJson(originalFileJson, writer);
+                } catch (IOException | JsonIOException ex) {
+                    throw new RuntimeException("Failed to read file: " + absoluteFilePath, ex);
+                }
             }
         });
         // Remove files that were not generated this round but previously most likely by older template
@@ -363,7 +446,7 @@ public class CodegenImpl implements Codegen {
     }
 
     @SneakyThrows
-    private void runMustache(TemplateFile mustacheFile, Path destinationFile, DatasprayContext context) {
+    private Optional<String> runMustache(TemplateFile mustacheFile, Path destinationFile, DatasprayContext context) {
         String mustacheStr;
         try (InputStream is = mustacheFile.openInputStream()) {
             mustacheStr = IOUtils.toString(is, Charsets.UTF_8);
@@ -373,19 +456,14 @@ public class CodegenImpl implements Codegen {
                     .getParent()
                     .resolve(requestedFilename + MUSTACHE_FILE_EXTENSION_INCLUDE)
                     .normalize();
-            return mustacheFile.getTemplateFiles().stream()
+            return mustacheFile.getTemplateFiles().stream(TemplateFiles.TemplateType.INCLUDE)
                     .filter(f -> f.getRelativePath().equals(requestedPath))
                     .map(f -> new InputStreamReader(f.openInputStream(), Charsets.UTF_8))
                     .findAny()
                     .orElseThrow(() -> new FileNotFoundException("Template file not found: " + requestedPath));
         }));
-        if (content.isBlank()) {
-            return;
-        }
-        Optional.ofNullable(destinationFile.getParent())
-                .map(Path::toFile)
-                .ifPresent(File::mkdirs);
-        Files.writeString(destinationFile, content, Charsets.UTF_8);
+
+        return content.isBlank() ? Optional.empty() : Optional.of(content);
     }
 
     @SneakyThrows

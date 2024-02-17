@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,9 +29,9 @@ import io.dataspray.core.definition.model.DataStream;
 import io.dataspray.core.definition.model.DatasprayStore;
 import io.dataspray.core.definition.model.Definition;
 import io.dataspray.core.definition.model.JavaProcessor;
-import io.dataspray.core.definition.model.KafkaStore;
+import io.dataspray.core.definition.model.StoreType;
 import io.dataspray.core.definition.model.StreamLink;
-import io.dataspray.runner.StoreType;
+import io.dataspray.core.definition.model.TypescriptProcessor;
 
 public enum SampleProject {
     EMPTY(name -> Definition.builder()
@@ -39,7 +39,7 @@ public enum SampleProject {
             .version(Definition.Version.V_0_0_0)
             .dataFormats(ImmutableSet.of())
             .build()),
-    CLOUD(name -> Definition.builder()
+    JAVA(name -> Definition.builder()
             .name(name)
             .namespace("com.example")
             .version(Definition.Version.V_0_0_0)
@@ -96,7 +96,7 @@ public enum SampleProject {
                                             .build()))
                             .build()))
             .build()),
-    KAFKA(name -> Definition.builder()
+    TYPESCRIPT(name -> Definition.builder()
             .name(name)
             .namespace("com.example")
             .version(Definition.Version.V_0_0_0)
@@ -107,38 +107,37 @@ public enum SampleProject {
                             .build(),
                     DataFormat.builder()
                             .name("login")
-                            .serde(Serde.PROTOBUF)
+                            .serde(Serde.JSON)
                             .build(),
                     DataFormat.builder()
                             .name("ip")
-                            .serde(Serde.AVRO)
+                            .serde(Serde.JSON)
                             .build()))
-            .javaProcessors(ImmutableSet.of(
-                    JavaProcessor.builder()
+            .typescriptProcessors(ImmutableSet.of(
+                    TypescriptProcessor.builder()
                             .name("IP Extractor")
                             .target(JavaProcessor.Target.DATASPRAY)
                             .inputStreams(ImmutableSet.of(
                                     StreamLink.builder()
-                                            .storeType(StoreType.KAFKA)
-                                            .storeName("myKafka")
+                                            .storeType(StoreType.DATASPRAY)
+                                            .storeName("default")
                                             .streamName("evt_login")
                                             .build(),
                                     StreamLink.builder()
-                                            .storeType(StoreType.KAFKA)
-                                            .storeName("myKafka")
+                                            .storeType(StoreType.DATASPRAY)
+                                            .storeName("default")
                                             .streamName("evt_register")
                                             .build()))
                             .outputStreams(ImmutableSet.of(
                                     StreamLink.builder()
-                                            .storeType(StoreType.KAFKA)
-                                            .storeName("myKafka")
+                                            .storeType(StoreType.DATASPRAY)
+                                            .storeName("default")
                                             .streamName("last_ip")
                                             .build()))
                             .build()))
-            .kafkaStores(ImmutableSet.of(
-                    KafkaStore.builder()
-                            .name("myKafka")
-                            .bootstrapServers("localhost:12345")
+            .datasprayStores(ImmutableSet.of(
+                    DatasprayStore.builder()
+                            .name("default")
                             .streams(ImmutableSet.of(
                                     DataStream.builder()
                                             .dataFormatName("login")

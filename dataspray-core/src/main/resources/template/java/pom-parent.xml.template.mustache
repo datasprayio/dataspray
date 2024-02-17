@@ -36,11 +36,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.dataspray</groupId>
-            <artifactId>dataspray-runner</artifactId>
-            <version>{{{util.runnerVersion}}}</version>
-        </dependency>
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
@@ -49,6 +44,21 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-client</artifactId>
+            <version>{{{datasprayVersion}}}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-lambda-java-core</artifactId>
+            <version>1.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-lambda-java-events</artifactId>
+            <version>3.11.1</version>
         </dependency>
         {{^processor.jsonStreams.empty}}
         <dependency>
@@ -83,14 +93,6 @@
         {{/processor.avroStreams.empty}}
 
         <!-- Test dependencies -->
-        <dependency>
-            <groupId>io.dataspray</groupId>
-            <artifactId>dataspray-runner</artifactId>
-            <version>{{{util.runnerVersion}}}</version>
-            <classifier>tests</classifier>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

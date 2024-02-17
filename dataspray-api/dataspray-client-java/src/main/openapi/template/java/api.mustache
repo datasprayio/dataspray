@@ -96,15 +96,6 @@ public class {{classname}} {
      * @param _callback Callback for upload/download progress
      * @return Call to execute
      * @throws ApiException If fail to serialize the request body object
-     {{#responses.0}}
-     * @http.response.details
-     <table summary="Response Details" border="1">
-        <tr><td> Status Code </td><td> Description </td><td> Response Headers </td></tr>
-        {{#responses}}
-        <tr><td> {{code}} </td><td> {{message}} </td><td> {{#headers}} * {{baseName}} - {{description}} <br> {{/headers}}{{^headers.0}} - {{/headers.0}} </td></tr>
-        {{/responses}}
-     </table>
-     {{/responses.0}}
      {{#isDeprecated}}
      * @deprecated
      {{/isDeprecated}}
@@ -285,15 +276,6 @@ public class {{classname}} {
      * @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{^isContainer}}{{#defaultValue}}, default to {{.}}{{/defaultValue}}{{/isContainer}}){{/required}}{{/allParams}}{{#returnType}}
      * @return {{.}}{{/returnType}}
      * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the response body
-     {{#responses.0}}
-     * @http.response.details
-     <table summary="Response Details" border="1">
-        <tr><td> Status Code </td><td> Description </td><td> Response Headers </td></tr>
-        {{#responses}}
-        <tr><td> {{code}} </td><td> {{message}} </td><td> {{#headers}} * {{baseName}} - {{description}} <br> {{/headers}}{{^headers.0}} - {{/headers.0}} </td></tr>
-        {{/responses}}
-     </table>
-     {{/responses.0}}
      {{#isDeprecated}}
      * @deprecated
      {{/isDeprecated}}
@@ -325,15 +307,6 @@ public class {{classname}} {
      * @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{^isContainer}}{{#defaultValue}}, default to {{.}}{{/defaultValue}}{{/isContainer}}){{/required}}{{/allParams}}
      * @return ApiResponse&lt;{{returnType}}{{^returnType}}Void{{/returnType}}&gt;
      * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the response body
-     {{#responses.0}}
-     * @http.response.details
-     <table summary="Response Details" border="1">
-        <tr><td> Status Code </td><td> Description </td><td> Response Headers </td></tr>
-        {{#responses}}
-        <tr><td> {{code}} </td><td> {{message}} </td><td> {{#headers}} * {{baseName}} - {{description}} <br> {{/headers}}{{^headers.0}} - {{/headers.0}} </td></tr>
-        {{/responses}}
-     </table>
-     {{/responses.0}}
      {{#isDeprecated}}
      * @deprecated
      {{/isDeprecated}}
@@ -393,15 +366,6 @@ public class {{classname}} {
      * @param _callback The callback to be executed when the API call finishes
      * @return The request call
      * @throws ApiException If fail to process the API call, e.g. serializing the request body object
-     {{#responses.0}}
-     * @http.response.details
-     <table summary="Response Details" border="1">
-        <tr><td> Status Code </td><td> Description </td><td> Response Headers </td></tr>
-        {{#responses}}
-        <tr><td> {{code}} </td><td> {{message}} </td><td> {{#headers}} * {{baseName}} - {{description}} <br> {{/headers}}{{^headers.0}} - {{/headers.0}} </td></tr>
-        {{/responses}}
-     </table>
-     {{/responses.0}}
      {{#isDeprecated}}
      * @deprecated
      {{/isDeprecated}}
@@ -453,15 +417,6 @@ public class {{classname}} {
          * @param _callback ApiCallback API callback
          * @return Call to execute
          * @throws ApiException If fail to serialize the request body object
-         {{#responses.0}}
-         * @http.response.details
-         <table summary="Response Details" border="1">
-            <tr><td> Status Code </td><td> Description </td><td> Response Headers </td></tr>
-            {{#responses}}
-            <tr><td> {{code}} </td><td> {{message}} </td><td> {{#headers}} * {{baseName}} - {{description}} <br> {{/headers}}{{^headers.0}} - {{/headers.0}} </td></tr>
-            {{/responses}}
-         </table>
-         {{/responses.0}}
          {{#isDeprecated}}
          * @deprecated
          {{/isDeprecated}}
@@ -477,15 +432,6 @@ public class {{classname}} {
          * Execute {{operationId}} request{{#returnType}}
          * @return {{.}}{{/returnType}}
          * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the response body
-         {{#responses.0}}
-         * @http.response.details
-         <table summary="Response Details" border="1">
-            <tr><td> Status Code </td><td> Description </td><td> Response Headers </td></tr>
-            {{#responses}}
-            <tr><td> {{code}} </td><td> {{message}} </td><td> {{#headers}} * {{baseName}} - {{description}} <br> {{/headers}}{{^headers.0}} - {{/headers.0}} </td></tr>
-            {{/responses}}
-         </table>
-         {{/responses.0}}
          {{#isDeprecated}}
          * @deprecated
          {{/isDeprecated}}
@@ -509,15 +455,6 @@ public class {{classname}} {
          * Execute {{operationId}} request with HTTP info returned
          * @return ApiResponse&lt;{{returnType}}{{^returnType}}Void{{/returnType}}&gt;
          * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the response body
-         {{#responses.0}}
-         * @http.response.details
-         <table summary="Response Details" border="1">
-            <tr><td> Status Code </td><td> Description </td><td> Response Headers </td></tr>
-            {{#responses}}
-            <tr><td> {{code}} </td><td> {{message}} </td><td> {{#headers}} * {{baseName}} - {{description}} <br> {{/headers}}{{^headers.0}} - {{/headers.0}} </td></tr>
-            {{/responses}}
-         </table>
-         {{/responses.0}}
          {{#isDeprecated}}
          * @deprecated
          {{/isDeprecated}}
@@ -541,15 +478,6 @@ public class {{classname}} {
          * @param _callback The callback to be executed when the API call finishes
          * @return The request call
          * @throws ApiException If fail to process the API call, e.g. serializing the request body object
-         {{#responses.0}}
-         * @http.response.details
-         <table summary="Response Details" border="1">
-            <tr><td> Status Code </td><td> Description </td><td> Response Headers </td></tr>
-            {{#responses}}
-            <tr><td> {{code}} </td><td> {{message}} </td><td> {{#headers}} * {{baseName}} - {{description}} <br> {{/headers}}{{^headers.0}} - {{/headers.0}} </td></tr>
-            {{/responses}}
-         </table>
-         {{/responses.0}}
          {{#isDeprecated}}
          * @deprecated
          {{/isDeprecated}}
@@ -567,15 +495,6 @@ public class {{classname}} {
      * {{notes}}{{#requiredParams}}
      * @param {{paramName}} {{description}} (required){{/requiredParams}}
      * @return API{{operationId}}Request
-     {{#responses.0}}
-     * @http.response.details
-     <table summary="Response Details" border="1">
-        <tr><td> Status Code </td><td> Description </td><td> Response Headers </td></tr>
-        {{#responses}}
-        <tr><td> {{code}} </td><td> {{message}} </td><td> {{#headers}} * {{baseName}} - {{description}} <br> {{/headers}}{{^headers.0}} - {{/headers.0}} </td></tr>
-        {{/responses}}
-     </table>
-     {{/responses.0}}
      {{#isDeprecated}}
      * @deprecated
      {{/isDeprecated}}

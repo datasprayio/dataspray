@@ -1,2 +1,2 @@
-18.19.0
-# If bumped, also change property node.version in parent pom.xml
+20.11.0
+# If bumped, also change in parent pom.xml

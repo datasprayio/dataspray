@@ -104,7 +104,8 @@ import static java.util.function.Predicate.not;
 @Slf4j
 @ApplicationScoped
 public class LambdaDeployerImpl implements LambdaDeployer {
-    public static final int LAMBDA_DEFAULT_TIMEOUT = 900;
+    public static final int LAMBDA_DEFAULT_TIMEOUT = 128;
+    public static final int LAMBDA_DEFAULT_MEMORY_IN_MB = 900;
     /** Lambda version alias pointing to the active version in use */
     public static final String LAMBDA_ACTIVE_QUALIFIER = "ACTIVE";
     public static final String CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME = "deployer.customerPermissionBoundary.name";
@@ -260,7 +261,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .runtime(runtime)
                             .handler(handler)
                             .environment(env)
-                            .memorySize(128)
+                            .memorySize(LAMBDA_DEFAULT_MEMORY_IN_MB)
                             .timeout(LAMBDA_DEFAULT_TIMEOUT)
                             .snapStart(SnapStart.builder()
                                     .applyOn(snapStartApplyOn)
@@ -284,6 +285,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .runtime(runtime)
                     .handler(handler)
                     .environment(env)
+                    .memorySize(LAMBDA_DEFAULT_MEMORY_IN_MB)
                     .snapStart(SnapStart.builder()
                             .applyOn(snapStartApplyOn)
                             .build())

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,12 +23,14 @@
 package io.dataspray.core;
 
 import com.google.common.base.Strings;
+import io.dataspray.client.DataSprayClient;
 import io.dataspray.core.definition.model.Item;
 import io.dataspray.core.definition.model.JavaProcessor;
 import io.dataspray.core.definition.model.Processor;
 import io.dataspray.core.definition.model.StreamLink;
-import io.dataspray.stream.client.StreamApi;
+import io.dataspray.core.definition.model.TypescriptProcessor;
 import io.dataspray.stream.control.client.model.DeployRequest;
+import io.dataspray.stream.control.client.model.DeployRequest.RuntimeEnum;
 import io.dataspray.stream.control.client.model.TaskStatus;
 import io.dataspray.stream.control.client.model.TaskVersion;
 import io.dataspray.stream.control.client.model.TaskVersions;
@@ -42,7 +44,6 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -56,12 +57,14 @@ public class StreamRuntimeImpl implements StreamRuntime {
     @Inject
     ContextBuilder contextBuilder;
     @Inject
-    StreamApi streamApi;
+    Builder builder;
 
     @Override
     @SneakyThrows
     public void statusAll(Organization organization, Project project) {
-        streamApi.control(organization.toAccess()).statusAll(organization.getName())
+        DataSprayClient.get(organization.toAccess())
+                .control()
+                .statusAll(organization.getName())
                 .getTasks()
                 .forEach(this::printStatus);
     }
@@ -69,12 +72,14 @@ public class StreamRuntimeImpl implements StreamRuntime {
     @Override
     @SneakyThrows
     public void status(Organization organization, Project project, String processorName) {
-        if (project.getDefinition().getJavaProcessors().stream()
+        if (project.getDefinition().getProcessors().stream()
                 .map(Item::getName)
                 .noneMatch(processorName::equals)) {
             throw new RuntimeException("Task not found: " + processorName);
         }
-        TaskStatus status = streamApi.control(organization.toAccess()).status(organization.getName(), processorName);
+        TaskStatus status = DataSprayClient.get(organization.toAccess())
+                .control()
+                .status(organization.getName(), processorName);
         printStatus(status);
     }
 
@@ -85,13 +90,13 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 "Not yet implemented: %s", processor.getTarget());
 
         // Find code file
-        final File codeZipFile;
-        if (processor instanceof JavaProcessor) {
-            codeZipFile = CodegenImpl.getProcessorDir(project, processor.getTaskId())
-                    .resolve(Path.of("target", processor.getTaskId() + ".jar")).toFile();
-        } else {
-            throw new RuntimeException("Cannot determine file to upload for task type " + processor.getClass().getSimpleName());
-        }
+        final File codeZipFile = builder.getBuiltArtifact(project, processor.getName())
+                // If not found, try building it
+                .orElseGet(() -> {
+                    log.info("Artifact not found for {}, attempting to build it first", processor.getName());
+                    return builder.build(project, processor.getName());
+                })
+                .getCodeZipFile();
 
         // Deploy
         String codeUrl = upload(organization, project, processorName, codeZipFile);
@@ -108,13 +113,16 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
         // First get S3 upload presigned url
         log.info("Requesting permission to upload {}", codeZipFile);
-        UploadCodeResponse uploadCodeResponse = streamApi.control(organization.toAccess()).uploadCode(organization.getName(), new UploadCodeRequest()
-                .taskId(processor.getTaskId())
-                .contentLengthBytes(codeZipFile.length()));
+        UploadCodeResponse uploadCodeResponse = DataSprayClient.get(organization.toAccess())
+                .control()
+                .uploadCode(organization.getName(), new UploadCodeRequest()
+                        .taskId(processor.getTaskId())
+                        .contentLengthBytes(codeZipFile.length()));
 
         // Upload to S3
         log.info("Uploading to {}", uploadCodeResponse.getPresignedUrl());
-        streamApi.uploadCode(uploadCodeResponse.getPresignedUrl(), codeZipFile);
+        DataSprayClient.get(organization.toAccess())
+                .uploadCode(uploadCodeResponse.getPresignedUrl(), codeZipFile);
 
         log.info("File available at {}", uploadCodeResponse.getCodeUrl());
 
@@ -127,8 +135,21 @@ public class StreamRuntimeImpl implements StreamRuntime {
         Processor processor = project.getProcessorByName(processorName);
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
-        String handler = Optional.ofNullable(Strings.emptyToNull(processor.getHandler()))
-                .orElseGet(() -> project.getDefinition().getJavaPackage() + ".Runner");
+
+        String handler;
+        // TODO Eventually this needs to be inferred from definition or project .nvmrc/.sdkman files
+        RuntimeEnum runtime;
+        if (processor instanceof JavaProcessor) {
+            handler = Optional.ofNullable(Strings.emptyToNull(processor.getHandler()))
+                    .orElseGet(() -> project.getDefinition().getJavaPackage() + ".Runner");
+            runtime = RuntimeEnum.JAVA21;
+        } else if (processor instanceof TypescriptProcessor) {
+            // TODO Double check for TS this is the right handler https://docs.aws.amazon.com/lambda/latest/dg/foundation-progmodel.html
+            handler = "index.js";
+            runtime = RuntimeEnum.NODEJS20_X;
+        } else {
+            throw new RuntimeException("Cannot publish processor " + processor.getName() + " of unknown type " + processor.getClass().getCanonicalName());
+        }
 
         // Publish version
         log.info("Publishing task {} with inputs {} outputs {} handler {}",
@@ -136,14 +157,16 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 processor.getInputStreams().stream().map(StreamLink::getStreamName).collect(Collectors.toSet()),
                 processor.getOutputStreams().stream().map(StreamLink::getStreamName).collect(Collectors.toSet()),
                 handler);
-        TaskVersion deployedVersion = streamApi.control(organization.toAccess()).deployVersion(organization.getName(), processor.getTaskId(), new DeployRequest()
-                .runtime(DeployRequest.RuntimeEnum.JAVA21)
-                .handler(handler)
-                .inputQueueNames(processor.getInputStreams().stream()
-                        .map(StreamLink::getStreamName)
-                        .collect(Collectors.toList()))
-                .codeUrl(codeUrl)
-                .switchToNow(activateVersion));
+        TaskVersion deployedVersion = DataSprayClient.get(organization.toAccess())
+                .control()
+                .deployVersion(organization.getName(), processor.getTaskId(), new DeployRequest()
+                        .runtime(runtime)
+                        .handler(handler)
+                        .inputQueueNames(processor.getInputStreams().stream()
+                                .map(StreamLink::getStreamName)
+                                .collect(Collectors.toList()))
+                        .codeUrl(codeUrl)
+                        .switchToNow(activateVersion));
 
         if (activateVersion) {
             log.info("Task {} published and activated as version {}: {}",
@@ -164,7 +187,9 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
         // Switch to this version
         log.info("Activating version {} for task {}", version, processorName);
-        TaskStatus taskStatus = streamApi.control(organization.toAccess()).activateVersion(organization.getName(), processor.getTaskId(), version);
+        TaskStatus taskStatus = DataSprayClient.get(organization.toAccess())
+                .control()
+                .activateVersion(organization.getName(), processor.getTaskId(), version);
         log.info("Version active!");
 
         return taskStatus;
@@ -178,7 +203,9 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 "Not yet implemented: %s", processor.getTarget());
 
         log.info("Pausing {}", processor.getTaskId());
-        TaskStatus taskStatus = streamApi.control(organization.toAccess()).pause(organization.getName(), processor.getTaskId());
+        TaskStatus taskStatus = DataSprayClient.get(organization.toAccess())
+                .control()
+                .pause(organization.getName(), processor.getTaskId());
         log.info("Task set to be paused");
         printStatus(taskStatus);
 
@@ -193,7 +220,9 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 "Not yet implemented: %s", processor.getTarget());
 
         log.info("Resuming {}", processor.getTaskId());
-        TaskStatus taskStatus = streamApi.control(organization.toAccess()).resume(organization.getName(), processor.getTaskId());
+        TaskStatus taskStatus = DataSprayClient.get(organization.toAccess())
+                .control()
+                .resume(organization.getName(), processor.getTaskId());
         log.info("Task set to be resumed");
         printStatus(taskStatus);
 
@@ -207,7 +236,9 @@ public class StreamRuntimeImpl implements StreamRuntime {
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
 
-        TaskVersions versions = streamApi.control(organization.toAccess()).getVersions(organization.getName(), processor.getTaskId());
+        TaskVersions versions = DataSprayClient.get(organization.toAccess())
+                .control()
+                .getVersions(organization.getName(), processor.getTaskId());
         printVersions(versions);
 
         return versions;
@@ -220,7 +251,9 @@ public class StreamRuntimeImpl implements StreamRuntime {
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
 
-        TaskStatus status = streamApi.control(organization.toAccess()).delete(organization.getName(), processor.getTaskId());
+        TaskStatus status = DataSprayClient.get(organization.toAccess())
+                .control()
+                .delete(organization.getName(), processor.getTaskId());
 
         printStatus(status);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,21 +24,23 @@ package io.dataspray.core;
 
 import com.google.common.collect.ImmutableMap;
 import com.samskivert.mustache.Mustache.CustomContext;
+import lombok.NonNull;
+import lombok.Value;
 
+/**
+ * Context holder for Mustache templates.
+ *
+ * @see io.dataspray.core.ContextBuilder
+ */
+@Value
 public class DatasprayContext implements CustomContext {
 
-    private final ImmutableMap<String, Object> data;
-
-    public DatasprayContext(ImmutableMap<String, Object> data) {
-        this.data = data;
-    }
+    @NonNull
+    ImmutableMap<String, Object> data;
 
     @Override
     public Object get(String name) throws Exception {
         return data.get(name);
     }
 
-    public ImmutableMap<String, Object> getData() {
-        return data;
-    }
 }

@@ -1,8 +1,59 @@
 package {{{definition.javaPackage}}};
 
-public interface Coordinator {
+{{#util.javaImportsFormat}}
+import lombok.SneakyThrows;
+import io.dataspray.runner.RawCoordinator;
+import io.dataspray.runner.StoreType;
+{{^processor.stringOutputStreams.empty}}
+import java.nio.charset.StandardCharsets;
+{{/processor.stringOutputStreams.empty}}
+{{^processor.jsonOutputStreams.empty}}
+import java.nio.charset.StandardCharsets;
+{{/processor.jsonOutputStreams.empty}}
+{{^processor.avroOutputStreams.empty}}
+import java.io.ByteArrayOutputStream;
+{{/processor.avroOutputStreams.empty}}
+{{/util.javaImportsFormat}}
+
+public class Coordinator implements Coordinator {
+
+    private final RawCoordinator rawCoordinator;
+
+    public Coordinator(RawCoordinator rawCoordinator) {
+        this.rawCoordinator = rawCoordinator;
+    }
     {{#processor.outputStreams}}
 
-    void sendTo{{{uniqueNameCamelUpper}}}({{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}});
+    @SneakyThrows
+    @Override
+    public void sendTo{{{uniqueNameCamelUpper}}}({{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
+        {{#dataFormat.isSerdeAvro}}
+        byte[] {{{dataFormat.nameCamelLower}}}Bytes;
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            {{{dataFormat.nameCamelUpper}}}.getEncoder().encode({{{dataFormat.nameCamelLower}}}, baos);
+            {{{dataFormat.nameCamelLower}}}Bytes = baos.toByteArray();
+        }
+
+        {{/dataFormat.isSerdeAvro}}
+        rawCoordinator.send(
+            {{#dataFormat.isSerdeBinary}}
+            {{{dataFormat.nameCamelLower}}},
+            {{/dataFormat.isSerdeBinary}}
+            {{#dataFormat.isSerdeString}}
+            {{{dataFormat.nameCamelLower}}}.getBytes(StandardCharsets.UTF_8),
+            {{/dataFormat.isSerdeString}}
+            {{#dataFormat.isSerdeJson}}
+            gson.toJson({{{dataFormat.nameCamelLower}}}).getBytes(StandardCharsets.UTF_8),
+            {{/dataFormat.isSerdeJson}}
+            {{#dataFormat.isSerdeProtobuf}}
+            {{{nameCamelUpper}}}.toByteArray(),
+            {{/dataFormat.isSerdeProtobuf}}
+            {{#dataFormat.isSerdeAvro}}
+            {{{dataFormat.nameCamelLower}}}Bytes,
+            {{/dataFormat.isSerdeAvro}}
+            StoreType.{{{storeType.name}}},
+            "{{{storeName}}}",
+            "{{{streamName}}}");
+    }
     {{/processor.outputStreams}}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,6 @@ package io.dataspray.core.definition.model;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Streams;
 import com.google.gson.annotations.SerializedName;
 import com.jcabi.aspects.Cacheable;
 import io.dataspray.common.StringUtil;
@@ -38,7 +37,6 @@ import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.Optional;
 
 
@@ -64,10 +62,7 @@ public class Definition extends Item {
 
     @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public String getJavaPackage() {
-        return StringUtil.javaPackageName(
-                Strings.nullToEmpty(getNamespace())
-                + "."
-                + getName());
+        return StringUtil.javaPackageName(Strings.nullToEmpty(getNamespace()));
     }
 
     @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
@@ -99,15 +94,25 @@ public class Definition extends Item {
         initialize();
         return ImmutableSet.<Processor>builder()
                 .addAll(javaProcessors)
+                .addAll(typescriptProcessors)
                 .build();
     }
 
     @Builder.Default
     ImmutableSet<JavaProcessor> javaProcessors = ImmutableSet.of();
+    @Builder.Default
+    ImmutableSet<TypescriptProcessor> typescriptProcessors = ImmutableSet.of();
 
+    @Nonnull
     public ImmutableSet<JavaProcessor> getJavaProcessors() {
         initialize();
-        return javaProcessors;
+        return javaProcessors == null ? ImmutableSet.of() : javaProcessors;
+    }
+
+    @Nonnull
+    public ImmutableSet<TypescriptProcessor> getTypescriptProcessors() {
+        initialize();
+        return typescriptProcessors == null ? ImmutableSet.of() : typescriptProcessors;
     }
 
     @NonFinal
@@ -119,9 +124,7 @@ public class Definition extends Item {
         }
         inited = true;
 
-        Streams.concat(
-                Optional.ofNullable(javaProcessors).stream().flatMap(Collection::stream).map(processor -> (Processor) processor)
-        ).forEach(processor -> {
+        getProcessors().forEach(processor -> {
             processor.setParent(this);
             processor.getStreams().forEach(stream -> {
                 stream.setParentDefinition(this);

@@ -1,0 +1,26 @@
+{
+  "name": "dataspray-runner",
+  "version": "0.0.1",
+  "description": "Common library for DataSpray tasks",
+  "author": {
+    "name": "Matus Faro",
+    "email": "matus@dataspray.io"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.131",
+    "esbuild": "^0.19.11",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@types/node": "^20.11.16",
+    "dataspray-client": "^0.0.1"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ]
+}

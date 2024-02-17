@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 
 package io.dataspray.core;
 
+import com.jcabi.aspects.Cacheable;
 import io.dataspray.core.definition.model.Definition;
 import io.dataspray.core.definition.model.Processor;
 import lombok.NonNull;
@@ -43,10 +44,16 @@ public class Project {
     @NonNull
     Optional<String> activeProcessor;
 
+    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public Processor getProcessorByName(String name) {
         return getDefinition().getProcessors().stream()
                 .filter(p -> p.getName().equals(name))
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("Processor not found: " + name));
+    }
+
+    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public Path getProcessorDir(Processor processor) {
+        return getPath().resolve(processor.getNameDir());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,6 @@ package io.dataspray.core.definition.model;
 import com.google.common.collect.Sets;
 import com.jcabi.aspects.Cacheable;
 import io.dataspray.common.StringUtil;
-import io.dataspray.runner.StoreType;
 import lombok.AllArgsConstructor;
 import lombok.Setter;
 import lombok.Value;

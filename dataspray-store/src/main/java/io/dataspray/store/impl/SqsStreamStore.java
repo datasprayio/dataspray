@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,6 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SqsException;
 
 import java.util.Base64;
-import java.util.Base64.Encoder;
 import java.util.Map;
 import java.util.Optional;
 
@@ -65,8 +64,6 @@ public class SqsStreamStore implements StreamStore {
     @Inject
     CustomerLogger customerLog;
 
-    private final Encoder base64Encoder = Base64.getEncoder();
-
     @Override
     public void submit(String organizationName, String streamName, byte[] messageBytes, MediaType contentType) {
         // Since SQS accepts messages as String, convert each message appropriately
@@ -84,7 +81,7 @@ public class SqsStreamStore implements StreamStore {
             case "application/octet-stream":
             case "application/avro":
             case "application/protobuf":
-                messageStr = base64Encoder.encodeToString(messageBytes);
+                messageStr = Base64.getEncoder().encodeToString(messageBytes);
                 break;
         }
 

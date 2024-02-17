@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,8 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 @Slf4j
 @QuarkusTest
@@ -38,18 +39,15 @@ public class DefinitionLoaderTest {
     @Inject
     DefinitionLoader loader;
 
-    @Test
-    public void testSerde() throws Exception {
-        Definition definition = mockDefinition().build();
+    @ParameterizedTest
+    @EnumSource(value = SampleProject.class, mode = EnumSource.Mode.INCLUDE, names = {"JAVA", "TYPESCRIPT"})
+    public void testSerde(SampleProject sampleProject) throws Exception {
+        Definition definition = sampleProject.getDefinitionForName("test");
         log.info("Yaml:\n{}", loader.toYaml(definition));
         log.info("Json:\n{}", loader.toJson(definition, false));
         log.info("Json pretty:\n{}", loader.toJson(definition, true));
         Assertions.assertEquals(definition, loader.fromYaml(loader.toYaml(definition)));
         Assertions.assertEquals(definition, loader.fromJson(loader.toJson(definition, true)));
         Assertions.assertEquals(definition, loader.fromJson(loader.toJson(definition, false)));
-    }
-
-    private Definition.DefinitionBuilder<?, ?> mockDefinition() {
-        return SampleProject.CLOUD.getDefinitionForName("test").toBuilder();
     }
 }

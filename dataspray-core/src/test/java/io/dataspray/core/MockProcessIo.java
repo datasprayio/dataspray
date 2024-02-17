@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import static com.google.common.base.Preconditions.checkState;
+
 @Slf4j
 @Singleton
 public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
@@ -54,8 +56,8 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
     private File in;
     private File out;
     private File err;
-    private Thread outTailer;
-    private Thread errTailer;
+    private volatile Thread outTailer;
+    private volatile Thread errTailer;
     private volatile boolean acceptEof = false;
 
     @SneakyThrows
@@ -66,8 +68,12 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
             while (true) {
                 line = bufferedReader.readLine();
                 if (line == null) {
-                    //noinspection BusyWait
-                    Thread.sleep(300);
+                    try {
+                        //noinspection BusyWait
+                        Thread.sleep(300);
+                    } catch (InterruptedException ex) {
+                        break;
+                    }
                 } else if (acceptEof && EOF.equals(line)) {
                     break;
                 } else {
@@ -75,6 +81,9 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
                 }
             }
             while ((line = bufferedReader.readLine()) != null) {
+                if (EOF.equals(line)) {
+                    continue;
+                }
                 logger.accept(line);
             }
         }
@@ -87,7 +96,7 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
 
     @SneakyThrows
     public void write(String data, File file) {
-        Files.writeString(file.toPath(), data, Charsets.UTF_8, StandardOpenOption.APPEND);
+        Files.writeString(file.toPath(), data, Charsets.UTF_8, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
     }
 
     @Override
@@ -101,34 +110,57 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
     public Map<String, String> start() {
         tempDir = Files.createTempDirectory(UUID.randomUUID().toString());
         tempDir.toFile().deleteOnExit();
+
         in = Path.of(tempDir.toString(), "in").toFile();
         out = Path.of(tempDir.toString(), "out").toFile();
         err = Path.of(tempDir.toString(), "err").toFile();
-        in.createNewFile();
-        out.createNewFile();
-        err.createNewFile();
-        in.deleteOnExit();
-        out.deleteOnExit();
-        err.deleteOnExit();
-        outTailer = new Thread(() -> tail(out, line -> logOut.info("{}", line)), "out tailer");
-        errTailer = new Thread(() -> tail(err, line -> logErr.error("{}", line)), "err tailer");
-        outTailer.start();
-        errTailer.start();
+
         return ImmutableMap.of(
                 BuilderImpl.BUILDER_IN, in.toString(),
                 BuilderImpl.BUILDER_OUT, out.toString(),
                 BuilderImpl.BUILDER_ERR, err.toString());
     }
 
+    @SneakyThrows
+    public void setup() {
+        stop();
+
+        acceptEof = false;
+
+        checkState(in.createNewFile());
+        checkState(out.createNewFile());
+        checkState(err.createNewFile());
+        outTailer = new Thread(() -> tail(out, line -> logOut.info("{}", line)), "out tailer");
+        errTailer = new Thread(() -> tail(err, line -> logErr.error("{}", line)), "err tailer");
+        outTailer.start();
+        errTailer.start();
+    }
+
     @Override
     public void stop() {
         acceptEof = true;
 
-        write(EOF, out);
-        write(EOF, err);
+        if (in.exists()) {
+            checkState(in.delete());
+        }
+        if (out.exists()) {
+            write(EOF, out);
+            checkState(out.delete());
+        }
+        if (err.exists()) {
+            write(EOF, err);
+            checkState(err.delete());
+        }
 
-        attemptJoinThread(outTailer);
-        attemptJoinThread(errTailer);
+
+        if (outTailer != null) {
+            attemptJoinThread(outTailer);
+            outTailer = null;
+        }
+        if (errTailer != null) {
+            attemptJoinThread(errTailer);
+            errTailer = null;
+        }
     }
 
     @SneakyThrows
@@ -143,8 +175,7 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
         if (!thread.isAlive()) {
             return;
         }
-        log.warn("Thread {} is not interrupting, stopping", thread.getName());
-        thread.stop();
+        log.warn("Thread {} is not interrupting, giving up", thread.getName());
     }
 
     public static class TestProfile implements QuarkusTestProfile {

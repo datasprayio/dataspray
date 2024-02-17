@@ -10,7 +10,7 @@
     <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-lambda-web" />
     <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-lambda-web-test" />
     <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-package" />
-    <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-runner" />
+    <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-runner-java" />
     <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-store" />
     <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-stream-client" />
     <file type="Quarkus" url="file://$PROJECT_DIR$/dataspray-stream-control" />
@@ -28,6 +28,11 @@
         <option value="$PROJECT_DIR$/dataspray-backend/pom.xml" />
         <option value="$PROJECT_DIR$/dataspray-common-test/pom.xml" />
       </list>
+    </option>
+    <option name="ignoredFiles">
+      <set>
+        <option value="$PROJECT_DIR$/dataspray-runner-java/pom.xml" />
+      </set>
     </option>
     <option name="workspaceImportForciblyTurnedOn" value="true" />
   </component>

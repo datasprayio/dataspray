@@ -65,7 +65,7 @@
         </dependency>
         <dependency>
             <groupId>io.dataspray</groupId>
-            <artifactId>dataspray-stream-client</artifactId>
+            <artifactId>dataspray-client</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -141,7 +141,7 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
-                                    <artifactId>dataspray-stream-client</artifactId>
+                                    <artifactId>dataspray-api-schema</artifactId>
                                     <classifier>schema-control</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
