@@ -162,15 +162,6 @@
                                     <outputDirectory>${project.basedir}/public/logo/</outputDirectory>
                                     <excludes>favicon.*</excludes>
                                 </artifactItem>
-                                <artifactItem>
-                                    <groupId>io.dataspray</groupId>
-                                    <artifactId>dataspray-client</artifactId>
-                                    <classifier>client-typescript</classifier>
-                                    <version>${project.version}</version>
-                                    <type>tar.gz</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.basedir}/src/api/client/</outputDirectory>
-                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>

@@ -20,5 +20,33 @@
  * SOFTWARE.
  */
 
-export * from './client';
-export * from './wrapper';
+import {isCsr} from "./isoUtil";
+import {detectEnv, Environment} from "./detectEnv";
+import {BASE_PATH, DataSprayClient} from "dataspray-client";
+
+let clientCache: DataSprayClient;
+
+export const getClient = (): DataSprayClient => {
+    if (!clientCache) {
+        let basePath = BASE_PATH;
+        switch (detectEnv()) {
+            case Environment.STAGING:
+            case Environment.LOCAL:
+                basePath = BASE_PATH.replace("dataspray.io", "staging.dataspray.io");
+                break;
+            case Environment.SELF_HOST:
+                basePath = BASE_PATH.replace("dataspray.io", window.location.host);
+                break;
+        }
+        const fetchApi = isCsr()
+                ? window.fetch.bind(window)
+                : async () => {
+                    throw new Error("SSR fetch is disabled");
+                }
+        clientCache = DataSprayClient.get({
+            basePath,
+            fetchApi,
+        });
+    }
+    return clientCache;
+}

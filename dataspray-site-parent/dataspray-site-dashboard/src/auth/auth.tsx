@@ -20,7 +20,8 @@
  * SOFTWARE.
  */
 
-import {AuthResult, getClientAuth, SignInResponse, SignUpResponse} from "../api";
+import {AuthResult, SignInResponse, SignUpResponse} from "dataspray-client";
+import {getClient} from "../util/dataSprayClient";
 import {urlWithHiddenParams} from "../util/routerUtil";
 import React, {useEffect, useMemo, useRef} from "react";
 import {Router, useRouter} from "next/router";
@@ -126,10 +127,10 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
 
 var refreshingJti: string | undefined;
 const refreshTokenIfNecessary = (
-    onSignIn: (response: AuthResult | null) => void,
-    authResult?: AuthResult | null | undefined,
-    accessToken?: CognitoAccessToken,
-    idToken?: CognitoIdToken,
+        onSignIn: (response: AuthResult | null) => void,
+        authResult?: AuthResult | null | undefined,
+        accessToken?: CognitoAccessToken,
+        idToken?: CognitoIdToken,
 ) => {
 
     // Only refresh if we have tokens and we're not already refreshing them
@@ -152,7 +153,7 @@ const refreshTokenIfNecessary = (
             if (jti !== refreshingJti) return;
 
             try {
-                const signInResponse = await getClientAuth().signInRefreshToken({
+                const signInResponse = await getClient().authNz().signInRefreshToken({
                     signInRefreshTokenRequest: {
                         refreshToken: authResult.refreshToken,
                     }
@@ -181,19 +182,19 @@ const refreshTokenIfNecessary = (
 }
 
 const signUp = async (
-    onSignIn: (response: AuthResult | null) => void,
-    values: {
-        username: string,
-        email: string,
-        password: string,
-        marketingAgree: boolean,
-        tosAgree: boolean,
-    },
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult | null) => void,
+        values: {
+            username: string,
+            email: string,
+            password: string,
+            marketingAgree: boolean,
+            tosAgree: boolean,
+        },
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<void> => {
     try {
-        const signupResponse = await getClientAuth().signUp({
+        const signupResponse = await getClient().authNz().signUp({
             signUpRequest: {
                 username: values.username,
                 email: values.email,
@@ -212,15 +213,15 @@ const signUp = async (
 
 
 const signUpConfirmCode = async (
-    onSignIn: (response: AuthResult | null) => void,
-    username: string,
-    code: string,
-    password: string | undefined,
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult | null) => void,
+        username: string,
+        code: string,
+        password: string | undefined,
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<void> => {
     try {
-        const signupResponse = await getClientAuth().signUpConfirmCode({
+        const signupResponse = await getClient().authNz().signUpConfirmCode({
             signUpConfirmCodeRequest: {username, code}
         });
 
@@ -232,12 +233,12 @@ const signUpConfirmCode = async (
 };
 
 const handleSignupResponse = async (
-    onSignIn: (response: AuthResult | null) => void,
-    signupResponse: SignUpResponse,
-    username: string,
-    password: string | undefined,
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult | null) => void,
+        signupResponse: SignUpResponse,
+        username: string,
+        password: string | undefined,
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<void> => {
 
     // All good, sign-up doesn't log in, attempt to login, or redirect to login page
@@ -247,11 +248,11 @@ const handleSignupResponse = async (
         // The password is only kept as router state so it's lost on refresh
         if (password) {
             const authResult = await signIn(
-                onSignIn,
-                {usernameOrEmail: username, password},
-                undefined,
-                setError,
-                routerPush)
+                    onSignIn,
+                    {usernameOrEmail: username, password},
+                    undefined,
+                    setError,
+                    routerPush)
             if (authResult) {
                 return; // All good, signed up, signed in, and already redirect
             }
@@ -289,17 +290,17 @@ const handleSignupResponse = async (
 }
 
 const signIn = async (
-    onSignIn: (response: AuthResult | null) => void,
-    values: {
-        usernameOrEmail: string,
-        password: string,
-    },
-    to: string | undefined,
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult | null) => void,
+        values: {
+            usernameOrEmail: string,
+            password: string,
+        },
+        to: string | undefined,
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<AuthResult | undefined> => {
     try {
-        const signInResponse = await getClientAuth().signIn({
+        const signInResponse = await getClient().authNz().signIn({
             signInRequest: {
                 usernameOrEmail: values.usernameOrEmail,
                 password: values.password,
@@ -315,17 +316,17 @@ const signIn = async (
 }
 
 const signInConfirmTotp = async (
-    onSignIn: (response: AuthResult | null) => void,
-    username: string,
-    session: string,
-    code: string,
-    to: string | undefined,
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult | null) => void,
+        username: string,
+        session: string,
+        code: string,
+        to: string | undefined,
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<AuthResult | undefined> => {
 
     try {
-        const signInResponse = await getClientAuth().signInChallengeTotpCode({
+        const signInResponse = await getClient().authNz().signInChallengeTotpCode({
             signInChallengeTotpCodeRequest: {username, code, session}
         });
 
@@ -338,16 +339,16 @@ const signInConfirmTotp = async (
 }
 
 const signInPasswordChange = async (
-    onSignIn: (response: AuthResult | null) => void,
-    username: string,
-    session: string,
-    newPassword: string,
-    to: string | undefined,
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult | null) => void,
+        username: string,
+        session: string,
+        newPassword: string,
+        to: string | undefined,
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<AuthResult | undefined> => {
     try {
-        const signInResponse = await getClientAuth().signInChallengePasswordChange({
+        const signInResponse = await getClient().authNz().signInChallengePasswordChange({
             signInChallengePasswordChangeRequest: {username, session, newPassword}
         });
 
@@ -360,12 +361,12 @@ const signInPasswordChange = async (
 }
 
 const handleSignInResponse = async (
-    onSignIn: (response: AuthResult | null) => void,
-    signInResponse: SignInResponse,
-    password: string | undefined,
-    to: string | undefined,
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult | null) => void,
+        signInResponse: SignInResponse,
+        password: string | undefined,
+        to: string | undefined,
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<AuthResult | undefined> => {
 
     // Email confirmation necessary, redirect to ask for code
@@ -424,13 +425,13 @@ const handleSignInResponse = async (
 }
 
 const signInRefresh = async (
-    onSignIn: (response: AuthResult | null) => void,
-    refreshToken: string,
-    setError: (error: string) => void,
-    routerPush: Router['push'],
+        onSignIn: (response: AuthResult | null) => void,
+        refreshToken: string,
+        setError: (error: string) => void,
+        routerPush: Router['push'],
 ): Promise<AuthResult | undefined> => {
     try {
-        const signInResponse = await getClientAuth().signInRefreshToken({
+        const signInResponse = await getClient().authNz().signInRefreshToken({
             signInRefreshTokenRequest: {refreshToken}
         })
 
@@ -443,8 +444,8 @@ const signInRefresh = async (
 }
 
 const signOut = async (
-    onSignIn: (response: AuthResult | null) => void,
-    refreshToken?: string,
+        onSignIn: (response: AuthResult | null) => void,
+        refreshToken?: string,
 ): Promise<undefined> => {
 
     // Remove token from browser session
@@ -453,7 +454,7 @@ const signOut = async (
     // Invalidate tokens from server
     if (refreshToken) {
         try {
-            await getClientAuth().signOut({
+            await getClient().authNz().signOut({
                 signOutRequest: {refreshToken}
             });
         } catch (e: any) {
