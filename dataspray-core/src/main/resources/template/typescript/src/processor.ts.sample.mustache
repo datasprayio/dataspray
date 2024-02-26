@@ -1,0 +1,16 @@
+import { Message } from "dataspray-runner";
+import { Coordinator } from "./coordinator";
+{{^processor.jsonInputStreams.empty}}
+import {
+{{#processor.jsonInputStreams}}
+    {{{dataFormat.nameCamelUpper}}},
+{{/processor.jsonInputStreams}}
+} from './streams';
+{{/processor.jsonInputStreams.empty}}
+
+export interface Processor {
+    {{#processor.inputStreams}}
+
+    process{{{uniqueNameCamelUpper}}}(message: Message<{{{this.dataFormat.nameCamelUpper}}}>, coordinator: Coordinator): void;
+    {{/processor.inputStreams}}
+}

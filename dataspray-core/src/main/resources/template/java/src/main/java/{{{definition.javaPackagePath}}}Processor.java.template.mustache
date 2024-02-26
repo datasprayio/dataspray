@@ -7,6 +7,6 @@ import io.dataspray.runner.Message;
 public interface Processor {
     {{#processor.inputStreams}}
 
-    void process{{{uniqueNameCamelUpper}}}(Message<{{#util.upperCamelCase}}{{{this.dataFormat.name}}}{{/util.upperCamelCase}}> {{this.uniqueNameCamelLower}}, Coordinator coordinator);
+    void process{{{uniqueNameCamelUpper}}}(Message<{{{this.dataFormat.nameCamelUpper}}}> {{this.uniqueNameCamelLower}}, Coordinator coordinator);
     {{/processor.inputStreams}}
 }

@@ -77,15 +77,15 @@
         <module>dataspray-resources</module>
         <module>dataspray-lambda-web-test</module>
         <module>dataspray-lambda-web</module>
-        <module>dataspray-api</module>
-        <module>dataspray-runner</module>
+        <module>dataspray-api-parent</module>
+        <module>dataspray-runner-parent</module>
         <module>dataspray-core</module>
         <module>dataspray-cli</module>
         <module>dataspray-store</module>
         <module>dataspray-authorizer</module>
         <module>dataspray-stream-control</module>
         <module>dataspray-stream-ingest</module>
-        <module>dataspray-site</module>
+        <module>dataspray-site-parent</module>
         <module>dataspray-package</module>
     </modules>
 

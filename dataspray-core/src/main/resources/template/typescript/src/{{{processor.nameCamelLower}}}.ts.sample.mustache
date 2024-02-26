@@ -1,0 +1,26 @@
+import { Message } from "dataspray-runner";
+import { Processor } from "./processor";
+import { Coordinator } from "./coordinator";
+{{^processor.jsonStreams.empty}}
+import {
+{{#processor.jsonStreams}}
+    {{{dataFormat.nameCamelUpper}}},
+{{/processor.jsonStreams}}
+} from './streams';
+{{/processor.jsonStreams.empty}}
+
+export class {{{processor.nameCamelUpper}}} implements Processor {
+    {{#processor.inputStreams}}
+
+    process{{{uniqueNameCamelUpper}}}(message: Message<{{{this.dataFormat.nameCamelUpper}}}>, coordinator: Coordinator): void {
+
+        // TODO
+
+        {{#processor.outputStreams}}
+        {{#-first}}
+        coordinator.sendTo{{{uniqueNameCamelUpper}}}({{>./stream-sample-data}});
+        {{/-first}}
+        {{/processor.outputStreams}}
+    }
+    {{/processor.inputStreams}}
+}

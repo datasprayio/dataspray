@@ -1,0 +1,9 @@
+{
+  "name": "dataspray-parent",
+  "version": "0.0.1",
+  "author": {
+    "name": "Matus Faro",
+    "email": "matus@dataspray.io"
+  },
+  "license": "MIT"
+}

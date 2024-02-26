@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
-    <file url="file://$PROJECT_DIR$/dataspray-api/dataspray-api-schema/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-api/dataspray-api-schema/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-api/dataspray-api/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-api/dataspray-api/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-api/dataspray-client-java/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-api/dataspray-client-java/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-api/dataspray-client-typescript/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-api/dataspray-client-typescript/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-api-schema/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-api-schema/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-client-java/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-client-java/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-client-typescript/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-client-typescript/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-authorizer/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-authorizer/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-backend/src/main/java" charset="UTF-8" />
@@ -33,10 +33,10 @@
     <file url="file://$PROJECT_DIR$/dataspray-resources/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-runner-java/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-runner-java/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-runner/dataspray-runner-java/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-runner/dataspray-runner-java/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-runner/dataspray-runner-typescript/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/dataspray-runner/dataspray-runner-typescript/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-runner-parent/dataspray-runner-java/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-runner-parent/dataspray-runner-java/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-runner-parent/dataspray-runner-typescript/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-runner-parent/dataspray-runner-typescript/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-store/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-store/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-stream-client/src/main/java" charset="UTF-8" />

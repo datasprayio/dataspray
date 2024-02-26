@@ -59,7 +59,7 @@ export abstract class Entrypoint {
 
     abstract process(
             metadata: MessageMetadata,
-            data: Blob,
+            data: string,
             rawCoordinator: RawCoordinator,
     ): Promise<void> | void;
 }

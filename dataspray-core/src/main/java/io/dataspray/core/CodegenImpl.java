@@ -35,6 +35,7 @@ import com.google.gson.JsonSyntaxException;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.TemplateLoader;
 import com.samskivert.mustache.MustacheException;
+import io.dataspray.common.json.GsonMergeUtil;
 import io.dataspray.core.TemplateFiles.TemplateFile;
 import io.dataspray.core.definition.model.DataFormat;
 import io.dataspray.core.definition.model.Definition;
@@ -44,7 +45,6 @@ import io.dataspray.core.definition.model.Processor;
 import io.dataspray.core.definition.model.TypescriptProcessor;
 import io.dataspray.core.definition.parser.DefinitionLoader;
 import io.dataspray.core.sample.SampleProject;
-import io.dataspray.common.json.GsonMergeUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.SneakyThrows;
@@ -177,18 +177,15 @@ public class CodegenImpl implements Codegen {
 
     @Override
     public void generateAll(Project project) {
+        generateRoot(project);
         project.getDefinition().getDataFormats()
                 .forEach(dataFormat -> generateDataFormat(project, dataFormat));
         project.getDefinition().getProcessors()
-                .forEach(processor -> generate(project, processor));
+                .forEach(processor -> generateProcessor(project, processor));
     }
 
-    @Override
-    public void generateDataFormat(Project project, String dataFormatName) {
-        generateDataFormat(project, project.getDefinition().getDataFormats().stream()
-                .filter(p -> p.getName().equals(dataFormatName))
-                .findAny()
-                .orElseThrow(() -> new RuntimeException("Cannot find data format with name " + dataFormatName)));
+    private void generateRoot(Project project) {
+        codegen(project, project.getPath(), Template.ROOT, contextBuilder.createForRoot(project), Optional.of(0L));
     }
 
     private void generateDataFormat(Project project, DataFormat dataFormat) {
@@ -209,15 +206,15 @@ public class CodegenImpl implements Codegen {
     }
 
     @Override
-    public void generate(Project project, String processorName) {
-        generate(project, Optional.ofNullable(project.getDefinition().getProcessors()).stream()
+    public void generateProcessor(Project project, String processorName) {
+        generateProcessor(project, Optional.ofNullable(project.getDefinition().getProcessors()).stream()
                 .flatMap(Collection::stream)
                 .filter(p -> p.getName().equals(processorName))
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("Cannot find processor with name " + processorName)));
     }
 
-    public void generate(Project project, Processor processor) {
+    public void generateProcessor(Project project, Processor processor) {
         Template template;
         if (processor instanceof JavaProcessor) {
             template = Template.JAVA;
@@ -261,6 +258,11 @@ public class CodegenImpl implements Codegen {
 
     @SneakyThrows
     private void codegen(Project project, Path processorPath, Template template, DatasprayContext processorContext) {
+        codegen(project, processorPath, template, processorContext, Optional.empty());
+    }
+
+    @SneakyThrows
+    private void codegen(Project project, Path processorPath, Template template, DatasprayContext processorContext, Optional<Long> maxDepthOpt) {
         // Create templates folder
         Path templatesPath = project.getPath().resolve(TEMPLATES_FOLDER);
         if (templatesPath.toFile().mkdir()) {
@@ -307,7 +309,7 @@ public class CodegenImpl implements Codegen {
         fileTracker.unlinkUntrackFiles(project, trackedFiles);
 
         // Finally, apply our template
-        applyTemplate(project, template.getFilesFromDisk(templateInRepoDir), processorPath, Optional.empty(), processorContext);
+        applyTemplate(project, template.getFilesFromDisk(templateInRepoDir), processorPath, maxDepthOpt, processorContext);
     }
 
     @SneakyThrows

@@ -1,0 +1,7 @@
+# Allow locally installed packages to be used in the workspace similar to Maven local cache
+packages:
+  - 'dataspray-runner-parent/dataspray-runner-typescript'
+  - 'dataspray-api-parent/dataspray-client-typescript'
+  - 'dataspray-site-parent/dataspray-dashboard'
+  - 'dataspray-site-parent/dataspray-docs'
+  - 'dataspray-site-parent/dataspray-landing'

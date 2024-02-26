@@ -30,6 +30,7 @@ import java.nio.file.Path;
 @Getter
 @AllArgsConstructor
 public enum Template {
+    ROOT("root"),
     TEMPLATES("template"),
     SCHEMAS("schema"),
 

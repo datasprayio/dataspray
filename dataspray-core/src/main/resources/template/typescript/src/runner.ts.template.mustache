@@ -1,40 +1,53 @@
 import { Context, APIGatewayProxyResult, APIGatewayEvent } from 'aws-lambda';
 import { Coordinator } from './coordinator';
+import { Entrypoint, Message, MessageMetadata, RawCoordinator, StoreType } from 'dataspray-runner';
+{{^processor.jsonInputStreams.empty}}
+import {
 {{#processor.jsonInputStreams}}
-import { {{{dataFormat.nameCamelUpper}}} } from './types/{{{dataFormat.nameCamelLower}}}';
+    {{{dataFormat.nameCamelUpper}}},
+    validate{{{dataFormat.nameCamelLower}}},
 {{/processor.jsonInputStreams}}
-
-const {{{processor.nameCamelLower}}}Runner = new {{{processor.nameCamelUpper}}}Runner();
+} from './streams';
+{{/processor.jsonInputStreams.empty}}
+import { {{{processor.nameCamelUpper}}} } from './{{{processor.nameCamelLower}}}';
+import { Processor } from './processor';
 
 class Runner extends Entrypoint {
+
+    private processor: Processor = new {{{processor.nameCamelUpper}}}();
+
     process(metadata: MessageMetadata, data: string, rawCoordinator: RawCoordinator): Promise<void> | void {
-        Coordinator coordinator = new Coordinator(rawCoordinator);
-        {{#processor.inputStreams}}if (StoreType.{{{storeType.name}}}.equals(metadata.getStoreType())
-                && "{{{storeName}}}".equals(metadata.getStoreName())
-                && "{{{streamName}}}".equals(metadata.getStreamName())) {
+        const coordinator: Coordinator = new Coordinator(rawCoordinator);
+        {{#processor.inputStreams}}if (StoreType.{{{storeType.name}}} === metadata.storeType
+                && "{{{storeName}}}" === metadata.storeName
+                && "{{{streamName}}}" === metadata.streamName) {
             {{#dataFormat.isSerdeString}}
-            processor.process{{{uniqueNameCamelUpper}}}(new MessageImpl(metadata, data), coordinator);
+            this.processor.process{{{uniqueNameCamelUpper}}}(new Message(metadata, data), coordinator);
             {{/dataFormat.isSerdeString}}
             {{^dataFormat.isSerdeString}}
-            processor.process{{{uniqueNameCamelUpper}}}(new MessageImpl(metadata, this.to{{{dataFormat.nameCamelUpper}}}(data)), coordinator);
+            this.processor.process{{{uniqueNameCamelUpper}}}(new Message(metadata, this.to{{{dataFormat.nameCamelUpper}}}(data)), coordinator);
             {{/dataFormat.isSerdeString}}
         } else {{/processor.inputStreams}}{
-            throw new Error(`Received unexpected message from ${metadata.getStoreType()} source ${metadata.getStoreName()} stream ${metadata.getStreamName()}`);
+            throw new Error(`Received unexpected message from ${metadata.storeType} source ${metadata.storeName} stream ${metadata.streamName}`);
         }
     }
     {{#processor.inputStreams}}
     {{^dataFormat.isSerdeString}}
 
-    private to{{{dataFormat.nameCamelUpper}}}(data: string) {
+    private to{{{dataFormat.nameCamelUpper}}}(data: string): {{{dataFormat.nameCamelUpper}}} {
         {{#dataFormat.isSerdeBinary}}
         return Buffer.from(data, 'base64').toString('utf8');
         {{/dataFormat.isSerdeBinary}}
         {{#dataFormat.isSerdeJson}}
-        return JSON.parse(data) as {{{dataFormat.nameCamelUpper}}};
+        const dataJson = JSON.parse(data);
+        if (!validate{{{dataFormat.nameCamelLower}}}(dataJson)) {
+            throw new Error(validate{{{dataFormat.nameCamelLower}}}['errors']);
+        }
+        return dataJson as {{{dataFormat.nameCamelUpper}}};
         {{/dataFormat.isSerdeJson}}
     }
     {{/dataFormat.isSerdeString}}
     {{/processor.inputStreams}}
 }
 
-export const handler = new Runner().handle;
+export const handler = new Runner().process;

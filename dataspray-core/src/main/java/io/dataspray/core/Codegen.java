@@ -33,7 +33,5 @@ public interface Codegen {
 
     void generateAll(Project project);
 
-    void generateDataFormat(Project project, String dataFormatName);
-
-    void generate(Project project, String processorName);
+    void generateProcessor(Project project, String processorName);
 }

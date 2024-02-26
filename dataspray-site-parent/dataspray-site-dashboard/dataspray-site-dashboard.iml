@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module version="4">
   <component name="AdditionalModuleElements">
-    <content url="file://$MODULE_DIR$/../dataspray-site-dashboard" dumb="true">
-      <excludeFolder url="file://$MODULE_DIR$/../dataspray-site-dashboard/.next" />
-      <excludeFolder url="file://$MODULE_DIR$/../dataspray-site-dashboard/.open-next" />
-      <excludeFolder url="file://$MODULE_DIR$/../dataspray-site-dashboard/node" />
-      <excludeFolder url="file://$MODULE_DIR$/../dataspray-site-dashboard/node_modules" />
-      <excludeFolder url="file://$MODULE_DIR$/../dataspray-site-dashboard/out" />
-      <excludeFolder url="file://$MODULE_DIR$/../dataspray-site-dashboard/public/logo" />
-      <excludeFolder url="file://$MODULE_DIR$/../dataspray-site-dashboard/public/vscode-web" />
+    <content url="file://$MODULE_DIR$/../../dataspray-site-parent/dataspray-site-dashboard" dumb="true">
+      <excludeFolder url="file://$MODULE_DIR$/../../dataspray-site-parent/dataspray-site-dashboard/.next" />
+      <excludeFolder url="file://$MODULE_DIR$/../../dataspray-site-parent/dataspray-site-dashboard/.open-next" />
+      <excludeFolder url="file://$MODULE_DIR$/../../dataspray-site-parent/dataspray-site-dashboard/node" />
+      <excludeFolder url="file://$MODULE_DIR$/../../dataspray-site-parent/dataspray-site-dashboard/node_modules" />
+      <excludeFolder url="file://$MODULE_DIR$/../../dataspray-site-parent/dataspray-site-dashboard/out" />
+      <excludeFolder url="file://$MODULE_DIR$/../../dataspray-site-parent/dataspray-site-dashboard/public/logo" />
+      <excludeFolder url="file://$MODULE_DIR$/../../dataspray-site-parent/dataspray-site-dashboard/public/vscode-web" />
     </content>
   </component>
 </module>

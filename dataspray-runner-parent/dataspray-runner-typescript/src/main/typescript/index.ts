@@ -23,5 +23,4 @@
 export {StoreType} from './storeType';
 export {RawCoordinator} from './rawCoordinator';
 export {Entrypoint} from './entrypoint';
-
-export type {Message, MessageMetadata} from './message';
+export {Message, MessageMetadata} from './message';

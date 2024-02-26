@@ -23,9 +23,9 @@
 package io.dataspray.core;
 
 import com.google.common.collect.ImmutableMap;
+import io.dataspray.common.VersionUtil;
 import io.dataspray.core.definition.model.DataFormat;
 import io.dataspray.core.definition.model.Processor;
-import io.dataspray.common.VersionUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.jgit.api.Git;
@@ -38,6 +38,12 @@ public class ContextBuilder {
     ContextUtil contextUtil;
     @Inject
     VersionUtil versionUtil;
+
+    public DatasprayContext createForRoot(
+            Project project) {
+        return new DatasprayContext(createProjectBase(project)
+                .build());
+    }
 
     public DatasprayContext createForFilename(
             DatasprayContext parentContext,

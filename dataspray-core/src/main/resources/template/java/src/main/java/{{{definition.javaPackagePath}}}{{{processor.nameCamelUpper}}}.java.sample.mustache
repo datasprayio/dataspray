@@ -8,8 +8,10 @@ public class {{{processor.nameCamelUpper}}} implements Processor {
     {{#processor.inputStreams}}
 
     @Override
-    public void process{{{uniqueNameCamelUpper}}}(Message<{{#util.upperCamelCase}}{{{this.dataFormat.name}}}{{/util.upperCamelCase}}> message, Coordinator coordinator) {
+    public void process{{{uniqueNameCamelUpper}}}(Message<{{{this.dataFormat.nameCamelUpper}}}> message, Coordinator coordinator) {
+
         // TODO
+
         {{#processor.outputStreams}}
         {{#-first}}
         coordinator.sendTo{{{uniqueNameCamelUpper}}}({{>../../stream-sample-data}});

@@ -1,0 +1,47 @@
+{{^processor.jsonStreams.empty}}
+import Ajv from 'ajv'
+import standaloneCode from 'ajv/dist/standalone/index.js'
+import { createWriteStream, readFileSync, writeFileSync } from 'fs'
+import { compile, compileFromFile } from 'json-schema-to-typescript'
+
+const schemas = [
+{{#processor.jsonStreams}}
+    '../{{{util.dataFormatsFolder}}}/{{{this.dataFormat.nameDir}}}/{{{this.dataFormat.nameCamelLower}}}.schema.json',
+{{/processor.jsonStreams}}
+]
+    .map(filePath => readFileSync(filePath).toString())
+    .map(content => JSON.parse(content));
+
+var stream = createWriteStream('./src/streams.ts', { flags: 'w' });
+stream.once('open', async fd => {
+    // Generate Typescript type
+    await Promise.all(schemas.map(async schema => {
+        const content = await compile(schema, schema.$id, {
+            bannerComment: '',
+        })
+        stream.write(content);
+    }));
+
+    // Generate validation code
+    stream.write('// Validator\n');
+    const validatorContent = standaloneCode(new Ajv({
+        schemas: Object.fromEntries(schemas.map(schema => [
+            // Key is used as the exported function name by Ajv
+            `validate${schema.$id}`, schema
+        ])),
+        strict: true,
+        code: {
+            source: true,
+            esm: true,
+            lines: false,
+            optimize: false,
+        },
+    }));
+    stream.write(validatorContent);
+    stream.write('\n');
+
+    // All types have been written out
+    stream.end();
+});
+
+{{/processor.jsonStreams.empty}}

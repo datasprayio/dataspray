@@ -59,7 +59,7 @@ public class Install implements Runnable {
             codegen.generateAll(project);
             artifacts = builder.buildAll(project);
         } else {
-            codegen.generate(project, activeProcessor.get());
+            codegen.generateProcessor(project, activeProcessor.get());
             artifacts = ImmutableSet.of(builder.build(project, activeProcessor.get()));
         }
 

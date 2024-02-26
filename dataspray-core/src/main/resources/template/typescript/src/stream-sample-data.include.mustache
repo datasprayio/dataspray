@@ -1,0 +1,8 @@
+{{#util.trim}}
+{{#dataFormat.isSerdeString}}
+"Forty two"
+{{/dataFormat.isSerdeString}}
+{{#dataFormat.isSerdeJson}}
+new {{{dataFormat.nameCamelUpper}}}()
+{{/dataFormat.isSerdeJson}}
+{{/util.trim}}

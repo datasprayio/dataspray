@@ -1,0 +1,15 @@
+# Architecture
+
+```mermaid
+graph TB;
+{{#definition.processors}}
+    {{taskId}}[{{name}}];
+    {{#inputStreams}}
+        {{{uniqueNameCamelUpper}}}([{{{uniqueNameCamelUpper}}}]) --> {{taskId}};
+    {{/inputStreams}}
+    {{#outputStreams}}
+        {{taskId}} --> {{{uniqueNameCamelUpper}}}([{{{uniqueNameCamelUpper}}}]);
+    {{/outputStreams}}
+{{/definition.processors}}
+```
+

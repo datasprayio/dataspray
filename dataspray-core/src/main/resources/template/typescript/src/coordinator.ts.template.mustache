@@ -1,0 +1,32 @@
+import { RawCoordinator, StoreType } from 'dataspray-runner';
+{{^processor.jsonOutputStreams.empty}}
+import {
+{{#processor.jsonOutputStreams}}
+    {{{dataFormat.nameCamelUpper}}},
+{{/processor.jsonOutputStreams}}
+} from './streams';
+{{/processor.jsonOutputStreams.empty}}
+
+export class Coordinator {
+
+    private rawCoordinator: RawCoordinator;
+
+    constructor(rawCoordinator: RawCoordinator) {
+        this.rawCoordinator = rawCoordinator;
+    }
+    {{#processor.outputStreams}}
+
+    sendTo{{{uniqueNameCamelUpper}}}({{{dataFormat.nameCamelLower}}}: {{{dataFormat.nameCamelUpper}}}): void {
+        this.rawCoordinator.send(
+            {{#dataFormat.isSerdeString}}
+            new Blob([{{{dataFormat.nameCamelLower}}}], { type: 'plain/text' }),
+            {{/dataFormat.isSerdeString}}
+            {{#dataFormat.isSerdeJson}}
+            new Blob([JSON.stringify({{{dataFormat.nameCamelLower}}}, null, 2)], { type: 'application/json' }),
+            {{/dataFormat.isSerdeJson}}
+            StoreType.{{{storeType.name}}},
+            "{{{storeName}}}",
+            "{{{streamName}}}");
+    }
+    {{/processor.outputStreams}}
+}

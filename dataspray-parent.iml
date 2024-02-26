@@ -2,7 +2,7 @@
 <module version="4">
   <component name="AdditionalModuleElements">
     <content url="file://$MODULE_DIR$" dumb="true">
-      <sourceFolder url="file://$MODULE_DIR$/dataspray-api/dataspray-client-java/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/dataspray-api-parent/dataspray-client-java/src/main/java" isTestSource="false" />
     </content>
   </component>
 </module>

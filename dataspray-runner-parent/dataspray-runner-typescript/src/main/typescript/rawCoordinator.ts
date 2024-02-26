@@ -79,9 +79,9 @@ export class RawCoordinator {
             }
 
             // Fetch endpoint
-            const endpoint = process.env[DATASPRAY_ENDPOINT_ENV] || undefined;
+            const basePath = process.env[DATASPRAY_ENDPOINT_ENV] || undefined;
 
-            this.ingestApi = DataSprayClient.get({apiKey, endpoint}).ingest();
+            this.ingestApi = DataSprayClient.get({apiKey, basePath}).ingest();
         }
         return this.ingestApi;
     }
