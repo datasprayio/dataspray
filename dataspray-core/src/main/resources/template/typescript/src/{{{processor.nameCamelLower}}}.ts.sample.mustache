@@ -1,13 +1,13 @@
 import { Message } from "dataspray-runner";
 import { Processor } from "./processor";
 import { Coordinator } from "./coordinator";
-{{^processor.jsonStreams.empty}}
+{{^processor.jsonInputStreams.empty}}
 import {
-{{#processor.jsonStreams}}
+{{#processor.jsonInputStreams}}
     {{{dataFormat.nameCamelUpper}}},
-{{/processor.jsonStreams}}
+{{/processor.jsonInputStreams}}
 } from './streams';
-{{/processor.jsonStreams.empty}}
+{{/processor.jsonInputStreams.empty}}
 
 export class {{{processor.nameCamelUpper}}} implements Processor {
     {{#processor.inputStreams}}
@@ -15,11 +15,8 @@ export class {{{processor.nameCamelUpper}}} implements Processor {
     process{{{uniqueNameCamelUpper}}}(message: Message<{{{this.dataFormat.nameCamelUpper}}}>, coordinator: Coordinator): void {
 
         // TODO
-
         {{#processor.outputStreams}}
-        {{#-first}}
-        coordinator.sendTo{{{uniqueNameCamelUpper}}}({{>./stream-sample-data}});
-        {{/-first}}
+        //coordinator.sendTo{{{uniqueNameCamelUpper}}}({{>./stream-sample-data}});
         {{/processor.outputStreams}}
     }
     {{/processor.inputStreams}}

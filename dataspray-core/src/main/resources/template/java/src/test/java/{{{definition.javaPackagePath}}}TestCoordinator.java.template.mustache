@@ -25,7 +25,6 @@ public class TestCoordinator implements Coordinator {
     {{#processor.outputStreams}}
 
     @SneakyThrows
-    @Override
     public void sendTo{{{uniqueNameCamelUpper}}}({{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
         sent{{{dataFormat.nameCamelUpper}}}.add({{{dataFormat.nameCamelLower}}});
     }

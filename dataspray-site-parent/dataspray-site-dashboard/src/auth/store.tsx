@@ -20,11 +20,11 @@
  * SOFTWARE.
  */
 
-import {create} from 'zustand'
 import {persistNSync} from "persist-and-sync";
-import {AuthResult} from "../../api";
+import {AuthResult} from "dataspray-client";
+import {createWithEqualityFn} from "zustand/traditional";
 
-const useAuthStore = create<{
+const useAuthStore = createWithEqualityFn<{
     authResult: AuthResult | null,
     setAuthResult: (result: AuthResult | null) => void,
     currentOrganizationName: string | null,

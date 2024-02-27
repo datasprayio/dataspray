@@ -14,16 +14,13 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
 
     @Test(timeout = 10_000)
     public void test{{{uniqueNameCamelUpper}}}() {
+
         processor.process{{{uniqueNameCamelUpper}}}(
             createMessage{{{dataFormat.nameCamelUpper}}}({{>../../stream-sample-data}}),
             coordinator);
+
         {{#processor.outputStreams}}
-        {{#-first}}
-        coordinator.assertSent{{{dataFormat.nameCamelUpper}}}(ImmutableList.of({{>../../stream-sample-data}}));
-        {{/-first}}
-        {{^-first}}
-        coordinator.assertSentNone{{{dataFormat.nameCamelUpper}}}(0);
-        {{/-first}}
+        coordinator.assertSentNone{{{dataFormat.nameCamelUpper}}}();
         {{/processor.outputStreams}}
     }
     {{/processor.inputStreams}}

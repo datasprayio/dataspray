@@ -1,0 +1,18 @@
+import { createWriteStream } from 'fs';
+import archiver from 'archiver';
+
+// Bundle a zip file using assets from the dist folder
+const folderDist = './dist';
+const outFilename = 'index.zip';
+const includeGlob = 'index.js*';
+
+const output = createWriteStream(`${folderDist}/${outFilename}`, { flags: 'w' });
+const archive = archiver('zip', { zlib: { level: 9 } });
+
+output.on('close', function () { console.log(`Bundled ${outFilename} with ${archive.pointer()} total bytes`) });
+archive.on('warning', (err) => { throw err });
+archive.on('error', (err) => { throw err });
+
+archive.pipe(output);
+archive.glob(includeGlob, { cwd: folderDist });
+archive.finalize();

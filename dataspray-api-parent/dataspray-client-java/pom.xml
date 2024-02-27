@@ -115,7 +115,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
-                                    <artifactId>dataspray-api-schema</artifactId>
+                                    <artifactId>dataspray-api</artifactId>
                                     <classifier>schema-control</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
@@ -125,7 +125,7 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
-                                    <artifactId>dataspray-api-schema</artifactId>
+                                    <artifactId>dataspray-api</artifactId>
                                     <classifier>schema-ingest</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>

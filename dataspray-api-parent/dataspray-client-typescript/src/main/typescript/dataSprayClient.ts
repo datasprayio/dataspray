@@ -34,7 +34,6 @@ import {
     IngestApi,
     IngestApiInterface
 } from "./client";
-import fetch from 'node-fetch';
 
 export interface DataSprayClientConfig {
     apiKey?: string;
@@ -85,7 +84,7 @@ export class DataSprayClient {
     }
 
     async uploadCode(presignedUrl: string, file: Blob) {
-        const response = await fetch(presignedUrl, {
+        const response = await (this.config.fetchApi || fetch)(presignedUrl, {
             method: 'PUT',
             body: file,
             headers: {

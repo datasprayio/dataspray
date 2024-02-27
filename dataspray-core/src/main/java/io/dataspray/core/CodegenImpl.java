@@ -418,7 +418,7 @@ public class CodegenImpl implements Codegen {
                 try {
                     resultFileJson = gson.fromJson(resultFileOpt.get(), JsonObject.class);
                 } catch (JsonSyntaxException ex) {
-                    throw new RuntimeException("Failed to parse file as JSON: " + absoluteFilePath, ex);
+                    throw new RuntimeException("Failed to parse generated template as JSON: " + absoluteFilePath, ex);
                 }
 
                 // Merge the two Jsons with a custom conflict resolution

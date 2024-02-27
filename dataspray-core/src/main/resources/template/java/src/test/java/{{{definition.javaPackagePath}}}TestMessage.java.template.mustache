@@ -1,0 +1,20 @@
+package {{{definition.javaPackage}}};
+
+{{#util.javaImportsFormat}}
+import lombok.NonNull;
+import lombok.Value;
+import io.dataspray.runner.Message;
+import io.dataspray.runner.StoreType;
+{{/util.javaImportsFormat}}
+
+@Value
+public class TestMessage<T> implements Message<T> {
+    @NonNull
+    StoreType storeType;
+    @NonNull
+    String storeName;
+    @NonNull
+    String streamName;
+    @NonNull
+    T data;
+}

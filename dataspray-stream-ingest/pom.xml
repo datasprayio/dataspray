@@ -141,7 +141,7 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
-                                    <artifactId>dataspray-client</artifactId>
+                                    <artifactId>dataspray-api</artifactId>
                                     <classifier>schema-ingest</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>

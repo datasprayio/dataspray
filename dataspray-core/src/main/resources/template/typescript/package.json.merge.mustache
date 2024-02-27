@@ -5,18 +5,19 @@
     "prebuild": "ts-node ./prebuild.ts",
     {{/processor.jsonStreams.empty}}
     "build": "esbuild src/index.ts --bundle --minify --sourcemap --platform=node --target=es2020 --outfile=dist/index.js",
-    "postbuild": "cd dist && zip -r index.zip index.js*"
+    "postbuild": "ts-node ./postbuild.ts"
   },
   "dependencies": {
     "@types/node": "^20.11.16",
     "dataspray-runner": "0.0.1"
   },
   "devDependencies": {
-    {{^processor.jsonStreams.empty}}
-    "json-schema-to-typescript": "^13.1.2",
-    "ajv": "^8.12.0",
-    {{/processor.jsonStreams.empty}}
     "@types/aws-lambda": "^8.10.131",
+    {{^processor.jsonStreams.empty}}
+    "ajv": "^8.12.0",
+    "json-schema-to-typescript": "^13.1.2",
+    {{/processor.jsonStreams.empty}}
+    "archiver": "^6.0.1",
     "esbuild": "^0.19.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"

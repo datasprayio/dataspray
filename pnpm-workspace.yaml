@@ -2,6 +2,6 @@
 packages:
   - 'dataspray-runner-parent/dataspray-runner-typescript'
   - 'dataspray-api-parent/dataspray-client-typescript'
-  - 'dataspray-site-parent/dataspray-dashboard'
-  - 'dataspray-site-parent/dataspray-docs'
-  - 'dataspray-site-parent/dataspray-landing'
+  - 'dataspray-site-parent/dataspray-site-dashboard'
+  - 'dataspray-site-parent/dataspray-site-docs'
+  - 'dataspray-site-parent/dataspray-site-landing'

@@ -21,12 +21,12 @@
  */
 
 import {AuthResult, SignInResponse, SignUpResponse} from "dataspray-client";
-import {getClient} from "../util/dataSprayClient";
 import {urlWithHiddenParams} from "../util/routerUtil";
 import React, {useEffect, useMemo, useRef} from "react";
 import {Router, useRouter} from "next/router";
 import {jwtDecode, JwtPayload} from "jwt-decode";
-import useAuthStore from "../pages/auth/store";
+import useAuthStore from "./store";
+import {getClient} from "../util/dataSprayClientWrapper";
 
 interface CognitoAccessToken {
     auth_time: number,
@@ -84,7 +84,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
     // Setup auto-refreshing of tokens
     useEffect(() => {
         refreshTokenIfNecessary(onSignIn, authResult, accessToken, idToken);
-    }, [accessToken, idToken]);
+    }, [accessToken, authResult, idToken, onSignIn]);
 
     // Redirect if this page requests that user is signed in/out
     const router = useRouter();
@@ -122,7 +122,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
         signInConfirmTotp: (...args: OmitFirstArg<typeof signInConfirmTotp>) => signInConfirmTotp(onSignIn, ...args),
         signInPasswordChange: (...args: OmitFirstArg<typeof signInPasswordChange>) => signInPasswordChange(onSignIn, ...args),
         signOut: () => signOut(onSignIn, authResult?.refreshToken),
-    }), [authResult, accessToken, idToken, onSignIn]);
+    }), [authResult, currentOrganizationName, accessToken, idToken, onSignIn]);
 }
 
 var refreshingJti: string | undefined;

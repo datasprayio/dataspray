@@ -5,7 +5,7 @@ import { Entrypoint, Message, MessageMetadata, RawCoordinator, StoreType } from 
 import {
 {{#processor.jsonInputStreams}}
     {{{dataFormat.nameCamelUpper}}},
-    validate{{{dataFormat.nameCamelLower}}},
+    validate{{{dataFormat.nameCamelUpper}}},
 {{/processor.jsonInputStreams}}
 } from './streams';
 {{/processor.jsonInputStreams.empty}}
@@ -40,8 +40,8 @@ class Runner extends Entrypoint {
         {{/dataFormat.isSerdeBinary}}
         {{#dataFormat.isSerdeJson}}
         const dataJson = JSON.parse(data);
-        if (!validate{{{dataFormat.nameCamelLower}}}(dataJson)) {
-            throw new Error(validate{{{dataFormat.nameCamelLower}}}['errors']);
+        if (!validate{{{dataFormat.nameCamelUpper}}}(dataJson)) {
+            throw new Error(validate{{{dataFormat.nameCamelUpper}}}['errors']);
         }
         return dataJson as {{{dataFormat.nameCamelUpper}}};
         {{/dataFormat.isSerdeJson}}

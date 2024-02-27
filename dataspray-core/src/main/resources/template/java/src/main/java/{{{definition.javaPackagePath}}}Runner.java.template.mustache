@@ -34,7 +34,7 @@ public class Runner extends Entrypoint {
 
     @Override
     public void process(MessageMetadata metadata, String data, RawCoordinator rawCoordinator) {
-        Coordinator coordinator = new Coordinator(rawCoordinator);
+        Coordinator coordinator = new GeneratedCoordinator(rawCoordinator);
         {{#processor.inputStreams}}if (StoreType.{{{storeType.name}}}.equals(metadata.getStoreType())
                 && "{{{storeName}}}".equals(metadata.getStoreName())
                 && "{{{streamName}}}".equals(metadata.getStreamName())) {
@@ -52,7 +52,7 @@ public class Runner extends Entrypoint {
     {{^dataFormat.isSerdeString}}
 
     @SneakyThrows
-    private {{{dataFormat.nameCamelUpper}}} to{{{dataFormat.nameCamelUpper}}}(byte[] data) {
+    private {{{dataFormat.nameCamelUpper}}} to{{{dataFormat.nameCamelUpper}}}(String data) {
         {{#dataFormat.isSerdeBinary}}
         return Base64.getDecoder().decode(data);
         {{/dataFormat.isSerdeBinary}}

@@ -11,11 +11,8 @@ public class {{{processor.nameCamelUpper}}} implements Processor {
     public void process{{{uniqueNameCamelUpper}}}(Message<{{{this.dataFormat.nameCamelUpper}}}> message, Coordinator coordinator) {
 
         // TODO
-
         {{#processor.outputStreams}}
-        {{#-first}}
-        coordinator.sendTo{{{uniqueNameCamelUpper}}}({{>../../stream-sample-data}});
-        {{/-first}}
+        // coordinator.sendTo{{{uniqueNameCamelUpper}}}({{>../../stream-sample-data}});
         {{/processor.outputStreams}}
     }
     {{/processor.inputStreams}}

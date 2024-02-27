@@ -169,7 +169,7 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>io.dataspray</groupId>
-                                    <artifactId>dataspray-client</artifactId>
+                                    <artifactId>dataspray-api</artifactId>
                                     <classifier>schema-control</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>

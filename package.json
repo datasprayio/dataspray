@@ -5,5 +5,10 @@
     "name": "Matus Faro",
     "email": "matus@dataspray.io"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "pnpm": {
+    "patchedDependencies": {
+      "@cloudscape-design/components@3.0.478": "dataspray-site-parent/dataspray-site-dashboard/patches/@cloudscape-design__components@3.0.478.patch"
+    }
+  }
 }
