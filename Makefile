@@ -11,7 +11,7 @@ action-test:
 # Deploy to particular environment (production, staging)
 # Used by GitHub Action workflow deploy.yml
 action-deploy-cloud-%:
-	AWS_PROFILE=dataspray mvn clean deploy -Pnative,%
+	AWS_PROFILE=dataspray mvn clean deploy -Pnative,$*
 
 # Deploy client libraries to package managers
 client-languages := java typescript
