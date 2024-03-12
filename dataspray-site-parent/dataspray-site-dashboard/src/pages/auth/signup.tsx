@@ -124,17 +124,7 @@ const Page: NextPageWithLayout = () => {
                                     <FormField
                                         label="Password"
                                         errorText={errors?.password}
-                                        description={
-                                            <>
-                                                <Link
-                                                    href="/auth/forgot"
-                                                    variant="primary"
-                                                    fontSize="body-s"
-                                                    onFollow={routerOnFollow}
-                                                >
-                                                    Forgot password?
-                                                </Link>
-                                                {" "}
+                                        description={(
                                                 <Link
                                                     href="/auth/signup"
                                                     variant="primary"
@@ -143,8 +133,7 @@ const Page: NextPageWithLayout = () => {
                                                 >
                                                     Already have an account?
                                                 </Link>
-                                            </>
-                                        }
+                                        )}
                                     >
                                         <Input
                                             type="password"

@@ -27,9 +27,6 @@ import DashboardAppLayout from "../layout/DashboardAppLayout";
 const Page: NextPageWithLayout = () => {
     return (
         <DashboardAppLayout
-            navigationItems={[
-                {type: 'link', text: 'Tasks', href: '/deployment/task'},
-            ]}
             content={(
                 <>
                     Add content here

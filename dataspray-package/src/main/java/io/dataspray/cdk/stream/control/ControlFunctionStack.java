@@ -58,7 +58,10 @@ public class ControlFunctionStack extends ApiFunctionStack {
                 .deployEnv(deployEnv)
                 .functionName("control")
                 .codeZip(codeZip)
-                .apiTags(ImmutableSet.of("AuthNZ", "Control"))
+                .apiTags(ImmutableSet.of(
+                        "AuthNZ",
+                        "Control",
+                        "Organization"))
                 .corsForSite(dashboardSiteStack)
                 .build());
 

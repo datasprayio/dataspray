@@ -79,6 +79,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TaskStatus'
+        cursor:
+          type: string
     TaskStatus:
       type: object
       required:
@@ -141,6 +143,10 @@ components:
       - name: organizationName
         in: path
         required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
         schema:
           type: string
     responses:

@@ -30,6 +30,8 @@ import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminCreateUserRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminCreateUserResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthRequest;
@@ -43,6 +45,7 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowTyp
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ChallengeNameType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSignUpRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSignUpResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.DeliveryMediumType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ResendConfirmationCodeRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ResendConfirmationCodeResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.RevokeTokenRequest;
@@ -72,6 +75,27 @@ public class CognitoUserStore implements UserStore {
 
     @Inject
     CognitoIdentityProviderClient cognitoClient;
+
+    /**
+     * Create a new user on-behalf.
+     *
+     * @link <a
+     * href="https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminCreateUser.html">AdminCreateUser</a>
+     */
+    @Override
+    public AdminCreateUserResponse createUser(String username, String email) {
+        ImmutableSet.Builder<AttributeType> attrsBuilder = ImmutableSet.<AttributeType>builder()
+                .add(AttributeType.builder()
+                        .name(USER_ATTRIBUTE_EMAIL)
+                        .value(email)
+                        .build());
+        return cognitoClient.adminCreateUser(AdminCreateUserRequest.builder()
+                .userPoolId(userPoolId)
+                .username(username)
+                .userAttributes(attrsBuilder.build())
+                .desiredDeliveryMediums(DeliveryMediumType.EMAIL)
+                .build());
+    }
 
     /**
      * Sign up flow.

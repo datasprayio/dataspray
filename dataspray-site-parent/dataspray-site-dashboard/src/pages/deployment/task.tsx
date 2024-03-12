@@ -22,40 +22,103 @@
 
 import {NextPageWithLayout} from "../_app";
 import DashboardLayout from "../../layout/DashboardLayout";
-import {SplitPanel} from "@cloudscape-design/components";
+import {Pagination, SplitPanel, StatusIndicator, Table} from "@cloudscape-design/components";
 import DashboardAppLayout from "../../layout/DashboardAppLayout";
-import {useEffect} from "react";
 import {useAuth} from "../../auth/auth";
+import useTaskStore from "../../deployment/taskStore";
+import {FullPageHeader} from "../../table/FullPageHeader";
+import {getHeaderCounterTextSingle} from "../../table/tableUtil";
+import Link from "@cloudscape-design/components/link";
+import {useState} from "react";
 
 const Page: NextPageWithLayout = () => {
-    const {idToken} = useAuth();
-    useEffect(() => {
-        // TODO
-        // getClientControl().statusAll({
-        //     organizationName: currentOrganizationName,
-        // })
-    }, []);
+    const {currentOrganizationName} = useAuth();
+    const {
+        tasks,
+        hasMore,
+        pageIndex,
+        pageCount,
+        setPageIndex,
+        pageTasks,
+        isLoading,
+    } = useTaskStore(currentOrganizationName);
+    const [selectedTaskId, setSelectedTaskIds] = useState<string>();
+    const selectedTask = selectedTaskId ? tasks.find(task => task.taskId === selectedTaskId) : undefined;
+
+    var splitPanel: React.ReactNode;
+    if (!selectedTask) {
+        splitPanel = (
+                <SplitPanel header='No task selected'>
+                    Select a task to see its details.
+                </SplitPanel>
+        );
+    } else {
+        splitPanel = (
+                <SplitPanel header={selectedTask.taskId}>
+                    taskId: {selectedTask.taskId}
+                    Status: {selectedTask.status}
+                    TODO
+                </SplitPanel>
+        );
+    }
 
     return (
             <DashboardAppLayout
-                splitPanel={(
-                    <SplitPanel header='Tasks'>
-                        Add content here
-                    </SplitPanel>
-                )}
-                content={(
-                    <>
-                        Add content here
-                    </>
-                )}
+                    content={(
+                            <Table
+                                    header={
+                                        <FullPageHeader
+                                                title="Instances"
+                                                createButtonText="Create instance"
+                                                selectedItemsCount={selectedTaskId ? 1 : 0}
+                                                counter={getHeaderCounterTextSingle(tasks.length, hasMore)}
+                                        />
+                                    }
+                                    variant='full-page'
+                                    stickyHeader
+                                    columnDefinitions={[
+                                        {
+                                            id: 'id',
+                                            header: 'Task ID',
+                                            cell: task => <Link href="#">{task.taskId}</Link>,
+                                            isRowHeader: true,
+                                        },
+                                        {
+                                            id: 'status',
+                                            header: 'Task Status',
+                                            cell: task => (
+                                                    <>
+                                                        <StatusIndicator
+                                                                type={task.status === 'RUNNING' ? 'success' : 'error'}> {task.status} </StatusIndicator>
+                                                    </>
+                                            ),
+                                        },
+                                    ]}
+                                    items={pageTasks}
+                                    selectionType="single"
+                                    loading={isLoading}
+                                    pagination={(
+                                            <Pagination
+                                                    currentPageIndex={pageIndex + 1}
+                                                    pagesCount={pageCount}
+                                                    openEnd={hasMore}
+                                                    onPreviousPageClick={() => setPageIndex(pageIndex - 1)}
+                                                    onNextPageClick={() => setPageIndex(pageIndex + 1)}
+                                                    onChange={e => setPageIndex(e.detail.currentPageIndex - 1)}
+                                                    disabled={isLoading}
+                                            />
+                                    )}
+                            />
+                    )}
+                    splitPanel={splitPanel}
             />
     )
 }
 
 Page.getLayout = (page) => (
-    <DashboardLayout
-        pageTitle='Home'
-    >{page}</DashboardLayout>
+        <DashboardLayout
+                pageTitle='Tasks'
+        >{page}</DashboardLayout>
 )
 
 export default Page

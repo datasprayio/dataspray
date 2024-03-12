@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.SerializedName;
+import io.dataspray.store.util.WithCursor;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.Nonnull;
 import lombok.AllArgsConstructor;
@@ -56,7 +57,7 @@ public interface LambdaDeployer {
 
     Optional<Status> status(String organizationName, String taskId);
 
-    ImmutableList<Status> statusAll(String organizationName);
+    WithCursor<ImmutableList<Status>> statusAll(String organizationName, String cursor);
 
     void pause(String organizationName, String taskId);
 

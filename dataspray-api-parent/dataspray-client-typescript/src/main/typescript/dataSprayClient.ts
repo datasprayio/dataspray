@@ -32,7 +32,9 @@ import {
     HealthApiInterface,
     HTTPHeaders,
     IngestApi,
-    IngestApiInterface
+    IngestApiInterface,
+    OrganizationApi,
+    OrganizationApiInterface
 } from "./client";
 
 export interface DataSprayClientConfig {
@@ -81,6 +83,10 @@ export class DataSprayClient {
 
     health(): HealthApiInterface {
         return this.getClient(HealthApi);
+    }
+
+    organization(): OrganizationApiInterface {
+        return this.getClient(OrganizationApi);
     }
 
     async uploadCode(presignedUrl: string, file: Blob) {

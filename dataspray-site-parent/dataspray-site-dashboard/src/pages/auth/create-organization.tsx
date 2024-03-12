@@ -33,42 +33,40 @@ import Link from "@cloudscape-design/components/link";
 import * as React from "react";
 import {useState} from "react";
 import {useRouterOnFollow} from "../../util/useRouterOnFollow";
+import Checkbox from "@cloudscape-design/components/checkbox";
 import {CloudscapeFormik} from "../../util/CloudscapeFormik";
 import {useRouter} from "next/router";
 import AuthLayout from "../../layout/AuthLayout";
 import {useAuth} from "../../auth/auth";
+import {getClient} from "../../util/dataSprayClientWrapper";
 
 const Page: NextPageWithLayout = () => {
-    const router = useRouter();
-    const routerOnFollow = useRouterOnFollow();
     const [error, setError] = useState<React.ReactNode>()
-    const to = router.query.to?.toString();
-    const usernameOrEmail = router.query.usernameOrEmail?.toString();
-    const {signIn} = useAuth('redirect-if-signed-in');
 
     return (
         <>
             <Head>
-                <title>Sign-in</title>
+                <title>Create Organization</title>
             </Head>
             <main>
                 <CloudscapeFormik
                     initialValues={{
-                        usernameOrEmail: usernameOrEmail || '',
-                        password: '',
+                        organizationName: "",
                     }}
                     validationSchema={(
                         yup.object().shape({
-                            usernameOrEmail: yup.string().required('Username or email is required.'),
-                            password: yup.string().required('Password is required.'),
+                            organizationName: yup.string().trim().required('Organization name is required.'),
                         })
                     )}
-                    onSubmit={(values) => signIn(values, to, setError, router.push)}
+                    onSubmit={(values) => getClient().organization().createOrganization({
+                        organizationName: values.organizationName,
+                    })}
                 >
                     {({
                         isSubmitting,
                         errors,
                         values,
+                        setFieldValue,
                         handleChange,
                         handleBlur,
                         handleSubmit,
@@ -80,59 +78,25 @@ const Page: NextPageWithLayout = () => {
                                 actions={
                                     <SpaceBetween direction="horizontal" size="xs">
                                         <Button disabled={isSubmitting} variant="primary"
-                                                onClick={e => handleSubmit()}>Submit</Button>
+                                                onClick={e => handleSubmit()}>Create</Button>
                                     </SpaceBetween>
                                 }
-                                header={<Header variant="h1">Sign-in</Header>}
+                                header={<Header variant="h1">Create organization</Header>}
                                 errorText={error}
                             >
                                 <SpaceBetween direction="vertical" size="l">
                                     <FormField
-                                        label="Username or email"
-                                        errorText={errors?.usernameOrEmail}
+                                        label="Name"
+                                        errorText={errors?.organizationName}
                                     >
                                         <Input
                                             type="text"
-                                            name="usernameOrEmail"
-                                            placeholder="matus"
+                                            name="name"
+                                            placeholder="my-company"
                                             onChangeNative={handleChange}
                                             onBlurNative={handleBlur}
-                                            value={values?.usernameOrEmail}
+                                            value={values?.organizationName || ''}
                                             autoFocus
-                                        />
-                                    </FormField>
-                                    <FormField
-                                        label="Password"
-                                        errorText={errors?.password}
-                                        description={
-                                            <>
-                                                <Link
-                                                    href="/auth/forgot"
-                                                    variant="primary"
-                                                    fontSize="body-s"
-                                                    onFollow={routerOnFollow}
-                                                >
-                                                    Forgot password?
-                                                </Link>
-                                                {" "}
-                                                <Link
-                                                    href="/auth/signup"
-                                                    variant="primary"
-                                                    fontSize="body-s"
-                                                    onFollow={routerOnFollow}
-                                                >
-                                                    Don&apos;t have an account?
-                                                </Link>
-                                            </>
-                                        }
-                                    >
-                                        <Input
-                                            type="password"
-                                            name="password"
-                                            placeholder="Password"
-                                            onChangeNative={handleChange}
-                                            onBlurNative={handleBlur}
-                                            value={values?.password}
                                         />
                                     </FormField>
                                 </SpaceBetween>
@@ -147,7 +111,7 @@ const Page: NextPageWithLayout = () => {
 
 Page.getLayout = (page) => (
     <AuthLayout
-        pageTitle="Sign-in"
+        pageTitle="Sign-up"
     >{page}</AuthLayout>
 )
 

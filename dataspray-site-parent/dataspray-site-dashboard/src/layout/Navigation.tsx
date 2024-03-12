@@ -26,27 +26,23 @@ import {useRouter} from "next/router";
 import {getDocsUrl} from "../util/detectEnv";
 
 const HeaderItems: ReadonlyArray<SideNavigationProps.Item> = [
-    {type: 'link', text: 'Home', href: '/'},
-    {type: 'divider'},
 ];
 const FooterItems: ReadonlyArray<SideNavigationProps.Item> = [
     {type: 'divider'},
     {type: 'link', external: true, text: 'Documentation', href: getDocsUrl()},
 ];
 
-export default function Navigation(props: {
-    items: Array<SideNavigationProps.Item>
-}) {
+export default function Navigation() {
     const router = useRouter();
     const routerOnFollow = useRouterOnFollow();
 
     return (
         <SideNavigation
             activeHref={router.pathname}
-            header={{href: '/home/index.html', text: 'Service'}}
+            header={{href: '/', text: 'Home'}}
             items={[
                 ...HeaderItems,
-                ...(props.items),
+                {type: 'link', text: 'Tasks', href: '/deployment/task'},
                 ...FooterItems,
             ]}
             onFollow={routerOnFollow}

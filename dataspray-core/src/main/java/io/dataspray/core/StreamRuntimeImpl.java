@@ -64,7 +64,8 @@ public class StreamRuntimeImpl implements StreamRuntime {
     public void statusAll(Organization organization, Project project) {
         DataSprayClient.get(organization.toAccess())
                 .control()
-                .statusAll(organization.getName())
+                // TODO add pagination
+                .statusAll(organization.getName(), null)
                 .getTasks()
                 .forEach(this::printStatus);
     }

@@ -20,42 +20,14 @@
  * SOFTWARE.
  */
 
-package io.dataspray.store;
+package io.dataspray.store.util;
 
-
-import com.google.common.collect.ImmutableSet;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NonNull;
 import lombok.Value;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.GroupType;
 
-public interface OrganizationStore {
+import java.util.Optional;
 
-    GroupType createOrganization(String organizationName, String authorUsername);
-
-    ImmutableSet<Organization> getOrganizationsForUser(String username);
-
-    OrganizationMetadata getMetadata(String organizationName);
-
-    void addUserToOrganization(String organizationName, String username);
-
-    void removeUserFromOrganization(String organizationName, String username);
-
-    @Value
-    @Builder(toBuilder = true)
-    @AllArgsConstructor
-    class Organization {
-        @NonNull
-        String name;
-    }
-
-    @Value
-    @Builder(toBuilder = true)
-    @AllArgsConstructor
-    class OrganizationMetadata {
-
-        @NonNull
-        String authorUsername;
-    }
+@Value
+public class WithCursor<T> {
+    T data;
+    Optional<String> cursorOpt;
 }

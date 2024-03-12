@@ -22,7 +22,7 @@
 
 import {AuthResult, SignInResponse, SignUpResponse} from "dataspray-client";
 import {urlWithHiddenParams} from "../util/routerUtil";
-import React, {useEffect, useMemo, useRef} from "react";
+import React, {useEffect, useMemo} from "react";
 import {Router, useRouter} from "next/router";
 import {jwtDecode, JwtPayload} from "jwt-decode";
 import useAuthStore from "./store";
@@ -86,18 +86,20 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
         refreshTokenIfNecessary(onSignIn, authResult, accessToken, idToken);
     }, [accessToken, authResult, idToken, onSignIn]);
 
+    // Fetch current organization name or pick first one from the group
+    const currentOrganizationName = authStore.currentOrganizationName || idToken?.["cognito:groups"]?.[0] || null;
+
     // Redirect if this page requests that user is signed in/out
     const router = useRouter();
-    const redirected = useRef(false)
     useEffect(() => {
-        if (redirected.current || authResult === undefined) return
+        if (authResult === undefined) return
 
         // Redirect if necessary
-        if (behavior === 'redirect-if-signed-in' && !!authResult) {
-            redirected.current = true
+        if (behavior !== undefined && !!authResult && !currentOrganizationName) {
+            router.push('/auth/create-organization');
+        } else if (behavior === 'redirect-if-signed-in' && !!authResult) {
             router.push('/');
         } else if (behavior === 'redirect-if-signed-out' && authResult == null) {
-            redirected.current = true
             router.push({
                 pathname: '/auth/signin',
                 query: {to: router.asPath},
@@ -106,10 +108,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
 
         // router and redirect as a dep causes an infinite loop
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [authResult]);
-
-    // Fetch current organization name or pick first one from the group
-    const currentOrganizationName = authStore.currentOrganizationName || idToken?.["cognito:groups"]?.[0] || null;
+    }, [authResult, currentOrganizationName]);
 
     return useMemo(() => ({
         authResult,

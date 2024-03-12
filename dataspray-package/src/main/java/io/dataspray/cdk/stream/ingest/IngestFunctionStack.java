@@ -67,7 +67,9 @@ public class IngestFunctionStack extends ApiFunctionStack {
                 .deployEnv(deployEnv)
                 .functionName("ingest")
                 .codeZip(codeZip)
-                .apiTags(ImmutableSet.of("Ingest", "Health"))
+                .apiTags(ImmutableSet.of(
+                        "Ingest",
+                        "Health"))
                 .build());
 
         getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()

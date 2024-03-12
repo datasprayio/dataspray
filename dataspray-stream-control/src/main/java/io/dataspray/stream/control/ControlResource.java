@@ -23,12 +23,14 @@
 package io.dataspray.stream.control;
 
 import com.google.common.base.Enums;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.store.LambdaDeployer;
 import io.dataspray.store.LambdaDeployer.DeployedVersion;
 import io.dataspray.store.LambdaDeployer.State;
 import io.dataspray.store.LambdaDeployer.Status;
 import io.dataspray.store.LambdaDeployer.Versions;
+import io.dataspray.store.util.WithCursor;
 import io.dataspray.stream.control.model.DeployRequest;
 import io.dataspray.stream.control.model.TaskStatus;
 import io.dataspray.stream.control.model.TaskStatus.StatusEnum;
@@ -128,10 +130,13 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     @Override
-    public TaskStatuses statusAll(String organizationName) {
-        return new TaskStatuses(deployer.statusAll(organizationName).stream()
-                .map(status -> toTaskStatus(status.getTaskId(), Optional.of(status)))
-                .collect(Collectors.toList()));
+    public TaskStatuses statusAll(String organizationName, String cursor) {
+        WithCursor<ImmutableList<Status>> result = deployer.statusAll(organizationName, cursor);
+        return new TaskStatuses(
+                result.getData().stream()
+                        .map(status -> toTaskStatus(status.getTaskId(), Optional.of(status)))
+                        .collect(Collectors.toList()),
+                result.getCursorOpt().orElse(null));
     }
 
     @Override

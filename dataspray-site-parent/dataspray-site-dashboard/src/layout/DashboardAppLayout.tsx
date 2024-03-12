@@ -26,13 +26,13 @@ import {TopNavId} from "./DashboardLayout";
 import {SideNavigationProps} from "@cloudscape-design/components/side-navigation/interfaces";
 
 const DashboardAppLayout = (props: {
-    navigationItems?: Array<SideNavigationProps.Item>,
 } & React.ComponentProps<typeof AppLayout>) => {
-    const {navigationItems, ...appLayoutProps} = props;
+    const {...appLayoutProps} = props;
     return (
         <AppLayout
             headerSelector={`#${TopNavId}`}
-            navigation={navigationItems && (<Navigation items={navigationItems} />)}
+            navigation={(<Navigation />)}
+            toolsHide
             {...appLayoutProps}
         />
     );

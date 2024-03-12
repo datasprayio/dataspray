@@ -23,13 +23,19 @@
 package io.dataspray.store.impl;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.gson.Gson;
 import io.dataspray.store.OrganizationStore;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRemoveUserFromGroupRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.CreateGroupRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.GetGroupRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.GroupType;
 
 /**
  * Organization management backed by Cognito groups.
@@ -42,7 +48,25 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
     String userPoolId;
 
     @Inject
+    Gson gson;
+    @Inject
     CognitoIdentityProviderClient cognitoClient;
+
+    @Override
+    public GroupType createOrganization(String organizationName, String authorUsername) {
+
+        // Create group
+        GroupType group = cognitoClient.createGroup(CreateGroupRequest.builder()
+                .userPoolId(userPoolId)
+                .groupName(organizationName)
+                .description(gson.toJson(new OrganizationMetadata(authorUsername)))
+                .build()).group();
+
+        // Add author to group
+        addUserToOrganization(group.groupName(), authorUsername);
+
+        return group;
+    }
 
     @Override
     public ImmutableSet<Organization> getOrganizationsForUser(String username) {
@@ -53,5 +77,34 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
                 .stream()
                 .map(group -> new Organization(group.groupName()))
                 .collect(ImmutableSet.toImmutableSet());
+    }
+
+    @Override
+    public OrganizationMetadata getMetadata(String organizationName) {
+        String description = cognitoClient.getGroup(GetGroupRequest.builder()
+                        .userPoolId(userPoolId)
+                        .groupName(organizationName)
+                        .build())
+                .group()
+                .description();
+        return gson.fromJson(description, OrganizationMetadata.class);
+    }
+
+    @Override
+    public void addUserToOrganization(String organizationName, String username) {
+        cognitoClient.adminAddUserToGroup(AdminAddUserToGroupRequest.builder()
+                .userPoolId(userPoolId)
+                .groupName(organizationName)
+                .username(username)
+                .build());
+    }
+
+    @Override
+    public void removeUserFromOrganization(String organizationName, String username) {
+        cognitoClient.adminRemoveUserFromGroup(AdminRemoveUserFromGroupRequest.builder()
+                .userPoolId(userPoolId)
+                .groupName(organizationName)
+                .username(username)
+                .build());
     }
 }

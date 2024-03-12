@@ -35,6 +35,7 @@ import io.dataspray.store.ApiAccessStore.ApiAccess;
 import io.dataspray.store.LambdaDeployer;
 import io.dataspray.store.StreamStore;
 import io.dataspray.store.util.WaiterUtil;
+import io.dataspray.store.util.WithCursor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
@@ -565,9 +566,10 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     }
 
     @Override
-    public ImmutableList<Status> statusAll(String organizationName) {
+    public WithCursor<ImmutableList<Status>> statusAll(String organizationName, String cursor) {
         // TODO this doesn't scale well, need to start storing a list of tasks in a database
-        return lambdaClient.listFunctionsPaginator(ListFunctionsRequest.builder()
+        // TODO implement cursor
+        return new WithCursor<>(lambdaClient.listFunctionsPaginator(ListFunctionsRequest.builder()
                         .build()).stream()
                 .map(ListFunctionsResponse::functions)
                 .flatMap(Collection::stream)
@@ -579,7 +581,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .map(taskId -> status(organizationName, taskId))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .collect(ImmutableList.toImmutableList());
+                .collect(ImmutableList.toImmutableList()),
+                Optional.empty());
     }
 
     @Override

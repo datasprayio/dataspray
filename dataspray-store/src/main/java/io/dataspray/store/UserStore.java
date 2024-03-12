@@ -26,6 +26,7 @@ package io.dataspray.store;
 import com.google.common.annotations.VisibleForTesting;
 import lombok.NonNull;
 import lombok.Value;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminCreateUserResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeResponse;
@@ -42,6 +43,8 @@ public interface UserStore {
      * href="https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_SignUp.html#CognitoUserPools-SignUp-request-Username">SignUp:username</a>
      */
     String USERNAME_VALIDATION = "^[\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]{1,128}$";
+
+    AdminCreateUserResponse createUser(String username, String email);
 
     SignUpResponse signup(String username, String email, String password, boolean tosAgreed, boolean marketingAgreed);
 

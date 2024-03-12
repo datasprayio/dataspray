@@ -1,0 +1,42 @@
+/organization/{organizationName}/create:
+  put:
+    operationId: createOrganization
+    tags: [ Organization ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Ok
+      '409':
+        description: Taken
+/organization/{organizationName}/invite:
+  post:
+    operationId: inviteToOrganization
+    tags: [ Organization ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: email
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: username
+        in: query
+        required: false
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Ok
+      '404':
+        description: User by email not found, specify username to create new
+      '409':
+        description: Username taken, specify new username
