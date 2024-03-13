@@ -78,7 +78,15 @@ const Page: NextPageWithLayout = () => {
                             <Form
                                 variant="embedded"
                                 actions={
-                                    <SpaceBetween direction="horizontal" size="xs">
+                                    <SpaceBetween direction="horizontal" size="xs" alignItems='center'>
+                                        <Link
+                                                href="/auth/signup"
+                                                variant="primary"
+                                                fontSize="body-s"
+                                                onFollow={routerOnFollow}
+                                        >
+                                            Don&apos;t have an account?
+                                        </Link>
                                         <Button disabled={isSubmitting} variant="primary"
                                                 onClick={e => handleSubmit()}>Submit</Button>
                                     </SpaceBetween>
@@ -104,27 +112,6 @@ const Page: NextPageWithLayout = () => {
                                     <FormField
                                         label="Password"
                                         errorText={errors?.password}
-                                        description={
-                                            <>
-                                                <Link
-                                                    href="/auth/forgot"
-                                                    variant="primary"
-                                                    fontSize="body-s"
-                                                    onFollow={routerOnFollow}
-                                                >
-                                                    Forgot password?
-                                                </Link>
-                                                {" "}
-                                                <Link
-                                                    href="/auth/signup"
-                                                    variant="primary"
-                                                    fontSize="body-s"
-                                                    onFollow={routerOnFollow}
-                                                >
-                                                    Don&apos;t have an account?
-                                                </Link>
-                                            </>
-                                        }
                                     >
                                         <Input
                                             type="password"

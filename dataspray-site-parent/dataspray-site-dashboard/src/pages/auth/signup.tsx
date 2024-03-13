@@ -84,7 +84,15 @@ const Page: NextPageWithLayout = () => {
                             <Form
                                 variant="embedded"
                                 actions={
-                                    <SpaceBetween direction="horizontal" size="xs">
+                                    <SpaceBetween direction="horizontal" size="xs" alignItems='center'>
+                                        <Link
+                                                href="/auth/signin"
+                                                variant="primary"
+                                                fontSize="body-s"
+                                                onFollow={routerOnFollow}
+                                        >
+                                            Already have an account?
+                                        </Link>
                                         <Button disabled={isSubmitting} variant="primary"
                                                 onClick={e => handleSubmit()}>Submit</Button>
                                     </SpaceBetween>
@@ -124,16 +132,6 @@ const Page: NextPageWithLayout = () => {
                                     <FormField
                                         label="Password"
                                         errorText={errors?.password}
-                                        description={(
-                                                <Link
-                                                    href="/auth/signup"
-                                                    variant="primary"
-                                                    fontSize="body-s"
-                                                    onFollow={routerOnFollow}
-                                                >
-                                                    Already have an account?
-                                                </Link>
-                                        )}
                                     >
                                         <Input
                                             type="password"
@@ -148,7 +146,7 @@ const Page: NextPageWithLayout = () => {
                                     <FormField
                                         description={
                                             <>
-                                                Please read and agree to our{" "}
+                                                Please read our{" "}
                                                 <Link
                                                     href="/terms-of-service"
                                                     external

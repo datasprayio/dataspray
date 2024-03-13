@@ -66,7 +66,6 @@ const Page: NextPageWithLayout = () => {
                         isSubmitting,
                         errors,
                         values,
-                        setFieldValue,
                         handleChange,
                         handleBlur,
                         handleSubmit,
