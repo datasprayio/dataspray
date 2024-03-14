@@ -90,7 +90,7 @@ const Page: NextPageWithLayout = () => {
                                     >
                                         <Input
                                             type="text"
-                                            name="name"
+                                            name="organizationName"
                                             placeholder="my-company"
                                             onChangeNative={handleChange}
                                             onBlurNative={handleBlur}

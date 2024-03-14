@@ -138,7 +138,6 @@ public class ApiStack extends FunctionStack {
                 .validation(CertificateValidation.fromDns(dnsZone))
                 .build();
         restApi = SpecRestApi.Builder.create(this, getConstructId("apigateway"))
-
                 .apiDefinition(ApiDefinition.fromInline(openApiSpec))
                 .domainName(DomainNameOptions.builder()
                         .certificate(certificate)

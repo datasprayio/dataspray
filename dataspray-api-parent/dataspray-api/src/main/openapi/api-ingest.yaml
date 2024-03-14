@@ -13,7 +13,13 @@ security:
 components:
   securitySchemes:
     Authorizer:
-      $ref: 'common.yaml#/components/securitySchemes/Authorizer'
+      # WARNING: If changed, also change in api.yaml
+      # This cannot be a reference such as "$ref: 'common.yaml#/components/securitySchemes/Authorizer'"
+      # because generator will only use 'type' and 'scheme' fields for some weird reason.
+      type: http
+      in: header
+      name: Authorization
+      scheme: apikey
 
 paths:
   /ping:
