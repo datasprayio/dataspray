@@ -241,6 +241,7 @@ public class ApiStack extends FunctionStack {
     @SuppressWarnings("unchecked")
     @SneakyThrows
     private ImmutableSet<ApiFunctionStack> addApiGatewayExtensionsToOpenapiSpec(Map<String, Object> openApiSpec) {
+        boolean authorizerSecuritySchemeFound = false;
         Map<String, Object> components = (Map<String, Object>) openApiSpec.get("components");
         if (components != null) {
             Map<String, Object> securitySchemes = (Map<String, Object>) components.get("securitySchemes");
@@ -248,10 +249,12 @@ public class ApiStack extends FunctionStack {
                 for (String securitySchemeName : ImmutableSet.copyOf(securitySchemes.keySet())) {
                     Map<String, Object> securityScheme = (Map<String, Object>) securitySchemes.get(securitySchemeName);
                     if (securityScheme != null
-                        && "apiKey".equals(securityScheme.get("type"))
+                        && "Authorizer".equals(securitySchemeName)
+                        && "http".equals(securityScheme.get("type"))
                         && "header".equals(securityScheme.get("in"))
                         && securityScheme.containsKey("name")
                         && Authorizer.AUTHORIZATION_HEADER.equalsIgnoreCase((String) securityScheme.get("name"))) {
+                        authorizerSecuritySchemeFound = true;
                         // Cognito Authorization
                         securityScheme.putAll(Map.of(
                                 // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-authtype.html
@@ -266,6 +269,9 @@ public class ApiStack extends FunctionStack {
                     }
                 }
             }
+        }
+        if (!authorizerSecuritySchemeFound) {
+            throw new IllegalStateException("OpenAPI spec does not contain a valid security scheme for the Authorizer");
         }
         Set<ApiFunctionStack> usedWebServices = Sets.newHashSet();
         Map<String, Object> paths = (Map<String, Object>) openApiSpec.get("paths");
