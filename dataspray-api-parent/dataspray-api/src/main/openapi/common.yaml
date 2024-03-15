@@ -1,6 +1,11 @@
 # Shared components for all OpenAPI specs
 
 components:
+  securitySchemes:
+    Authorizer:
+      type: apiKey
+      in: header
+      name: authorization
   responses:
     Ok:
       description: >-

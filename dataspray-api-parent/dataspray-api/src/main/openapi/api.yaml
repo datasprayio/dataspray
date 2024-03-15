@@ -7,19 +7,14 @@ info:
 servers:
   - url: https://api.dataspray.io
 
-security:
-  - Authorizer: [ ]
-
 components:
   securitySchemes:
     Authorizer:
-      # WARNING: If changed, also change in api-ingest.yaml
-      # This cannot be a reference such as "$ref: 'common.yaml#/components/securitySchemes/Authorizer'"
-      # because generator will only use 'type' and 'scheme' fields for some weird reason.
-      type: http
-      in: header
-      name: Authorization
-      scheme: apikey
+      $ref: 'common.yaml#/components/securitySchemes/Authorizer'
+
+# Use Lambda Authorizer by default unless overriden by specific endpoint
+security:
+  - Authorizer: [ ]
 
 paths:
   /ping:

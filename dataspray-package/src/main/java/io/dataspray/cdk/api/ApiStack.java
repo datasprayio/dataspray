@@ -250,7 +250,7 @@ public class ApiStack extends FunctionStack {
                     Map<String, Object> securityScheme = (Map<String, Object>) securitySchemes.get(securitySchemeName);
                     if (securityScheme != null
                         && "Authorizer".equals(securitySchemeName)
-                        && "http".equals(securityScheme.get("type"))
+                        && "apiKey".equals(securityScheme.get("type"))
                         && "header".equals(securityScheme.get("in"))
                         && securityScheme.containsKey("name")
                         && Authorizer.AUTHORIZATION_HEADER.equalsIgnoreCase((String) securityScheme.get("name"))) {
@@ -261,7 +261,9 @@ public class ApiStack extends FunctionStack {
                                 "x-amazon-apigateway-authtype", "custom",
                                 // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-authorizer.html
                                 "x-amazon-apigateway-authorizer", Map.of(
+                                        // Difference between "request" and "token": https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-lambda-authorizer-input.html
                                         "type", "request",
+                                        // If this source is not present, AG returns 401 without even calling our Authorizer, see: https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-lambda-authorizer.html#http-api-lambda-authorizer.identity-sources
                                         "identitySource", "method.request.header." + Authorizer.AUTHORIZATION_HEADER.toLowerCase(),
                                         "authorizerCredentials", getRoleApiGatewayInvoke().getRoleArn(),
                                         "authorizerUri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + getAuthorizerFunctionName() + "/invocations",

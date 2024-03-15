@@ -79,8 +79,11 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             // and will apply to subsequent calls to any method/resource in the RestApi made with the same token
 
             // Extract Authorization header
-            String authorizationValue = event.getHeaders().getOrDefault(AUTHORIZATION_HEADER, "");
-            String authorizationValueLower = authorizationValue.toLowerCase();
+            String authorizationValue = event.getHeaders()
+                    .getOrDefault(AUTHORIZATION_HEADER, "")
+                    .trim();
+            String authorizationValueLower = authorizationValue
+                    .toLowerCase();
 
             final String identifier;
             final String username;
