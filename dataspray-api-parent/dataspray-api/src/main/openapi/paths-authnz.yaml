@@ -185,6 +185,7 @@ components:
   put:
     operationId: signUp
     tags: [ AuthNZ ]
+    security: [ ] # No auth required
     requestBody:
       required: true
       content:
@@ -202,6 +203,7 @@ components:
   put:
     operationId: signUpConfirmCode
     tags: [ AuthNZ ]
+    security: [ ] # No auth required
     requestBody:
       required: true
       content:
@@ -219,6 +221,7 @@ components:
   post:
     operationId: signIn
     tags: [ AuthNZ ]
+    security: [ ] # No auth required
     requestBody:
       required: true
       content:
@@ -236,6 +239,7 @@ components:
   post:
     operationId: signInChallengeTotpCode
     tags: [ AuthNZ ]
+    security: [ ] # No auth required
     requestBody:
       required: true
       content:
@@ -253,6 +257,7 @@ components:
   post:
     operationId: signInChallengePasswordChange
     tags: [ AuthNZ ]
+    security: [ ] # No auth required
     requestBody:
       required: true
       content:
@@ -270,6 +275,7 @@ components:
   post:
     operationId: signInRefreshToken
     tags: [ AuthNZ ]
+    security: [ ] # No auth required
     requestBody:
       required: true
       content:
@@ -287,6 +293,7 @@ components:
   post:
     operationId: signOut
     tags: [ AuthNZ ]
+    security: [ ] # No auth required
     requestBody:
       required: true
       content:

@@ -42,6 +42,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.ws.rs.core.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import software.amazon.awssdk.arns.Arn;
 
 import java.util.Map;
@@ -125,7 +126,9 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                 }
 
             } else {
-                throw new ApiGatewayUnauthorized("Client unauthorized: No valid authorization scheme found");
+                throw new ApiGatewayUnauthorized("Client unauthorized: No valid authorization scheme found," +
+                                                 " Authorization header: '" + StringUtils.abbreviate(authorizationValue, 7) + "'," +
+                                                 " all header names: " + String.join(", ", event.getHeaders().keySet()));
             }
 
             // Extract endpoint info
