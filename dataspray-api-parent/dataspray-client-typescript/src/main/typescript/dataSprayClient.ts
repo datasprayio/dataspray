@@ -116,6 +116,13 @@ export class DataSprayClient {
         this.headers['Authorization'] = `cognito ${accessToken}`;
     }
 
+    /**
+     * Unset api key/access token. Takes effect immediately for existing clients.
+     */
+    unsetAuth() {
+        delete this.headers['Authorization'];
+    }
+
     private getClient<T extends BaseAPI>(ctor: BaseAPIConstructor<T>): T {
         var client: T = this.clientCache.get(ctor) as T;
         if (!client) {

@@ -41,6 +41,7 @@ import {useAuth} from "../../auth/auth";
 import {getClient} from "../../util/dataSprayClientWrapper";
 
 const Page: NextPageWithLayout = () => {
+    useAuth('redirect-if-signed-out');
     const [error, setError] = useState<React.ReactNode>()
 
     return (

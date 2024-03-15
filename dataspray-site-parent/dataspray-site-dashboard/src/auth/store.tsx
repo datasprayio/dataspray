@@ -20,28 +20,47 @@
  * SOFTWARE.
  */
 
-import {persistNSync} from "persist-and-sync";
 import {AuthResult} from "dataspray-client";
-import {createWithEqualityFn} from "zustand/traditional";
+import {getClient} from "../util/dataSprayClientWrapper";
+import {create} from "zustand";
+import {createJSONStorage, persist, subscribeWithSelector} from "zustand/middleware";
 
-const useAuthStore = createWithEqualityFn<{
+interface State {
     authResult: AuthResult | null,
     setAuthResult: (result: AuthResult | null) => void,
     currentOrganizationName: string | null,
     setCurrentOrganizationName: (currentOrganizationName: string) => void,
-}>(
-    persistNSync(
-        set => ({
-            authResult: null,
-            setAuthResult: authResult => set(state => ({ ...state, authResult })),
-            currentOrganizationName: null,
-            setCurrentOrganizationName: currentOrganizationName => set(state => ({ ...state, currentOrganizationName })),
-        }),
-        {
-            name: "ds_store_auth",
-            storage: 'sessionStorage',
-        },
-    ),
+}
+
+const useAuthStore = create<State>()(
+        subscribeWithSelector(
+        persist(
+                set => ({
+                    authResult: null,
+                    setAuthResult: authResult => set(state => ({...state, authResult})),
+                    currentOrganizationName: null,
+                    setCurrentOrganizationName: currentOrganizationName => set(state => ({
+                        ...state,
+                        currentOrganizationName
+                    })),
+                }),
+                {
+                    name: "ds_store_auth",
+                    storage: createJSONStorage(() => sessionStorage),
+                },
+        )
+        )
 );
+
+// Listening changes to auth result to trigger updating the access token in the DS client
+const onAuthResultHandler = (authResult: AuthResult | null) => {
+    if (authResult) {
+        getClient().setAccessToken(authResult.accessToken)
+    } else {
+        getClient().unsetAuth();
+    }
+}
+useAuthStore.subscribe(state => state.authResult, onAuthResultHandler);
+onAuthResultHandler(useAuthStore.getState().authResult);
 
 export default useAuthStore;

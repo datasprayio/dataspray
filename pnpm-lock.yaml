@@ -86,9 +86,6 @@ importers:
       next:
         specifier: ^14.0.4
         version: 14.0.4(react-dom@18.2.0)(react@18.2.0)
-      persist-and-sync:
-        specifier: ^1.2.1
-        version: 1.2.1(zustand@4.5.1)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1509,6 +1506,7 @@ packages:
     dependencies:
       react: 18.2.0
     dev: false
+    bundledDependencies: false
 
   /@cloudscape-design/component-toolkit@1.0.0-beta.40:
     resolution: {integrity: sha512-YoOzT1c1CrHPuchJ17ek8kDBD7GK3kv+iwjphul7DQWVXL4t3ZjdeyR52jNwvohgbiahAMLTWr9olMDqE3z5Kw==}
@@ -8017,14 +8015,6 @@ packages:
       '@types/estree': 1.0.5
       estree-walker: 3.0.3
       is-reference: 3.0.2
-    dev: false
-
-  /persist-and-sync@1.2.1(zustand@4.5.1):
-    resolution: {integrity: sha512-McPXNsMKYnMJGFuAEy//EezrKFuI1sq4TjcSNKbDegkA0mG1RzgVcRzI1qyFgPC+Qao8eHlH65Ck7Awp9u2dUg==}
-    peerDependencies:
-      zustand: ^3 || ^4
-    dependencies:
-      zustand: 4.5.1(@types/react@18.2.47)(react@18.2.0)
     dev: false
 
   /picocolors@1.0.0:
