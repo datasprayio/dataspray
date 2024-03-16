@@ -175,7 +175,7 @@ abstract class AuthorizerBase extends AbstractTest {
     static APIGatewayCustomAuthorizerEvent createEvent(String apiKey) {
         APIGatewayCustomAuthorizerEvent event = new APIGatewayCustomAuthorizerEvent();
         event.setMethodArn("arn:aws:execute-api:us-east-1:123456789012:abcdef123/default/$connect");
-        event.setHeaders(ImmutableMap.of(HttpHeaders.AUTHORIZATION, "apikey " + apiKey));
+        event.setHeaders(ImmutableMap.of(HttpHeaders.AUTHORIZATION.toLowerCase(), "apikey " + apiKey));
         event.setRequestContext(APIGatewayCustomAuthorizerEvent.RequestContext.builder()
                 .withAccountId("100000000001") // AWS account id
                 .withApiId("api-id")
