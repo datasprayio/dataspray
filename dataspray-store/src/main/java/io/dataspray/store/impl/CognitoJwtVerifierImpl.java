@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -69,7 +69,7 @@ public class CognitoJwtVerifierImpl implements CognitoJwtVerifier, RSAKeyProvide
     String userPoolId;
 
     private final JWTVerifier jwtVerifier = JWT.require(Algorithm.RSA256(this)).build();
-    private volatile Optional<JwkProvider> jwkProvider;
+    private volatile Optional<JwkProvider> jwkProvider = Optional.empty();
 
     public Optional<VerifiedCognitoJwt> verify(String accessToken) throws JWTVerificationException {
         // Verify JWT and decode.
