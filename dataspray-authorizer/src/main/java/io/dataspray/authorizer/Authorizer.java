@@ -56,7 +56,7 @@ import static io.dataspray.store.CognitoJwtVerifier.VerifiedCognitoJwt;
 @Slf4j
 @Named("authorizer")
 public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEvent, Object> {
-    public static final String AUTHORIZATION_HEADER = HttpHeaders.AUTHORIZATION;
+    public static final String AUTHORIZATION_HEADER = HttpHeaders.AUTHORIZATION.toLowerCase();
     public static final Predicate<String> API_KEY_PREDICATE = Pattern.compile("(^\\w*x[\\w-_]?)api[\\w-_]?key\\w*$", Pattern.CASE_INSENSITIVE).asMatchPredicate();
 
     @Inject
