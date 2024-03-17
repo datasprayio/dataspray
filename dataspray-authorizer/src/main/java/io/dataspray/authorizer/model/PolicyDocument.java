@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.SerializedName;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -36,6 +38,8 @@ import java.util.List;
  * PolicyDocument represents an IAM Policy, specifically for the execute-api:Invoke action
  * in the context of an API Gateway Authorizer
  */
+@ToString
+@EqualsAndHashCode
 @Getter
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @RegisterForReflection
