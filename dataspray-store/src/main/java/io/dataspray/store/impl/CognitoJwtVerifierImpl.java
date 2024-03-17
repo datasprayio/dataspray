@@ -105,7 +105,8 @@ public class CognitoJwtVerifierImpl implements CognitoJwtVerifier, RSAKeyProvide
         if (jwkProvider.isEmpty()) {
             synchronized (this) {
                 if (jwkProvider.isEmpty()) {
-                    jwkProvider = Optional.of(new JwkProviderBuilder(String.format("https://cognito-idp.%s.amazonaws.com/%s/.well-known/jwks.json",
+                    // JwkProvider internally suffixes with /.well-known/jwks.json
+                    jwkProvider = Optional.of(new JwkProviderBuilder(String.format("https://cognito-idp.%s.amazonaws.com/%s",
                             region,
                             userPoolId))
                             .cached(true)
