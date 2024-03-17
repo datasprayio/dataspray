@@ -140,9 +140,8 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             String stage = event.getRequestContext().getStage();
 
             // Send back allow policy
-            log.info("Client authorized for {}", identifier);
             PolicyDocument policyDocument = generatePolicyDocument(region, awsAccountId, restApiId, stage, organizationNames, queueWhitelist);
-            return new AuthPolicy(
+            AuthPolicy authPolicy = new AuthPolicy(
                     username,
                     policyDocument,
                     usageKey,
@@ -150,6 +149,8 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                             AuthorizerConstants.CONTEXT_KEY_USERNAME, username,
                             AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", organizationNames)
                     ));
+            log.info("Client authorized for {} policy {}", identifier, authPolicy);
+            return authPolicy;
         } catch (ApiGatewayUnauthorized ex) {
             log.info("Client unauthorized: {}", ex.getReason());
             throw ex;
