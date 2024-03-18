@@ -39,8 +39,8 @@ paths:
     $ref: 'paths-authnz.yaml#/~1apikey'
   /apikey/{apiKeyId}:
     $ref: 'paths-authnz.yaml#/~1apikey~1{apiKeyId}'
-  /organization/{organizationName}/create:
-    $ref: 'paths-organization.yaml#/~1organization~1{organizationName}~1create'
+  /organizations/create:
+    $ref: 'paths-organization.yaml#/~1organizations~1create'
   /organization/{organizationName}/invite:
     $ref: 'paths-organization.yaml#/~1organization~1{organizationName}~1invite'
   /organization/{organizationName}/control/code/upload:
