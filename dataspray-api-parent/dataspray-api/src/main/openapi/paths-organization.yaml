@@ -1,10 +1,10 @@
-/organization/{organizationName}/create:
+/organizations/create:
   put:
     operationId: createOrganization
     tags: [ Organization ]
     parameters:
       - name: organizationName
-        in: path
+        in: query
         required: true
         schema:
           type: string
