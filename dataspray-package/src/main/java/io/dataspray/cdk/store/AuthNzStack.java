@@ -131,6 +131,7 @@ public class AuthNzStack extends BaseStack {
                 .userPoolClientName("authnz")
                 .enableTokenRevocation(true)
                 .generateSecret(false)
+                .accessTokenValidity(Duration.days(1))
                 .build();
     }
 }
