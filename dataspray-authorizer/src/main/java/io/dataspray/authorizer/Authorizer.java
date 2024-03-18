@@ -26,6 +26,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayCustomAuthorizerEvent;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import io.dataspray.authorizer.model.AuthPolicy;
@@ -149,7 +150,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                             AuthorizerConstants.CONTEXT_KEY_USERNAME, username,
                             AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", organizationNames)
                     ));
-            log.info("Client authorized for {} policy {}", identifier, authPolicy);
+            logAuthorized(identifier, Strings.nullToEmpty(event.getPath()), organizationNames);
             return authPolicy;
         } catch (ApiGatewayUnauthorized ex) {
             log.info("Client unauthorized: {}", ex.getReason());
@@ -245,5 +246,18 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
 
     public static String sanitizeArnInjection(String accountId) {
         return accountId.replaceAll("[^A-Za-z0-9-_]", "");
+    }
+
+    private void logAuthorized(String identifier, String path, ImmutableSet<String> organizationNames) {
+        if (path.startsWith("/organization/")) {
+            String pathOrganizationName = path.split("/", 4)[2];
+            if (organizationNames.contains(pathOrganizationName)) {
+                log.info("Client {} authorized and allowed for organization path {}", identifier, path);
+            } else {
+                log.info("Client {} authorized and disallowed for organization path {}", identifier, path);
+            }
+        } else {
+            log.info("Client {} authorized and allowed for path {}", identifier, path);
+        }
     }
 }
