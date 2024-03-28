@@ -29,11 +29,8 @@ import Header from "@cloudscape-design/components/header";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import * as yup from "yup"
-import Link from "@cloudscape-design/components/link";
 import * as React from "react";
 import {useState} from "react";
-import {useRouterOnFollow} from "../../util/useRouterOnFollow";
-import Checkbox from "@cloudscape-design/components/checkbox";
 import {CloudscapeFormik} from "../../util/CloudscapeFormik";
 import {useRouter} from "next/router";
 import AuthLayout from "../../layout/AuthLayout";
@@ -41,78 +38,96 @@ import {useAuth} from "../../auth/auth";
 import {getClient} from "../../util/dataSprayClientWrapper";
 
 const Page: NextPageWithLayout = () => {
-    useAuth('redirect-if-signed-out');
+    const router = useRouter();
+    const {signInRefresh, authResult} = useAuth('redirect-if-signed-out');
     const [error, setError] = useState<React.ReactNode>()
 
     return (
-        <>
-            <Head>
-                <title>Create Organization</title>
-            </Head>
-            <main>
-                <CloudscapeFormik
-                    initialValues={{
-                        organizationName: "",
-                    }}
-                    validationSchema={(
-                        yup.object().shape({
-                            organizationName: yup.string().trim().required('Organization name is required.'),
-                        })
-                    )}
-                    onSubmit={(values) => getClient().organization().createOrganization({
-                        organizationName: values.organizationName,
-                    })}
-                >
-                    {({
-                        isSubmitting,
-                        errors,
-                        values,
-                        handleChange,
-                        handleBlur,
-                        handleSubmit,
-                    }) => (
-
-                        <form onSubmit={handleSubmit}>
-                            <Form
-                                variant="embedded"
-                                actions={
-                                    <SpaceBetween direction="horizontal" size="xs">
-                                        <Button disabled={isSubmitting} variant="primary"
-                                                onClick={e => handleSubmit()}>Create</Button>
-                                    </SpaceBetween>
+            <>
+                <Head>
+                    <title>Create Organization</title>
+                </Head>
+                <main>
+                    <CloudscapeFormik
+                            initialValues={{
+                                organizationName: "",
+                            }}
+                            validationSchema={(
+                                    yup.object().shape({
+                                        organizationName: yup.string().trim().required('Organization name is required.'),
+                                    })
+                            )}
+                            onSubmit={async (values) => {
+                                try {
+                                    await getClient().organization().createOrganization({
+                                        organizationName: values.organizationName,
+                                    })
+                                } catch (e: any) {
+                                    if (e.status === 409) {
+                                        setError('Organization name already exists.');
+                                    } else {
+                                        setError(e);
+                                    }
+                                    return;
                                 }
-                                header={<Header variant="h1">Create organization</Header>}
-                                errorText={error}
-                            >
-                                <SpaceBetween direction="vertical" size="l">
-                                    <FormField
-                                        label="Name"
-                                        errorText={errors?.organizationName}
+                                try {
+                                    await signInRefresh(authResult!.refreshToken, '/', setError, router.push);
+                                } catch (e: any) {
+                                    setError('Failed to load organization, please re-login.');
+                                    return;
+                                }
+                            }}
+                    >
+                        {({
+                              isSubmitting,
+                              errors,
+                              values,
+                              handleChange,
+                              handleBlur,
+                              handleSubmit,
+                          }) => (
+
+                                <form onSubmit={handleSubmit}>
+                                    <Form
+                                            variant="embedded"
+                                            actions={
+                                                <SpaceBetween direction="horizontal" size="xs">
+                                                    <Button disabled={isSubmitting} variant="primary"
+                                                            onClick={e => handleSubmit()}>Create</Button>
+                                                </SpaceBetween>
+                                            }
+                                            header={<Header variant="h1">Create organization</Header>}
+                                            errorText={error}
                                     >
-                                        <Input
-                                            type="text"
-                                            name="organizationName"
-                                            placeholder="my-company"
-                                            onChangeNative={handleChange}
-                                            onBlurNative={handleBlur}
-                                            value={values?.organizationName || ''}
-                                            autoFocus
-                                        />
-                                    </FormField>
-                                </SpaceBetween>
-                            </Form>
-                        </form>
-                    )}
-                </CloudscapeFormik>
-            </main>
-        </>
+                                        <SpaceBetween direction="vertical" size="l">
+                                            <FormField
+                                                    label="Name"
+                                                    errorText={errors?.organizationName}
+                                            >
+                                                <Input
+                                                        type="text"
+                                                        name="organizationName"
+                                                        placeholder="my-company"
+                                                        onChangeNative={handleChange}
+                                                        onBlurNative={handleBlur}
+                                                        value={values?.organizationName || ''}
+                                                        autoFocus
+                                                />
+                                            </FormField>
+                                        </SpaceBetween>
+                                    </Form>
+                                </form>
+                        )}
+                    </CloudscapeFormik>
+                </main>
+            </>
     )
 }
 
 Page.getLayout = (page) => (
-    <AuthLayout
-        pageTitle="Sign-up"
-    >{page}</AuthLayout>
+        <AuthLayout
+                pageTitle="Create Organization"
+        >{page}</AuthLayout>
 )
 
 export default Page

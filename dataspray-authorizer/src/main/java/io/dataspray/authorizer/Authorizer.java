@@ -150,7 +150,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                             AuthorizerConstants.CONTEXT_KEY_USERNAME, username,
                             AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", organizationNames)
                     ));
-            logAuthorized(identifier, Strings.nullToEmpty(event.getPath()), organizationNames);
+            logAuthorization(identifier, Strings.nullToEmpty(event.getPath()), organizationNames, authPolicy);
             return authPolicy;
         } catch (ApiGatewayUnauthorized ex) {
             log.info("Client unauthorized: {}", ex.getReason());
@@ -248,7 +248,8 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
         return accountId.replaceAll("[^A-Za-z0-9-_]", "");
     }
 
-    private void logAuthorized(String identifier, String path, ImmutableSet<String> organizationNames) {
+    private void logAuthorization(String identifier, String path, ImmutableSet<String> organizationNames, AuthPolicy authPolicy) {
+        log.debug("Client {} authorized with policy {}", identifier, authPolicy);
         if (path.startsWith("/organization/")) {
             String pathOrganizationName = path.split("/", 4)[2];
             if (organizationNames.contains(pathOrganizationName)) {

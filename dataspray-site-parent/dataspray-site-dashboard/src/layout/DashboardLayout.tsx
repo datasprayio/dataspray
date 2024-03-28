@@ -30,6 +30,7 @@ import {Mode} from "@cloudscape-design/global-styles";
 import React from "react";
 import DarkModeSvg from "../icons/DarkModeSvg";
 import LightModeSvg from "../icons/LightModeSvg";
+import {useRouter} from "next/router";
 
 export const TopNavId = 'top-nav';
 
@@ -37,75 +38,112 @@ export default function DashboardLayout(props: {
     children: React.ReactNode,
     pageTitle?: string,
 }) {
-    const {idToken, signOut} = useAuth('redirect-if-signed-out');
+    const router = useRouter()
+    const {idToken, currentOrganizationName, setCurrentOrganizationName} = useAuth('redirect-if-signed-out');
     const {mode, toggle} = useMode();
+    const organizations = idToken?.["cognito:groups"] || [];
+
+    // Change organization if requested
+    const changeToOrganizationName = router.query.organization as string | undefined;
+    React.useEffect(() => {
+        if (!changeToOrganizationName
+                || changeToOrganizationName === currentOrganizationName
+                || !organizations.includes(changeToOrganizationName)) {
+            return
+        }
+        setCurrentOrganizationName(changeToOrganizationName)
+    }, [changeToOrganizationName]);
+
     return (
-        <BaseLayout pageTitle={props.pageTitle}>
-            <TopNavigation
-                id={TopNavId}
-                className={styles.topNav}
-                identity={{
-                    logo: {src: '/logo/logo-small.png', alt: 'Logo'},
-                    title: props.pageTitle,
-                    href: '/',
-                }}
-                utilities={[
-                    {
-                        type: 'button',
-                        onClick: toggle,
-                        iconSvg: (mode === Mode.Dark ? <DarkModeSvg/> : <LightModeSvg/>),
-                    },
-                    {
-                        type: "menu-dropdown",
-                        text: idToken?.["cognito:username"],
-                        description: idToken?.email,
-                        iconName: "user-profile",
-                        items: [
-                            {id: "profile", text: "Profile"},
+            <BaseLayout pageTitle={props.pageTitle}>
+                <TopNavigation
+                        id={TopNavId}
+                        className={styles.topNav}
+                        identity={{
+                            logo: {src: '/logo/logo-small.png', alt: 'Logo'},
+                            title: props.pageTitle,
+                            href: '/',
+                        }}
+                        utilities={[
                             {
-                                id: "preferences",
-                                text: "Preferences"
-                            },
-                            {id: "security", text: "Security"},
-                            {
-                                id: "support-group",
-                                text: "Support",
+                                type: 'menu-dropdown',
+                                text: currentOrganizationName || 'Create Org',
                                 items: [
                                     {
-                                        id: "documentation",
-                                        text: "Documentation",
-                                        iconName: "file",
-                                        href: getDocsUrl(),
-                                        external: true,
-                                        externalIconAriaLabel: " (opens in new tab)"
+                                        id: "organizations",
+                                        text: "Organizations",
+                                        items: [
+                                            ...organizations.map(organizationName => ({
+                                                id: organizationName,
+                                                text: organizationName,
+                                                disabled: organizationName === currentOrganizationName,
+                                                href: "/?organization=" + encodeURIComponent(organizationName),
+                                            })),
+                                        ]
                                     },
                                     {
-                                        id: "support",
-                                        text: "Support",
-                                        iconName: "envelope",
-                                        href: "mailto:support@dataspray.io",
-                                        external: true,
-                                        externalIconAriaLabel: " (opens in new tab)"
+                                        id: "create",
+                                        text: "Create...",
+                                        href: "/auth/create-organization",
                                     },
-                                    {
-                                        id: "feedback",
-                                        text: "Feedback",
-                                        iconName: "bug",
-                                        href: getFeedbackUrl(),
-                                        external: true,
-                                        externalIconAriaLabel: " (opens in new tab)"
-                                    }
-                                ]
+                                ],
                             },
                             {
-                                id: "signout",
-                                text: "Sign out",
-                                href: "/auth/signout",
-                            }]
-                    },
-                ]}
-            />
-            {props.children}
-        </BaseLayout>
+                                type: 'button',
+                                onClick: toggle,
+                                iconSvg: (mode === Mode.Dark ? <DarkModeSvg/> : <LightModeSvg/>),
+                            },
+                            {
+                                type: "menu-dropdown",
+                                text: idToken?.["cognito:username"],
+                                description: idToken?.email,
+                                iconName: "user-profile",
+                                items: [
+                                    {id: "profile", text: "Profile"},
+                                    {
+                                        id: "preferences",
+                                        text: "Preferences"
+                                    },
+                                    {id: "security", text: "Security"},
+                                    {
+                                        id: "support-group",
+                                        text: "Support",
+                                        items: [
+                                            {
+                                                id: "documentation",
+                                                text: "Documentation",
+                                                iconName: "file",
+                                                href: getDocsUrl(),
+                                                external: true,
+                                                externalIconAriaLabel: " (opens in new tab)"
+                                            },
+                                            {
+                                                id: "feedback",
+                                                text: "Feedback",
+                                                iconName: "bug",
+                                                href: getFeedbackUrl(),
+                                                external: true,
+                                                externalIconAriaLabel: " (opens in new tab)"
+                                            },
+                                            {
+                                                id: "support",
+                                                text: "Support",
+                                                iconName: "envelope",
+                                                href: "mailto:support@dataspray.io",
+                                                external: true,
+                                                externalIconAriaLabel: " (opens in new tab)"
+                                            },
+                                        ]
+                                    },
+                                    {
+                                        id: "signout",
+                                        text: "Sign out",
+                                        href: "/auth/signout",
+                                    }]
+                            },
+                        ]}
+                />
+                {props.children}
+            </BaseLayout>
     )
 }

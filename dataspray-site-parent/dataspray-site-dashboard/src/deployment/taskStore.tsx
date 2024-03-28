@@ -40,13 +40,11 @@ export default function useTaskStore(organizationName: string | null): SWRInfini
         // add the cursor to the API endpoint
         return [`taskStatuses`, previousPageData?.cursor]
     }
-    console.log(`DEBUDEBUG 1 ${organizationName}`)
     const fetcher = !organizationName ? null : async ([key, cursor]: [string, string, string | undefined]): Promise<TaskStatuses> => {
         const page = await getClient().control().statusAll({
             organizationName,
             cursor,
         });
-        console.log(`DEBUDEBUG 2`, page)
         return page;
     }
     const swrInifinite = useSWRInfinite(getKey, fetcher);

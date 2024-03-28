@@ -99,7 +99,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
             router.push('/auth/create-organization');
         } else if (behavior === 'redirect-if-signed-in' && !!authResult) {
             router.push('/');
-        } else if (behavior === 'redirect-if-signed-out' && authResult == null) {
+        } else if (behavior === 'redirect-if-signed-out' && !authResult) {
             router.push({
                 pathname: '/auth/signin',
                 query: {to: router.asPath},
@@ -113,6 +113,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
     return useMemo(() => ({
         authResult,
         currentOrganizationName,
+        setCurrentOrganizationName: authStore.setCurrentOrganizationName,
         accessToken,
         idToken,
         signUp: (...args: OmitFirstArg<typeof signUp>) => signUp(onSignIn, ...args),
@@ -120,6 +121,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
         signIn: (...args: OmitFirstArg<typeof signIn>) => signIn(onSignIn, ...args),
         signInConfirmTotp: (...args: OmitFirstArg<typeof signInConfirmTotp>) => signInConfirmTotp(onSignIn, ...args),
         signInPasswordChange: (...args: OmitFirstArg<typeof signInPasswordChange>) => signInPasswordChange(onSignIn, ...args),
+        signInRefresh: (...args: OmitFirstArg<typeof signInRefresh>) => signInRefresh(onSignIn, ...args),
         signOut: () => signOut(onSignIn, authResult?.refreshToken),
     }), [authResult, currentOrganizationName, accessToken, idToken, onSignIn]);
 }
@@ -426,6 +428,7 @@ const handleSignInResponse = async (
 const signInRefresh = async (
         onSignIn: (response: AuthResult | null) => void,
         refreshToken: string,
+        to: string | undefined,
         setError: (error: string) => void,
         routerPush: Router['push'],
 ): Promise<AuthResult | undefined> => {
@@ -434,7 +437,7 @@ const signInRefresh = async (
             signInRefreshTokenRequest: {refreshToken}
         })
 
-        return await handleSignInResponse(onSignIn, signInResponse, undefined, undefined, setError, routerPush);
+        return await handleSignInResponse(onSignIn, signInResponse, undefined, to, setError, routerPush);
     } catch (e: any) {
         console.error('Failed to refresh session', e ?? 'Unknown error')
         setError(e?.message || ('Failed to refresh session: ' + (e || 'Unknown error')))

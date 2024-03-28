@@ -26,7 +26,7 @@ import {create} from "zustand";
 import {createJSONStorage, persist, subscribeWithSelector} from "zustand/middleware";
 
 interface State {
-    authResult: AuthResult | null,
+    authResult: AuthResult | null | undefined,
     setAuthResult: (result: AuthResult | null) => void,
     currentOrganizationName: string | null,
     setCurrentOrganizationName: (currentOrganizationName: string) => void,
@@ -36,7 +36,7 @@ const useAuthStore = create<State>()(
         subscribeWithSelector(
         persist(
                 set => ({
-                    authResult: null,
+                    authResult: undefined,
                     setAuthResult: authResult => set(state => ({...state, authResult})),
                     currentOrganizationName: null,
                     setCurrentOrganizationName: currentOrganizationName => set(state => ({
@@ -53,7 +53,7 @@ const useAuthStore = create<State>()(
 );
 
 // Listening changes to auth result to trigger updating the access token in the DS client
-const onAuthResultHandler = (authResult: AuthResult | null) => {
+const onAuthResultHandler = (authResult: AuthResult | null | undefined) => {
     if (authResult) {
         getClient().setAccessToken(authResult.accessToken)
     } else {
