@@ -47,7 +47,7 @@ public interface CognitoJwtVerifier {
         String username;
 
         @Nonnull
-        ImmutableSet<String> groupNames;
+        ImmutableSet<String> organizationNames;
 
         @NonNull
         UsageKeyType usageKeyType;

@@ -32,6 +32,7 @@ import io.dataspray.singletable.ShardPageResult;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import io.dataspray.store.ApiAccessStore;
+import io.dataspray.store.CognitoJwtVerifier;
 import io.dataspray.store.util.KeygenUtil;
 import io.quarkus.runtime.Startup;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -221,7 +222,16 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public Optional<UsageKey> getUsageKey(UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames) {
+    public Optional<UsageKey> getUsageKey(CognitoJwtVerifier.VerifiedCognitoJwt verifiedCognitoJwt) {
+        return getUsageKey(verifiedCognitoJwt.getUsageKeyType(), Optional.of(verifiedCognitoJwt.getUsername()), verifiedCognitoJwt.getOrganizationNames());
+    }
+
+    @Override
+    public Optional<UsageKey> getUsageKey(ApiAccess apiAccess) {
+        return getUsageKey(apiAccess.getUsageKeyType(), Optional.of(apiAccess.getOwnerUsername()), ImmutableSet.of(apiAccess.getOrganizationName()));
+    }
+
+    private Optional<UsageKey> getUsageKey(UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames) {
         return getUsageKeyApiKey(type, usernameOpt, organizationNames)
                 .map(this::getOrCreateUsageKey);
     }
@@ -229,8 +239,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     /**
      * Get or create a Usage Key for the given Usage Key's API key.
      */
-    @VisibleForTesting
-    public UsageKey getOrCreateUsageKey(String apiKey) {
+    private UsageKey getOrCreateUsageKey(String apiKey) {
 
         // Lookup mapping from dynamo
         Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeyByApiKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
@@ -281,7 +290,8 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     /**
      * Get the Usage Key API key for the given Usage Key type.
      */
-    private Optional<String> getUsageKeyApiKey(UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames) {
+    @VisibleForTesting
+    public static Optional<String> getUsageKeyApiKey(UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames) {
 
         // For organization wide usage key, find the organization name
         Optional<String> organizationNameOpt = Optional.empty();

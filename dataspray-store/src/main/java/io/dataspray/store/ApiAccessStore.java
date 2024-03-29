@@ -26,6 +26,7 @@ package io.dataspray.store;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.singletable.DynamoTable;
+import io.dataspray.store.CognitoJwtVerifier.VerifiedCognitoJwt;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
@@ -97,10 +98,9 @@ public interface ApiAccessStore {
 
     void revokeApiKeyForTaskVersion(String organizationName, String taskId, String taskVersion);
 
-    /**
-     * Retrieve the Usage Key if the given access requires a Usage Key.
-     */
-    Optional<UsageKey> getUsageKey(UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames);
+    Optional<UsageKey> getUsageKey(VerifiedCognitoJwt verifiedCognitoJwt);
+
+    Optional<UsageKey> getUsageKey(ApiAccess apiAccess);
 
     void getAllUsageKeys(Consumer<ImmutableList<UsageKey>> batchConsumer);
 

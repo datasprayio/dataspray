@@ -50,8 +50,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 @QuarkusTest
@@ -61,7 +60,7 @@ public class ApiAccessStoreTest {
     MotoInstance motoInstance;
 
     @Inject
-    DynamoApiGatewayApiAccessStore apiAccessStore;
+    ApiAccessStore apiAccessStore;
     @Inject
     DynamoDbClient dynamo;
     @Inject
@@ -100,8 +99,9 @@ public class ApiAccessStoreTest {
                 UsageKeyType.ORGANIZATION,
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
-
-        assertTrue(usageKeyExists(apiAccess1.getApiKey()));
+        assertFalse(usageKeyExists(apiAccess1));
+        assertTrue(apiAccessStore.getUsageKey(apiAccess1).isPresent());
+        assertTrue(usageKeyExists(apiAccess1));
         assertEquals(Set.of("queue1", "queue2"), apiAccess1.getQueueWhitelist());
         assertTrue(apiAccess1.isTtlNotExpired());
 
@@ -112,8 +112,9 @@ public class ApiAccessStoreTest {
                 UsageKeyType.ORGANIZATION,
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
-
-        assertTrue(usageKeyExists(apiAccess2.getApiKey()));
+        assertTrue(usageKeyExists(apiAccess2));
+        assertTrue(apiAccessStore.getUsageKey(apiAccess2).isPresent());
+        assertTrue(usageKeyExists(apiAccess2));
     }
 
     @Test
@@ -214,23 +215,17 @@ public class ApiAccessStoreTest {
     }
 
     @Test
-    public void testUsageKeyCreateGet() throws Exception {
-        String apiKey1 = UUID.randomUUID().toString();
-        UsageKey usageKey1 = apiAccessStore.getOrCreateUsageKey(apiKey1);
-        assertEquals(apiKey1, usageKey1.getApiKey());
-
-        String apiKey2 = UUID.randomUUID().toString();
-        UsageKey usageKey2a = apiAccessStore.getOrCreateUsageKey(apiKey2);
-        UsageKey usageKey2b = apiAccessStore.getOrCreateUsageKey(apiKey2);
-        assertEquals(apiKey2, usageKey2a.getApiKey());
-        assertEquals(apiKey2, usageKey2b.getApiKey());
-        assertEquals(usageKey2a.getUsageKeyId(), usageKey2b.getUsageKeyId());
-    }
-
-    @Test
     public void testUsageKeyScan() throws Exception {
-        UsageKey usageKey1 = apiAccessStore.getOrCreateUsageKey(UUID.randomUUID().toString());
-        UsageKey usageKey2 = apiAccessStore.getOrCreateUsageKey(UUID.randomUUID().toString());
+        ApiAccess apiAccess1 = createApiAccessInDb(
+                UsageKeyType.ORGANIZATION,
+                Optional.empty(),
+                Optional.empty());
+        ApiAccess apiAccess2 = createApiAccessInDb(
+                UsageKeyType.ORGANIZATION,
+                Optional.empty(),
+                Optional.empty());
+        UsageKey usageKey1 = apiAccessStore.getUsageKey(apiAccess1).get();
+        UsageKey usageKey2 = apiAccessStore.getUsageKey(apiAccess2).get();
 
         Set<UsageKey> allUsageKeys = Sets.newHashSet();
         apiAccessStore.getAllUsageKeys(allUsageKeys::addAll);
@@ -272,12 +267,17 @@ public class ApiAccessStoreTest {
         return apiAccess;
     }
 
-    private boolean usageKeyExists(String apiKey) {
+    private boolean usageKeyExists(ApiAccess apiAccess) {
+        String usageKeyApiKey = DynamoApiGatewayApiAccessStore.getUsageKeyApiKey(
+                        apiAccess.getUsageKeyType(),
+                        Optional.of(apiAccess.getOwnerUsername()),
+                        ImmutableSet.of(apiAccess.getOrganizationName()))
+                .orElseThrow();
         TableSchema<UsageKey> usageKeySchema = singleTable.parseTableSchema(UsageKey.class);
         Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
                 .tableName(usageKeySchema.tableName())
                 .key(usageKeySchema.primaryKey(Map.of(
-                        "apiKey", apiKey)))
+                        "apiKey", usageKeyApiKey)))
                 .build()).item()));
         return usageKeyOpt.isPresent();
     }
