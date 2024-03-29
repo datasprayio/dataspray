@@ -97,11 +97,12 @@ public interface ApiAccessStore {
 
     void revokeApiKeyForTaskVersion(String organizationName, String taskId, String taskVersion);
 
-    UsageKey getOrCreateUsageKey(String apiKey);
+    /**
+     * Retrieve the Usage Key if the given access requires a Usage Key.
+     */
+    Optional<UsageKey> getUsageKey(UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames);
 
     void getAllUsageKeys(Consumer<ImmutableList<UsageKey>> batchConsumer);
-
-    Optional<String> getUsageKey(UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames);
 
     @Value
     @AllArgsConstructor
@@ -155,7 +156,7 @@ public interface ApiAccessStore {
     }
 
     /**
-     * Mapping of organization name to Api Key Amazon ID.
+     * Mapping of Usage Key's API Key name to Usage Key's generated ID.
      * <br />
      * An api key has its own Amazon ID that is required for all API calls, hence this mapping.
      */
@@ -169,6 +170,8 @@ public interface ApiAccessStore {
     class UsageKey {
 
         /**
+         * Not to be confused with DataSpray's Api Key, this is the AWS API Gateway's Usage Key's API Key.
+         * <br />
          * Typically a deterministic api key constructed from relevant parts such as organization name.
          * <br />
          * See {@link ApiAccessStore#getUsageKey} for the format of this Api Key.

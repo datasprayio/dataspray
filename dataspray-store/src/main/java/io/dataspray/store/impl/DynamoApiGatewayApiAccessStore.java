@@ -22,6 +22,7 @@
 
 package io.dataspray.store.impl;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
@@ -132,11 +133,6 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     private ApiAccess createApiAccess(ApiAccess apiAccess) {
         checkArgument(apiAccess.isTtlNotExpired());
 
-        // Create Api Gateway Usage Key for this organization if it doesn't exist yet
-        if (UsageKeyType.ORGANIZATION.equals(apiAccess.getUsageKeyType())) {
-            getOrCreateUsageKey(apiAccess.getApiKey());
-        }
-
         // Add api key in dynamo
         dynamo.putItem(PutItemRequest.builder()
                 .tableName(apiAccessSchema.tableName())
@@ -225,6 +221,15 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
+    public Optional<UsageKey> getUsageKey(UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames) {
+        return getUsageKeyApiKey(type, usernameOpt, organizationNames)
+                .map(this::getOrCreateUsageKey);
+    }
+
+    /**
+     * Get or create a Usage Key for the given Usage Key's API key.
+     */
+    @VisibleForTesting
     public UsageKey getOrCreateUsageKey(String apiKey) {
 
         // Lookup mapping from dynamo
@@ -273,8 +278,10 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         } while (cursorOpt.isPresent());
     }
 
-    @Override
-    public Optional<String> getUsageKey(UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames) {
+    /**
+     * Get the Usage Key API key for the given Usage Key type.
+     */
+    private Optional<String> getUsageKeyApiKey(UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames) {
 
         // For organization wide usage key, find the organization name
         Optional<String> organizationNameOpt = Optional.empty();

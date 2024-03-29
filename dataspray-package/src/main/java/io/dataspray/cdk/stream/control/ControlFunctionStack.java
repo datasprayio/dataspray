@@ -63,6 +63,8 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         "Control",
                         "Organization"))
                 .corsForSite(dashboardSiteStack)
+                .memorySize(512)
+                .memorySizeNative(256)
                 .build());
 
         customerFunctionPermissionBoundaryManagedPolicyName = getConstructId("customer-function-permission-boundary");

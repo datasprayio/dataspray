@@ -77,6 +77,7 @@ public abstract class FunctionStack extends BaseStack {
             String functionName,
             String codeZip,
             long memorySize,
+            long memorySizeNative,
             String jvmHandler) {
 
         // Create the function builder
@@ -84,12 +85,12 @@ public abstract class FunctionStack extends BaseStack {
                 .uuid(UUID.nameUUIDFromBytes(constructId.getBytes(Charsets.UTF_8)).toString())
                 .functionName(functionName)
                 .code(Code.fromAsset(codeZip))
-                .memorySize(memorySize)
                 .timeout(Duration.seconds(30));
 
         // Lambda differences between a native image and JVM
         if (detectIsNative(codeZip)) {
             functionBuilder
+                    .memorySize(memorySizeNative)
                     .architecture(detectNativeArch())
                     // PROVIDED does not support arm64
                     .runtime(Runtime.PROVIDED_AL2023)
@@ -101,6 +102,7 @@ public abstract class FunctionStack extends BaseStack {
                     .events(List.of(ApiEventSource.Builder.create("any", "/{proxy+}").build()));
         } else {
             functionBuilder
+                    .memorySize(memorySize)
                     // For JVM default to ARM as it's cheaper
                     .architecture(Architecture.ARM_64)
                     .runtime(Runtime.JAVA_21)

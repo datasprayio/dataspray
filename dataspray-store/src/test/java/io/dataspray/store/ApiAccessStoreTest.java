@@ -61,7 +61,7 @@ public class ApiAccessStoreTest {
     MotoInstance motoInstance;
 
     @Inject
-    ApiAccessStore apiAccessStore;
+    DynamoApiGatewayApiAccessStore apiAccessStore;
     @Inject
     DynamoDbClient dynamo;
     @Inject

@@ -60,6 +60,7 @@ public abstract class ApiFunctionStack extends FunctionStack {
                 apiFunctionName,
                 options.getCodeZip(),
                 options.getMemorySize(),
+                options.getMemorySizeNative(),
                 QUARKUS_LAMBDA_HANDLER);
 
         // Setup CORS using Quarkus Jakarta CORS filter
@@ -92,7 +93,9 @@ public abstract class ApiFunctionStack extends FunctionStack {
         @NonNull
         String codeZip;
         @lombok.Builder.Default
-        int memorySize = 512;
+        int memorySize = 256;
+        @lombok.Builder.Default
+        int memorySizeNative = 128;
         @Nullable
         NextSiteStack corsForSite;
 

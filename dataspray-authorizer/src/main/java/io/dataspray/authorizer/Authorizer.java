@@ -37,6 +37,7 @@ import io.dataspray.authorizer.model.Statement;
 import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.ApiAccessStore.ApiAccess;
+import io.dataspray.store.ApiAccessStore.UsageKey;
 import io.dataspray.store.CognitoJwtVerifier;
 import io.dataspray.store.UserStore;
 import jakarta.inject.Inject;
@@ -91,7 +92,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             final String username;
             final ImmutableSet<String> organizationNames;
             final ImmutableSet<String> queueWhitelist;
-            final Optional<String> usageKey;
+            final Optional<UsageKey> usageKey;
             if (authorizationValueLower.startsWith("cognito ")) {
 
                 // Parse authorization as Cognito JWT Access Token
@@ -111,7 +112,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                 // Parse authorization as our API Key
                 String apiKeyStr = authorizationValue.substring(7);
                 ApiAccess apiAccess = apiAccessStore.getApiAccessByApiKey(apiKeyStr, true)
-                        .orElseThrow(() -> new ApiGatewayUnauthorized("invalid apikey found"));
+                        .orElseThrow(() -> new ApiGatewayUnauthorized("invalid apikey found" + apiKeyStr));
 
                 // Extract access info
                 username = apiAccess.getOwnerUsername();
@@ -145,7 +146,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             AuthPolicy authPolicy = new AuthPolicy(
                     username,
                     policyDocument,
-                    usageKey,
+                    usageKey.map(UsageKey::getApiKey),
                     Map.of(
                             AuthorizerConstants.CONTEXT_KEY_USERNAME, username,
                             AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", organizationNames)
@@ -213,7 +214,12 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                         .collect(ImmutableSet.toImmutableSet()));
             }
         }
-        accountAndTargetStatement.addCondition("StringNotLike", "aws:PrincipalArn", arnMatchersBuilder.build());
+        accountAndTargetStatement.addCondition("StringNotLike", "aws:PrincipalArn",
+                // "When multiple values are specified for a single context key in a policy with negated matching
+                // condition operators [such as 'StringNotLike'], the effective permissions work like a logical NOR.
+                // In negated matching, a logical NOR or NOT OR returns true only if all values evaluate to false."
+                // https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-logic-multiple-context-keys-or-values.html#reference_policies_multiple-conditions-negated-matching-eval
+                arnMatchersBuilder.build());
         policyDocument.addStatement(accountAndTargetStatement);
 
         return policyDocument;
