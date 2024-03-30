@@ -122,9 +122,10 @@ abstract class AuthorizerBase extends AbstractTest {
                     response.statusCode(200)
                             .body("principalId", equalTo(apiAccess.getPrincipalId()))
                             .body("usageIdentifierKey", equalTo(switch (apiAccess.getUsageKeyType()) {
-                                case ORGANIZATION -> "dataspray-usage-key-1-" + apiAccess.getOrganizationName();
-                                case GLOBAL -> "dataspray-usage-key-2-GLOBAL";
-                                case UNLIMITED -> null;
+                                case ORGANIZATION ->
+                                        "dataspray-usage-key-ORGANIZATION-" + apiAccess.getOrganizationName() + getDeployEnv().getSuffix();
+                                case GLOBAL -> "dataspray-usage-key-GLOBAL" + getDeployEnv().getSuffix();
+                                case UNLIMITED -> "dataspray-usage-key-UNLIMITED" + getDeployEnv().getSuffix();
                             }))
                             .body("context." + AuthorizerConstants.CONTEXT_KEY_USERNAME, equalTo(apiAccess.getOwnerUsername()))
                             .body("context." + AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, equalTo(apiAccess.getOrganizationName()))
