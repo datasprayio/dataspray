@@ -185,6 +185,21 @@ public class ApiStack extends FunctionStack {
                 .deleteExisting(false)
                 .build();
 
+        // TODO delete this at next deploy: only used to satisfy CDK stack dependency
+        UsagePlan.Builder.create(this, getConstructId("usage-plan-" + 1))
+                .name("usage-plan-" + 1)
+                .apiStages(List.of(UsagePlanPerApiStage.builder()
+                        .api(restApi)
+                        .stage(restApi.getDeploymentStage()).build()))
+                .quota(QuotaSettings.builder()
+                        .limit(1000)
+                        .offset(0)
+                        .period(Period.DAY).build())
+                .throttle(ThrottleSettings.builder()
+                        .rateLimit(10)
+                        .burstLimit(10).build())
+                .build();
+
         // If changing, keep the old one as well as existing accounts may already point to it
         usagePlanUnlimited = createUsagePlan(restApi, UsageKeyType.UNLIMITED, 1,
                 Optional.empty(),
