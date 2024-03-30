@@ -13,6 +13,14 @@ on:
         options:
           - production
           - staging
+      lambdaRuntime:
+        type: choice
+        description: 'Lambda Runtime'
+        required: true
+        default: 'jvm'
+        options:
+          - jvm
+          - native
 
 concurrency:
   group: deploy-cloud-${{ github.event.inputs.environment || 'staging' }}
@@ -65,4 +73,4 @@ jobs:
       # Deploy Cloud
       - name: Maven build
         timeout-minutes: 60
-        run: MAVEN_ARGS="--batch-mode" make action-deploy-cloud-${{ github.event.inputs.environment || 'staging' }}
+        run: MAVEN_ARGS="--batch-mode" make action-deploy-cloud-${{ github.event.inputs.lambdaRuntime }}-${{ github.event.inputs.environment }}
