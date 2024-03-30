@@ -224,14 +224,16 @@ public class ApiAccessStoreTest {
                 UsageKeyType.ORGANIZATION,
                 Optional.empty(),
                 Optional.empty());
-        UsageKey usageKey1 = apiAccessStore.getUsageKeyApiKey(apiAccess1).get();
-        UsageKey usageKey2 = apiAccessStore.getUsageKeyApiKey(apiAccess2).get();
+        String usageKeyApiKey1 = apiAccessStore.getUsageKeyApiKey(apiAccess1).get();
+        String usageKeyApiKey2 = apiAccessStore.getUsageKeyApiKey(apiAccess2).get();
 
-        Set<UsageKey> allUsageKeys = Sets.newHashSet();
-        apiAccessStore.getAllUsageKeys(allUsageKeys::addAll);
+        Set<String> allUsageKeys = Sets.newHashSet();
+        apiAccessStore.getAllUsageKeys(keys -> keys.stream()
+                .map(UsageKey::getApiKey)
+                .forEach(allUsageKeys::add));
 
-        assertTrue(allUsageKeys.contains(usageKey1));
-        assertTrue(allUsageKeys.contains(usageKey2));
+        assertTrue(allUsageKeys.contains(usageKeyApiKey1));
+        assertTrue(allUsageKeys.contains(usageKeyApiKey2));
     }
 
     /**
