@@ -452,6 +452,13 @@ public class ApiStack extends FunctionStack {
         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-api-key-source.html
         openApiSpec.put("x-amazon-apigateway-api-key-source", "AUTHORIZER");
 
+        // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-validation-sample-api-swagger.html
+        openApiSpec.put("x-amazon-apigateway-request-validators", ImmutableMap.of(
+                "all", ImmutableMap.of(
+                        "validateRequestBody", true,
+                        "validateRequestParameters", true)));
+        openApiSpec.put("x-amazon-apigateway-request-validator", "all");
+
         return ImmutableSet.copyOf(usedWebServices);
     }
 
