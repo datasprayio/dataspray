@@ -178,8 +178,8 @@ public interface ApiAccessStore {
     @AllArgsConstructor
     @EqualsAndHashCode
     @Builder(toBuilder = true)
-    @DynamoTable(type = Primary, partitionKeys = "apiKey", rangePrefix = "usageKeyByApiKey")
-    @DynamoTable(type = Gsi, indexNumber = 1, shardKeys = "apiKey", shardCount = 10, rangePrefix = "allUsageKeys", rangeKeys = "apiKey")
+    @DynamoTable(type = Primary, partitionKeys = "usageKeyApiKey", rangePrefix = "usageKeyByApiKey")
+    @DynamoTable(type = Gsi, indexNumber = 1, shardKeys = "usageKeyApiKey", shardCount = 10, rangePrefix = "allUsageKeys", rangeKeys = "usageKeyApiKey")
     @RegisterForReflection
     class UsageKey {
 
@@ -191,7 +191,7 @@ public interface ApiAccessStore {
          * See {@link ApiAccessStore#getUsageKeyApiKey} for the format of this Api Key.
          */
         @NonNull
-        String apiKey;
+        String usageKeyApiKey;
 
         /**
          * Unique Amazon ID for a given api key.

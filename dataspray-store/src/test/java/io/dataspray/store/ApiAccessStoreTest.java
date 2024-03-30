@@ -100,7 +100,7 @@ public class ApiAccessStoreTest {
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
         assertFalse(usageKeyExists(apiAccess1));
-        assertTrue(apiAccessStore.getUsageKeyApiKey(apiAccess1).isPresent());
+        apiAccessStore.createOrGetUsageKeyForOrganization(apiAccess1.getOrganizationName());
         assertTrue(usageKeyExists(apiAccess1));
         assertEquals(Set.of("queue1", "queue2"), apiAccess1.getQueueWhitelist());
         assertTrue(apiAccess1.isTtlNotExpired());
@@ -112,8 +112,6 @@ public class ApiAccessStoreTest {
                 UsageKeyType.ORGANIZATION,
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
-        assertTrue(usageKeyExists(apiAccess2));
-        assertTrue(apiAccessStore.getUsageKeyApiKey(apiAccess2).isPresent());
         assertTrue(usageKeyExists(apiAccess2));
     }
 
@@ -224,14 +222,16 @@ public class ApiAccessStoreTest {
                 UsageKeyType.ORGANIZATION,
                 Optional.empty(),
                 Optional.empty());
-        String usageKeyApiKey1 = apiAccessStore.getUsageKeyApiKey(apiAccess1).get();
-        String usageKeyApiKey2 = apiAccessStore.getUsageKeyApiKey(apiAccess2).get();
+        String usageKeyApiKey1 = apiAccessStore.createOrGetUsageKeyForOrganization(apiAccess1.getOrganizationName()).getUsageKeyApiKey();
+        String usageKeyApiKey2 = apiAccessStore.createOrGetUsageKeyForOrganization(apiAccess2.getOrganizationName()).getUsageKeyApiKey();
 
         Set<String> allUsageKeys = Sets.newHashSet();
         apiAccessStore.getAllUsageKeys(keys -> keys.stream()
-                .map(UsageKey::getApiKey)
+                .map(UsageKey::getUsageKeyApiKey)
                 .forEach(allUsageKeys::add));
 
+        log.info("All usage keys: {}", allUsageKeys);
+        log.info("Api keys: {} {}", usageKeyApiKey1, usageKeyApiKey2);
         assertTrue(allUsageKeys.contains(usageKeyApiKey1));
         assertTrue(allUsageKeys.contains(usageKeyApiKey2));
     }
@@ -279,7 +279,7 @@ public class ApiAccessStoreTest {
         Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
                 .tableName(usageKeySchema.tableName())
                 .key(usageKeySchema.primaryKey(Map.of(
-                        "apiKey", usageKeyApiKey)))
+                        "usageKeyApiKey", usageKeyApiKey)))
                 .build()).item()));
         return usageKeyOpt.isPresent();
     }

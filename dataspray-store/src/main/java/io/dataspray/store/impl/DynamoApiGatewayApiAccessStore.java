@@ -254,7 +254,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeyByApiKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
                 .tableName(usageKeyByApiKeySchema.tableName())
                 .key(usageKeyByApiKeySchema.primaryKey(Map.of(
-                        "apiKey", apiKey)))
+                        "usageKeyApiKey", apiKey)))
                 .build()).item()));
 
         // Return existing key
