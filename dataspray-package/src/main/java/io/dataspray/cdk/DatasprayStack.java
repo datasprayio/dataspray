@@ -130,7 +130,7 @@ public class DatasprayStack {
                 setConfigProperty(function, FirehoseS3AthenaBatchStore.FIREHOSE_STREAM_NAME_PROP_NAME, ingestStack.getFirehoseName());
                 setConfigProperty(function, LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME, controlStack.getCustomerFunctionPermissionBoundaryManagedPolicyName());
                 setConfigProperty(function, LambdaDeployerImpl.CODE_BUCKET_NAME_PROP_NAME, controlStack.getBucketCodeName());
-                setConfigProperty(function, DynamoApiGatewayApiAccessStore.USAGE_PLAN_ID_PROP_NAME, apiStack.getActiveUsagePlan().getUsagePlanId());
+                setConfigProperty(function, DynamoApiGatewayApiAccessStore.ORGANIZATION_USAGE_PLAN_ID_PROP_NAME, apiStack.getUsagePlanOrganization().getUsagePlanId());
             }
         }
 

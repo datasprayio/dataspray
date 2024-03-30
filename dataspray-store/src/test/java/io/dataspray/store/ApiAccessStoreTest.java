@@ -24,6 +24,7 @@ package io.dataspray.store;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import io.dataspray.common.test.AbstractTest;
 import io.dataspray.common.test.aws.MotoInstance;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.singletable.SingleTable;
@@ -55,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Slf4j
 @QuarkusTest
 @QuarkusTestResource(MotoLifecycleManager.class)
-public class ApiAccessStoreTest {
+public class ApiAccessStoreTest extends AbstractTest {
 
     MotoInstance motoInstance;
 
@@ -100,7 +101,7 @@ public class ApiAccessStoreTest {
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
         assertFalse(usageKeyExists(apiAccess1));
-        apiAccessStore.createOrGetUsageKeyForOrganization(apiAccess1.getOrganizationName());
+        apiAccessStore.getOrCreateUsageKeyApiKeyForOrganization(apiAccess1.getOrganizationName());
         assertTrue(usageKeyExists(apiAccess1));
         assertEquals(Set.of("queue1", "queue2"), apiAccess1.getQueueWhitelist());
         assertTrue(apiAccess1.isTtlNotExpired());
@@ -222,8 +223,8 @@ public class ApiAccessStoreTest {
                 UsageKeyType.ORGANIZATION,
                 Optional.empty(),
                 Optional.empty());
-        String usageKeyApiKey1 = apiAccessStore.createOrGetUsageKeyForOrganization(apiAccess1.getOrganizationName()).getUsageKeyApiKey();
-        String usageKeyApiKey2 = apiAccessStore.createOrGetUsageKeyForOrganization(apiAccess2.getOrganizationName()).getUsageKeyApiKey();
+        String usageKeyApiKey1 = apiAccessStore.getOrCreateUsageKeyApiKeyForOrganization(apiAccess1.getOrganizationName());
+        String usageKeyApiKey2 = apiAccessStore.getOrCreateUsageKeyApiKeyForOrganization(apiAccess2.getOrganizationName());
 
         Set<String> allUsageKeys = Sets.newHashSet();
         apiAccessStore.getAllUsageKeys(keys -> keys.stream()
@@ -271,10 +272,10 @@ public class ApiAccessStoreTest {
 
     private boolean usageKeyExists(ApiAccess apiAccess) {
         String usageKeyApiKey = DynamoApiGatewayApiAccessStore.getUsageKeyApiKey(
-                        apiAccess.getUsageKeyType(),
-                        Optional.of(apiAccess.getOwnerUsername()),
-                        ImmutableSet.of(apiAccess.getOrganizationName()))
-                .orElseThrow();
+                getDeployEnv(),
+                apiAccess.getUsageKeyType(),
+                Optional.of(apiAccess.getOwnerUsername()),
+                ImmutableSet.of(apiAccess.getOrganizationName()));
         TableSchema<UsageKey> usageKeySchema = singleTable.parseTableSchema(UsageKey.class);
         Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
                 .tableName(usageKeySchema.tableName())

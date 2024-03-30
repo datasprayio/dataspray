@@ -98,23 +98,23 @@ public interface ApiAccessStore {
 
     void revokeApiKeyForTaskVersion(String organizationName, String taskId, String taskVersion);
 
-    UsageKey createOrGetUsageKeyForOrganization(String organizationName);
+    String getOrCreateUsageKeyApiKeyForOrganization(String organizationName);
 
     /**
      * Retrieve the deterministic Usage Key Api Key from JWT.
      * <p />
      * Does not check whether it actually exists. You should have already created it with
-     * {@link #createOrGetUsageKeyForOrganization}.
+     * {@link #getOrCreateUsageKeyApiKeyForOrganization}.
      */
-    Optional<String> getUsageKeyApiKey(VerifiedCognitoJwt verifiedCognitoJwt);
+    String getUsageKeyApiKey(VerifiedCognitoJwt verifiedCognitoJwt);
 
     /**
      * Retrieve the deterministic Usage Key Api Key from API Access.
      * <p />
      * Does not check whether it actually exists. You should have already created it with
-     * {@link #createOrGetUsageKeyForOrganization}.
+     * {@link #getOrCreateUsageKeyApiKeyForOrganization}.
      */
-    Optional<String> getUsageKeyApiKey(ApiAccess apiAccess);
+    String getUsageKeyApiKey(ApiAccess apiAccess);
 
     void getAllUsageKeys(Consumer<ImmutableList<UsageKey>> batchConsumer);
 
@@ -214,11 +214,10 @@ public interface ApiAccessStore {
     @RegisterForReflection
     enum UsageKeyType {
         /** No Usage Key */
-        UNLIMITED(0),
+        UNLIMITED,
         /** Usage Key shared for entire organization */
-        ORGANIZATION(1),
+        ORGANIZATION,
         /** Usage Key shared globally */
-        GLOBAL(2);
-        private final long id;
+        GLOBAL
     }
 }

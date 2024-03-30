@@ -36,6 +36,8 @@ import io.dataspray.cdk.store.SingleTableStack;
 import io.dataspray.cdk.template.BaseStack;
 import io.dataspray.cdk.template.FunctionStack;
 import io.dataspray.common.DeployEnvironment;
+import io.dataspray.store.ApiAccessStore.UsageKeyType;
+import io.dataspray.store.impl.DynamoApiGatewayApiAccessStore;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -44,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Fn;
 import software.amazon.awscdk.services.apigateway.ApiDefinition;
+import software.amazon.awscdk.services.apigateway.ApiKey;
 import software.amazon.awscdk.services.apigateway.DomainNameOptions;
 import software.amazon.awscdk.services.apigateway.EndpointType;
 import software.amazon.awscdk.services.apigateway.Period;
@@ -91,7 +94,11 @@ public class ApiStack extends FunctionStack {
     private final SpecRestApi restApi;
     private final RecordSet recordSetA;
     private final RecordSet recordSetAaaa;
-    private final UsagePlan activeUsagePlan;
+    private final UsagePlan usagePlanUnlimited;
+    private final UsagePlan usagePlanGlobal;
+    private final UsagePlan usagePlanOrganization;
+    private final ApiKey apiKeyUnlimited;
+    private final ApiKey apiKeyGlobal;
     private final Options options;
 
     public ApiStack(Construct parent, Options options) {
@@ -179,30 +186,57 @@ public class ApiStack extends FunctionStack {
                 .build();
 
         // If changing, keep the old one as well as existing accounts may already point to it
-        activeUsagePlan = createUsagePlan(1,
-                QuotaSettings.builder()
+        usagePlanUnlimited = createUsagePlan(restApi, UsageKeyType.UNLIMITED, 1,
+                Optional.empty(),
+                Optional.empty());
+        usagePlanGlobal = createUsagePlan(restApi, UsageKeyType.GLOBAL, 1,
+                Optional.empty(),
+                Optional.of(ThrottleSettings.builder()
+                        .rateLimit(100)
+                        .burstLimit(10).build()));
+        usagePlanOrganization = createUsagePlan(restApi, UsageKeyType.ORGANIZATION, 1,
+                Optional.of(QuotaSettings.builder()
                         .limit(1000)
-                        .offset(0) // TODO What does this mean?? AWS is missing documentation
-                        .period(Period.DAY).build(),
-                ThrottleSettings.builder()
+                        .offset(0)
+                        .period(Period.DAY).build()),
+                Optional.of(ThrottleSettings.builder()
                         .rateLimit(10)
-                        .burstLimit(10).build());
+                        .burstLimit(10).build()));
 
-        usedWebServices.forEach(this::addFunctionToApiGatewayPermission);
-    }
 
-    public UsagePlan createUsagePlan(long usagePlanVersion, QuotaSettings quota, ThrottleSettings throttle) {
-        return UsagePlan.Builder.create(this, getConstructId("usage-plan-" + usagePlanVersion))
-                .name("usage-plan-" + usagePlanVersion)
-                .apiStages(List.of(UsagePlanPerApiStage.builder()
-                        .api(restApi)
-                        .stage(restApi.getDeploymentStage()).build()))
-                .quota(quota)
-                .throttle(throttle)
+        String usageKeyApiKeyUnlimited = DynamoApiGatewayApiAccessStore.getUsageKeyApiKey(getDeployEnv(), UsageKeyType.UNLIMITED, Optional.empty(), ImmutableSet.of());
+        apiKeyUnlimited = ApiKey.Builder.create(this, getConstructId(usageKeyApiKeyUnlimited))
+                .apiKeyName(usageKeyApiKeyUnlimited)
+                .value(usageKeyApiKeyUnlimited)
+                .enabled(true)
                 .build();
+        usagePlanUnlimited.addApiKey(apiKeyUnlimited);
+
+        String usageKeyApiKeyGlobal = DynamoApiGatewayApiAccessStore.getUsageKeyApiKey(getDeployEnv(), UsageKeyType.GLOBAL, Optional.empty(), ImmutableSet.of());
+        apiKeyGlobal = ApiKey.Builder.create(this, getConstructId(usageKeyApiKeyGlobal))
+                .apiKeyName(usageKeyApiKeyGlobal)
+                .value(usageKeyApiKeyGlobal)
+                .enabled(true)
+                .build();
+        usagePlanGlobal.addApiKey(apiKeyGlobal);
+
+        usedWebServices.forEach(webService -> addFunctionToApiGatewayPermission(restApi, webService));
     }
 
-    private void addFunctionToApiGatewayPermission(ApiFunctionStack webService) {
+    public UsagePlan createUsagePlan(SpecRestApi restApi, UsageKeyType type, long version, Optional<QuotaSettings> quotaOpt, Optional<ThrottleSettings> throttleOpt) {
+        String name = "usage-plan-" + type.name() + "-v" + version + getDeployEnv().getSuffix();
+        UsagePlan.Builder builder = UsagePlan.Builder.create(this, getConstructId("usage-plan-" + name))
+                .name("usage-plan-" + name)
+                .apiStages(List.of(UsagePlanPerApiStage.builder()
+                        // TODO Add method-level throttling here: .throttle(...)
+                        .api(restApi)
+                        .stage(restApi.getDeploymentStage()).build()));
+        quotaOpt.ifPresent(builder::quota);
+        throttleOpt.ifPresent(builder::throttle);
+        return builder.build();
+    }
+
+    private void addFunctionToApiGatewayPermission(SpecRestApi restApi, ApiFunctionStack webService) {
         webService.getApiFunction().addPermission(getConstructId("gateway-to-lambda-permission"), Permission.builder()
                 .sourceArn(restApi.arnForExecuteApi())
                 .principal(ServicePrincipal.Builder

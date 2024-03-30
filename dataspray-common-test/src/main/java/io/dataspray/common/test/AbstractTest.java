@@ -22,6 +22,7 @@
 
 package io.dataspray.common.test;
 
+import io.dataspray.common.DeployEnvironment;
 import lombok.SneakyThrows;
 
 import java.io.File;
@@ -29,6 +30,11 @@ import java.io.File;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class AbstractTest {
+
+    protected DeployEnvironment getDeployEnv() {
+        // DataSpray Common Test module has this hard-coded in application.properties
+        return DeployEnvironment.TEST;
+    }
 
     /**
      * Fetch a test resource given by name. Expected to be in "{testResources}/{package}/{testClass}/{fileName}"

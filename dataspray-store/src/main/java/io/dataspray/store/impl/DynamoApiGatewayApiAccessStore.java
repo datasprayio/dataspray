@@ -27,6 +27,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import io.dataspray.common.DeployEnvironment;
 import io.dataspray.singletable.IndexSchema;
 import io.dataspray.singletable.ShardPageResult;
 import io.dataspray.singletable.SingleTable;
@@ -57,27 +58,30 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static io.dataspray.common.DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME;
 
 @Slf4j
 @ApplicationScoped
 public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
 
-    public static final String USAGE_PLAN_ID_PROP_NAME = "apiAccess.usagePlan.id";
+    public static final String ORGANIZATION_USAGE_PLAN_ID_PROP_NAME = "apiAccess.organization.usagePlan.id";
     public static final int API_KEY_LENGTH = 42;
     /** Usage Key prefix to satisfy req of at least 20 characters */
     public static final String USAGE_KEY_PREFIX = "dataspray-usage-key-";
 
-    @ConfigProperty(name = USAGE_PLAN_ID_PROP_NAME, defaultValue = "unset")
-    String usagePlanId;
+    @ConfigProperty(name = DEPLOY_ENVIRONMENT_PROP_NAME)
+    DeployEnvironment deployEnv;
+    @ConfigProperty(name = ORGANIZATION_USAGE_PLAN_ID_PROP_NAME, defaultValue = "unset")
+    String usagePlanIdOrganization;
 
     @Inject
-    public DynamoDbClient dynamo;
+    DynamoDbClient dynamo;
     @Inject
-    public SingleTable singleTable;
+    SingleTable singleTable;
     @Inject
-    public ApiGatewayClient apiGatewayClient;
+    ApiGatewayClient apiGatewayClient;
     @Inject
-    public KeygenUtil keygenUtil;
+    KeygenUtil keygenUtil;
 
     private TableSchema<ApiAccess> apiAccessSchema;
     private IndexSchema<ApiAccess> apiAccessByOrganizationSchema;
@@ -134,10 +138,8 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     private ApiAccess createApiAccess(ApiAccess apiAccess) {
         checkArgument(apiAccess.isTtlNotExpired());
 
-        // Create Api Gateway Usage Key for this organization if it doesn't exist yet
-        if (UsageKeyType.ORGANIZATION.equals(apiAccess.getUsageKeyType())) {
-            getOrCreateUsageKey(apiAccess.getApiKey());
-        }
+        // Create Api Gateway Usage Key if it doesn't exist yet
+        getOrCreateUsageKeyApiKey(apiAccess.getUsageKeyType(), apiAccess.getApiKey());
 
         // Add api key in dynamo
         dynamo.putItem(PutItemRequest.builder()
@@ -227,28 +229,46 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public UsageKey createOrGetUsageKeyForOrganization(String organizationName) {
-        return getOrCreateUsageKey(getUsageKeyApiKey(
+    public String getOrCreateUsageKeyApiKeyForOrganization(String organizationName) {
+        return getOrCreateUsageKeyApiKey(
                 UsageKeyType.ORGANIZATION,
-                Optional.empty(),
-                ImmutableSet.of(organizationName))
-                .orElseThrow(IllegalStateException::new));
+                getUsageKeyApiKey(
+                        deployEnv,
+                        UsageKeyType.ORGANIZATION,
+                        Optional.empty(),
+                        ImmutableSet.of(organizationName)));
     }
 
     @Override
-    public Optional<String> getUsageKeyApiKey(CognitoJwtVerifier.VerifiedCognitoJwt verifiedCognitoJwt) {
-        return getUsageKeyApiKey(verifiedCognitoJwt.getUsageKeyType(), Optional.of(verifiedCognitoJwt.getUsername()), verifiedCognitoJwt.getOrganizationNames());
+    public String getUsageKeyApiKey(CognitoJwtVerifier.VerifiedCognitoJwt verifiedCognitoJwt) {
+        return getUsageKeyApiKey(deployEnv, verifiedCognitoJwt.getUsageKeyType(), Optional.of(verifiedCognitoJwt.getUsername()), verifiedCognitoJwt.getOrganizationNames());
     }
 
     @Override
-    public Optional<String> getUsageKeyApiKey(ApiAccess apiAccess) {
-        return getUsageKeyApiKey(apiAccess.getUsageKeyType(), Optional.of(apiAccess.getOwnerUsername()), ImmutableSet.of(apiAccess.getOrganizationName()));
+    public String getUsageKeyApiKey(ApiAccess apiAccess) {
+        return getUsageKeyApiKey(deployEnv, apiAccess.getUsageKeyType(), Optional.of(apiAccess.getOwnerUsername()), ImmutableSet.of(apiAccess.getOrganizationName()));
     }
 
     /**
      * Get or create a Usage Key for the given Usage Key's API key.
      */
-    private UsageKey getOrCreateUsageKey(String apiKey) {
+    private String getOrCreateUsageKeyApiKey(UsageKeyType type, String apiKey) {
+
+        switch (type) {
+
+            // Global and Unlimited are pre-created as part of CDK stack
+            case GLOBAL:
+            case UNLIMITED:
+                return apiKey;
+
+            // Organization usage key is created on demand
+            case ORGANIZATION:
+                break;
+
+            default:
+                throw new IllegalArgumentException("Unsupported UsageKeyType: " + type);
+        }
+        // We have fallen through, this means we are fetching an organization key
 
         // Lookup mapping from dynamo
         Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeyByApiKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
@@ -257,9 +277,9 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
                         "usageKeyApiKey", apiKey)))
                 .build()).item()));
 
-        // Return existing key
+        // Return existing key if exists
         if (usageKeyOpt.isPresent()) {
-            return usageKeyOpt.get();
+            return usageKeyOpt.get().getUsageKeyApiKey();
         }
 
         // Create a new API Gateway Usage Key
@@ -270,7 +290,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         CreateUsagePlanKeyResponse createUsagePlanKeyResponse = apiGatewayClient.createUsagePlanKey(CreateUsagePlanKeyRequest.builder()
                 .keyType("API_KEY")
                 .keyId(createApiKeyResponse.id())
-                .usagePlanId(usagePlanId).build());
+                .usagePlanId(usagePlanIdOrganization).build());
 
         // Store mapping in dynamo
         UsageKey usageKey = new UsageKey(apiKey, createApiKeyResponse.id());
@@ -279,7 +299,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
                 .item(usageKeyByApiKeySchema.toAttrMap(usageKey))
                 .build());
 
-        return usageKey;
+        return usageKey.getUsageKeyApiKey();
     }
 
     @Override
@@ -297,10 +317,13 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     /**
-     * Get the Usage Key API key for the given Usage Key type.
+     * Get the deterministic Usage Key API key for the given Usage Key type.
+     * <p/>
+     * This method is used by both CDK to pre-create api keys and also by the API Gateway to fetch the key,
+     * Do not change the format of the key without considering the implications.
      */
     @VisibleForTesting
-    public static Optional<String> getUsageKeyApiKey(UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames) {
+    public static String getUsageKeyApiKey(DeployEnvironment deployEnv, UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames) {
 
         // For organization wide usage key, find the organization name
         Optional<String> organizationNameOpt = Optional.empty();
@@ -317,13 +340,14 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
             }
         }
 
-        return switch (type) {
-            case UNLIMITED -> Optional.empty();
-            // Share usage key across all API keys on the same organization.
-            // Let's just use the account ID as usage key since it's not a secret.
-            case ORGANIZATION -> Optional.of(USAGE_KEY_PREFIX + type.getId() + "-" + organizationNameOpt.get());
-            case GLOBAL -> Optional.of(USAGE_KEY_PREFIX + type.getId() + "-GLOBAL");
-            default -> throw new IllegalStateException("Unknown usage key type: " + type);
-        };
+        StringBuilder usageKeyApiKeyBuilder = new StringBuilder()
+                .append(USAGE_KEY_PREFIX)
+                .append(type.name());
+        organizationNameOpt.ifPresent(organizationName -> usageKeyApiKeyBuilder
+                .append("-")
+                .append(organizationName));
+        usageKeyApiKeyBuilder
+                .append(deployEnv.getSuffix());
+        return usageKeyApiKeyBuilder.toString();
     }
 }

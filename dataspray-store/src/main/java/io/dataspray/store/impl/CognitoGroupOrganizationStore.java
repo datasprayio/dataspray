@@ -66,7 +66,7 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
                 .build()).group();
 
         // Create Api Gateway Usage Key for this organization
-        apiAccessStore.createOrGetUsageKeyForOrganization(organizationName);
+        apiAccessStore.getOrCreateUsageKeyApiKeyForOrganization(organizationName);
 
         // Add author to group
         addUserToOrganization(group.groupName(), authorUsername);

@@ -91,7 +91,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             final String username;
             final ImmutableSet<String> organizationNames;
             final ImmutableSet<String> queueWhitelist;
-            final Optional<String> usageKeyApiKey;
+            final String usageKeyApiKey;
             if (authorizationValueLower.startsWith("cognito ")) {
 
                 // Parse authorization as Cognito JWT Access Token
@@ -145,7 +145,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             AuthPolicy authPolicy = new AuthPolicy(
                     username,
                     policyDocument,
-                    usageKeyApiKey,
+                    Optional.of(usageKeyApiKey),
                     Map.of(
                             AuthorizerConstants.CONTEXT_KEY_USERNAME, username,
                             AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", organizationNames)
