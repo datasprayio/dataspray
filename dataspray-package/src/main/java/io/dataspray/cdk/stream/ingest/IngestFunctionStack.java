@@ -25,6 +25,7 @@ package io.dataspray.cdk.stream.ingest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.cdk.api.ApiFunctionStack;
+import io.dataspray.cdk.store.SingleTableStack;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.TargetStore;
 import lombok.Getter;
@@ -62,7 +63,7 @@ public class IngestFunctionStack extends ApiFunctionStack {
     private final String firehoseName;
     private final DeliveryStream firehose;
 
-    public IngestFunctionStack(Construct parent, DeployEnvironment deployEnv, String codeZip) {
+    public IngestFunctionStack(Construct parent, DeployEnvironment deployEnv, String codeZip, SingleTableStack singleTableStack) {
         super(parent, Options.builder()
                 .deployEnv(deployEnv)
                 .functionName("ingest")
@@ -70,6 +71,21 @@ public class IngestFunctionStack extends ApiFunctionStack {
                 .apiTags(ImmutableSet.of(
                         "Ingest",
                         "Health"))
+                .build());
+
+        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+                .sid(getConstructIdCamelCase("SingleTable"))
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "dynamodb:GetItem",
+                        "dynamodb:BatchGetItem",
+                        "dynamodb:Query",
+                        "dynamodb:PutItem",
+                        "dynamodb:UpdateItem",
+                        "dynamodb:BatchWriteItem",
+                        "dynamodb:DeleteItem"))
+                .resources(ImmutableList.of(
+                        singleTableStack.getSingleTableTable().getTableArn()))
                 .build());
 
         getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()

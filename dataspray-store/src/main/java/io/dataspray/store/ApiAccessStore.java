@@ -98,9 +98,23 @@ public interface ApiAccessStore {
 
     void revokeApiKeyForTaskVersion(String organizationName, String taskId, String taskVersion);
 
-    Optional<UsageKey> getUsageKey(VerifiedCognitoJwt verifiedCognitoJwt);
+    UsageKey createOrGetUsageKeyForOrganization(String organizationName);
 
-    Optional<UsageKey> getUsageKey(ApiAccess apiAccess);
+    /**
+     * Retrieve the deterministic Usage Key Api Key from JWT.
+     * <p />
+     * Does not check whether it actually exists. You should have already created it with
+     * {@link #createOrGetUsageKeyForOrganization}.
+     */
+    Optional<String> getUsageKeyApiKey(VerifiedCognitoJwt verifiedCognitoJwt);
+
+    /**
+     * Retrieve the deterministic Usage Key Api Key from API Access.
+     * <p />
+     * Does not check whether it actually exists. You should have already created it with
+     * {@link #createOrGetUsageKeyForOrganization}.
+     */
+    Optional<String> getUsageKeyApiKey(ApiAccess apiAccess);
 
     void getAllUsageKeys(Consumer<ImmutableList<UsageKey>> batchConsumer);
 
@@ -174,7 +188,7 @@ public interface ApiAccessStore {
          * <br />
          * Typically a deterministic api key constructed from relevant parts such as organization name.
          * <br />
-         * See {@link ApiAccessStore#getUsageKey} for the format of this Api Key.
+         * See {@link ApiAccessStore#getUsageKeyApiKey} for the format of this Api Key.
          */
         @NonNull
         String apiKey;

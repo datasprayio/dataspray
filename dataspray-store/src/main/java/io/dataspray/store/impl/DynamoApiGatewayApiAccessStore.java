@@ -134,6 +134,11 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     private ApiAccess createApiAccess(ApiAccess apiAccess) {
         checkArgument(apiAccess.isTtlNotExpired());
 
+        // Create Api Gateway Usage Key for this organization if it doesn't exist yet
+        if (UsageKeyType.ORGANIZATION.equals(apiAccess.getUsageKeyType())) {
+            getOrCreateUsageKey(apiAccess.getApiKey());
+        }
+
         // Add api key in dynamo
         dynamo.putItem(PutItemRequest.builder()
                 .tableName(apiAccessSchema.tableName())
@@ -222,18 +227,22 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public Optional<UsageKey> getUsageKey(CognitoJwtVerifier.VerifiedCognitoJwt verifiedCognitoJwt) {
-        return getUsageKey(verifiedCognitoJwt.getUsageKeyType(), Optional.of(verifiedCognitoJwt.getUsername()), verifiedCognitoJwt.getOrganizationNames());
+    public UsageKey createOrGetUsageKeyForOrganization(String organizationName) {
+        return getOrCreateUsageKey(getUsageKeyApiKey(
+                UsageKeyType.ORGANIZATION,
+                Optional.empty(),
+                ImmutableSet.of(organizationName))
+                .orElseThrow(IllegalStateException::new));
     }
 
     @Override
-    public Optional<UsageKey> getUsageKey(ApiAccess apiAccess) {
-        return getUsageKey(apiAccess.getUsageKeyType(), Optional.of(apiAccess.getOwnerUsername()), ImmutableSet.of(apiAccess.getOrganizationName()));
+    public Optional<String> getUsageKeyApiKey(CognitoJwtVerifier.VerifiedCognitoJwt verifiedCognitoJwt) {
+        return getUsageKeyApiKey(verifiedCognitoJwt.getUsageKeyType(), Optional.of(verifiedCognitoJwt.getUsername()), verifiedCognitoJwt.getOrganizationNames());
     }
 
-    private Optional<UsageKey> getUsageKey(UsageKeyType type, Optional<String> usernameOpt, ImmutableSet<String> organizationNames) {
-        return getUsageKeyApiKey(type, usernameOpt, organizationNames)
-                .map(this::getOrCreateUsageKey);
+    @Override
+    public Optional<String> getUsageKeyApiKey(ApiAccess apiAccess) {
+        return getUsageKeyApiKey(apiAccess.getUsageKeyType(), Optional.of(apiAccess.getOwnerUsername()), ImmutableSet.of(apiAccess.getOrganizationName()));
     }
 
     /**

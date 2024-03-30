@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableSet;
 import io.dataspray.cdk.api.ApiFunctionStack;
 import io.dataspray.cdk.site.NextSiteStack;
 import io.dataspray.cdk.store.AuthNzStack;
+import io.dataspray.cdk.store.SingleTableStack;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.impl.LambdaDeployerImpl;
 import io.dataspray.store.impl.SqsStreamStore;
@@ -53,7 +54,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
     private final String bucketCodeName;
     private final Bucket bucketCode;
 
-    public ControlFunctionStack(Construct parent, DeployEnvironment deployEnv, String codeZip, AuthNzStack authNzStack, NextSiteStack dashboardSiteStack) {
+    public ControlFunctionStack(Construct parent, DeployEnvironment deployEnv, String codeZip, AuthNzStack authNzStack, NextSiteStack dashboardSiteStack, SingleTableStack singleTableStack) {
         super(parent, Options.builder()
                 .deployEnv(deployEnv)
                 .functionName("control")
@@ -113,6 +114,20 @@ public class ControlFunctionStack extends ApiFunctionStack {
                 .resources(ImmutableList.of(bucketCode.getBucketArn() + "/*"))
                 .build());
 
+        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+                .sid(getConstructIdCamelCase("SingleTable"))
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "dynamodb:GetItem",
+                        "dynamodb:BatchGetItem",
+                        "dynamodb:Query",
+                        "dynamodb:PutItem",
+                        "dynamodb:UpdateItem",
+                        "dynamodb:BatchWriteItem",
+                        "dynamodb:DeleteItem"))
+                .resources(ImmutableList.of(
+                        singleTableStack.getSingleTableTable().getTableArn()))
+                .build());
         getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerManagementLambda"))
                 .effect(Effect.ALLOW)

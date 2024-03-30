@@ -100,7 +100,7 @@ public class ApiAccessStoreTest {
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
         assertFalse(usageKeyExists(apiAccess1));
-        assertTrue(apiAccessStore.getUsageKey(apiAccess1).isPresent());
+        assertTrue(apiAccessStore.getUsageKeyApiKey(apiAccess1).isPresent());
         assertTrue(usageKeyExists(apiAccess1));
         assertEquals(Set.of("queue1", "queue2"), apiAccess1.getQueueWhitelist());
         assertTrue(apiAccess1.isTtlNotExpired());
@@ -113,7 +113,7 @@ public class ApiAccessStoreTest {
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
         assertTrue(usageKeyExists(apiAccess2));
-        assertTrue(apiAccessStore.getUsageKey(apiAccess2).isPresent());
+        assertTrue(apiAccessStore.getUsageKeyApiKey(apiAccess2).isPresent());
         assertTrue(usageKeyExists(apiAccess2));
     }
 
@@ -224,8 +224,8 @@ public class ApiAccessStoreTest {
                 UsageKeyType.ORGANIZATION,
                 Optional.empty(),
                 Optional.empty());
-        UsageKey usageKey1 = apiAccessStore.getUsageKey(apiAccess1).get();
-        UsageKey usageKey2 = apiAccessStore.getUsageKey(apiAccess2).get();
+        UsageKey usageKey1 = apiAccessStore.getUsageKeyApiKey(apiAccess1).get();
+        UsageKey usageKey2 = apiAccessStore.getUsageKeyApiKey(apiAccess2).get();
 
         Set<UsageKey> allUsageKeys = Sets.newHashSet();
         apiAccessStore.getAllUsageKeys(allUsageKeys::addAll);

@@ -37,7 +37,6 @@ import io.dataspray.authorizer.model.Statement;
 import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.ApiAccessStore.ApiAccess;
-import io.dataspray.store.ApiAccessStore.UsageKey;
 import io.dataspray.store.CognitoJwtVerifier;
 import io.dataspray.store.UserStore;
 import jakarta.inject.Inject;
@@ -92,7 +91,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             final String username;
             final ImmutableSet<String> organizationNames;
             final ImmutableSet<String> queueWhitelist;
-            final Optional<UsageKey> usageKey;
+            final Optional<String> usageKeyApiKey;
             if (authorizationValueLower.startsWith("cognito ")) {
 
                 // Parse authorization as Cognito JWT Access Token
@@ -104,7 +103,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                 username = verifiedCognitoJwt.getUsername();
                 organizationNames = verifiedCognitoJwt.getOrganizationNames();
                 queueWhitelist = ImmutableSet.of();
-                usageKey = apiAccessStore.getUsageKey(verifiedCognitoJwt);
+                usageKeyApiKey = apiAccessStore.getUsageKeyApiKey(verifiedCognitoJwt);
                 identifier = "user " + verifiedCognitoJwt.getUsername() + " via cognito JWT";
 
             } else if (authorizationValueLower.startsWith("apikey ")) {
@@ -118,7 +117,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                 username = apiAccess.getOwnerUsername();
                 organizationNames = ImmutableSet.of(apiAccess.getOrganizationName());
                 queueWhitelist = apiAccess.getQueueWhitelist();
-                usageKey = apiAccessStore.getUsageKey(apiAccess);
+                usageKeyApiKey = apiAccessStore.getUsageKeyApiKey(apiAccess);
                 switch (apiAccess.getOwnerType()) {
                     case USER -> identifier = "user " + apiAccess.getOwnerUsername() + " via apikey";
                     case TASK ->
@@ -146,7 +145,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             AuthPolicy authPolicy = new AuthPolicy(
                     username,
                     policyDocument,
-                    usageKey.map(UsageKey::getApiKey),
+                    usageKeyApiKey,
                     Map.of(
                             AuthorizerConstants.CONTEXT_KEY_USERNAME, username,
                             AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", organizationNames)

@@ -101,10 +101,10 @@ public class DatasprayStack {
         SingleTableStack singleTableStack = new SingleTableStack(app, deployEnv);
         AuthNzStack authNzStack = new AuthNzStack(app, deployEnv);
 
-        IngestFunctionStack ingestStack = new IngestFunctionStack(app, deployEnv, ingestCodeZip);
+        IngestFunctionStack ingestStack = new IngestFunctionStack(app, deployEnv, ingestCodeZip, singleTableStack);
         functionStacks.add(ingestStack);
 
-        ControlFunctionStack controlStack = new ControlFunctionStack(app, deployEnv, controlCodeZip, authNzStack, dashboardSite);
+        ControlFunctionStack controlStack = new ControlFunctionStack(app, deployEnv, controlCodeZip, authNzStack, dashboardSite, singleTableStack);
         functionStacks.add(controlStack);
 
         ApiStack apiStack = new ApiStack(app, ApiStack.Options.builder()
@@ -113,6 +113,7 @@ public class DatasprayStack {
                 .apiFunctions(ImmutableSet.of(ingestStack, controlStack))
                 .authorizerCodeZip(authorizerCodeZip)
                 .dnsStack(dnsStack)
+                .singleTableStack(singleTableStack)
                 .build());
         functionStacks.add(apiStack);
 

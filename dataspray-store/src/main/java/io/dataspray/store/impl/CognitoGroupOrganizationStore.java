@@ -24,6 +24,7 @@ package io.dataspray.store.impl;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
+import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.OrganizationStore;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -51,6 +52,8 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
     Gson gson;
     @Inject
     CognitoIdentityProviderClient cognitoClient;
+    @Inject
+    ApiAccessStore apiAccessStore;
 
     @Override
     public GroupType createOrganization(String organizationName, String authorUsername) {
@@ -61,6 +64,9 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
                 .groupName(organizationName)
                 .description(gson.toJson(new OrganizationMetadata(authorUsername)))
                 .build()).group();
+
+        // Create Api Gateway Usage Key for this organization
+        apiAccessStore.createOrGetUsageKeyForOrganization(organizationName);
 
         // Add author to group
         addUserToOrganization(group.groupName(), authorUsername);

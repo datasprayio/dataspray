@@ -32,6 +32,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.dataspray.authorizer.Authorizer;
 import io.dataspray.cdk.dns.DnsStack;
+import io.dataspray.cdk.store.SingleTableStack;
 import io.dataspray.cdk.template.BaseStack;
 import io.dataspray.cdk.template.FunctionStack;
 import io.dataspray.common.DeployEnvironment;
@@ -105,6 +106,20 @@ public class ApiStack extends FunctionStack {
                 512,
                 128,
                 Authorizer.class.getName() + "::handleRequest");
+        authorizerFunction.addToRolePolicy(PolicyStatement.Builder.create()
+                .sid(getConstructIdCamelCase("SingleTable"))
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "dynamodb:GetItem",
+                        "dynamodb:BatchGetItem",
+                        "dynamodb:Query",
+                        "dynamodb:PutItem",
+                        "dynamodb:UpdateItem",
+                        "dynamodb:BatchWriteItem",
+                        "dynamodb:DeleteItem"))
+                .resources(ImmutableList.of(
+                        options.getSingleTableStack().getSingleTableTable().getTableArn()))
+                .build());
 
         roleApiGatewayInvoke = Role.Builder.create(this, getConstructId("role"))
                 .roleName(getConstructId("authorizer-role-invoke"))
@@ -420,5 +435,7 @@ public class ApiStack extends FunctionStack {
         String authorizerCodeZip;
         @NonNull
         DnsStack dnsStack;
+        @NonNull
+        SingleTableStack singleTableStack;
     }
 }
