@@ -73,4 +73,4 @@ jobs:
       # Deploy Cloud
       - name: Maven build
         timeout-minutes: 60
-        run: MAVEN_ARGS="--batch-mode" make action-deploy-cloud-${{ github.event.inputs.lambdaRuntime }}-${{ github.event.inputs.environment }}
+        run: MAVEN_ARGS="--batch-mode" make action-deploy-cloud-${{ github.event.inputs.lambdaRuntime || 'jvm' }}-${{ github.event.inputs.environment || 'staging' }}
