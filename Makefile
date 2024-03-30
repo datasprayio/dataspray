@@ -10,9 +10,9 @@ action-test:
 
 # Deploy to particular environment (production, staging) with JVM or native executables
 # Used by GitHub Action workflow deploy.yml
-action-deploy-cloud-jvm-%:
-	AWS_PROFILE=dataspray mvn clean deploy -Pnative,$*
 action-deploy-cloud-native-%:
+	AWS_PROFILE=dataspray mvn clean deploy -Pnative,$*
+action-deploy-cloud-jvm-%:
 	AWS_PROFILE=dataspray mvn clean deploy -P$*
 
 # Deploy client libraries to package managers
