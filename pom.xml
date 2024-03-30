@@ -760,58 +760,59 @@
     </build>
 
     <profiles>
-        <profile>
-            <id>production</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>enforce-production</id>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <requireActiveProfile>
-                                            <profiles>native</profiles>
-                                        </requireActiveProfile>
-                                    </rules>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>staging</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>enforce-staging</id>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <requireActiveProfile>
-                                            <profiles>native</profiles>
-                                        </requireActiveProfile>
-                                    </rules>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
+        <!-- For now, allow staging/production to deploy non-native JVM -->
+        <!--        <profile>-->
+        <!--            <id>production</id>-->
+        <!--            <build>-->
+        <!--                <plugins>-->
+        <!--                    <plugin>-->
+        <!--                        <groupId>org.apache.maven.plugins</groupId>-->
+        <!--                        <artifactId>maven-enforcer-plugin</artifactId>-->
+        <!--                        <executions>-->
+        <!--                            <execution>-->
+        <!--                                <id>enforce-production</id>-->
+        <!--                                <goals>-->
+        <!--                                    <goal>enforce</goal>-->
+        <!--                                </goals>-->
+        <!--                                <configuration>-->
+        <!--                                    <rules>-->
+        <!--                                        <requireActiveProfile>-->
+        <!--                                            <profiles>native</profiles>-->
+        <!--                                        </requireActiveProfile>-->
+        <!--                                    </rules>-->
+        <!--                                </configuration>-->
+        <!--                            </execution>-->
+        <!--                        </executions>-->
+        <!--                    </plugin>-->
+        <!--                </plugins>-->
+        <!--            </build>-->
+        <!--        </profile>-->
+        <!--        <profile>-->
+        <!--            <id>staging</id>-->
+        <!--            <build>-->
+        <!--                <plugins>-->
+        <!--                    <plugin>-->
+        <!--                        <groupId>org.apache.maven.plugins</groupId>-->
+        <!--                        <artifactId>maven-enforcer-plugin</artifactId>-->
+        <!--                        <executions>-->
+        <!--                            <execution>-->
+        <!--                                <id>enforce-staging</id>-->
+        <!--                                <goals>-->
+        <!--                                    <goal>enforce</goal>-->
+        <!--                                </goals>-->
+        <!--                                <configuration>-->
+        <!--                                    <rules>-->
+        <!--                                        <requireActiveProfile>-->
+        <!--                                            <profiles>native</profiles>-->
+        <!--                                        </requireActiveProfile>-->
+        <!--                                    </rules>-->
+        <!--                                </configuration>-->
+        <!--                            </execution>-->
+        <!--                        </executions>-->
+        <!--                    </plugin>-->
+        <!--                </plugins>-->
+        <!--            </build>-->
+        <!--        </profile>-->
         <profile>
             <id>selfhost</id>
         </profile>
