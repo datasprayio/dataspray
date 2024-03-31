@@ -87,7 +87,22 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
     }, [accessToken, authResult, idToken, onSignIn]);
 
     // Fetch current organization name or pick first one from the group
-    const currentOrganizationName = authStore.currentOrganizationName || idToken?.["cognito:groups"]?.[0] || null;
+    // - undefined: auth is still pending
+    // - null: user is not part of any organization
+    // - string: selected organization
+    let currentOrganizationName: string | null | undefined = undefined;
+    if (idToken) {
+        if (authStore.currentOrganizationName) {
+            currentOrganizationName = idToken["cognito:groups"]?.includes(authStore.currentOrganizationName)
+                    // The persisted selection is valid
+                    ? authStore.currentOrganizationName
+                    // The user is no longer part of the organization that was persisted
+                    : null;
+        } else {
+            // There is no explicit organization selected, pick the first one
+            currentOrganizationName = idToken["cognito:groups"]?.[0] || null;
+        }
+    }
 
     // Redirect if this page requests that user is signed in/out
     const router = useRouter();

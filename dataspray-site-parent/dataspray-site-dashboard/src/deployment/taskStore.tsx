@@ -25,7 +25,7 @@ import useSWRInfinite, {SWRInfiniteResponse} from 'swr/infinite';
 import {TaskStatus, TaskStatuses} from 'dataspray-client';
 import {useState} from "react";
 
-export default function useTaskStore(organizationName: string | null): SWRInfiniteResponse<TaskStatuses, any> & {
+export default function useTaskStore(organizationName?: string | null): SWRInfiniteResponse<TaskStatuses, any> & {
     hasMore: boolean,
     tasks: TaskStatus[],
     pageIndex: number,
