@@ -60,8 +60,7 @@ public abstract class ApiFunctionStack extends FunctionStack {
                 apiFunctionName,
                 options.getCodeZip(),
                 options.getMemorySize(),
-                options.getMemorySizeNative(),
-                QUARKUS_LAMBDA_HANDLER);
+                options.getMemorySizeNative());
 
         // Setup CORS using Quarkus Jakarta CORS filter
         // https://quarkus.io/guides/security-cors

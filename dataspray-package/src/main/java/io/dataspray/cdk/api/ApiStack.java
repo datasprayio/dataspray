@@ -111,8 +111,7 @@ public class ApiStack extends FunctionStack {
                 authorizerFunctionName,
                 options.getAuthorizerCodeZip(),
                 512,
-                128,
-                Authorizer.class.getName() + "::handleRequest");
+                128);
         authorizerFunction.addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("SingleTable"))
                 .effect(Effect.ALLOW)

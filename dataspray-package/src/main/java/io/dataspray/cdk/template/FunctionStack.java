@@ -77,8 +77,7 @@ public abstract class FunctionStack extends BaseStack {
             String functionName,
             String codeZip,
             long memorySize,
-            long memorySizeNative,
-            String jvmHandler) {
+            long memorySizeNative) {
 
         // Create the function builder
         SingletonFunction.Builder functionBuilder = SingletonFunction.Builder.create(this, constructId)
@@ -106,7 +105,7 @@ public abstract class FunctionStack extends BaseStack {
                     // For JVM default to ARM as it's cheaper
                     .architecture(Architecture.ARM_64)
                     .runtime(Runtime.JAVA_21)
-                    .handler(jvmHandler);
+                    .handler(QUARKUS_LAMBDA_HANDLER);
         }
 
         // Finally construct the function
