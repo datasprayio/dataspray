@@ -37,7 +37,6 @@ public class SingleTableStack extends BaseStack {
 
     private final String tablePrefix;
     private final Table singleTableTable;
-    private final Table singleTableTableDeleteMe;
 
     public SingleTableStack(Construct parent, DeployEnvironment deployEnv) {
         super(parent, "singletable", deployEnv);
@@ -51,17 +50,5 @@ public class SingleTableStack extends BaseStack {
                         tablePrefix,
                         SingleTableProvider.LSI_COUNT,
                         SingleTableProvider.GSI_COUNT);
-
-        // TODO delete me after next deploy
-        singleTableTableDeleteMe = SingleTable.builder()
-                .tablePrefix(getConstructId("dataspray"))
-                .build()
-                .createCdkTable(
-                        this,
-                        "dataspray",
-                        SingleTableProvider.LSI_COUNT,
-                        SingleTableProvider.GSI_COUNT);
-        exportValue(singleTableTableDeleteMe.getTableArn());
-        exportValue(singleTableTableDeleteMe.getTableName());
     }
 }
