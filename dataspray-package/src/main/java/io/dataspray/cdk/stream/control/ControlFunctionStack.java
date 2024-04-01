@@ -129,6 +129,17 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         singleTableStack.getSingleTableTable().getTableArn()))
                 .build());
         getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+                .sid(getConstructIdCamelCase("ApiGateway"))
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "apigateway:POST")) // POST is for creating API Keys and Usage Plan Keys
+                .resources(ImmutableList.of(
+                        // NOTE: this is broad permission for any API Gateway since adding the API Gateway ARN
+                        // would create a circular dependency between the two stacks.
+                        "arn:aws:apigateway:" + getRegion() + ":" + getAccount() + ":/apikeys",
+                        "arn:aws:apigateway:" + getRegion() + ":" + getAccount() + ":/usageplans/*/keys"))
+                .build());
+        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerManagementLambda"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
