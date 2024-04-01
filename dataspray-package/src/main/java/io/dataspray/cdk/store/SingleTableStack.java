@@ -61,6 +61,7 @@ public class SingleTableStack extends BaseStack {
                         "dataspray",
                         SingleTableProvider.LSI_COUNT,
                         SingleTableProvider.GSI_COUNT);
+        exportValue(singleTableTableDeleteMe.getTableArn());
         exportValue(singleTableTableDeleteMe.getTableName());
     }
 }
