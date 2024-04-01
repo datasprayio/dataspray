@@ -47,7 +47,7 @@ public class SingleTableStack extends BaseStack {
                 .build()
                 .createCdkTable(
                         this,
-                        "dataspray",
+                        tablePrefix,
                         SingleTableProvider.LSI_COUNT,
                         SingleTableProvider.GSI_COUNT);
 
