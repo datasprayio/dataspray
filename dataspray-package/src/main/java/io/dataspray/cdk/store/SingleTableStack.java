@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,13 +35,15 @@ import software.constructs.Construct;
 @Getter
 public class SingleTableStack extends BaseStack {
 
+    private final String tablePrefix;
     private final Table singleTableTable;
 
     public SingleTableStack(Construct parent, DeployEnvironment deployEnv) {
         super(parent, "singletable", deployEnv);
 
+        tablePrefix = getConstructId("dataspray");
         singleTableTable = SingleTable.builder()
-                .tablePrefix(getConstructId("dataspray"))
+                .tablePrefix(tablePrefix)
                 .build()
                 .createCdkTable(
                         this,

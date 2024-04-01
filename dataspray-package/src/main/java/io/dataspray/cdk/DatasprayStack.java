@@ -125,7 +125,7 @@ public class DatasprayStack {
                 setConfigProperty(function, ControlResource.DATASPRAY_API_ENDPOINT_PROP_NAME, apiStack.getApiFqdn(functionStack));
                 setConfigProperty(function, CognitoUserStore.USER_POOL_ID_PROP_NAME, authNzStack.getUserPool().getUserPoolId());
                 setConfigProperty(function, CognitoUserStore.USER_POOL_APP_CLIENT_ID_PROP_NAME, authNzStack.getUserPoolClient().getUserPoolClientId());
-                setConfigProperty(function, SingleTableProvider.TABLE_PREFIX_PROP_NAME, singleTableStack.getSingleTableTable().getTableName());
+                setConfigProperty(function, SingleTableProvider.TABLE_PREFIX_PROP_NAME, singleTableStack.getTablePrefix());
                 setConfigProperty(function, FirehoseS3AthenaBatchStore.ETL_BUCKET_PROP_NAME, ingestStack.getBucketEtlName());
                 setConfigProperty(function, FirehoseS3AthenaBatchStore.FIREHOSE_STREAM_NAME_PROP_NAME, ingestStack.getFirehoseName());
                 setConfigProperty(function, LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME, controlStack.getCustomerFunctionPermissionBoundaryManagedPolicyName());
