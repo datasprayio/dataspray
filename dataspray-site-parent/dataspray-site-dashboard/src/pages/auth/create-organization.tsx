@@ -40,7 +40,7 @@ import {getClient} from "../../util/dataSprayClientWrapper";
 const Page: NextPageWithLayout = () => {
     const router = useRouter();
     const {signInRefresh, authResult} = useAuth('redirect-if-signed-out');
-    const [error, setError] = useState<React.ReactNode>()
+    const [error, setError] = useState<string>()
 
     return (
             <>
@@ -63,10 +63,10 @@ const Page: NextPageWithLayout = () => {
                                         organizationName: values.organizationName,
                                     })
                                 } catch (e: any) {
-                                    if (e.status === 409) {
+                                    if (e?.response?.status === 409) {
                                         setError('Organization name already exists.');
                                     } else {
-                                        setError(e);
+                                        setError(`Unknown error: ${e}`);
                                     }
                                     return;
                                 }
