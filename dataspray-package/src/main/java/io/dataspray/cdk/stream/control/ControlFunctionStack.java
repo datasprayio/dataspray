@@ -136,8 +136,8 @@ public class ControlFunctionStack extends ApiFunctionStack {
                 .resources(ImmutableList.of(
                         // NOTE: this is broad permission for any API Gateway since adding the API Gateway ARN
                         // would create a circular dependency between the two stacks.
-                        "arn:aws:apigateway:" + getRegion() + ":" + getAccount() + ":/apikeys",
-                        "arn:aws:apigateway:" + getRegion() + ":" + getAccount() + ":/usageplans/*/keys"))
+                        "arn:aws:apigateway:" + getRegion() + "::/apikeys",
+                        "arn:aws:apigateway:" + getRegion() + "::/usageplans/*/keys"))
                 .build());
         getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerManagementLambda"))
