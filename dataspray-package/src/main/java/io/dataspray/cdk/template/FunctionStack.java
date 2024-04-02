@@ -22,7 +22,6 @@
 
 package io.dataspray.cdk.template;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import io.dataspray.common.DeployEnvironment;
 import lombok.Getter;
@@ -30,17 +29,18 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.Value;
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.services.lambda.Alias;
 import software.amazon.awscdk.services.lambda.Architecture;
 import software.amazon.awscdk.services.lambda.Code;
+import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
-import software.amazon.awscdk.services.lambda.SingletonFunction;
+import software.amazon.awscdk.services.lambda.SnapStartConf;
 import software.amazon.awscdk.services.lambda.eventsources.ApiEventSource;
 import software.constructs.Construct;
 
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -63,7 +63,7 @@ public abstract class FunctionStack extends BaseStack {
      * Function names are exposed separately to allow another stack to use the function name without having to depend on
      * the function stack.
      */
-    private final Map<String, SingletonFunction> functions = Maps.newHashMap();
+    private final Map<String, FunctionAndAlias> functions = Maps.newHashMap();
 
     public FunctionStack(Construct parent, String constructIdSuffix, DeployEnvironment deployEnv) {
         super(parent, constructIdSuffix, deployEnv);
@@ -72,7 +72,7 @@ public abstract class FunctionStack extends BaseStack {
     /**
      * Hybrid SingletonFunction of native or JVM code
      */
-    protected SingletonFunction addSingletonFunction(
+    protected FunctionAndAlias addSingletonFunction(
             String constructId,
             String functionName,
             String codeZip,
@@ -80,17 +80,17 @@ public abstract class FunctionStack extends BaseStack {
             long memorySizeNative) {
 
         // Create the function builder
-        SingletonFunction.Builder functionBuilder = SingletonFunction.Builder.create(this, constructId)
-                .uuid(UUID.nameUUIDFromBytes(constructId.getBytes(Charsets.UTF_8)).toString())
+        Architecture architecture = detectNativeArch();
+        Function.Builder functionBuilder = Function.Builder.create(this, constructId)
                 .functionName(functionName)
                 .code(Code.fromAsset(codeZip))
-                .timeout(Duration.seconds(30));
+                .timeout(Duration.seconds(30))
+                .architecture(architecture);
 
         // Lambda differences between a native image and JVM
         if (detectIsNative(codeZip)) {
             functionBuilder
                     .memorySize(memorySizeNative)
-                    .architecture(detectNativeArch())
                     // PROVIDED does not support arm64
                     .runtime(Runtime.PROVIDED_AL2023)
                     // Unused in native image
@@ -106,12 +106,23 @@ public abstract class FunctionStack extends BaseStack {
                     .architecture(Architecture.ARM_64)
                     .runtime(Runtime.JAVA_21)
                     .handler(QUARKUS_LAMBDA_HANDLER);
+            if (architecture == Architecture.X86_64) {
+                // Snap start is only available for x86_64
+                // https://docs.aws.amazon.com/lambda/latest/dg/snapstart.html#snapstart-runtimes
+                functionBuilder.snapStart(SnapStartConf.ON_PUBLISHED_VERSIONS);
+            }
         }
 
-        // Finally construct the function
-        SingletonFunction function = functionBuilder.build();
-        this.functions.put(functionName, function);
-        return function;
+        // Construct the function
+        Function function = functionBuilder.build();
+
+        // Update LIVE alias to point to latest version
+        function.getLatestVersion();
+        Alias alias = function.addAlias("live");
+
+        FunctionAndAlias functionAndAlias = new FunctionAndAlias(functionName, function, alias);
+        this.functions.put(functionName, functionAndAlias);
+        return functionAndAlias;
     }
 
     /**
@@ -156,5 +167,15 @@ public abstract class FunctionStack extends BaseStack {
         String codeZip;
         @lombok.Builder.Default
         int memorySize = 512;
+    }
+
+    @Value
+    public static class FunctionAndAlias {
+        @NonNull
+        String name;
+        @NonNull
+        Function function;
+        @NonNull
+        Alias alias;
     }
 }

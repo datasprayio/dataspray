@@ -33,7 +33,6 @@ import jakarta.annotation.Nullable;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
-import software.amazon.awscdk.services.lambda.SingletonFunction;
 import software.constructs.Construct;
 
 import java.util.Optional;
@@ -47,7 +46,7 @@ public abstract class ApiFunctionStack extends FunctionStack {
     private final Options options;
     private final ImmutableSet<String> apiTags;
     private final String apiFunctionName;
-    private final SingletonFunction apiFunction;
+    private final FunctionAndAlias apiFunction;
 
     public ApiFunctionStack(Construct parent, Options options) {
         super(parent, "web-" + options.getFunctionName(), options.getDeployEnv());

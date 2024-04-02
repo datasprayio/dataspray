@@ -105,7 +105,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         LifecycleRule.builder()
                                 .expiration(Duration.days(1)).build()))
                 .build();
-        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CodeUploadBucket"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -114,7 +114,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                 .resources(ImmutableList.of(bucketCode.getBucketArn() + "/*"))
                 .build());
 
-        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("SingleTable"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -128,7 +128,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                 .resources(ImmutableList.of(
                         singleTableStack.getSingleTableTable().getTableArn()))
                 .build());
-        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("ApiGateway"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -139,7 +139,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         "arn:aws:apigateway:" + getRegion() + "::/apikeys",
                         "arn:aws:apigateway:" + getRegion() + "::/usageplans/*/keys"))
                 .build());
-        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerManagementLambda"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -170,7 +170,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":event-source-mapping:*"))
                 .build());
         // Unfortunately not all permissions allow for resource-specific restrictions.
-        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerManagementLambdaResourceWildcardActions"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -180,7 +180,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                 .resources(ImmutableList.of("*"))
                 .build());
 
-        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerManagementSqs"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -191,7 +191,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         "arn:aws:sqs:" + getRegion() + ":" + getAccount() + ":" + SqsStreamStore.CUSTOMER_QUEUE_WILDCARD))
                 .build());
 
-        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerManagementIam"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -205,7 +205,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         "arn:aws:iam::" + getAccount() + ":role/" + LambdaDeployerImpl.CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER.apply(getDeployEnv()) + "*"))
                 .build());
 
-        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("AuthnzCognitoUserPool"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(

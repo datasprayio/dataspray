@@ -73,7 +73,7 @@ public class IngestFunctionStack extends ApiFunctionStack {
                         "Health"))
                 .build());
 
-        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("SingleTable"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -88,7 +88,7 @@ public class IngestFunctionStack extends ApiFunctionStack {
                         singleTableStack.getSingleTableTable().getTableArn()))
                 .build());
 
-        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerIngestSqs"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -155,7 +155,7 @@ public class IngestFunctionStack extends ApiFunctionStack {
                 "ExtendedS3DestinationConfiguration.DynamicPartitioningConfiguration",
                 Map.of("Enabled", Boolean.TRUE, "RetryOptions", Map.of(
                         "DurationInSeconds", 300L)));
-        getApiFunction().addToRolePolicy(PolicyStatement.Builder.create()
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "firehose:PutRecord"))

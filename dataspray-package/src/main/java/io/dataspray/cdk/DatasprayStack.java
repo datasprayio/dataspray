@@ -32,6 +32,7 @@ import io.dataspray.cdk.store.SingleTableStack;
 import io.dataspray.cdk.stream.control.ControlFunctionStack;
 import io.dataspray.cdk.stream.ingest.IngestFunctionStack;
 import io.dataspray.cdk.template.FunctionStack;
+import io.dataspray.cdk.template.FunctionStack.FunctionAndAlias;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.SingleTableProvider;
 import io.dataspray.store.impl.CognitoUserStore;
@@ -42,7 +43,6 @@ import io.dataspray.stream.control.ControlResource;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.cxapi.CloudAssembly;
-import software.amazon.awscdk.services.lambda.SingletonFunction;
 
 import java.util.Optional;
 import java.util.Set;
@@ -120,7 +120,7 @@ public class DatasprayStack {
         // For dynamically-named resources such as S3 bucket names, pass the name as deployEnv vars directly to the lambdas
         // which will be picked up by Quarkus' @ConfigProperty
         for (FunctionStack functionStack : functionStacks) {
-            for (SingletonFunction function : functionStack.getFunctions().values()) {
+            for (FunctionAndAlias function : functionStack.getFunctions().values()) {
                 setConfigProperty(function, DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME, deployEnv.name());
                 setConfigProperty(function, ControlResource.DATASPRAY_API_ENDPOINT_PROP_NAME, apiStack.getApiFqdn(functionStack));
                 setConfigProperty(function, CognitoUserStore.USER_POOL_ID_PROP_NAME, authNzStack.getUserPool().getUserPoolId());
@@ -137,13 +137,13 @@ public class DatasprayStack {
         return app.synth();
     }
 
-    public static void setConfigProperty(SingletonFunction function, String prop, String value) {
+    public static void setConfigProperty(FunctionAndAlias function, String prop, String value) {
         // Adjust a quarkus property to the environment variable format
         // https://quarkus.io/guides/config-reference#environment-variablespom.xml
         String propAsEnvVar = prop.replaceAll("[^a-zA-Z0-9]", "_").toUpperCase();
 
         // Attach onto the function
-        function.addEnvironment(propAsEnvVar, value);
+        function.getFunction().addEnvironment(propAsEnvVar, value);
     }
 
     private DatasprayStack() {

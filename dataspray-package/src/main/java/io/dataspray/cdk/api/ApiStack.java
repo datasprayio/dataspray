@@ -63,7 +63,6 @@ import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.Permission;
-import software.amazon.awscdk.services.lambda.SingletonFunction;
 import software.amazon.awscdk.services.route53.ARecord;
 import software.amazon.awscdk.services.route53.AaaaRecord;
 import software.amazon.awscdk.services.route53.IHostedZone;
@@ -88,7 +87,7 @@ public class ApiStack extends FunctionStack {
 
     private final String authorizerFunctionName;
     private final String openApiServerUrl;
-    private final SingletonFunction authorizerFunction;
+    private final FunctionAndAlias authorizerFunction;
     private final Role roleApiGatewayInvoke;
     private final Certificate certificate;
     private final SpecRestApi restApi;
@@ -112,7 +111,7 @@ public class ApiStack extends FunctionStack {
                 options.getAuthorizerCodeZip(),
                 512,
                 128);
-        authorizerFunction.addToRolePolicy(PolicyStatement.Builder.create()
+        authorizerFunction.getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("SingleTable"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
@@ -134,7 +133,7 @@ public class ApiStack extends FunctionStack {
                         PolicyStatement.Builder.create()
                                 .effect(Effect.ALLOW)
                                 .actions(List.of("lambda:InvokeFunction", "lambda:InvokeAsync"))
-                                .resources(List.of(authorizerFunction.getFunctionArn()))
+                                .resources(List.of(authorizerFunction.getAlias().getFunctionArn()))
                                 .resources(List.of("arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + authorizerFunctionName))
                                 .build())).build())).build();
 
@@ -236,7 +235,7 @@ public class ApiStack extends FunctionStack {
     }
 
     private void addFunctionToApiGatewayPermission(SpecRestApi restApi, ApiFunctionStack webService) {
-        webService.getApiFunction().addPermission(getConstructId("gateway-to-lambda-permission"), Permission.builder()
+        webService.getApiFunction().getFunction().addPermission(getConstructId("gateway-to-lambda-permission"), Permission.builder()
                 .sourceArn(restApi.arnForExecuteApi())
                 .principal(ServicePrincipal.Builder
                         .create("apigateway.amazonaws.com").build())
