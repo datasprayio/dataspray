@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -150,7 +150,7 @@ public abstract class IngestBase extends AbstractLambdaTest {
         // Submit data to Ingest Resource
         request(Given.builder()
                 .method(HttpMethod.POST)
-                .path("/organization/" + getOrganizationName() + "/target/" + targetId + "/message")
+                .path("/v1/organization/" + getOrganizationName() + "/target/" + targetId + "/message")
                 .contentType(APPLICATION_JSON_TYPE)
                 .body(body)
                 .build())

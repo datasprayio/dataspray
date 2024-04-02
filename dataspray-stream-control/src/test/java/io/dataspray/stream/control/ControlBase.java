@@ -71,7 +71,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
         String taskId = "task1";
         UploadCodeResponse uploadCodeResponse = request(UploadCodeResponse.class, Given.builder()
                 .method(HttpMethod.PUT)
-                .path("/organization/" + getOrganizationName() + "/control/code/upload")
+                .path("/v1/organization/" + getOrganizationName() + "/control/code/upload")
                 .body(new UploadCodeRequest()
                         .taskId(taskId)
                         .contentLengthBytes(12L))
@@ -88,7 +88,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
         // Deploy version
         TaskVersion taskVersion = request(TaskVersion.class, Given.builder()
                 .method(HttpMethod.PATCH)
-                .path("/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy")
+                .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy")
                 .body(new DeployRequest()
                         .codeUrl(uploadCodeResponse.getCodeUrl())
                         .handler("io.dataspray.Runner")
@@ -104,7 +104,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
         // Activate version
         TaskStatus taskStatusActivate = request(TaskStatus.class, Given.builder()
                 .method(HttpMethod.PATCH)
-                .path("/organization/" + getOrganizationName() + "/control/task/" + taskId + "/activate")
+                .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/activate")
                 .query(Map.of("version", List.of("1")))
                 .body(new DeployRequest()
                         .codeUrl(uploadCodeResponse.getCodeUrl())
@@ -122,7 +122,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
         // Pause
         TaskStatus taskStatusPause = request(TaskStatus.class, Given.builder()
                 .method(HttpMethod.PATCH)
-                .path("/organization/" + getOrganizationName() + "/control/task/" + taskId + "/pause")
+                .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/pause")
                 .build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
@@ -133,7 +133,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
         // Resume
         TaskStatus taskStatusResume = request(TaskStatus.class, Given.builder()
                 .method(HttpMethod.PATCH)
-                .path("/organization/" + getOrganizationName() + "/control/task/" + taskId + "/resume")
+                .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/resume")
                 .build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
@@ -145,7 +145,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
         // Need to upload different code for published version to increment
         UploadCodeResponse uploadCodeResponse2 = request(UploadCodeResponse.class, Given.builder()
                 .method(HttpMethod.PUT)
-                .path("/organization/" + getOrganizationName() + "/control/code/upload")
+                .path("/v1/organization/" + getOrganizationName() + "/control/code/upload")
                 .body(new UploadCodeRequest()
                         .taskId(taskId)
                         .contentLengthBytes(12L))
@@ -163,7 +163,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
         // Deploy version
         TaskVersion taskVersion2 = request(TaskVersion.class, Given.builder()
                 .method(HttpMethod.PATCH)
-                .path("/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy")
+                .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy")
                 .body(new DeployRequest()
                         .codeUrl(uploadCodeResponse2.getCodeUrl())
                         .handler("io.dataspray.Runner")
@@ -179,7 +179,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
         // Status all
         TaskStatuses taskStatuses = request(TaskStatuses.class, Given.builder()
                 .method(HttpMethod.GET)
-                .path("/organization/" + getOrganizationName() + "/control/status")
+                .path("/v1/organization/" + getOrganizationName() + "/control/status")
                 .build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
@@ -195,7 +195,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
         // Delete
         TaskStatus taskStatusDelete = request(TaskStatus.class, Given.builder()
                 .method(HttpMethod.DELETE)
-                .path("/organization/" + getOrganizationName() + "/control/task/" + taskId + "/delete")
+                .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/delete")
                 .build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@ public class PingTest {
 
     @Test
     public void test() {
-        RestAssured.when().get("/ping")
+        RestAssured.when().get("/v1/health")
                 .then().statusCode(Status.NO_CONTENT.getStatusCode());
     }
 }

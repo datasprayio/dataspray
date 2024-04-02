@@ -151,7 +151,7 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
         // Sign up
         SignUpResponse signUpResponse = request(SignUpResponse.class, Given.builder()
                 .method(HttpMethod.PUT)
-                .path("/sign-up")
+                .path("/v1/auth/sign-up")
                 .body(SignUpRequest.builder()
                         .username(username)
                         .email(email)
@@ -181,7 +181,7 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
         // Need to confirm email
         signUpResponse = request(SignUpResponse.class, Given.builder()
                 .method(HttpMethod.PUT)
-                .path("/sign-up/code")
+                .path("/v1/auth/sign-up/code")
                 .body(SignUpConfirmCodeRequest.builder()
                         .username(username)
                         .code("123")
@@ -196,7 +196,7 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
         // Sign in using username
         SignInResponse signInResponse = request(SignInResponse.class, Given.builder()
                 .method(HttpMethod.POST)
-                .path("/sign-in")
+                .path("/v1/auth/sign-in")
                 .body(SignInRequest.builder()
                         .usernameOrEmail(username)
                         .password(password)
@@ -235,7 +235,7 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
             // TODO Disabled since Moto doesn't currently send USERNAME as a ChallengeParameters for SOFTWARE_TOKEN_MFA challenge
             /* signInResponse = request(SignInResponse.class, Given.builder()
                     .method(HttpMethod.POST)
-                    .path("/sign-in")
+                    .path("/v1/auth/sign-in")
                     .body(SignInRequest.builder()
                             // TODO Try using email here instead of username; unfortunately Moto currently doesn't support AliasAttributes
                             .usernameOrEmail(username)
@@ -252,7 +252,7 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
             // TODO Disabled until MOTO releases bug to support the underlying endpoint https://github.com/getmoto/moto/pull/7136/files in 4.2.13
             /* signInResponse = request(SignInResponse.class, Given.builder()
                     .method(HttpMethod.POST)
-                    .path("/sign-in/totp")
+                    .path("/v1/auth/sign-in/totp")
                     .body(SignInChallengeTotpCodeRequest.builder()
                             .email(email)
                             .session(signInResponse.getChallengeTotpCode().getSession())
