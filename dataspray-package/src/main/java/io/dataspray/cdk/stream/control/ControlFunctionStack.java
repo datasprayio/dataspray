@@ -57,7 +57,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
     public ControlFunctionStack(Construct parent, DeployEnvironment deployEnv, String codeZip, AuthNzStack authNzStack, NextSiteStack dashboardSiteStack, SingleTableStack singleTableStack) {
         super(parent, Options.builder()
                 .deployEnv(deployEnv)
-                .functionName("control")
+                .baseFunctionName("control")
                 .codeZip(codeZip)
                 .apiTags(ImmutableSet.of(
                         "AuthNZ",

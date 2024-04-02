@@ -45,18 +45,16 @@ public abstract class ApiFunctionStack extends FunctionStack {
 
     private final Options options;
     private final ImmutableSet<String> apiTags;
-    private final String apiFunctionName;
     private final FunctionAndAlias apiFunction;
 
     public ApiFunctionStack(Construct parent, Options options) {
-        super(parent, "web-" + options.getFunctionName(), options.getDeployEnv());
+        super(parent, "web-" + options.getBaseFunctionName(), options.getDeployEnv());
 
         this.options = options;
         apiTags = options.getApiTags();
-        apiFunctionName = options.getFunctionName() + options.getDeployEnv().getSuffix();
         apiFunction = addSingletonFunction(
                 getConstructId("lambda"),
-                apiFunctionName,
+                options.getBaseFunctionName(),
                 options.getCodeZip(),
                 options.getMemorySize(),
                 options.getMemorySizeNative());
@@ -87,7 +85,7 @@ public abstract class ApiFunctionStack extends FunctionStack {
         @NonNull
         ImmutableSet<String> apiTags;
         @NonNull
-        String functionName;
+        String baseFunctionName;
         @NonNull
         String codeZip;
         @lombok.Builder.Default

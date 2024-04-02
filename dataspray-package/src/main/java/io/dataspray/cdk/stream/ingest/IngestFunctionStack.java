@@ -66,7 +66,7 @@ public class IngestFunctionStack extends ApiFunctionStack {
     public IngestFunctionStack(Construct parent, DeployEnvironment deployEnv, String codeZip, SingleTableStack singleTableStack) {
         super(parent, Options.builder()
                 .deployEnv(deployEnv)
-                .functionName("ingest")
+                .baseFunctionName("ingest")
                 .codeZip(codeZip)
                 .apiTags(ImmutableSet.of(
                         "Ingest",

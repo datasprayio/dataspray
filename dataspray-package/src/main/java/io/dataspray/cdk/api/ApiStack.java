@@ -85,7 +85,6 @@ import static com.google.common.base.Preconditions.checkState;
 @Getter
 public class ApiStack extends FunctionStack {
 
-    private final String authorizerFunctionName;
     private final String openApiServerUrl;
     private final FunctionAndAlias authorizerFunction;
     private final Role roleApiGatewayInvoke;
@@ -104,10 +103,9 @@ public class ApiStack extends FunctionStack {
         super(parent, "api-gateway", options.getDeployEnv());
         this.options = options;
 
-        authorizerFunctionName = "authorizer" + options.getDeployEnv().getSuffix();
         authorizerFunction = addSingletonFunction(
                 getConstructId("lambda"),
-                authorizerFunctionName,
+                "authorizer",
                 options.getAuthorizerCodeZip(),
                 512,
                 128);
@@ -134,7 +132,7 @@ public class ApiStack extends FunctionStack {
                                 .effect(Effect.ALLOW)
                                 .actions(List.of("lambda:InvokeFunction", "lambda:InvokeAsync"))
                                 .resources(List.of(authorizerFunction.getAlias().getFunctionArn()))
-                                .resources(List.of("arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + authorizerFunctionName))
+                                .resources(List.of("arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + authorizerFunction.getName()))
                                 .build())).build())).build();
 
         Map<String, Object> openApiSpec = constructOpenApiForApiGateway();
@@ -314,7 +312,7 @@ public class ApiStack extends FunctionStack {
                                         // If this source is not present, AG returns 401 without even calling our Authorizer, see: https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-lambda-authorizer.html#http-api-lambda-authorizer.identity-sources
                                         "identitySource", "method.request.header." + Authorizer.AUTHORIZATION_HEADER.toLowerCase(),
                                         "authorizerCredentials", getRoleApiGatewayInvoke().getRoleArn(),
-                                        "authorizerUri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + getAuthorizerFunctionName() + "/invocations",
+                                        "authorizerUri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + getAuthorizerFunction().getName() + "/invocations",
                                         "authorizerResultTtlInSeconds", TimeUnit.MINUTES.toSeconds(5))));
                     }
                 }
@@ -384,7 +382,7 @@ public class ApiStack extends FunctionStack {
                         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-integration.html
                         methodData.put("x-amazon-apigateway-integration", ImmutableMap.builder()
                                 .put("httpMethod", "POST")
-                                .put("uri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + endpointFunction.getApiFunctionName() + "/invocations")
+                                .put("uri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + endpointFunction.getApiFunction().getName() + "/invocations")
                                 .put("responses", ImmutableMap.of(
                                         // Add cors support
                                         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/enable-cors-for-resource-using-swagger-importer-tool.html

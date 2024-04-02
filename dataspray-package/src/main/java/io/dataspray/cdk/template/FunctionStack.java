@@ -74,10 +74,11 @@ public abstract class FunctionStack extends BaseStack {
      */
     protected FunctionAndAlias addSingletonFunction(
             String constructId,
-            String functionName,
+            String baseFunctionName,
             String codeZip,
             long memorySize,
             long memorySizeNative) {
+        String functionName = "dataspray" + baseFunctionName + getDeployEnv().getSuffix();
 
         // Create the function builder
         Function.Builder functionBuilder = Function.Builder.create(this, constructId)
