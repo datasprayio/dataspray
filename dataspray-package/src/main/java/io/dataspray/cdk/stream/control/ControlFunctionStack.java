@@ -64,7 +64,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         "Control",
                         "Organization"))
                 .corsForSite(dashboardSiteStack)
-                .memorySize(512)
+                .memorySize(256)
                 .memorySizeNative(256)
                 .build());
 

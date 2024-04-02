@@ -26,7 +26,7 @@ import {create} from "zustand";
 import {createJSONStorage, persist, subscribeWithSelector} from "zustand/middleware";
 
 interface State {
-    authResult: AuthResult | null | undefined,
+    authResult: AuthResult | null,
     setAuthResult: (result: AuthResult | null) => void,
     currentOrganizationName: string | null,
     setCurrentOrganizationName: (currentOrganizationName: string) => void,
@@ -36,7 +36,7 @@ const useAuthStore = create<State>()(
         subscribeWithSelector(
         persist(
                 set => ({
-                    authResult: undefined,
+                    authResult: null,
                     setAuthResult: authResult => set(state => ({...state, authResult})),
                     currentOrganizationName: null,
                     setCurrentOrganizationName: currentOrganizationName => set(state => ({

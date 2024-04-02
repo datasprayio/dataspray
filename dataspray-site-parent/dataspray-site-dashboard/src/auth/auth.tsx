@@ -138,7 +138,14 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
         signInPasswordChange: (...args: OmitFirstArg<typeof signInPasswordChange>) => signInPasswordChange(onSignIn, ...args),
         signInRefresh: (...args: OmitFirstArg<typeof signInRefresh>) => signInRefresh(onSignIn, ...args),
         signOut: () => signOut(onSignIn, authResult?.refreshToken),
-    }), [authResult, currentOrganizationName, accessToken, idToken, onSignIn]);
+    }), [
+        authResult,
+        currentOrganizationName,
+        authStore.setCurrentOrganizationName,
+        accessToken,
+        idToken,
+        onSignIn
+    ]);
 }
 
 var refreshingJti: string | undefined;

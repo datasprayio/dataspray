@@ -107,7 +107,7 @@ public class ApiStack extends FunctionStack {
                 getConstructId("lambda"),
                 "authorizer",
                 options.getAuthorizerCodeZip(),
-                512,
+                256,
                 128);
         authorizerFunction.getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("SingleTable"))
@@ -131,8 +131,7 @@ public class ApiStack extends FunctionStack {
                         PolicyStatement.Builder.create()
                                 .effect(Effect.ALLOW)
                                 .actions(List.of("lambda:InvokeFunction", "lambda:InvokeAsync"))
-                                .resources(List.of(authorizerFunction.getAlias().getFunctionArn()))
-                                .resources(List.of("arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + authorizerFunction.getFunctionName() + ":" + getAuthorizerFunction().getAliasName()))
+                                .resources(authorizerFunction.getAlias().getResourceArnsForGrantInvoke())
                                 .build())).build())).build();
 
         Map<String, Object> openApiSpec = constructOpenApiForApiGateway();
