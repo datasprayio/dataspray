@@ -1,4 +1,4 @@
-/organizations/create:
+/v1/organizations/create:
   put:
     operationId: createOrganization
     tags: [ Organization ]
@@ -13,7 +13,7 @@
         description: Ok
       '409':
         description: Taken
-/organization/{organizationName}/invite:
+/v1/organization/{organizationName}/invite:
   post:
     operationId: inviteToOrganization
     tags: [ Organization ]

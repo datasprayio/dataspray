@@ -17,49 +17,49 @@ security:
   - Authorizer: [ ]
 
 paths:
-  /ping:
-    $ref: 'paths-health.yaml#/~1ping'
-  /sign-up:
-    $ref: 'paths-authnz.yaml#/~1sign-up'
-  /sign-up/code:
-    $ref: 'paths-authnz.yaml#/~1sign-up~1code'
-  /sign-in:
-    $ref: 'paths-authnz.yaml#/~1sign-in'
-  /sign-in/totp:
-    $ref: 'paths-authnz.yaml#/~1sign-in~1totp'
-  /sign-in/password-change:
-    $ref: 'paths-authnz.yaml#/~1sign-in~1password-change'
-  /sign-in/refresh:
-    $ref: 'paths-authnz.yaml#/~1sign-in~1refresh'
-  /sign-out:
-    $ref: 'paths-authnz.yaml#/~1sign-out'
-  /apikeys:
-    $ref: 'paths-authnz.yaml#/~1apikeys'
-  /apikey:
-    $ref: 'paths-authnz.yaml#/~1apikey'
-  /apikey/{apiKeyId}:
-    $ref: 'paths-authnz.yaml#/~1apikey~1{apiKeyId}'
-  /organizations/create:
-    $ref: 'paths-organization.yaml#/~1organizations~1create'
-  /organization/{organizationName}/invite:
-    $ref: 'paths-organization.yaml#/~1organization~1{organizationName}~1invite'
-  /organization/{organizationName}/control/code/upload:
-    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1code~1upload'
-  /organization/{organizationName}/control/status:
-    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1status'
-  /organization/{organizationName}/control/task/{taskId}/status/:
-    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1status~1'
-  /organization/{organizationName}/control/task/{taskId}/deploy:
-    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1deploy'
-  /organization/{organizationName}/control/task/{taskId}/versions:
-    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1versions'
-  /organization/{organizationName}/control/task/{taskId}/activate:
-    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1activate'
-  /organization/{organizationName}/control/task/{taskId}/pause:
-    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1pause'
-  /organization/{organizationName}/control/task/{taskId}/resume:
-    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1resume'
-  /organization/{organizationName}/control/task/{taskId}/delete:
-    $ref: 'paths-control.yaml#/~1organization~1{organizationName}~1control~1task~1{taskId}~1delete'
-  /organization/{organizationName}/target/{targetId}/message:
-    $ref: 'paths-ingest.yaml#/~1organization~1{organizationName}~1target~1{targetId}~1message'
+  /v1/health:
+    $ref: 'paths-health.yaml#/~1v1~1health'
+  /v1/auth/sign-up:
+    $ref: 'paths-authnz.yaml#/~1v1~1auth~1sign-up'
+  /v1/auth/sign-up/code:
+    $ref: 'paths-authnz.yaml#/~1v1~1auth~1sign-up~1code'
+  /v1/auth/sign-in:
+    $ref: 'paths-authnz.yaml#/~1v1~1auth~1sign-in'
+  /v1/auth/sign-in/totp:
+    $ref: 'paths-authnz.yaml#/~1v1~1auth~1sign-in~1totp'
+  /v1/auth/sign-in/password-change:
+    $ref: 'paths-authnz.yaml#/~1v1~1auth~1sign-in~1password-change'
+  /v1/auth/sign-in/refresh:
+    $ref: 'paths-authnz.yaml#/~1v1~1auth~1sign-in~1refresh'
+  /v1/auth/sign-out:
+    $ref: 'paths-authnz.yaml#/~1v1~1auth~1sign-out'
+  /v1/auth/apikeys:
+    $ref: 'paths-authnz.yaml#/~1v1~1auth~1apikeys'
+  /v1/auth/apikey:
+    $ref: 'paths-authnz.yaml#/~1v1~1auth~1apikey'
+  /v1/auth/apikey/{apiKeyId}:
+    $ref: 'paths-authnz.yaml#/~1v1~1auth~1apikey~1{apiKeyId}'
+  /v1/organizations/create:
+    $ref: 'paths-organization.yaml#/~1v1~1organizations~1create'
+  /v1/organization/{organizationName}/invite:
+    $ref: 'paths-organization.yaml#/~1v1~1organization~1{organizationName}~1invite'
+  /v1/organization/{organizationName}/control/code/upload:
+    $ref: 'paths-control.yaml#/~1v1~1organization~1{organizationName}~1control~1code~1upload'
+  /v1/organization/{organizationName}/control/status:
+    $ref: 'paths-control.yaml#/~1v1~1organization~1{organizationName}~1control~1status'
+  /v1/organization/{organizationName}/control/task/{taskId}/status/:
+    $ref: 'paths-control.yaml#/~1v1~1organization~1{organizationName}~1control~1task~1{taskId}~1status~1'
+  /v1/organization/{organizationName}/control/task/{taskId}/deploy:
+    $ref: 'paths-control.yaml#/~1v1~1organization~1{organizationName}~1control~1task~1{taskId}~1deploy'
+  /v1/organization/{organizationName}/control/task/{taskId}/versions:
+    $ref: 'paths-control.yaml#/~1v1~1organization~1{organizationName}~1control~1task~1{taskId}~1versions'
+  /v1/organization/{organizationName}/control/task/{taskId}/activate:
+    $ref: 'paths-control.yaml#/~1v1~1organization~1{organizationName}~1control~1task~1{taskId}~1activate'
+  /v1/organization/{organizationName}/control/task/{taskId}/pause:
+    $ref: 'paths-control.yaml#/~1v1~1organization~1{organizationName}~1control~1task~1{taskId}~1pause'
+  /v1/organization/{organizationName}/control/task/{taskId}/resume:
+    $ref: 'paths-control.yaml#/~1v1~1organization~1{organizationName}~1control~1task~1{taskId}~1resume'
+  /v1/organization/{organizationName}/control/task/{taskId}/delete:
+    $ref: 'paths-control.yaml#/~1v1~1organization~1{organizationName}~1control~1task~1{taskId}~1delete'
+  /v1/organization/{organizationName}/target/{targetId}/message:
+    $ref: 'paths-ingest.yaml#/~1v1~1organization~1{organizationName}~1target~1{targetId}~1message'

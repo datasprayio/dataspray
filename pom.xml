@@ -176,6 +176,11 @@
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
+                <artifactId>dataspray-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-authorizer</artifactId>
                 <version>${project.version}</version>
             </dependency>

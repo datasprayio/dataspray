@@ -5,7 +5,7 @@ components:
     Message:
       type: object
 
-/organization/{organizationName}/target/{targetId}/message:
+/v1/organization/{organizationName}/target/{targetId}/message:
   post:
     operationId: message
     tags: [ Ingest ]

@@ -55,6 +55,10 @@
             <groupId>io.dataspray</groupId>
             <artifactId>dataspray-store</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.dataspray</groupId>
+            <artifactId>dataspray-api</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.quarkus</groupId>

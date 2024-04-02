@@ -181,7 +181,7 @@ components:
           items:
             $ref: '#/components/schemas/ApiKey'
 
-/sign-up:
+/v1/auth/sign-up:
   put:
     operationId: signUp
     tags: [ AuthNZ ]
@@ -199,7 +199,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/SignUpResponse'
-/sign-up/code:
+/v1/auth/sign-up/code:
   put:
     operationId: signUpConfirmCode
     tags: [ AuthNZ ]
@@ -217,7 +217,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/SignUpResponse'
-/sign-in:
+/v1/auth/sign-in:
   post:
     operationId: signIn
     tags: [ AuthNZ ]
@@ -235,7 +235,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/SignInResponse'
-/sign-in/totp:
+/v1/auth/sign-in/totp:
   post:
     operationId: signInChallengeTotpCode
     tags: [ AuthNZ ]
@@ -253,7 +253,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/SignInResponse'
-/sign-in/password-change:
+/v1/auth/sign-in/password-change:
   post:
     operationId: signInChallengePasswordChange
     tags: [ AuthNZ ]
@@ -271,7 +271,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/SignInResponse'
-/sign-in/refresh:
+/v1/auth/sign-in/refresh:
   post:
     operationId: signInRefreshToken
     tags: [ AuthNZ ]
@@ -289,7 +289,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/SignInResponse'
-/sign-out:
+/v1/auth/sign-out:
   post:
     operationId: signOut
     tags: [ AuthNZ ]
@@ -304,7 +304,7 @@ components:
       '200':
         description: Ok
 
-/apikeys:
+/v1/auth/apikeys:
   post:
     operationId: listApiKeys
     tags: [ AuthNZ ]
@@ -315,7 +315,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/ApiKeys'
-/apikey:
+/v1/auth/apikey:
   put:
     operationId: createApiKey
     tags: [ AuthNZ ]
@@ -326,7 +326,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/ApiKeyWithSecret'
-/apikey/{apiKeyId}:
+/v1/auth/apikey/{apiKeyId}:
   post:
     operationId: getApiKeySecret
     tags: [ AuthNZ ]

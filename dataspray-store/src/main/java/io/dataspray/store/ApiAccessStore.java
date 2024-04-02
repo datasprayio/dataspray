@@ -60,9 +60,6 @@ import static io.dataspray.singletable.TableType.Primary;
  */
 public interface ApiAccessStore {
 
-    String TRIAL_USAGE_PLAN_NAME = "trial-usage-plan";
-    long TRIAL_USAGE_PLAN_VERSION = 1;
-
     ApiAccess createApiAccessForUser(
             String organizationName,
             String username,

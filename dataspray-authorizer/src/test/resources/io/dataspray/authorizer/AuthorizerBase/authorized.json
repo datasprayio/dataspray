@@ -5,24 +5,15 @@
       "Action": "execute-api:Invoke",
       "Effect": "ALLOW",
       "Resource": [
-        "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/*"
+        "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/v1/auth",
+        "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/v1/organization/fd376965-10d2-43b3-a16c-35d3d8f0455a",
+        "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/v1/health",
+        "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/v1/auth/*",
+        "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/v1/organizations",
+        "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/v1/organization/fd376965-10d2-43b3-a16c-35d3d8f0455a/*",
+        "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/v1/health/*",
+        "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/v1/organizations/*"
       ]
-    },
-    {
-      "Action": "execute-api:Invoke",
-      "Effect": "DENY",
-      "Resource": [
-        "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/organization",
-        "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/organization/*"
-      ],
-      "Condition": {
-        "StringNotLike": {
-          "aws:PrincipalArn": [
-            "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/organization/fd376965-10d2-43b3-a16c-35d3d8f0455a",
-            "arn:aws:execute-api:us-east-1:123456789012:api-id/stage/*/organization/fd376965-10d2-43b3-a16c-35d3d8f0455a/*"
-          ]
-        }
-      }
     }
   ]
 }

@@ -111,7 +111,7 @@ components:
         lastUpdateStatusReason:
           type: string
 
-/organization/{organizationName}/control/code/upload:
+/v1/organization/{organizationName}/control/code/upload:
   put:
     operationId: uploadCode
     tags: [ Control ]
@@ -135,7 +135,7 @@ components:
             schema:
               $ref: '#/components/schemas/UploadCodeResponse'
 
-/organization/{organizationName}/control/status:
+/v1/organization/{organizationName}/control/status:
   get:
     operationId: statusAll
     tags: [ Control ]
@@ -156,7 +156,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskStatuses'
-/organization/{organizationName}/control/task/{taskId}/status/:
+/v1/organization/{organizationName}/control/task/{taskId}/status/:
   get:
     operationId: status
     tags: [ Control ]
@@ -178,7 +178,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskStatus'
-/organization/{organizationName}/control/task/{taskId}/deploy:
+/v1/organization/{organizationName}/control/task/{taskId}/deploy:
   patch:
     operationId: deployVersion
     tags: [ Control ]
@@ -206,7 +206,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskVersion'
-/organization/{organizationName}/control/task/{taskId}/versions:
+/v1/organization/{organizationName}/control/task/{taskId}/versions:
   get:
     operationId: getVersions
     tags: [ Control ]
@@ -228,7 +228,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskVersions'
-/organization/{organizationName}/control/task/{taskId}/activate:
+/v1/organization/{organizationName}/control/task/{taskId}/activate:
   patch:
     operationId: activateVersion
     tags: [ Control ]
@@ -255,7 +255,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskStatus'
-/organization/{organizationName}/control/task/{taskId}/pause:
+/v1/organization/{organizationName}/control/task/{taskId}/pause:
   patch:
     operationId: pause
     tags: [ Control ]
@@ -277,7 +277,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskStatus'
-/organization/{organizationName}/control/task/{taskId}/resume:
+/v1/organization/{organizationName}/control/task/{taskId}/resume:
   patch:
     operationId: resume
     tags: [ Control ]
@@ -299,7 +299,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskStatus'
-/organization/{organizationName}/control/task/{taskId}/delete:
+/v1/organization/{organizationName}/control/task/{taskId}/delete:
   delete:
     operationId: delete
     tags: [ Control ]

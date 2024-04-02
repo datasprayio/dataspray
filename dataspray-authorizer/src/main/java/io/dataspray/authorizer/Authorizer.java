@@ -26,9 +26,9 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayCustomAuthorizerEvent;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
+import io.dataspray.api.ApiConstants;
 import io.dataspray.authorizer.model.AuthPolicy;
 import io.dataspray.authorizer.model.Effect;
 import io.dataspray.authorizer.model.HttpMethod;
@@ -46,12 +46,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import software.amazon.awssdk.arns.Arn;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
+import static io.dataspray.api.ApiConstants.ORGANIZATION_PATH_PREFIX;
 import static io.dataspray.store.CognitoJwtVerifier.VerifiedCognitoJwt;
 
 @Slf4j
@@ -150,7 +151,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                             AuthorizerConstants.CONTEXT_KEY_USERNAME, username,
                             AuthorizerConstants.CONTEXT_KEY_ORGANIZATION_NAMES, String.join(",", organizationNames)
                     ));
-            logAuthorization(identifier, Strings.nullToEmpty(event.getPath()), organizationNames, authPolicy);
+            log.info("Client {} authorized with policy {}", identifier, authPolicy);
             return authPolicy;
         } catch (ApiGatewayUnauthorized ex) {
             log.info("Client unauthorized: {}", ex.getReason());
@@ -168,102 +169,47 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             ImmutableSet<String> queueWhitelist) {
 
         PolicyDocument policyDocument = new PolicyDocument();
-
-        // Allow all by default
-        policyDocument.addStatement(new Statement()
+        Statement statement = new Statement()
                 .setEffect(Effect.ALLOW)
-                .setAction("execute-api:Invoke")
-                .addResource(Statement.getExecuteApiArn(region, awsAccountId, restApiId, stage,
-                        HttpMethod.ALL, Optional.of(getResourcePathAll()))));
+                .setAction("execute-api:Invoke");
 
-        // For Ingest API, for paths ".../organization/{organizationName}/target/{targetId}/...", only allow your own account id
-        // and whitelisted targets.
-        // The idea here is to allow all by default and only deny other accounts (except own account). This can also be
-        // accomplished by allowing all except accounts and then allowing own account, having others implicitly denied.
-        // To verify this works as expected, follow the guide and test against the policy simulator:
-        // dataspray-authorizer/src/test/resources/io/dataspray/authorizer/AuthorizerBase/iam-policy-ingest-path-condition.jsonc
-        Statement accountAndTargetStatement = new Statement()
-                .setEffect(Effect.DENY)
-                .setAction("execute-api:Invoke")
-                .addResources(getResourcePathsAllAccounts()
-                        .map(resourcePath ->
-                                Statement.getExecuteApiArn(region, awsAccountId, restApiId, stage,
-                                        HttpMethod.ALL, Optional.of(resourcePath)))
-                        .collect(ImmutableSet.toImmutableSet()));
-
-        final ImmutableSet.Builder<String> arnMatchersBuilder = ImmutableSet.builder();
-        for (String organizationName : organizationNames) {
-            String organizationNameSanitized = sanitizeArnInjection(organizationName);
-            if (queueWhitelist.isEmpty()) {
-                // Allow all paths under account
-                arnMatchersBuilder.addAll(getResourcePathsForOrganization(organizationNameSanitized)
-                        .map(resourcePath -> Statement.getExecuteApiArn(region, awsAccountId, restApiId, stage,
-                                HttpMethod.ALL, Optional.of(resourcePath)))
-                        .collect(ImmutableSet.toImmutableSet()));
-            } else {
-                // Allow only paths under own account under whitelisted target queues
-                // If you need to add a non-target path, this is where you would add an exception
-                arnMatchersBuilder.addAll(queueWhitelist.stream()
-                        // Sanitize to prevent injection
-                        .map(Authorizer::sanitizeArnInjection)
-                        // Get resource paths specific to the queue target, not for all of account
-                        .flatMap(queue -> getResourcePathsForAccountAndTarget(organizationNameSanitized, queue))
-                        .map(resourcePath -> Statement.getExecuteApiArn(region, awsAccountId, restApiId, stage,
-                                HttpMethod.ALL, Optional.of(resourcePath)))
-                        .collect(ImmutableSet.toImmutableSet()));
+        if (queueWhitelist.isEmpty()) {
+            for (String topLevelPath : ApiConstants.TOP_LEVEL_PATHS) {
+                for (String wildcardSuffix : List.of("", "/*")) {
+                    if (ORGANIZATION_PATH_PREFIX.equals(topLevelPath)) {
+                        for (String organizationName : organizationNames) {
+                            String organizationNameSanitized = sanitizeArnInjection(organizationName);
+                            // Allow for organization endpoint
+                            statement.addResource(Statement.getExecuteApiArn(
+                                    region, awsAccountId, restApiId, stage,
+                                    HttpMethod.ALL, Optional.of(topLevelPath + "/" + organizationNameSanitized + wildcardSuffix)));
+                        }
+                    } else {
+                        statement.addResource(Statement.getExecuteApiArn(
+                                region, awsAccountId, restApiId, stage,
+                                HttpMethod.ALL, Optional.of(topLevelPath + wildcardSuffix)));
+                    }
+                }
+            }
+        } else {
+            for (String organizationName : organizationNames) {
+                String organizationNameSanitized = sanitizeArnInjection(organizationName);
+                for (String queue : queueWhitelist) {
+                    for (String wildcardSuffix : List.of("", "/*")) {
+                        statement.addResource(Statement.getExecuteApiArn(
+                                region, awsAccountId, restApiId, stage,
+                                HttpMethod.POST, Optional.of(ORGANIZATION_PATH_PREFIX + "/" + organizationNameSanitized + "/target/" + queue + wildcardSuffix)));
+                        // TODO Add condition to check for lambda:SourceFunctionArn to ensure only the lambda can use this
+                    }
+                }
             }
         }
-        accountAndTargetStatement.addCondition("StringNotLike", "aws:PrincipalArn",
-                // "When multiple values are specified for a single context key in a policy with negated matching
-                // condition operators [such as 'StringNotLike'], the effective permissions work like a logical NOR.
-                // In negated matching, a logical NOR or NOT OR returns true only if all values evaluate to false."
-                // https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-logic-multiple-context-keys-or-values.html#reference_policies_multiple-conditions-negated-matching-eval
-                arnMatchersBuilder.build());
-        policyDocument.addStatement(accountAndTargetStatement);
 
+        policyDocument.addStatement(statement);
         return policyDocument;
-    }
-
-    private static String getResourcePathAll() {
-        return "*";
-    }
-
-    private static Stream<String> getResourcePathsAllAccounts() {
-        return Stream.of(
-                "/organization",
-                "/organization/*"
-        );
-    }
-
-    private static Stream<String> getResourcePathsForOrganization(String accountIdSanitized) {
-        return Stream.of(
-                "/organization/" + accountIdSanitized,
-                "/organization/" + accountIdSanitized + "/*"
-        );
-    }
-
-    private static Stream<String> getResourcePathsForAccountAndTarget(String accountIdSanitized, String target) {
-        return Stream.of(
-                "/organization/" + accountIdSanitized + "/target/" + target,
-                "/organization/" + accountIdSanitized + "/target/" + target + "/*"
-        );
     }
 
     public static String sanitizeArnInjection(String accountId) {
         return accountId.replaceAll("[^A-Za-z0-9-_]", "");
-    }
-
-    private void logAuthorization(String identifier, String path, ImmutableSet<String> organizationNames, AuthPolicy authPolicy) {
-        log.debug("Client {} authorized with policy {}", identifier, authPolicy);
-        if (path.startsWith("/organization/")) {
-            String pathOrganizationName = path.split("/", 4)[2];
-            if (organizationNames.contains(pathOrganizationName)) {
-                log.info("Client {} authorized and allowed for organization path {}", identifier, path);
-            } else {
-                log.info("Client {} authorized and disallowed for organization path {}", identifier, path);
-            }
-        } else {
-            log.info("Client {} authorized and allowed for path {}", identifier, path);
-        }
     }
 }

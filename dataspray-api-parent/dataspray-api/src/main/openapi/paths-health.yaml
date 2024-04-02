@@ -1,4 +1,4 @@
-/ping:
+/v1/health:
   get:
     operationId: ping
     tags: [ Health ]
