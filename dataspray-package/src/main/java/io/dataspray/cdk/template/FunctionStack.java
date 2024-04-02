@@ -80,17 +80,16 @@ public abstract class FunctionStack extends BaseStack {
             long memorySizeNative) {
 
         // Create the function builder
-        Architecture architecture = detectNativeArch();
         Function.Builder functionBuilder = Function.Builder.create(this, constructId)
                 .functionName(functionName)
                 .code(Code.fromAsset(codeZip))
-                .timeout(Duration.seconds(30))
-                .architecture(architecture);
+                .timeout(Duration.seconds(30));
 
         // Lambda differences between a native image and JVM
         if (detectIsNative(codeZip)) {
             functionBuilder
                     .memorySize(memorySizeNative)
+                    .architecture(detectNativeArch())
                     // PROVIDED does not support arm64
                     .runtime(Runtime.PROVIDED_AL2023)
                     // Unused in native image
@@ -102,15 +101,12 @@ public abstract class FunctionStack extends BaseStack {
         } else {
             functionBuilder
                     .memorySize(memorySize)
-                    // For JVM default to ARM as it's cheaper
-                    .architecture(Architecture.ARM_64)
+                    // Snap start is only available for x86_64, otherwise use ARM as it's cheaper
+                    // https://docs.aws.amazon.com/lambda/latest/dg/snapstart.html#snapstart-runtimes
+                    .architecture(Architecture.X86_64)
+                    .snapStart(SnapStartConf.ON_PUBLISHED_VERSIONS)
                     .runtime(Runtime.JAVA_21)
                     .handler(QUARKUS_LAMBDA_HANDLER);
-            if (architecture == Architecture.X86_64) {
-                // Snap start is only available for x86_64
-                // https://docs.aws.amazon.com/lambda/latest/dg/snapstart.html#snapstart-runtimes
-                functionBuilder.snapStart(SnapStartConf.ON_PUBLISHED_VERSIONS);
-            }
         }
 
         // Construct the function
