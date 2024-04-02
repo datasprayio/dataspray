@@ -131,7 +131,9 @@ public class ApiStack extends FunctionStack {
                         PolicyStatement.Builder.create()
                                 .effect(Effect.ALLOW)
                                 .actions(List.of("lambda:InvokeFunction", "lambda:InvokeAsync"))
-                                .resources(authorizerFunction.getAlias().getResourceArnsForGrantInvoke())
+                                .resources(List.of(
+                                        "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + authorizerFunction.getFunctionName(),
+                                        "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + authorizerFunction.getFunctionName() + ":*"))
                                 .build())).build())).build();
 
         Map<String, Object> openApiSpec = constructOpenApiForApiGateway();
