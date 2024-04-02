@@ -78,7 +78,7 @@ public abstract class FunctionStack extends BaseStack {
             String codeZip,
             long memorySize,
             long memorySizeNative) {
-        String functionName = "dataspray" + baseFunctionName + getDeployEnv().getSuffix();
+        String functionName = "dataspray-" + baseFunctionName + getDeployEnv().getSuffix();
 
         // Create the function builder
         Function.Builder functionBuilder = Function.Builder.create(this, constructId)
@@ -114,10 +114,11 @@ public abstract class FunctionStack extends BaseStack {
         Function function = functionBuilder.build();
 
         // Update LIVE alias to point to latest version
+        String aliasName = "live";
         function.getLatestVersion();
-        Alias alias = function.addAlias("live");
+        Alias alias = function.addAlias(aliasName);
 
-        FunctionAndAlias functionAndAlias = new FunctionAndAlias(functionName, function, alias);
+        FunctionAndAlias functionAndAlias = new FunctionAndAlias(functionName, aliasName, function, alias);
         this.functions.put(functionName, functionAndAlias);
         return functionAndAlias;
     }
@@ -169,7 +170,9 @@ public abstract class FunctionStack extends BaseStack {
     @Value
     public static class FunctionAndAlias {
         @NonNull
-        String name;
+        String functionName;
+        @NonNull
+        String aliasName;
         @NonNull
         Function function;
         @NonNull
