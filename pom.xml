@@ -344,8 +344,7 @@
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>next-export-cdk</artifactId>
-                <!-- TODO bump to 0.0.2 to match AWS CDK dependency upgrade -->
-                <version>0.0.1</version>
+                <version>0.0.2</version>
             </dependency>
 
             <dependency>
