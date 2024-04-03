@@ -234,7 +234,7 @@ public class ApiStack extends FunctionStack {
     }
 
     private void addFunctionToApiGatewayPermission(SpecRestApi restApi, ApiFunctionStack webService) {
-        webService.getApiFunction().getFunction().addPermission(getConstructId("gateway-to-lambda-permission"), Permission.builder()
+        webService.getApiFunction().getAlias().addPermission(getConstructId("gateway-to-lambda-permission"), Permission.builder()
                 .sourceArn(restApi.arnForExecuteApi())
                 .principal(ServicePrincipal.Builder
                         .create("apigateway.amazonaws.com").build())
