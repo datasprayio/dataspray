@@ -104,7 +104,10 @@ export default function DashboardLayout(props: {
                                         id: "preferences",
                                         text: "Preferences"
                                     },
-                                    {id: "security", text: "Security"},
+                                    {
+                                        id: "security", text: "Security",
+                                        href: "/account/security"
+                                    },
                                     {
                                         id: "support-group",
                                         text: "Support",

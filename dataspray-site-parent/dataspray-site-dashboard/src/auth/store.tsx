@@ -26,6 +26,7 @@ import {create} from "zustand";
 import {createJSONStorage, persist, subscribeWithSelector} from "zustand/middleware";
 
 interface State {
+    _hasHydrated?: boolean,
     authResult: AuthResult | null,
     setAuthResult: (result: AuthResult | null) => void,
     currentOrganizationName: string | null,
@@ -34,21 +35,24 @@ interface State {
 
 const useAuthStore = create<State>()(
         subscribeWithSelector(
-        persist(
-                set => ({
-                    authResult: null,
-                    setAuthResult: authResult => set(state => ({...state, authResult})),
-                    currentOrganizationName: null,
-                    setCurrentOrganizationName: currentOrganizationName => set(state => ({
-                        ...state,
-                        currentOrganizationName
-                    })),
-                }),
-                {
-                    name: "ds_store_auth",
-                    storage: createJSONStorage(() => sessionStorage),
-                },
-        )
+                persist(
+                        set => ({
+                            authResult: null,
+                            setAuthResult: authResult => set(state => ({...state, authResult})),
+                            currentOrganizationName: null,
+                            setCurrentOrganizationName: currentOrganizationName => set(state => ({
+                                ...state,
+                                currentOrganizationName
+                            })),
+                        }),
+                        {
+                            name: "ds_store_auth",
+                            storage: createJSONStorage(() => sessionStorage),
+                            onRehydrateStorage: () => () => {
+                                useAuthStore.setState({_hasHydrated: true})
+                            }
+                        },
+                )
         )
 );
 

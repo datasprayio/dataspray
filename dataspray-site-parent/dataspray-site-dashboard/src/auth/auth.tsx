@@ -107,7 +107,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
     // Redirect if this page requests that user is signed in/out
     const router = useRouter();
     useEffect(() => {
-        if (authResult === undefined) return
+        if (!authStore._hasHydrated) return
 
         // Redirect if necessary
         if (behavior !== undefined && !!authResult && !currentOrganizationName) {
@@ -123,7 +123,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
 
         // router and redirect as a dep causes an infinite loop
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [authResult, currentOrganizationName]);
+    }, [authResult, currentOrganizationName, authStore._hasHydrated]);
 
     return useMemo(() => ({
         authResult,
