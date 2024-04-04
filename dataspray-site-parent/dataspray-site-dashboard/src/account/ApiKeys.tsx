@@ -8,7 +8,7 @@ import {useAuth} from "../auth/auth";
 export const ApiKeys = () => {
     const {currentOrganizationName} = useAuth();
 
-    const swr = useSWR('', !currentOrganizationName ? null : () => getClient().authNz().listApiKeys({
+    const swr = useSWR(currentOrganizationName, !currentOrganizationName ? null : () => getClient().authNz().listApiKeys({
         organizationName: currentOrganizationName,
     }).then(apiKeys => apiKeys.keys));
 

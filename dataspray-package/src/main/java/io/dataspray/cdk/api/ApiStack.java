@@ -121,7 +121,8 @@ public class ApiStack extends FunctionStack {
                         "dynamodb:BatchWriteItem",
                         "dynamodb:DeleteItem"))
                 .resources(ImmutableList.of(
-                        options.getSingleTableStack().getSingleTableTable().getTableArn()))
+                        options.getSingleTableStack().getSingleTableTable().getTableArn(),
+                        options.getSingleTableStack().getSingleTableTable().getTableArn() + "/index/*"))
                 .build());
 
         roleApiGatewayInvoke = Role.Builder.create(this, getConstructId("role"))

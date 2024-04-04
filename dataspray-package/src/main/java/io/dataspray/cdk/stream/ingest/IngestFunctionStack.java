@@ -85,7 +85,8 @@ public class IngestFunctionStack extends ApiFunctionStack {
                         "dynamodb:BatchWriteItem",
                         "dynamodb:DeleteItem"))
                 .resources(ImmutableList.of(
-                        singleTableStack.getSingleTableTable().getTableArn()))
+                        singleTableStack.getSingleTableTable().getTableArn(),
+                        singleTableStack.getSingleTableTable().getTableArn() + "/index/*"))
                 .build());
 
         getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
