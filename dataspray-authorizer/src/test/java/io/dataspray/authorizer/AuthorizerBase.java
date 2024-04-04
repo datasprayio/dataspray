@@ -150,6 +150,7 @@ abstract class AuthorizerBase extends AbstractTest {
         ApiAccess apiAccess = new ApiAccess(
                 getKeygenUtil().generateSecureApiKey(API_KEY_LENGTH),
                 organizationName,
+                "description",
                 ApiAccessStore.OwnerType.USER,
                 "user@example.com",
                 null,

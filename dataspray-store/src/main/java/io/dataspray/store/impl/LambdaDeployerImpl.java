@@ -330,6 +330,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         ApiAccess apiAccess = apiAccessStore.createApiAccessForTask(
                 apiKey,
                 organizationName,
+                publishedDescription,
                 username,
                 taskId,
                 publishedVersion,

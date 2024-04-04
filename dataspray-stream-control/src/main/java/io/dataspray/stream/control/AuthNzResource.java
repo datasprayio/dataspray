@@ -23,12 +23,18 @@
 package io.dataspray.stream.control;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import io.dataspray.store.ApiAccessStore;
+import io.dataspray.store.ApiAccessStore.ApiAccess;
+import io.dataspray.store.ApiAccessStore.UsageKeyType;
 import io.dataspray.store.EmailValidator;
 import io.dataspray.store.EmailValidator.EmailValidResult;
 import io.dataspray.store.OrganizationStore;
 import io.dataspray.store.UserStore;
 import io.dataspray.store.UserStore.CognitoProperties;
+import io.dataspray.stream.control.model.ApiKey;
+import io.dataspray.stream.control.model.ApiKeyCreate;
 import io.dataspray.stream.control.model.ApiKeyWithSecret;
 import io.dataspray.stream.control.model.ApiKeys;
 import io.dataspray.stream.control.model.AuthResult;
@@ -54,7 +60,6 @@ import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.NotImplementedException;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
@@ -70,7 +75,10 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.UserNotConf
 import software.amazon.awssdk.services.cognitoidentityprovider.model.UserNotFoundException;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.UsernameExistsException;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -87,23 +95,47 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
     EmailValidator emailValidator;
 
     @Override
-    public ApiKeyWithSecret createApiKey() {
-        throw new NotImplementedException();
+    public ApiKeyWithSecret createApiKey(ApiKeyCreate apiKeyCreate) {
+        if (!getOrganizationNames().contains(apiKeyCreate.getOrganizationName())) {
+            throw new ForbiddenException();
+        }
+        ApiAccess apiAccess = apiAccessStore.createApiAccessForUser(
+                apiKeyCreate.getOrganizationName(),
+                apiKeyCreate.getDescription(),
+                getUsername().orElseThrow(ForbiddenException::new),
+                UsageKeyType.ORGANIZATION,
+                Optional.ofNullable(apiKeyCreate.getQueueWhitelist())
+                        .filter(Predicate.not(List::isEmpty))
+                        .map(ImmutableSet::copyOf),
+                Optional.ofNullable(apiKeyCreate.getExpiresAt())
+                        .map(Instant::ofEpochMilli));
+        return apiAccessToApiKeyWithSecret(apiAccess);
     }
 
     @Override
-    public ApiKeyWithSecret getApiKeySecret(String apiKeyId) {
-        throw new NotImplementedException();
+    public ApiKeys listApiKeys(String organizationName) {
+        if (!getOrganizationNames().contains(organizationName)) {
+            throw new ForbiddenException();
+        }
+        return new ApiKeys(apiAccessStore.getApiAccessesByUser(
+                        organizationName,
+                        getUsername().orElseThrow(ForbiddenException::new)).stream()
+                .map(this::apiAccessToApiKey)
+                .collect(ImmutableList.toImmutableList()));
+
     }
 
     @Override
-    public ApiKeys listApiKeys() {
-        throw new NotImplementedException();
-    }
-
-    @Override
-    public void revokeApiKey(String apiKeyId) {
-        throw new NotImplementedException();
+    public void revokeApiKey(String organizationName, String apiKeyId) {
+        if (!getOrganizationNames().contains(organizationName)) {
+            throw new ForbiddenException();
+        }
+        apiAccessStore.getApiAccessesById(
+                        organizationName,
+                        getUsername().orElseThrow(ForbiddenException::new),
+                        apiKeyId)
+                .map(ApiAccess::getApiKey)
+                .ifPresent(apiAccessStore::revokeApiKey);
     }
 
     @Override
@@ -434,5 +466,23 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
         }
 
         userStore.setCognitoProperties(cognitoProperties);
+    }
+
+    private ApiKey apiAccessToApiKey(ApiAccess apiAccess) {
+        return new ApiKey(
+                apiAccess.getId(),
+                apiAccess.getDescription(),
+                apiAccess.getQueueWhitelist().asList(),
+                apiAccess.getTtlInEpochSec());
+    }
+
+
+    private ApiKeyWithSecret apiAccessToApiKeyWithSecret(ApiAccess apiAccess) {
+        return new ApiKeyWithSecret(
+                apiAccess.getId(),
+                apiAccess.getDescription(),
+                apiAccess.getQueueWhitelist().asList(),
+                apiAccess.getTtlInEpochSec(),
+                apiAccess.getApiKey());
     }
 }

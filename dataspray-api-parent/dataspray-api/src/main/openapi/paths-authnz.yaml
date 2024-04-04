@@ -148,29 +148,53 @@ components:
         refreshToken:
           type: string
 
+    ApiKeyCreate:
+      type: object
+      required:
+        - organizationName
+        - description
+      properties:
+        organizationName:
+          type: string
+        description:
+          type: string
+        queueWhitelist:
+          type: array
+          items:
+            type: string
+        expiresAt:
+          type: integer
+          format: int64
     ApiKey:
       type: object
       required:
         - id
-        - name
+        - organizationName
+        - description
+        - ownerType
+        - ownerUsername
+        - revocable
       properties:
         id:
           type: string
-        name:
+        description:
           type: string
+        queueWhitelist:
+          type: array
+          items:
+            type: string
+        expiresAt:
+          type: integer
+          format: int64
     ApiKeyWithSecret:
-      type: object
-      required:
-        - id
-        - name
-        - value
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        secret:
-          type: string
+      allOf:
+        - $ref: '#/components/schemas/ApiKey'
+        - type: object
+          required:
+            - secret
+          properties:
+            secret:
+              type: string
     ApiKeys:
       type: object
       required:
@@ -308,6 +332,12 @@ components:
   post:
     operationId: listApiKeys
     tags: [ AuthNZ ]
+    parameters:
+      - name: organizationName
+        in: query
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         description: Ok
@@ -319,23 +349,12 @@ components:
   put:
     operationId: createApiKey
     tags: [ AuthNZ ]
-    responses:
-      '200':
-        description: Ok
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApiKeyWithSecret'
-/v1/auth/apikey/{apiKeyId}:
-  post:
-    operationId: getApiKeySecret
-    tags: [ AuthNZ ]
-    parameters:
-      - name: apiKeyId
-        in: path
-        required: true
-        schema:
-          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiKeyCreate'
     responses:
       '200':
         description: Ok
@@ -347,6 +366,11 @@ components:
     operationId: revokeApiKey
     tags: [ AuthNZ ]
     parameters:
+      - name: organizationName
+        in: query
+        required: true
+        schema:
+          type: string
       - name: apiKeyId
         in: path
         required: true

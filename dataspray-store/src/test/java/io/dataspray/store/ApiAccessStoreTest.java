@@ -77,6 +77,7 @@ public class ApiAccessStoreTest extends AbstractTest {
         String username = UUID.randomUUID().toString();
         ApiAccess apiAccess = apiAccessStore.createApiAccessForUser(
                 organizationName,
+                "description",
                 username,
                 UsageKeyType.UNLIMITED,
                 Optional.empty(),
@@ -95,6 +96,7 @@ public class ApiAccessStoreTest extends AbstractTest {
         String username = UUID.randomUUID().toString();
         ApiAccess apiAccess1 = apiAccessStore.createApiAccessForUser(
                 organizationName,
+                "description",
                 username,
                 // Should cause a fetch miss for usage key, then create it
                 UsageKeyType.ORGANIZATION,
@@ -108,6 +110,7 @@ public class ApiAccessStoreTest extends AbstractTest {
 
         ApiAccess apiAccess2 = apiAccessStore.createApiAccessForUser(
                 organizationName,
+                "description",
                 username,
                 // Should fetch the previously created usage key
                 UsageKeyType.ORGANIZATION,
@@ -121,6 +124,7 @@ public class ApiAccessStoreTest extends AbstractTest {
         Assertions.assertThrows(IllegalArgumentException.class, () ->
                 apiAccessStore.createApiAccessForUser(
                         UUID.randomUUID().toString(),
+                        "description",
                         UUID.randomUUID() + "@example.com",
                         UsageKeyType.UNLIMITED,
                         Optional.empty(),
@@ -171,6 +175,7 @@ public class ApiAccessStoreTest extends AbstractTest {
 
         ApiAccess apiAccess2 = apiAccessStore.createApiAccessForUser(
                 apiAccess.getOrganizationName(),
+                "description",
                 apiAccess.getOwnerUsername(),
                 UsageKeyType.UNLIMITED,
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
@@ -250,6 +255,7 @@ public class ApiAccessStoreTest extends AbstractTest {
         ApiAccess apiAccess = new ApiAccess(
                 keygenUtil.generateSecureApiKey(DynamoApiGatewayApiAccessStore.API_KEY_LENGTH),
                 UUID.randomUUID().toString(),
+                "description",
                 ApiAccessStore.OwnerType.USER,
                 UUID.randomUUID() + "user@example.com",
                 null,

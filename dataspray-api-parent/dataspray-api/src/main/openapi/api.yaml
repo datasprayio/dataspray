@@ -37,8 +37,6 @@ paths:
     $ref: 'paths-authnz.yaml#/~1v1~1auth~1apikeys'
   /v1/auth/apikey:
     $ref: 'paths-authnz.yaml#/~1v1~1auth~1apikey'
-  /v1/auth/apikey/{apiKeyId}:
-    $ref: 'paths-authnz.yaml#/~1v1~1auth~1apikey~1{apiKeyId}'
   /v1/organizations/create:
     $ref: 'paths-organization.yaml#/~1v1~1organizations~1create'
   /v1/organization/{organizationName}/invite:

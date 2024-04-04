@@ -103,10 +103,11 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public ApiAccess createApiAccessForUser(String organizationName, String username, UsageKeyType usageKeyType, Optional<ImmutableSet<String>> queueWhitelistOpt, Optional<Instant> expiryOpt) {
+    public ApiAccess createApiAccessForUser(String organizationName, String description, String username, UsageKeyType usageKeyType, Optional<ImmutableSet<String>> queueWhitelistOpt, Optional<Instant> expiryOpt) {
         return createApiAccess(new ApiAccess(
                 keygenUtil.generateSecureApiKey(API_KEY_LENGTH),
                 organizationName,
+                description,
                 OwnerType.USER,
                 username,
                 null,
@@ -122,10 +123,11 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public ApiAccess createApiAccessForTask(String apiKey, String organizationName, String username, String taskId, String taskVersion, UsageKeyType usageKeyType, Optional<ImmutableSet<String>> queueWhitelistOpt) {
+    public ApiAccess createApiAccessForTask(String apiKey, String organizationName, String description, String username, String taskId, String taskVersion, UsageKeyType usageKeyType, Optional<ImmutableSet<String>> queueWhitelistOpt) {
         return createApiAccess(new ApiAccess(
                 apiKey,
                 organizationName,
+                description,
                 OwnerType.TASK,
                 username,
                 taskId,
@@ -165,6 +167,21 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
                 .map(apiAccessByOrganizationSchema::fromAttrMap)
                 .filter(ApiAccess::isTtlNotExpired)
                 .collect(ImmutableSet.toImmutableSet());
+    }
+
+    @Override
+    public ImmutableSet<ApiAccess> getApiAccessesByUser(String organizationName, String username) {
+        return getApiAccessesByOrganizationName(organizationName).stream()
+                .filter(apiAccess -> OwnerType.USER.equals(apiAccess.getOwnerType()))
+                .filter(apiAccess -> username.equals(apiAccess.getOwnerUsername()))
+                .collect(ImmutableSet.toImmutableSet());
+    }
+
+    @Override
+    public Optional<ApiAccess> getApiAccessesById(String organizationName, String username, String id) {
+        return getApiAccessesByUser(organizationName, username).stream()
+                .filter(apiAccess -> id.equals(apiAccess.getId()))
+                .findAny();
     }
 
     @Override

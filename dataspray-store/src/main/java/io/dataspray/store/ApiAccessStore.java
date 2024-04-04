@@ -36,6 +36,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.Value;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -62,6 +63,7 @@ public interface ApiAccessStore {
 
     ApiAccess createApiAccessForUser(
             String organizationName,
+            String description,
             String username,
             UsageKeyType usageKeyType,
             Optional<ImmutableSet<String>> queueWhitelistOpt,
@@ -79,6 +81,7 @@ public interface ApiAccessStore {
     ApiAccess createApiAccessForTask(
             String apiKey,
             String organizationName,
+            String description,
             String username,
             String taskId,
             String taskVersion,
@@ -86,6 +89,10 @@ public interface ApiAccessStore {
             Optional<ImmutableSet<String>> queueWhitelistOpt);
 
     ImmutableSet<ApiAccess> getApiAccessesByOrganizationName(String organizationName);
+
+    ImmutableSet<ApiAccess> getApiAccessesByUser(String organizationName, String username);
+
+    Optional<ApiAccess> getApiAccessesById(String organizationName, String username, String id);
 
     Optional<ApiAccess> getApiAccessByApiKey(String apiKey, boolean useCache);
 
@@ -132,6 +139,9 @@ public interface ApiAccessStore {
         String organizationName;
 
         @NonNull
+        String description;
+
+        @NonNull
         OwnerType ownerType;
 
         /** For ownerType=USER shows user's username. For ownerType=TASK, shows username of user that deployed the task. */
@@ -152,6 +162,14 @@ public interface ApiAccessStore {
 
         @Nullable
         Long ttlInEpochSec;
+
+        /**
+         * Unique ID to refer this access key by without using the api key itself
+         * as we don't want to expose it to clients after initial delivery.
+         */
+        public String getId() {
+            return DigestUtils.sha3_512Hex(apiKey);
+        }
 
         public boolean isTtlNotExpired() {
             return ttlInEpochSec == null
