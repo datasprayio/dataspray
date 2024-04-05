@@ -95,12 +95,9 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
     EmailValidator emailValidator;
 
     @Override
-    public ApiKeyWithSecret createApiKey(ApiKeyCreate apiKeyCreate) {
-        if (!getOrganizationNames().contains(apiKeyCreate.getOrganizationName())) {
-            throw new ForbiddenException();
-        }
+    public ApiKeyWithSecret createApiKey(String organizationName, ApiKeyCreate apiKeyCreate) {
         ApiAccess apiAccess = apiAccessStore.createApiAccessForUser(
-                apiKeyCreate.getOrganizationName(),
+                organizationName,
                 apiKeyCreate.getDescription(),
                 getUsername().orElseThrow(ForbiddenException::new),
                 UsageKeyType.ORGANIZATION,
@@ -114,9 +111,6 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
 
     @Override
     public ApiKeys listApiKeys(String organizationName) {
-        if (!getOrganizationNames().contains(organizationName)) {
-            throw new ForbiddenException();
-        }
         return new ApiKeys(apiAccessStore.getApiAccessesByUser(
                         organizationName,
                         getUsername().orElseThrow(ForbiddenException::new)).stream()
@@ -127,9 +121,6 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
 
     @Override
     public void revokeApiKey(String organizationName, String apiKeyId) {
-        if (!getOrganizationNames().contains(organizationName)) {
-            throw new ForbiddenException();
-        }
         apiAccessStore.getApiAccessesById(
                         organizationName,
                         getUsername().orElseThrow(ForbiddenException::new),

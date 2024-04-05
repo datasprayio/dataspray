@@ -11,7 +11,13 @@ export const TargetSelect = (props: {
     currentOrganizationName?: string | null,
     selectedTargets: Option[],
     setSelectedTargets: (targets: Option[]) => void,
-}) => {
+} & Partial<React.ComponentProps<typeof Multiselect>>) => {
+    const {
+        currentOrganizationName,
+        selectedTargets,
+        setSelectedTargets,
+        ...multiSelectProps
+    } = props;
 
     const loadInitiated = useRef<boolean>(false);
     const [options, setOptions] = useState<Option[]>()
@@ -25,8 +31,6 @@ export const TargetSelect = (props: {
         loadInitiated.current = true;
         setLoading(true);
 
-        // TODO call backend
-        // TODO handle retries too
         try {
             const result = await getClient().control().getTargets({
                 organizationName: props.currentOrganizationName,
@@ -36,6 +40,7 @@ export const TargetSelect = (props: {
                 value: target.name,
             })))
         } catch (e: any) {
+            loadInitiated.current = false; // Allow retry
             console.error('Failed to fetch targets', e ?? 'Unknown error')
             setError(e?.message || ('Failed to fetch targets: ' + (e || 'Unknown error')))
         }
@@ -74,6 +79,8 @@ export const TargetSelect = (props: {
                     filteringAriaLabel="Filter targets"
                     filteringClearAriaLabel="Clear"
                     ariaRequired={true}
+
+                    {...multiSelectProps}
             />
     )
 }

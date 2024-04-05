@@ -59,11 +59,6 @@ public class OrganizationResource extends AbstractResource implements Organizati
     @Override
     public void inviteToOrganization(String organizationName, String email, String username) {
 
-        // Validate you are part of the organization
-        if (!getOrganizationNames().contains(organizationName)) {
-            throw new ClientErrorException(403);
-        }
-
         if (Strings.isNullOrEmpty(username)) {
             // Check that the user exists given the email
             try {

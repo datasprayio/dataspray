@@ -168,7 +168,7 @@ public interface ApiAccessStore {
          * as we don't want to expose it to clients after initial delivery.
          */
         public String getId() {
-            return DigestUtils.sha3_512Hex(apiKey);
+            return DigestUtils.sha3_224Hex(apiKey).substring(0, 5);
         }
 
         public boolean isTtlNotExpired() {

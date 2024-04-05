@@ -6,6 +6,7 @@ import {ButtonDropdown, ButtonDropdownProps} from "@cloudscape-design/components
 
 export const PageHeader = (props: {
     title: string;
+    description?: string;
     buttons?: Array<{
         key?: string,
         text: string,
@@ -17,6 +18,7 @@ export const PageHeader = (props: {
     return (
             <Header
                     variant="h1"
+                    description={props.description}
                     actions={!!props.buttons && (
                             <SpaceBetween direction="horizontal" size="xs">
                                 {props.buttons.map((button, index) =>

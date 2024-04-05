@@ -91,7 +91,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
     // - null: user is not part of any organization
     // - string: selected organization
     let currentOrganizationName: string | null | undefined = undefined;
-    let organizationNames = idToken?.["cognito:groups"] || [];
+    let organizationNames = useMemo(() => idToken?.["cognito:groups"] || [], [idToken]);
     if (idToken) {
         if (authStore.currentOrganizationName) {
             currentOrganizationName = organizationNames.includes(authStore.currentOrganizationName)
@@ -108,7 +108,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
     // Redirect if this page requests that user is signed in/out
     const router = useRouter();
     useEffect(() => {
-        if (!authStore._hasHydrated) return
+        if (!authStore.hasHydrated) return
 
         // Redirect if necessary
         if (behavior !== undefined && !!authResult && !currentOrganizationName) {
@@ -124,7 +124,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
 
         // router and redirect as a dep causes an infinite loop
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [authResult, currentOrganizationName, authStore._hasHydrated]);
+    }, [authResult, currentOrganizationName, authStore.hasHydrated]);
 
     return useMemo(() => ({
         authResult,
@@ -142,6 +142,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
         signOut: () => signOut(onSignIn, authResult?.refreshToken),
     }), [
         authResult,
+        organizationNames,
         currentOrganizationName,
         authStore.setCurrentOrganizationName,
         accessToken,

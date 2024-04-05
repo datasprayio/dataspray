@@ -151,11 +151,8 @@ components:
     ApiKeyCreate:
       type: object
       required:
-        - organizationName
         - description
       properties:
-        organizationName:
-          type: string
         description:
           type: string
         queueWhitelist:
@@ -328,13 +325,13 @@ components:
       '200':
         description: Ok
 
-/v1/auth/apikeys:
+/v1/organization/{organizationName}/auth/apikeys:
   post:
     operationId: listApiKeys
     tags: [ AuthNZ ]
     parameters:
       - name: organizationName
-        in: query
+        in: path
         required: true
         schema:
           type: string
@@ -345,10 +342,16 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/ApiKeys'
-/v1/auth/apikey:
+/v1/organization/{organizationName}/auth/apikey:
   put:
     operationId: createApiKey
     tags: [ AuthNZ ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -362,12 +365,13 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/ApiKeyWithSecret'
+/v1/organization/{organizationName}/auth/apikey/{apiKeyId}:
   delete:
     operationId: revokeApiKey
     tags: [ AuthNZ ]
     parameters:
       - name: organizationName
-        in: query
+        in: path
         required: true
         schema:
           type: string

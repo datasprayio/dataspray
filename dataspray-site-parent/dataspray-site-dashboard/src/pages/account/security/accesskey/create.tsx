@@ -22,25 +22,31 @@
 
 import {NextPageWithLayout} from "../../../_app";
 import {useAuth} from "../../../../auth/auth";
-import SpaceBetween from "@cloudscape-design/components/space-between";
 import {PageHeader} from "../../../../common/PageHeader";
 import {CreateApiKey} from "../../../../account/CreateApiKey";
+import {CreatedApiKey} from "../../../../account/CreatedApiKey";
 import {ContentLayout} from "@cloudscape-design/components";
 import DashboardLayout from "../../../../layout/DashboardLayout";
 import BaseAppLayout from "../../../../layout/BaseAppLayout";
+import {useState} from "react";
+import {ApiKeyWithSecret} from "dataspray-client";
 
 const Page: NextPageWithLayout = () => {
     const {} = useAuth('redirect-if-signed-out');
+    const [apiKey, setApiKey] = useState<ApiKeyWithSecret>()
 
     return (
             <BaseAppLayout
                     content={(
                             <ContentLayout header={
-                                <PageHeader title='Security'/>
+                                <PageHeader title='Create Access Key'
+                                            description="You can create an Access Key to use the DataSpray API programmatically."/>
                             }>
-                                <SpaceBetween size="l">
-                                    <CreateApiKey/>
-                                </SpaceBetween>
+                                {!apiKey ? (
+                                        <CreateApiKey onCreated={setApiKey}/>
+                                ) : (
+                                        <CreatedApiKey apiKey={apiKey}/>
+                                )}
                             </ContentLayout>
                     )}
             />
