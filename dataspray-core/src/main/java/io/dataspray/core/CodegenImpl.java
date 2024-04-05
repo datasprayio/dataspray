@@ -383,7 +383,10 @@ public class CodegenImpl implements Codegen {
                     break;
             }
 
+            // Execute the template
             Optional<String> resultFileOpt = runMustache(item, absoluteFilePath, context);
+
+            // If the template evaluates to empty, skip the file
             if (resultFileOpt.isEmpty()) {
                 return;
             }
@@ -393,13 +396,24 @@ public class CodegenImpl implements Codegen {
                 // If merging, but file doesn't exist, replace it
                 || (item.getType() == TemplateFiles.TemplateType.MERGE && !fileExists)) {
 
+                // Create parent directories if needed
                 Optional.ofNullable(absoluteFilePath.getParent())
                         .map(Path::toFile)
                         .ifPresent(File::mkdirs);
+
+                // Write out the file
                 try {
                     Files.writeString(absoluteFilePath, resultFileOpt.get(), Charsets.UTF_8);
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
+                }
+
+                // If file is tracked, remove the write permission
+                // This is an extra warning for the user that the file will be re-generated and should not be modified
+                if (item.getType() == TemplateFiles.TemplateType.REPLACE) {
+                    if (!absoluteFilePath.toFile().setWritable(false, false)) {
+                        throw new RuntimeException("Cannot modify write permission on file: " + absoluteFilePath);
+                    }
                 }
             } else if (item.getType() == TemplateFiles.TemplateType.MERGE) {
                 // Perform a merge

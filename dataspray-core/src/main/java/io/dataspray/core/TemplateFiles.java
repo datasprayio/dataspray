@@ -142,9 +142,23 @@ public class TemplateFiles {
     @Getter
     @AllArgsConstructor
     public enum TemplateType {
+        /**
+         * Include files can only be included in other files. They are not standalone generated.
+         */
         INCLUDE(Optional.of(CodegenImpl.MUSTACHE_FILE_EXTENSION_INCLUDE)),
+        /**
+         * Sample files are generated only if the file doesn't already exist. They are intended for users to modify.
+         * May also be combined with MERGE for continuous updates.
+         */
         SAMPLE(Optional.of(CodegenImpl.MUSTACHE_FILE_EXTENSION_SAMPLE)),
+        /**
+         * Replace files are always re-generated. They are not intended for users to modify.
+         */
         REPLACE(Optional.of(CodegenImpl.MUSTACHE_FILE_EXTENSION_TEMPLATE)),
+        /**
+         * Merge files are generated if the file doesn't exist, otherwise it is updated. They are intended for users to
+         * modify. Only certain types of files can be merged.
+         */
         MERGE(Optional.of(CodegenImpl.MUSTACHE_FILE_EXTENSION_MERGE)),
         UNKNOWN(Optional.empty());
         private final Optional<String> mustacheFileExtension;
