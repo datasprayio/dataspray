@@ -30,6 +30,7 @@ import React from "react";
 import {getHeaderCounterTextSingle} from "../table/tableUtil";
 import {ApiKey} from "dataspray-client";
 import {dateToYyyyMmDd} from "../util/dateUtil";
+import {DeleteApiKeyModal} from "./DeleteApiKeyModal";
 
 export const ApiKeys = () => {
     const [error, setError] = React.useState<string | undefined>(undefined);
@@ -44,6 +45,28 @@ export const ApiKeys = () => {
         revalidateOnReconnect: false,
     });
 
+    const [showDeleteApiKeyModal, setShowDeleteApiKeyModal] = React.useState(false);
+    const deleteApiKeyModal = (
+            <DeleteApiKeyModal
+                    apiKey={selectedApiKey}
+                    show={showDeleteApiKeyModal}
+                    onHide={() => setShowDeleteApiKeyModal(false)}
+                    onDelete={async () => {
+                        try {
+                            await getClient().authNz().revokeApiKey({
+                                organizationName: currentOrganizationName!,
+                                apiKeyId: selectedApiKey!.id,
+                            });
+                            swr.mutate();
+                        } catch (e: any) {
+                            console.error('Failed to revoke access key', e ?? 'Unknown error')
+                            setError(e?.message || ('Failed to revoke access key: ' + (e || 'Unknown error')))
+                        }
+                        setShowDeleteApiKeyModal(false);
+                    }}
+            />
+    );
+
     return (
             <Container
                     header={
@@ -52,19 +75,10 @@ export const ApiKeys = () => {
                                 counter={getHeaderCounterTextSingle(swr.data?.length || 0, false)}
                                 actions={
                                     <SpaceBetween size="xs" direction="horizontal">
-                                        <Button disabled={!selectedApiKey} onClick={async () => {
-                                            try {
-                                                await getClient().authNz().revokeApiKey({
-                                                    organizationName: currentOrganizationName!,
-                                                    apiKeyId: selectedApiKey!.id,
-                                                });
-                                                swr.mutate();
-                                            } catch (e: any) {
-                                                console.error('Failed to revoke access key', e ?? 'Unknown error')
-                                                setError(e?.message || ('Failed to revoke access key: ' + (e || 'Unknown error')))
-                                            }
-                                        }}>
+                                        <Button disabled={!selectedApiKey}
+                                                onClick={() => setShowDeleteApiKeyModal(true)}>
                                             Revoke
+                                            {deleteApiKeyModal}
                                         </Button>
                                         <Button variant="primary" href='/account/security/accesskey/create'>
                                             Create
