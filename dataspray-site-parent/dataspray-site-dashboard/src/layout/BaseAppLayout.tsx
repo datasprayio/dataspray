@@ -21,18 +21,15 @@
  */
 
 import {AppLayout} from "@cloudscape-design/components";
-import Navigation from "./Navigation";
 import {TopNavId} from "./DashboardLayout";
-import BaseAppLayout from "./BaseAppLayout";
 
 const DashboardAppLayout = (props: {} & React.ComponentProps<typeof AppLayout>) => {
     const {...appLayoutProps} = props;
     return (
-            <BaseAppLayout
+            <AppLayout
                     headerSelector={`#${TopNavId}`}
-                    navigation={(<Navigation/>)}
                     toolsHide
-                    navigationHide={false}
+                    navigationHide
                     {...appLayoutProps}
             />
     );

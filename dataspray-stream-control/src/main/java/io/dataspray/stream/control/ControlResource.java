@@ -30,8 +30,13 @@ import io.dataspray.store.LambdaDeployer.DeployedVersion;
 import io.dataspray.store.LambdaDeployer.State;
 import io.dataspray.store.LambdaDeployer.Status;
 import io.dataspray.store.LambdaDeployer.Versions;
+import io.dataspray.store.TargetStore;
 import io.dataspray.store.util.WithCursor;
 import io.dataspray.stream.control.model.DeployRequest;
+import io.dataspray.stream.control.model.Target;
+import io.dataspray.stream.control.model.TargetBatch;
+import io.dataspray.stream.control.model.TargetStream;
+import io.dataspray.stream.control.model.Targets;
 import io.dataspray.stream.control.model.TaskStatus;
 import io.dataspray.stream.control.model.TaskStatus.StatusEnum;
 import io.dataspray.stream.control.model.TaskStatuses;
@@ -65,6 +70,8 @@ public class ControlResource extends AbstractResource implements ControlApi {
 
     @Inject
     LambdaDeployer deployer;
+    @Inject
+    TargetStore targetStore;
 
     @Override
     public TaskStatus activateVersion(String organizationName, String taskId, String version) {
@@ -143,6 +150,34 @@ public class ControlResource extends AbstractResource implements ControlApi {
     public UploadCodeResponse uploadCode(String organizationName, UploadCodeRequest uploadCodeRequest) {
         UploadCodeClaim uploadCodeClaim = deployer.uploadCode(organizationName, uploadCodeRequest.getTaskId(), uploadCodeRequest.getContentLengthBytes());
         return new UploadCodeResponse(uploadCodeClaim.getPresignedUrl(), uploadCodeClaim.getCodeUrl());
+    }
+
+    @Override
+    public Targets getTargets(String organizationName) {
+        TargetStore.Targets targets = targetStore.getTargets(organizationName, true);
+        return modelToTargets(organizationName, targets);
+    }
+
+    private Targets modelToTargets(String organizationName, TargetStore.Targets targets) {
+        return new Targets(
+                organizationName,
+                Boolean.TRUE.equals(targets.getAllowUndefinedTargets()),
+                Optional.ofNullable(targets.getUndefinedTarget()).map(this::modelToTarget).orElse(null),
+                targets.getTargets().stream()
+                        .map(this::modelToTarget)
+                        .collect(ImmutableList.toImmutableList()));
+    }
+
+
+    private Target modelToTarget(TargetStore.Target target) {
+        return new Target(
+                target.getName(),
+                target.getBatch()
+                        .map(batch -> new TargetBatch(batch.getRetention().getRetentionInDays()))
+                        .orElse(null),
+                target.getStreams().stream()
+                        .map(stream -> new TargetStream(stream.getName()))
+                        .collect(ImmutableList.toImmutableList()));
     }
 
     private TaskStatus getStatus(String organizationName, String taskId) {

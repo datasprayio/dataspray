@@ -91,16 +91,17 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
     // - null: user is not part of any organization
     // - string: selected organization
     let currentOrganizationName: string | null | undefined = undefined;
+    let organizationNames = idToken?.["cognito:groups"] || [];
     if (idToken) {
         if (authStore.currentOrganizationName) {
-            currentOrganizationName = idToken["cognito:groups"]?.includes(authStore.currentOrganizationName)
+            currentOrganizationName = organizationNames.includes(authStore.currentOrganizationName)
                     // The persisted selection is valid
                     ? authStore.currentOrganizationName
                     // The user is no longer part of the organization that was persisted
                     : null;
         } else {
             // There is no explicit organization selected, pick the first one
-            currentOrganizationName = idToken["cognito:groups"]?.[0] || null;
+            currentOrganizationName = organizationNames[0] || null;
         }
     }
 
@@ -127,6 +128,7 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
 
     return useMemo(() => ({
         authResult,
+        organizationNames,
         currentOrganizationName,
         setCurrentOrganizationName: authStore.setCurrentOrganizationName,
         accessToken,

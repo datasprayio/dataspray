@@ -107,13 +107,13 @@ public class IngestFunctionStack extends ApiFunctionStack {
                 // Add different expiry for each retention prefix
                 .lifecycleRules(Arrays.stream(TargetStore.BatchRetention.values()).map(batchRetention -> LifecycleRule.builder()
                         .id(batchRetention.name())
-                        .expiration(Duration.days(batchRetention.getExpirationInDays()))
+                        .expiration(Duration.days(batchRetention.getRetentionInDays()))
                         .prefix(ETL_BUCKET_RETENTION_PREFIX + batchRetention.name())
                         .build()).collect(Collectors.toList()))
                 // Move objects to archive after inactivity to save costs
                 .intelligentTieringConfigurations(Arrays.stream(TargetStore.BatchRetention.values())
                         // Only makes sense for data stored for more than 4 months (migrated after 3)
-                        .filter(batchRetention -> batchRetention.getExpirationInDays() > 120)
+                        .filter(batchRetention -> batchRetention.getRetentionInDays() > 120)
                         .map(batchRetention -> IntelligentTieringConfiguration.builder()
                                 .name(batchRetention.name())
                                 .prefix(ETL_BUCKET_RETENTION_PREFIX_PREFIX + batchRetention.name())

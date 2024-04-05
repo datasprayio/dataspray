@@ -39,16 +39,20 @@ export default function DashboardLayout(props: {
     pageTitle?: string,
 }) {
     const router = useRouter()
-    const {idToken, currentOrganizationName, setCurrentOrganizationName} = useAuth('redirect-if-signed-out');
+    const {
+        idToken,
+        organizationNames,
+        currentOrganizationName,
+        setCurrentOrganizationName
+    } = useAuth('redirect-if-signed-out');
     const {mode, toggle} = useMode();
-    const organizations = idToken?.["cognito:groups"] || [];
 
     // Change organization if requested
     const changeToOrganizationName = router.query.organization as string | undefined;
     React.useEffect(() => {
         if (!changeToOrganizationName
                 || changeToOrganizationName === currentOrganizationName
-                || !organizations.includes(changeToOrganizationName)) {
+                || !organizationNames.includes(changeToOrganizationName)) {
             return
         }
         setCurrentOrganizationName(changeToOrganizationName)
@@ -73,7 +77,7 @@ export default function DashboardLayout(props: {
                                         id: "organizations",
                                         text: "Organizations",
                                         items: [
-                                            ...organizations.map(organizationName => ({
+                                            ...organizationNames.map(organizationName => ({
                                                 id: organizationName,
                                                 text: organizationName,
                                                 disabled: organizationName === currentOrganizationName,

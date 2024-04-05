@@ -221,6 +221,6 @@ public interface TargetStore {
         THREE_MONTHS(3 * 30),
         YEAR(366),
         THREE_YEARS(3 * 366);
-        final int expirationInDays;
+        final long retentionInDays;
     }
 }

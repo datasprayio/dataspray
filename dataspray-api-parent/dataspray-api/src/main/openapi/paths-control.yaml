@@ -110,6 +110,49 @@ components:
             - IN_PROGRESS
         lastUpdateStatusReason:
           type: string
+    Targets:
+      type: object
+      required:
+        - organizationName
+        - allowUndefinedTargets
+        - targets
+      properties:
+        organizationName:
+          type: string
+        allowUndefinedTargets:
+          type: boolean
+        undefinedTarget:
+          $ref: '#/components/schemas/Target'
+        targets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Target'
+    Target:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        batch:
+          $ref: '#/components/schemas/TargetBatch'
+        streams:
+          type: array
+          items:
+            $ref: '#/components/schemas/TargetStream'
+    TargetBatch:
+      type: object
+      properties:
+        retentionInDays:
+          type: integer
+          format: int64
+    TargetStream:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
 
 /v1/organization/{organizationName}/control/code/upload:
   put:
@@ -321,3 +364,22 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskStatus'
+
+
+/v1/organization/{organizationName}/targets:
+  get:
+    operationId: getTargets
+    tags: [ Control ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Targets'

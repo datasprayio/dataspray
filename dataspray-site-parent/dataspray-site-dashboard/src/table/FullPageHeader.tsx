@@ -1,9 +1,9 @@
 import React from 'react';
-import { Button, Header, HeaderProps, SpaceBetween } from '@cloudscape-design/components';
+import {Button, Header, HeaderProps, SpaceBetween} from '@cloudscape-design/components';
 import Link from "@cloudscape-design/components/link";
 
 interface FullPageHeaderProps extends HeaderProps {
-    title?: string;
+    title: string;
     createButtonText?: string;
     extraActions?: React.ReactNode;
     selectedItemsCount: number;
@@ -13,9 +13,9 @@ interface FullPageHeaderProps extends HeaderProps {
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 export function FullPageHeader({
-                                   title = 'Distributions',
-                                   createButtonText = 'Create distribution',
-                                   extraActions = null,
+                                   title,
+                                   createButtonText = 'Create',
+                                   extraActions,
                                    selectedItemsCount,
                                    onInfoLinkClick,
                                    ...props
@@ -34,10 +34,10 @@ export function FullPageHeader({
                         <SpaceBetween size="xs" direction="horizontal">
                             {extraActions}
                             <Button data-testid="header-btn-view-details" disabled={!isOnlyOneSelected}>
-                                View details
+                                Pause
                             </Button>
                             <Button data-testid="header-btn-edit" disabled={!isOnlyOneSelected}>
-                                Edit
+                                Resume
                             </Button>
                             <Button data-testid="header-btn-delete" disabled={selectedItemsCount === 0}>
                                 Delete

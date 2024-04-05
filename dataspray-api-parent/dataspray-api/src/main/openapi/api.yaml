@@ -59,5 +59,7 @@ paths:
     $ref: 'paths-control.yaml#/~1v1~1organization~1{organizationName}~1control~1task~1{taskId}~1resume'
   /v1/organization/{organizationName}/control/task/{taskId}/delete:
     $ref: 'paths-control.yaml#/~1v1~1organization~1{organizationName}~1control~1task~1{taskId}~1delete'
+  /v1/organization/{organizationName}/targets:
+    $ref: 'paths-control.yaml#/~1v1~1organization~1{organizationName}~1targets'
   /v1/organization/{organizationName}/target/{targetId}/message:
     $ref: 'paths-ingest.yaml#/~1v1~1organization~1{organizationName}~1target~1{targetId}~1message'

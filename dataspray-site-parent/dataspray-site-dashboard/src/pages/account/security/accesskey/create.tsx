@@ -20,22 +20,37 @@
  * SOFTWARE.
  */
 
-import {AppLayout} from "@cloudscape-design/components";
-import Navigation from "./Navigation";
-import {TopNavId} from "./DashboardLayout";
-import BaseAppLayout from "./BaseAppLayout";
+import {NextPageWithLayout} from "../../../_app";
+import {useAuth} from "../../../../auth/auth";
+import SpaceBetween from "@cloudscape-design/components/space-between";
+import {PageHeader} from "../../../../common/PageHeader";
+import {CreateApiKey} from "../../../../account/CreateApiKey";
+import {ContentLayout} from "@cloudscape-design/components";
+import DashboardLayout from "../../../../layout/DashboardLayout";
+import BaseAppLayout from "../../../../layout/BaseAppLayout";
 
-const DashboardAppLayout = (props: {} & React.ComponentProps<typeof AppLayout>) => {
-    const {...appLayoutProps} = props;
+const Page: NextPageWithLayout = () => {
+    const {} = useAuth('redirect-if-signed-out');
+
     return (
             <BaseAppLayout
-                    headerSelector={`#${TopNavId}`}
-                    navigation={(<Navigation/>)}
-                    toolsHide
-                    navigationHide={false}
-                    {...appLayoutProps}
+                    content={(
+                            <ContentLayout header={
+                                <PageHeader title='Security'/>
+                            }>
+                                <SpaceBetween size="l">
+                                    <CreateApiKey/>
+                                </SpaceBetween>
+                            </ContentLayout>
+                    )}
             />
-    );
+    )
 }
 
-export default DashboardAppLayout;
+Page.getLayout = (page) => (
+        <DashboardLayout
+                pageTitle='Create Access Key'
+        >{page}</DashboardLayout>
+)
+
+export default Page

@@ -21,19 +21,19 @@
  */
 
 import {NextPageWithLayout} from "../_app";
-import DashboardLayout from "../../layout/DashboardLayout";
-import DashboardAppLayout from "../../layout/DashboardAppLayout";
 import {useAuth} from "../../auth/auth";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import {PageHeader} from "../../common/PageHeader";
 import {ApiKeys} from "../../account/ApiKeys";
 import {ContentLayout} from "@cloudscape-design/components";
+import DashboardLayout from "../../layout/DashboardLayout";
+import BaseAppLayout from "../../layout/BaseAppLayout";
 
 const Page: NextPageWithLayout = () => {
     const {} = useAuth('redirect-if-signed-out');
 
     return (
-            <DashboardAppLayout
+            <BaseAppLayout
                     content={(
                             <ContentLayout header={
                                 <PageHeader title='Security'/>
