@@ -21,7 +21,6 @@
  */
 
 import {Alert, Box, ColumnLayout, Modal} from "@cloudscape-design/components";
-import {useAuth} from "../auth/auth";
 import React from "react";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Button from "@cloudscape-design/components/button";
@@ -35,8 +34,6 @@ export const DeleteApiKeyModal = (props: {
     onHide: () => void;
     onDelete: () => void;
 }) => {
-    const {currentOrganizationName} = useAuth();
-
     const apiKeyId = props.apiKey?.id?.substring(0, 5);
     const [deleteInputText, setDeleteInputText] = React.useState('');
     const inputMatchesConsentText = apiKeyId?.toLowerCase() === deleteInputText.toLowerCase();
@@ -50,7 +47,7 @@ export const DeleteApiKeyModal = (props: {
                     footer={
                         <Box float="right">
                             <SpaceBetween direction="horizontal" size="xs">
-                                <Button variant="link" onClick={props.onHide}>
+                                <Button onClick={props.onHide}>
                                     Cancel
                                 </Button>
                                 <Button variant="primary" onClick={props.onDelete} disabled={!inputMatchesConsentText}>
@@ -62,11 +59,7 @@ export const DeleteApiKeyModal = (props: {
             >
                 <SpaceBetween size="m">
                     <Box variant="span">
-                        Permanently delete Access Key{' '}
-                        <Box variant="span" fontWeight="bold">
-                            {props.apiKey?.id}
-                        </Box>
-                        {' '}with description{' '}
+                        Permanently delete Access Key with description{' '}
                         <Box variant="span" fontWeight="bold">
                             {props.apiKey?.description}
                         </Box>
@@ -74,7 +67,8 @@ export const DeleteApiKeyModal = (props: {
                         You can’t undo this action.
                     </Box>
                     <Alert type="warning" statusIconAriaLabel="Warning">
-                        The authorization may be cached at our API layer for up to 5 minutes.
+                        The authorization may be cached at our API layer for the next 5 minutes. During this time, the
+                        key may still be valid.
                     </Alert>
 
                     <Box>To avoid accidental deletions, we ask you to provide additional written consent.</Box>

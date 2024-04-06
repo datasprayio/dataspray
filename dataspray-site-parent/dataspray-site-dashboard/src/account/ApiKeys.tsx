@@ -26,7 +26,7 @@ import {getClient} from "../util/dataSprayClientWrapper";
 import {Alert, Button, SpaceBetween, Table} from "@cloudscape-design/components";
 import useSWR from "swr";
 import {useAuth} from "../auth/auth";
-import React from "react";
+import React, {useState} from "react";
 import {getHeaderCounterTextSingle} from "../table/tableUtil";
 import {ApiKey} from "dataspray-client";
 import {dateToYyyyMmDd} from "../util/dateUtil";
@@ -45,12 +45,14 @@ export const ApiKeys = () => {
         revalidateOnReconnect: false,
     });
 
-    const [showDeleteApiKeyModal, setShowDeleteApiKeyModal] = React.useState(false);
+    const [showDeleteApiKeyModal, setShowDeleteApiKeyModal] = useState<boolean>(false);
     const deleteApiKeyModal = (
             <DeleteApiKeyModal
                     apiKey={selectedApiKey}
                     show={showDeleteApiKeyModal}
-                    onHide={() => setShowDeleteApiKeyModal(false)}
+                    onHide={() => {
+                        setShowDeleteApiKeyModal(false)
+                    }}
                     onDelete={async () => {
                         try {
                             await getClient().authNz().revokeApiKey({
@@ -78,7 +80,6 @@ export const ApiKeys = () => {
                                         <Button disabled={!selectedApiKey}
                                                 onClick={() => setShowDeleteApiKeyModal(true)}>
                                             Revoke
-                                            {deleteApiKeyModal}
                                         </Button>
                                         <Button variant="primary" href='/account/security/accesskey/create'>
                                             Create
@@ -90,6 +91,7 @@ export const ApiKeys = () => {
                         </Header>
                     }
             >
+                {deleteApiKeyModal}
                 <SpaceBetween size='m'>
                     {!!error && (<Alert type='error'>{error}</Alert>)}
                     <Table
