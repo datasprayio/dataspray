@@ -22,6 +22,10 @@
 
 package io.dataspray.store.impl;
 
+import com.github.rholder.retry.Retryer;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.WaitStrategies;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -42,6 +46,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ConflictException;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotFoundException;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.iam.IamClient;
@@ -63,6 +68,7 @@ import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
 import software.amazon.awssdk.services.lambda.model.GetAliasRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.GetPolicyRequest;
+import software.amazon.awssdk.services.lambda.model.InvalidParameterValueException;
 import software.amazon.awssdk.services.lambda.model.LambdaException;
 import software.amazon.awssdk.services.lambda.model.ListEventSourceMappingsRequest;
 import software.amazon.awssdk.services.lambda.model.ListEventSourceMappingsResponse;
@@ -95,6 +101,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -155,6 +162,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     ApiAccessStore apiAccessStore;
 
 
+    @SneakyThrows
     @Override
     public DeployedVersion deployVersion(
             String organizationName,
@@ -253,8 +261,15 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         Environment env = Environment.builder()
                 .variables(envBuilder.build()).build();
         if (existingFunctionOpt.isEmpty()) {
+            Retryer<String> retryer = RetryerBuilder.<String>newBuilder()
+                    // Creating a role requires some time even when using a waiter https://stackoverflow.com/a/37438525
+                    .retryIfException(ex -> ex instanceof InvalidParameterValueException
+                                            && ex.getMessage().contains("The role defined for the function cannot be assumed by Lambda."))
+                    .withStopStrategy(StopStrategies.stopAfterDelay(1, TimeUnit.MINUTES))
+                    .withWaitStrategy(WaitStrategies.exponentialWait(2, 15, TimeUnit.SECONDS))
+                    .build();
             // Create a new function with configuration and code all in one go
-            publishedVersion = lambdaClient.createFunction(CreateFunctionRequest.builder()
+            publishedVersion = retryer.call(() -> lambdaClient.createFunction(CreateFunctionRequest.builder()
                             .publish(true)
                             .functionName(functionName)
                             .description(publishedDescription)
@@ -274,7 +289,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                                     .applyOn(snapStartApplyOn)
                                     .build())
                             .build())
-                    .version();
+                    .version());
             log.debug("Created function {} with published version {} description {}", functionName, publishedVersion, publishedDescription);
 
             // Wait until function version publishes
@@ -392,6 +407,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     "Statement", List.of(Map.of(
                             "Effect", "Allow",
                             "Action", List.of(
+                                    "sqs:ChangeMessageVisibility",
                                     "sqs:ReceiveMessage",
                                     "sqs:DeleteMessage",
                                     "sqs:GetQueueAttributes"),
