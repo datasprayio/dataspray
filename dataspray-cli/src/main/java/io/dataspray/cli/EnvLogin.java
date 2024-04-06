@@ -60,20 +60,6 @@ public class EnvLogin implements Runnable {
                         .filter(Predicate.not(String::isBlank)))
                 .orElseThrow(() -> new RuntimeException("Need to supply organization name"));
 
-        // Retrieve api key
-        String apiKey = Optional.ofNullable(Strings.emptyToNull(this.apiKey))
-                .or(() -> Optional.ofNullable(System.console().readPassword("Enter value for API Key: "))
-                        .map(String::valueOf)
-                        .map(String::trim)
-                        .filter(Predicate.not(String::isBlank)))
-                .orElseThrow(() -> new RuntimeException("Need to supply api key"));
-
-        // Don't prompt for endpoint, only if explicitly set as most users won't need it
-        Optional<String> endpointOpt = Optional.ofNullable(Strings.emptyToNull(this.endpoint));
-
-        // Write organization to disk
-        cliConfig.setOrganization(organizationName, apiKey, endpointOpt);
-
         // Decide whether org should be set as default
         if (setAsDefault || cliConfig.getDefaultOrganization().isEmpty()) {
             cliConfig.setDefaultOrganization(organizationName);
@@ -86,5 +72,22 @@ public class EnvLogin implements Runnable {
                 cliConfig.setDefaultOrganization(organizationName);
             }
         }
+        // Retrieve api key
+        String apiKey = Optional.ofNullable(Strings.emptyToNull(this.apiKey))
+                .or(() -> Optional.ofNullable(System.console().readPassword("Enter value for API Key: "))
+                        .map(String::valueOf)
+                        .map(String::trim)
+                        .filter(Predicate.not(String::isBlank)))
+                .orElseThrow(() -> new RuntimeException("Need to supply api key"));
+
+        // Retrieve endpoint or use default if blank
+        Optional<String> endpointOpt = Optional.ofNullable(Strings.emptyToNull(this.endpoint))
+                .or(() -> Optional.ofNullable(System.console().readPassword("Enter value or leave blank for endpoint (https://api.dataspray.io): "))
+                        .map(String::valueOf)
+                        .map(String::trim)
+                        .filter(Predicate.not(String::isBlank)));
+
+        // Write organization to disk
+        cliConfig.setOrganization(organizationName, apiKey, endpointOpt);
     }
 }
