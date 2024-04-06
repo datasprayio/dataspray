@@ -401,6 +401,11 @@ public class CodegenImpl implements Codegen {
                         .map(Path::toFile)
                         .ifPresent(File::mkdirs);
 
+                // Set it to writeable in case we unset it before
+                if (absoluteFilePath.toFile().exists()) {
+                    setFileWriteable(absoluteFilePath, true);
+                }
+
                 // Write out the file
                 try {
                     Files.writeString(absoluteFilePath, resultFileOpt.get(), Charsets.UTF_8);
@@ -411,9 +416,7 @@ public class CodegenImpl implements Codegen {
                 // If file is tracked, remove the write permission
                 // This is an extra warning for the user that the file will be re-generated and should not be modified
                 if (item.getType() == TemplateFiles.TemplateType.REPLACE) {
-                    if (!absoluteFilePath.toFile().setWritable(false, false)) {
-                        throw new RuntimeException("Cannot modify write permission on file: " + absoluteFilePath);
-                    }
+                    setFileWriteable(absoluteFilePath, false);
                 }
             } else if (item.getType() == TemplateFiles.TemplateType.MERGE) {
                 // Perform a merge
@@ -459,6 +462,12 @@ public class CodegenImpl implements Codegen {
         });
         // Remove files that were not generated this round but previously most likely by older template
         fileTracker.unlinkUntrackFiles(project, trackedFiles);
+    }
+
+    private static void setFileWriteable(Path absoluteFilePath, boolean writeable) {
+        if (!absoluteFilePath.toFile().setWritable(writeable, false)) {
+            throw new RuntimeException("Cannot modify write permission on file: " + absoluteFilePath);
+        }
     }
 
     @SneakyThrows
