@@ -87,6 +87,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                                 .sid(getConstructIdCamelCase(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS + "PermissionBoundary"))
                                 .effect(Effect.ALLOW)
                                 .actions(ImmutableList.of(
+                                        "sqs:ChangeMessageVisibility",
                                         "sqs:ReceiveMessage",
                                         "sqs:DeleteMessage",
                                         "sqs:GetQueueAttributes"))
@@ -186,6 +187,9 @@ public class ControlFunctionStack extends ApiFunctionStack {
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "sqs:CreateQueue",
+                        "sqs:ChangeMessageVisibility",
+                        "sqs:ReceiveMessage",
+                        "sqs:DeleteMessage",
                         "sqs:GetQueueAttributes",
                         "sqs:GetQueueUrl"))
                 .resources(ImmutableList.of(
