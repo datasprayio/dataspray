@@ -55,6 +55,7 @@ class DataSprayClientImpl implements DataSprayClient {
         io.dataspray.stream.ingest.client.ApiClient apiClient = new io.dataspray.stream.ingest.client.ApiClient();
         access.getEndpoint().ifPresent(apiClient::setBasePath);
         apiClient.setHttpClient(getHttpClient(false, false));
+        apiClient.setApiKeyPrefix("apikey");
         apiClient.setApiKey(access.getApiKey());
         return new IngestApi(apiClient);
     }
@@ -64,6 +65,7 @@ class DataSprayClientImpl implements DataSprayClient {
         io.dataspray.stream.control.client.ApiClient apiClient = new io.dataspray.stream.control.client.ApiClient();
         access.getEndpoint().ifPresent(apiClient::setBasePath);
         apiClient.setHttpClient(getHttpClient(false, false));
+        apiClient.setApiKeyPrefix("apikey");
         apiClient.setApiKey(access.getApiKey());
         return new ControlApi(apiClient);
     }
