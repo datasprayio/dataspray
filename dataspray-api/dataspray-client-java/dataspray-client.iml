@@ -2,8 +2,8 @@
 <module version="4">
   <component name="AdditionalModuleElements">
     <content url="file://$MODULE_DIR$/../../dataspray-api-parent/dataspray-client-java" dumb="true">
+      <sourceFolder url="file://$MODULE_DIR$/../../dataspray-api-parent/dataspray-client-java/target/generated-sources/client-control/src/main/java" isTestSource="false" generated="true" />
       <excludeFolder url="file://$MODULE_DIR$/../../dataspray-api-parent/dataspray-client-java/target/generated-sources/annotations" />
-      <excludeFolder url="file://$MODULE_DIR$/../../dataspray-api-parent/dataspray-client-java/target/generated-sources/client-control/src/main/java" />
       <excludeFolder url="file://$MODULE_DIR$/../../dataspray-api-parent/dataspray-client-java/target/generated-sources/client-typescript" />
     </content>
   </component>

@@ -153,6 +153,7 @@ public class CliConfigImpl implements CliConfig {
     }
 
     private SubnodeConfiguration getOrganizationConfig(String organizationName) {
+        // TODO Doesn't support two organizations with the same name across two different endpoints
         return getRootConfig().getSection(organizationName);
     }
 

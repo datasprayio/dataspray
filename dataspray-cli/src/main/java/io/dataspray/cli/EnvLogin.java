@@ -82,7 +82,7 @@ public class EnvLogin implements Runnable {
 
         // Retrieve endpoint or use default if blank
         Optional<String> endpointOpt = Optional.ofNullable(Strings.emptyToNull(this.endpoint))
-                .or(() -> Optional.ofNullable(System.console().readPassword("Enter value or leave blank for endpoint (https://api.dataspray.io): "))
+                .or(() -> Optional.ofNullable(System.console().readLine("Enter value or leave blank for endpoint (https://api.dataspray.io): "))
                         .map(String::valueOf)
                         .map(String::trim)
                         .filter(Predicate.not(String::isBlank)));
