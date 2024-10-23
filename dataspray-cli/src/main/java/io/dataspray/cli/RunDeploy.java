@@ -35,7 +35,7 @@ import picocli.CommandLine.Option;
 import java.util.Optional;
 
 @Slf4j
-@Command(name = "deploy", description = "Single command to publish and switch")
+@Command(name = "deploy", description = "Single command to publish and activate")
 public class RunDeploy implements Runnable {
     @Mixin
     LoggingMixin loggingMixin;

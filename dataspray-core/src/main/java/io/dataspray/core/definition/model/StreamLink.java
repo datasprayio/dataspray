@@ -39,7 +39,7 @@ import javax.annotation.Nonnull;
 public class StreamLink {
     @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public String getUniqueNameCamelLower() {
-        boolean allStreamNamesAreUnique = getParentProcessor().getStreams().stream()
+        boolean allStreamNamesAreUnique = getParent().getStreams().stream()
                 .map(StreamLink::getStreamName)
                 .allMatch(Sets.newHashSet()::add);
         return allStreamNamesAreUnique
@@ -61,7 +61,7 @@ public class StreamLink {
 
     @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public Store getStore() {
-        return getParentDefinition().getStores().stream()
+        return getParent().getParent().getStores().stream()
                 .filter(store -> store.getName().equals(getStoreName()))
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("Store not found with name " + getStoreName()));
@@ -86,7 +86,7 @@ public class StreamLink {
     @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public DataFormat getDataFormat() {
         String dataFormatName = getStream().getDataFormatName();
-        return getParentDefinition().getDataFormats().stream()
+        return getParent().getParent().getDataFormats().stream()
                 .filter(dataFormat -> dataFormat.getName().equals(dataFormatName))
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("Data format not found with name " + dataFormatName));
@@ -94,9 +94,5 @@ public class StreamLink {
 
     @Setter
     @NonFinal
-    transient Definition parentDefinition;
-
-    @Setter
-    @NonFinal
-    transient Processor parentProcessor;
+    transient Processor parent;
 }

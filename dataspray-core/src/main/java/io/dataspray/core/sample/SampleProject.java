@@ -28,6 +28,7 @@ import io.dataspray.core.definition.model.DataFormat.Serde;
 import io.dataspray.core.definition.model.DataStream;
 import io.dataspray.core.definition.model.DatasprayStore;
 import io.dataspray.core.definition.model.Definition;
+import io.dataspray.core.definition.model.Endpoint;
 import io.dataspray.core.definition.model.JavaProcessor;
 import io.dataspray.core.definition.model.StoreType;
 import io.dataspray.core.definition.model.StreamLink;
@@ -76,6 +77,11 @@ public enum SampleProject {
                                             .storeType(StoreType.DATASPRAY)
                                             .storeName("default")
                                             .streamName("last_ip")
+                                            .build()))
+                            .endpoints(ImmutableSet.of(
+                                    Endpoint.builder()
+                                            .isPublic(false)
+                                            .isStreamingResponse(false)
                                             .build()))
                             .build()))
             .datasprayStores(ImmutableSet.of(
@@ -133,6 +139,11 @@ public enum SampleProject {
                                             .storeType(StoreType.DATASPRAY)
                                             .storeName("default")
                                             .streamName("last_ip")
+                                            .build()))
+                            .endpoints(ImmutableSet.of(
+                                    Endpoint.builder()
+                                            .isPublic(true)
+                                            .isStreamingResponse(true)
                                             .build()))
                             .build()))
             .datasprayStores(ImmutableSet.of(

@@ -33,7 +33,6 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Value;
-import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
 
 import java.io.File;
@@ -91,7 +90,6 @@ public class Definition extends Item {
 
     @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public ImmutableSet<Processor> getProcessors() {
-        initialize();
         return ImmutableSet.<Processor>builder()
                 .addAll(javaProcessors)
                 .addAll(typescriptProcessors)
@@ -105,32 +103,26 @@ public class Definition extends Item {
 
     @Nonnull
     public ImmutableSet<JavaProcessor> getJavaProcessors() {
-        initialize();
         return javaProcessors == null ? ImmutableSet.of() : javaProcessors;
     }
 
     @Nonnull
     public ImmutableSet<TypescriptProcessor> getTypescriptProcessors() {
-        initialize();
         return typescriptProcessors == null ? ImmutableSet.of() : typescriptProcessors;
     }
 
-    @NonFinal
-    transient boolean inited;
-
-    private void initialize() {
-        if (inited) {
-            return;
-        }
-        inited = true;
-
+    public Definition initialize() {
         getProcessors().forEach(processor -> {
             processor.setParent(this);
             processor.getStreams().forEach(stream -> {
-                stream.setParentDefinition(this);
-                stream.setParentProcessor(processor);
+                stream.setParent(processor);
+            });
+            processor.getEndpoints().forEach(endpoint -> {
+                endpoint.setParent(processor);
+                endpoint.initialize();
             });
         });
+        return this;
     }
 
     /**

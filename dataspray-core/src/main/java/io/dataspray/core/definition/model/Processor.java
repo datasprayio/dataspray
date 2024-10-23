@@ -37,6 +37,7 @@ import lombok.experimental.SuperBuilder;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Value
 @SuperBuilder(toBuilder = true)
@@ -61,6 +62,9 @@ public class Processor extends Item {
 
     @Nonnull
     ImmutableSet<StreamLink> outputStreams;
+
+    @Nonnull
+    Optional<Endpoint> endpoint;
 
     @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public ImmutableList<StreamLink> getStreams() {

@@ -10,15 +10,27 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
-public abstract class Entrypoint implements RequestHandler<SQSEvent, SQSBatchResponse> {
+public abstract class Entrypoint implements RequestHandler<Request, Object> {
 
     private final Pattern sqsArnPattern = Pattern.compile("customer-(?<customer>[^-]+)-(?<queue>.+)");
 
-    public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
+    public Object handleRequest(Request event, Context context) {
+
+        if (event.isSqsRequest()) {
+            return handleSQSEvent(event, context);
+        } else if (event.isHttpRequest()) {
+            return handleHttpRequest(event, context);
+        } else {
+            throw new IllegalArgumentException("Unsupported event type: " + event.getClass());
+        }
+    }
+
+    private SQSBatchResponse handleSQSEvent(SqsRequest event, Context context) {
         SQSBatchResponseBuilder responseBuilder = SQSBatchResponse.builder();
 
         for (SQSMessage msg : event.getRecords()) {
@@ -27,7 +39,7 @@ public abstract class Entrypoint implements RequestHandler<SQSEvent, SQSBatchRes
                 if (!matcher.matches()) {
                     log.error("Failed to determine source queue from ARN {}", msg.getEventSourceArn());
                 }
-                process(new MessageMetadata(
+                this.processSqsEvent(new MessageMetadata(
                                 StoreType.DATASPRAY,
                                 matcher.group("customer"),
                                 matcher.group("queue")),
@@ -41,5 +53,11 @@ public abstract class Entrypoint implements RequestHandler<SQSEvent, SQSBatchRes
         return responseBuilder.build();
     }
 
-    public abstract void process(MessageMetadata metadata, String data, RawCoordinator coordinator);
+    private HttpResponse handleHttpRequest(HttpRequest event, Context context) {
+        TODO
+    }
+
+    public abstract void processSqsEvent(MessageMetadata metadata, String data, RawCoordinator coordinator);
+
+    public abstract void processFunctionUrl(MessageMetadata metadata, String data, RawCoordinator coordinator);
 }

@@ -27,8 +27,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-import io.dataspray.core.definition.model.Definition;
 import io.dataspray.common.json.GsonUtil;
+import io.dataspray.core.definition.model.Definition;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -71,12 +71,14 @@ public class DefinitionLoaderImpl implements DefinitionLoader {
 
     @Override
     public Definition fromJson(String definitionStr) {
-        return gson.fromJson(definitionStr, Definition.class);
+        return gson.fromJson(definitionStr, Definition.class)
+                .initialize();
     }
 
     @Override
     public Definition fromJson(JsonElement definition) {
-        return gson.fromJson(definition, Definition.class);
+        return gson.fromJson(definition, Definition.class)
+                .initialize();
     }
 
     @Override
