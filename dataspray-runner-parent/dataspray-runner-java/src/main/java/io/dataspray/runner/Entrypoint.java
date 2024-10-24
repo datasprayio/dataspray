@@ -6,8 +6,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.SQSBatchResponseBuilder;
-import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import io.dataspray.runner.dto.Request;
+import io.dataspray.runner.dto.sqs.SqsMessage;
 import io.dataspray.runner.dto.sqs.SqsRequest;
 import io.dataspray.runner.dto.web.HttpRequest;
 import io.dataspray.runner.dto.web.HttpResponse;
@@ -40,7 +40,7 @@ public abstract class Entrypoint implements RequestHandler<Request, Object> {
     private SQSBatchResponse handleSqsEvent(SqsRequest event) {
         SQSBatchResponseBuilder responseBuilder = SQSBatchResponse.builder();
 
-        for (SQSMessage msg : event.getRecords()) {
+        for (SqsMessage msg : event.getRecords()) {
             try {
                 Matcher matcher = sqsArnPattern.matcher(msg.getEventSourceArn());
                 if (!matcher.matches()) {
@@ -67,7 +67,11 @@ public abstract class Entrypoint implements RequestHandler<Request, Object> {
         return processFunctionUrl(request, HttpResponse.builder());
     }
 
-    public abstract void processSqsEvent(MessageMetadata metadata, String data, RawCoordinator coordinator);
+    protected void processSqsEvent(MessageMetadata metadata, String data, RawCoordinator coordinator) {
+        throw new RuntimeException("No handler defined for SQS events");
+    }
 
-    public abstract HttpResponse processFunctionUrl(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder);
+    protected HttpResponse processFunctionUrl(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder) {
+        throw new RuntimeException("No handler defined for web endpoints");
+    }
 }

@@ -1,6 +1,7 @@
 {
   "main": "src/index.ts",
   "scripts": {
+    "test": "jest",
     {{^processor.jsonStreams.empty}}
     "prebuild": "ts-node ./prebuild.ts",
     {{/processor.jsonStreams.empty}}
@@ -12,6 +13,7 @@
     "dataspray-runner": "0.0.1"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "@types/aws-lambda": "^8.10.131",
     {{^processor.jsonStreams.empty}}
     "ajv": "^8.12.0",
@@ -19,6 +21,7 @@
     {{/processor.jsonStreams.empty}}
     "archiver": "^6.0.1",
     "esbuild": "^0.19.11",
+    "jest": "^29.7.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }

@@ -23,31 +23,30 @@
 package io.dataspray.core.definition.model;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
-
-import javax.annotation.Nonnull;
 
 @Value
 @SuperBuilder(toBuilder = true)
 @AllArgsConstructor
 public class Cors {
 
-    @Nonnull
-    String allowOrigins;
+    @Builder.Default
+    String allowOrigins = "*";
 
-    @Nonnull
-    String allowMethods;
+    @Builder.Default
+    String allowMethods = "GET, POST, PUT, DELETE, OPTIONS";
 
-    @Nonnull
-    String allowHeaders;
+    @Builder.Default
+    String allowHeaders = "";
 
-    @Nonnull
-    String exposeHeaders;
+    @Builder.Default
+    String exposeHeaders = "";
 
-    @Nonnull
-    boolean allowCredentials;
+    @Builder.Default
+    boolean allowCredentials = true;
 
-    @Nonnull
-    long maxAge;
+    @Builder.Default
+    long maxAge = 3600;
 }

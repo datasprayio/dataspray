@@ -9,6 +9,10 @@ import {
 {{/processor.jsonInputStreams.empty}}
 
 export interface Processor {
+    {{#processor.endpoint}}
+
+    handleWebRequest(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2>;
+    {{/processor.endpoint}}
     {{#processor.inputStreams}}
 
     process{{{uniqueNameCamelUpper}}}(message: Message<{{{this.dataFormat.nameCamelUpper}}}>, coordinator: Coordinator): void;

@@ -1,10 +1,20 @@
 package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
+{{^processor.inputStreams.empty}}
 import io.dataspray.runner.Message;
+{{/processor.inputStreams.empty}}
+{{#processor.endpoint}}
+import io.dataspray.runner.dto.web.HttpRequest;
+import io.dataspray.runner.dto.web.HttpResponse;
+{{/processor.endpoint}}
 {{/util.javaImportsFormat}}
 
 public interface Processor {
+    {{#processor.endpoint}}
+
+    HttpResponse handleWebRequest(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder);
+    {{/processor.endpoint}}
     {{#processor.inputStreams}}
 
     void process{{{uniqueNameCamelUpper}}}(Message<{{{this.dataFormat.nameCamelUpper}}}> {{this.uniqueNameCamelLower}}, Coordinator coordinator);

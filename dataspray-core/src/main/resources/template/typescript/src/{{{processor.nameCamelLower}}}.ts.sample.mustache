@@ -1,6 +1,14 @@
-import { Message } from "dataspray-runner";
 import { Processor } from "./processor";
+{{#processor.endpoint}}
+import {
+    APIGatewayProxyStructuredResultV2,
+    LambdaFunctionURLEvent,
+} from 'aws-lambda';
+{{/processor.endpoint}}
+{{^processor.inputStreams.empty}}
+import { Message } from "dataspray-runner";
 import { Coordinator } from "./coordinator";
+{{/processor.inputStreams.empty}}
 {{^processor.jsonInputStreams.empty}}
 import {
 {{#processor.jsonInputStreams}}
@@ -10,6 +18,14 @@ import {
 {{/processor.jsonInputStreams.empty}}
 
 export class {{{processor.nameCamelUpper}}} implements Processor {
+    {{#processor.endpoint}}
+
+    async handleWebRequest(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> {
+
+        // TODO
+        return { statusCode: 200 };
+    }
+    {{/processor.endpoint}}
     {{#processor.inputStreams}}
 
     process{{{uniqueNameCamelUpper}}}(message: Message<{{{this.dataFormat.nameCamelUpper}}}>, coordinator: Coordinator): void {

@@ -22,11 +22,11 @@
 
 import {StoreType} from "./storeType";
 
-export type MessageMetadata = {
+export interface MessageMetadata {
     storeType: StoreType;
     storeName: string;
     streamName: string;
-};
+}
 
 export class Message<T> {
 

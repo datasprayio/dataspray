@@ -15,11 +15,11 @@ import java.io.ByteArrayOutputStream;
 {{/processor.avroOutputStreams.empty}}
 {{/util.javaImportsFormat}}
 
-public class GeneratedCoordinator implements Coordinator {
+public class CoordinatorImpl implements Coordinator {
 
     private final RawCoordinator rawCoordinator;
 
-    public GeneratedCoordinator(RawCoordinator rawCoordinator) {
+    public CoordinatorImpl(RawCoordinator rawCoordinator) {
         this.rawCoordinator = rawCoordinator;
     }
     {{#processor.outputStreams}}

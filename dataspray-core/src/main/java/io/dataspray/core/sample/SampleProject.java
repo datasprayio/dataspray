@@ -23,6 +23,7 @@
 package io.dataspray.core.sample;
 
 import com.google.common.collect.ImmutableSet;
+import io.dataspray.core.definition.model.Cors;
 import io.dataspray.core.definition.model.DataFormat;
 import io.dataspray.core.definition.model.DataFormat.Serde;
 import io.dataspray.core.definition.model.DataStream;
@@ -34,12 +35,15 @@ import io.dataspray.core.definition.model.StoreType;
 import io.dataspray.core.definition.model.StreamLink;
 import io.dataspray.core.definition.model.TypescriptProcessor;
 
+import java.util.Optional;
+
 public enum SampleProject {
     EMPTY(name -> Definition.builder()
             .name(name)
             .version(Definition.Version.V_0_0_0)
             .dataFormats(ImmutableSet.of())
-            .build()),
+            .build()
+            .initialize()),
     JAVA(name -> Definition.builder()
             .name(name)
             .namespace("com.example")
@@ -78,10 +82,9 @@ public enum SampleProject {
                                             .storeName("default")
                                             .streamName("last_ip")
                                             .build()))
-                            .endpoints(ImmutableSet.of(
+                            .endpoint(Optional.of(
                                     Endpoint.builder()
                                             .isPublic(false)
-                                            .isStreamingResponse(false)
                                             .build()))
                             .build()))
             .datasprayStores(ImmutableSet.of(
@@ -101,7 +104,8 @@ public enum SampleProject {
                                             .name("last_ip")
                                             .build()))
                             .build()))
-            .build()),
+            .build()
+            .initialize()),
     TYPESCRIPT(name -> Definition.builder()
             .name(name)
             .namespace("com.example")
@@ -140,10 +144,14 @@ public enum SampleProject {
                                             .storeName("default")
                                             .streamName("last_ip")
                                             .build()))
-                            .endpoints(ImmutableSet.of(
+                            .endpoint(Optional.of(
                                     Endpoint.builder()
                                             .isPublic(true)
-                                            .isStreamingResponse(true)
+                                            .cors(Optional.of(Cors.builder()
+                                                    .allowOrigins("example.com")
+                                                    .allowMethods("GET, POST")
+                                                    .allowHeaders("Authorization")
+                                                    .build()))
                                             .build()))
                             .build()))
             .datasprayStores(ImmutableSet.of(
@@ -163,7 +171,8 @@ public enum SampleProject {
                                             .name("last_ip")
                                             .build()))
                             .build()))
-            .build());
+            .build()
+            .initialize());
 
     private final DefinitionCreator creator;
 

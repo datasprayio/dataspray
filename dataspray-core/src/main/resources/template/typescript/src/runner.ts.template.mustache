@@ -1,12 +1,24 @@
+{{#processor.endpoint}}
 import {
-    APIGatewayEvent,
-    APIGatewayProxyResult,
     APIGatewayProxyStructuredResultV2,
-    Context,
     LambdaFunctionURLEvent,
 } from 'aws-lambda';
-import { Coordinator } from './coordinator';
-import { Entrypoint, Message, MessageMetadata, RawCoordinator, StoreType } from 'dataspray-runner';
+{{/processor.endpoint}}
+{{^processor.inputStreams.empty}}
+import {
+    Coordinator,
+    CoordinatorImpl,
+} from './coordinator';
+{{/processor.inputStreams.empty}}
+import {
+    Entrypoint,
+    {{^processor.inputStreams.empty}}
+    Message,
+    MessageMetadata,
+    RawCoordinator,
+    StoreType,
+    {{/processor.inputStreams.empty}}
+} from 'dataspray-runner';
 {{^processor.jsonInputStreams.empty}}
 import {
 {{#processor.jsonInputStreams}}
@@ -21,9 +33,16 @@ import { Processor } from './processor';
 class Runner extends Entrypoint {
 
     private processor: Processor = new {{{processor.nameCamelUpper}}}();
+    {{#processor.endpoint}}
+
+    processFunctionUrl(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> {
+        return this.processor.handleWebRequest(request);
+    }
+    {{/processor.endpoint}}
+    {{^processor.inputStreams.empty}}
 
     processSqsEvent(metadata: MessageMetadata, data: string, rawCoordinator: RawCoordinator): Promise<void> | void {
-        const coordinator: Coordinator = new Coordinator(rawCoordinator);
+        const coordinator: Coordinator = new CoordinatorImpl(rawCoordinator);
         {{#processor.inputStreams}}if (StoreType.{{{storeType.name}}} === metadata.storeType
                 && "{{{storeName}}}" === metadata.storeName
                 && "{{{streamName}}}" === metadata.streamName) {
@@ -54,23 +73,7 @@ class Runner extends Entrypoint {
     }
     {{/dataFormat.isSerdeString}}
     {{/processor.inputStreams}}
-
-    processFunctionUrl(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> {
-        {{#processor.endpoint}}if (StoreType.{{{storeType.name}}} === metadata.storeType
-            && "{{{storeName}}}" === metadata.storeName
-            && "{{{streamName}}}" === metadata.streamName) {
-            {{#dataFormat.isSerdeString}}
-                this.processor.process{{{uniqueNameCamelUpper}}}(new Message(metadata, data), coordinator);
-            {{/dataFormat.isSerdeString}}
-            {{^dataFormat.isSerdeString}}
-                this.processor.process{{{uniqueNameCamelUpper}}}(new Message(metadata, this.to{{{dataFormat.nameCamelUpper}}}(data)), coordinator);
-            {{/dataFormat.isSerdeString}}
-            } else
-        {{/processor.endpoint}}
-        {{^processor.endpoint}}
-        throw new Error(`Received unexpected web request from ${request.http.sourceIp} for path ${request.http.path}`);
-        {{/processor.endpoint}}
-    }
+    {{/processor.inputStreams.empty}}
 }
 
 export const handler = new Runner().handleRequest;

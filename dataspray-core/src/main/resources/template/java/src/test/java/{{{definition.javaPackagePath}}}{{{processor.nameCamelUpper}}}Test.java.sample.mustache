@@ -2,7 +2,10 @@ package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
 import org.junit.Test;
-import com.google.common.collect.ImmutableList;
+{{#processor.endpoint}}
+import io.dataspray.runner.dto.web.HttpRequest;
+import io.dataspray.runner.dto.web.HttpResponse;
+{{/processor.endpoint}}
 {{/util.javaImportsFormat}}
 
 {{#util.javaImportsFormat}}
@@ -10,6 +13,18 @@ import static org.junit.Assert.*;
 {{/util.javaImportsFormat}}
 
 public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
+    {{#processor.endpoint}}
+
+    @Test(timeout = 10_000)
+    public void testWebRequest() {
+
+        HttpResponse response = processor.handleWebRequest(
+            HttpRequest.builder().build(),
+            HttpResponse.builder());
+
+        assertEquals(200, response.getStatusCode());
+    }
+    {{/processor.endpoint}}
     {{#processor.inputStreams}}
 
     @Test(timeout = 10_000)

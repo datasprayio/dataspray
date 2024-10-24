@@ -7,7 +7,14 @@ import {
 } from './streams';
 {{/processor.jsonOutputStreams.empty}}
 
-export class Coordinator {
+export interface Coordinator {
+    {{#processor.outputStreams}}
+
+    sendTo{{{uniqueNameCamelUpper}}}({{{dataFormat.nameCamelLower}}}: {{{dataFormat.nameCamelUpper}}}): void;
+    {{/processor.outputStreams}}
+}
+
+export class CoordinatorImpl implements Coordinator {
 
     private rawCoordinator: RawCoordinator;
 

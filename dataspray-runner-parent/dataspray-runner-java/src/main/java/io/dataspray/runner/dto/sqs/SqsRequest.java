@@ -30,5 +30,5 @@ import java.util.List;
  * Stripped down interface of {@link SQSEvent}.
  */
 public interface SqsRequest {
-    List<SQSEvent.SQSMessage> getRecords();
+    List<SqsMessage> getRecords();
 }

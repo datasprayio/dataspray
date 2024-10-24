@@ -1,10 +1,24 @@
 package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
+{{^processor.inputStreams.empty}}
 import io.dataspray.runner.Message;
+{{/processor.inputStreams.empty}}
+{{#processor.endpoint}}
+import io.dataspray.runner.dto.web.HttpRequest;
+import io.dataspray.runner.dto.web.HttpResponse;
+{{/processor.endpoint}}
 {{/util.javaImportsFormat}}
 
 public class {{{processor.nameCamelUpper}}} implements Processor {
+    {{#processor.endpoint}}
+
+    HttpResponse handleWebRequest(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder) {
+
+        // TODO
+        return responseBuilder.ok().build();
+    }
+    {{/processor.endpoint}}
     {{#processor.inputStreams}}
 
     @Override

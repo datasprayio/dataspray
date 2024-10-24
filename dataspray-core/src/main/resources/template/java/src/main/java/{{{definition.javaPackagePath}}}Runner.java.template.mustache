@@ -20,6 +20,10 @@ import io.dataspray.runner.StoreType;
 {{^processor.stringInputStreams.empty}}
 import java.nio.charset.StandardCharsets;
 {{/processor.stringInputStreams.empty}}
+{{#processor.endpoint}}
+import io.dataspray.runner.dto.web.HttpRequest;
+import io.dataspray.runner.dto.web.HttpResponse;
+{{/processor.endpoint}}
 {{/util.javaImportsFormat}}
 
 public class Runner extends Entrypoint {
@@ -31,10 +35,18 @@ public class Runner extends Entrypoint {
         .disableHtmlEscaping()
         .create();
     {{/processor.jsonInputStreams.empty}}
+    {{#processor.endpoint}}
 
     @Override
-    public void process(MessageMetadata metadata, String data, RawCoordinator rawCoordinator) {
-        Coordinator coordinator = new GeneratedCoordinator(rawCoordinator);
+    public HttpResponse handleWebRequest(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder) {
+        return processor.handleWebRequest(request);
+    }
+    {{/processor.endpoint}}
+    {{^processor.inputStreams.empty}}
+
+    @Override
+    public void processSqsEvent(MessageMetadata metadata, String data, RawCoordinator rawCoordinator) {
+        Coordinator coordinator = new CoordinatorImpl(rawCoordinator);
         {{#processor.inputStreams}}if (StoreType.{{{storeType.name}}}.equals(metadata.getStoreType())
                 && "{{{storeName}}}".equals(metadata.getStoreName())
                 && "{{{streamName}}}".equals(metadata.getStreamName())) {
@@ -68,4 +80,5 @@ public class Runner extends Entrypoint {
     }
     {{/dataFormat.isSerdeString}}
     {{/processor.inputStreams}}
+    {{/processor.inputStreams.empty}}
 }

@@ -1,0 +1,65 @@
+import { Processor } from "../processor";
+import { {{{processor.nameCamelUpper}}} } from "../{{{processor.nameCamelLower}}}";
+import {
+    {{#processor.endpoint}}
+    mockRequest,
+    {{/processor.endpoint}}
+    {{^processor.inputStreams.empty}}
+    mockMessage,
+    mockCoordinator,
+    {{#processor.inputStreams}}
+    mockMessage{{{uniqueNameCamelUpper}}},
+    {{/processor.inputStreams}}
+    {{/processor.inputStreams.empty}}
+} from "../testUtil";
+{{#processor.endpoint}}
+import {
+    APIGatewayProxyStructuredResultV2,
+    LambdaFunctionURLEvent,
+} from 'aws-lambda';
+{{/processor.endpoint}}
+{{^processor.inputStreams.empty}}
+import { Coordinator } from "../coordinator";
+{{/processor.inputStreams.empty}}
+{{#processor.endpoint}}
+
+describe('Web endpoint handler', () => {
+    let processor: {{{processor.nameCamelUpper}}};
+
+    beforeEach(() => {
+        processor = new {{{processor.nameCamelUpper}}}();
+    });
+
+    it('responds with ok', async () => {
+        const response = await processor.handleWebRequest(mockRequest({
+            body: '{}',
+        }));
+        expect(response.statusCode).toBe(200);
+    });
+});
+{{/processor.endpoint}}
+{{^processor.inputStreams.empty}}
+
+describe('SQS message processors', () => {
+    let processor: {{{processor.nameCamelUpper}}};
+    let coordinator: Coordinator;
+
+    beforeEach(() => {
+        processor = new {{{processor.nameCamelUpper}}}();
+        coordinator = mockCoordinator();
+    });
+    {{#processor.inputStreams}}
+
+    it('Process {{{uniqueNameCamelUpper}}}', async () => {
+        await processor.process{{{uniqueNameCamelUpper}}}(
+            mockMessage{{{uniqueNameCamelUpper}}}(
+                {} as any // TODO mock input data
+            ),
+            coordinator,
+        );
+        expect(response.status).toBe(200);
+        expect(response.text).toBe('Hello World');
+    });
+    {{/processor.inputStreams}}
+});
+{{/processor.inputStreams.empty}}
