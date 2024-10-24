@@ -6,11 +6,13 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.SQSBatchResponseBuilder;
-import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
+import io.dataspray.runner.dto.Request;
+import io.dataspray.runner.dto.sqs.SqsRequest;
+import io.dataspray.runner.dto.web.HttpRequest;
+import io.dataspray.runner.dto.web.HttpResponse;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,18 +21,23 @@ public abstract class Entrypoint implements RequestHandler<Request, Object> {
 
     private final Pattern sqsArnPattern = Pattern.compile("customer-(?<customer>[^-]+)-(?<queue>.+)");
 
+    /**
+     * Entry point for the Lambda Function.
+     */
     public Object handleRequest(Request event, Context context) {
-
         if (event.isSqsRequest()) {
-            return handleSQSEvent(event, context);
+            return handleSqsEvent(event);
         } else if (event.isHttpRequest()) {
-            return handleHttpRequest(event, context);
+            return handleHttpRequest(event);
         } else {
             throw new IllegalArgumentException("Unsupported event type: " + event.getClass());
         }
     }
 
-    private SQSBatchResponse handleSQSEvent(SqsRequest event, Context context) {
+    /**
+     * Handle an SQS event containing one or more messages.
+     */
+    private SQSBatchResponse handleSqsEvent(SqsRequest event) {
         SQSBatchResponseBuilder responseBuilder = SQSBatchResponse.builder();
 
         for (SQSMessage msg : event.getRecords()) {
@@ -53,11 +60,14 @@ public abstract class Entrypoint implements RequestHandler<Request, Object> {
         return responseBuilder.build();
     }
 
-    private HttpResponse handleHttpRequest(HttpRequest event, Context context) {
-        TODO
+    /**
+     * Handle an HTTP request from Function URL.
+     */
+    private HttpResponse handleHttpRequest(HttpRequest request) {
+        return processFunctionUrl(request, HttpResponse.builder());
     }
 
     public abstract void processSqsEvent(MessageMetadata metadata, String data, RawCoordinator coordinator);
 
-    public abstract void processFunctionUrl(MessageMetadata metadata, String data, RawCoordinator coordinator);
+    public abstract HttpResponse processFunctionUrl(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder);
 }

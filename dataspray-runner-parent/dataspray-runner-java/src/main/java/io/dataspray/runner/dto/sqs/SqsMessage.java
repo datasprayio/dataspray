@@ -20,20 +20,18 @@
  * SOFTWARE.
  */
 
-package io.dataspray.runner;
+package io.dataspray.runner.dto.sqs;
 
+import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import lombok.Data;
 
+/**
+ * Stripped down interface of {@link SQSMessage}.
+ */
 @Data
-public class HttpDetailsImpl implements HttpDetails {
+public class SqsMessage {
 
-    String method;
+    String body;
 
-    String path;
-
-    String protocol;
-
-    String sourceIp;
-
-    String userAgent;
+    String eventSourceArn;
 }

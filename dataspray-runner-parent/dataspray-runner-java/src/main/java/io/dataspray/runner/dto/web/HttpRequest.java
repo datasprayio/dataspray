@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package io.dataspray.runner;
+package io.dataspray.runner.dto.web;
 
 import java.util.List;
 import java.util.Map;

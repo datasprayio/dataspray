@@ -1,4 +1,10 @@
-import { Context, APIGatewayProxyResult, APIGatewayEvent } from 'aws-lambda';
+import {
+    APIGatewayEvent,
+    APIGatewayProxyResult,
+    APIGatewayProxyStructuredResultV2,
+    Context,
+    LambdaFunctionURLEvent,
+} from 'aws-lambda';
 import { Coordinator } from './coordinator';
 import { Entrypoint, Message, MessageMetadata, RawCoordinator, StoreType } from 'dataspray-runner';
 {{^processor.jsonInputStreams.empty}}
@@ -16,7 +22,7 @@ class Runner extends Entrypoint {
 
     private processor: Processor = new {{{processor.nameCamelUpper}}}();
 
-    process(metadata: MessageMetadata, data: string, rawCoordinator: RawCoordinator): Promise<void> | void {
+    processSqsEvent(metadata: MessageMetadata, data: string, rawCoordinator: RawCoordinator): Promise<void> | void {
         const coordinator: Coordinator = new Coordinator(rawCoordinator);
         {{#processor.inputStreams}}if (StoreType.{{{storeType.name}}} === metadata.storeType
                 && "{{{storeName}}}" === metadata.storeName
@@ -48,6 +54,23 @@ class Runner extends Entrypoint {
     }
     {{/dataFormat.isSerdeString}}
     {{/processor.inputStreams}}
+
+    processFunctionUrl(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> {
+        {{#processor.endpoint}}if (StoreType.{{{storeType.name}}} === metadata.storeType
+            && "{{{storeName}}}" === metadata.storeName
+            && "{{{streamName}}}" === metadata.streamName) {
+            {{#dataFormat.isSerdeString}}
+                this.processor.process{{{uniqueNameCamelUpper}}}(new Message(metadata, data), coordinator);
+            {{/dataFormat.isSerdeString}}
+            {{^dataFormat.isSerdeString}}
+                this.processor.process{{{uniqueNameCamelUpper}}}(new Message(metadata, this.to{{{dataFormat.nameCamelUpper}}}(data)), coordinator);
+            {{/dataFormat.isSerdeString}}
+            } else
+        {{/processor.endpoint}}
+        {{^processor.endpoint}}
+        throw new Error(`Received unexpected web request from ${request.http.sourceIp} for path ${request.http.path}`);
+        {{/processor.endpoint}}
+    }
 }
 
-export const handler = new Runner().process;
+export const handler = new Runner().handleRequest;

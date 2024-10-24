@@ -117,9 +117,8 @@ public class Definition extends Item {
             processor.getStreams().forEach(stream -> {
                 stream.setParent(processor);
             });
-            processor.getEndpoints().forEach(endpoint -> {
+            processor.getEndpoint().ifPresent(endpoint -> {
                 endpoint.setParent(processor);
-                endpoint.initialize();
             });
         });
         return this;

@@ -22,7 +22,6 @@
 
 package io.dataspray.core.definition.model;
 
-import io.dataspray.core.definition.parser.DefinitionLoadingException;
 import lombok.AllArgsConstructor;
 import lombok.Setter;
 import lombok.Value;
@@ -38,21 +37,12 @@ import java.util.Optional;
 public class Endpoint {
 
     @Nonnull
-    boolean isPublic;
-
-    @Nonnull
-    boolean isStreamingResponse;
-
-    @Setter
-    @NonFinal
-    transient Processor parent;
+    Boolean isPublic;
 
     @Nonnull
     Optional<Cors> cors;
 
-    void initialize() {
-        if (isStreamingResponse() && !(getParent() instanceof TypescriptProcessor)) {
-            throw new DefinitionLoadingException("Streaming endpoint response is only available for Typescript processor");
-        }
-    }
+    @Setter
+    @NonFinal
+    transient Processor parent;
 }

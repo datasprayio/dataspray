@@ -20,34 +20,32 @@
  * SOFTWARE.
  */
 
-package io.dataspray.runner;
+package io.dataspray.runner.dto.web;
 
-public interface HttpDetails {
+import lombok.Data;
 
-    /**
-     * The HTTP method used in this request. Valid values include GET, POST, PUT, HEAD, OPTIONS, PATCH, and DELETE.
-     */
-    String getMethod();
+import java.time.Instant;
 
-    /**
-     * The request path. For example, if the request URL is
-     * {@code https://{url-id}.lambda-url.{region}.on.aws/example/test/demo}, then the path value is
-     * {@code /example/test/demo}.
-     */
-    String getPath();
+/**
+ * @see <a href="https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html#urls-payloads">AWS docs</a>
+ */
+@Data
+public class HttpRequestContextImpl implements HttpRequestContext {
 
-    /**
-     * The protocol of the request. Example: {@code HTTP/1.1}
-     */
-    String getProtocol();
+    String apiId;
 
-    /**
-     * The source IP address of the immediate TCP connection making the request.
-     */
-    String getSourceIp();
+    String domainName;
 
-    /**
-     * The User-Agent request header value.
-     */
-    String getUserAgent();
+    String domainPrefix;
+
+    HttpDetailsImpl http;
+
+    String requestId;
+
+    Instant timeEpoch;
+
+    @Override
+    public Instant getTime() {
+        return timeEpoch;
+    }
 }

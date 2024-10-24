@@ -20,7 +20,13 @@
  * SOFTWARE.
  */
 
-import {Context, SQSBatchResponse, SQSEvent, SQSHandler} from 'aws-lambda';
+import {
+    APIGatewayProxyStructuredResultV2,
+    Handler,
+    LambdaFunctionURLEvent,
+    SQSBatchResponse,
+    SQSEvent
+} from 'aws-lambda';
 import {StoreType} from './storeType';
 import {RawCoordinator} from './rawCoordinator';
 import {MessageMetadata} from "./message";
@@ -29,7 +35,17 @@ export abstract class Entrypoint {
 
     readonly sqsArnPattern = /customer-(?<customer>[^-]+)-(?<queue>.+)/;
 
-    handle: SQSHandler = async (event: SQSEvent, context: Context): Promise<SQSBatchResponse | void> => {
+    handleRequest: Handler = async (event, context) => {
+        if (!!event['Records']) {
+            return this.handleSqsEvent(event as SQSEvent);
+        } else if (!!event['rawPath']) {
+            return this.handleHttpRequest(event as LambdaFunctionURLEvent);
+        } else {
+            throw new Error(`Unsupported event: ${event}`);
+        }
+    }
+
+    handleSqsEvent = async (event: SQSEvent): Promise<SQSBatchResponse | void> => {
         const sqsBatchResponse: SQSBatchResponse = {
             batchItemFailures: [],
         };
@@ -40,7 +56,7 @@ export abstract class Entrypoint {
                 if (!customer || !queue) {
                     throw new Error(`Failed to determine source queue from ARN ${msg.eventSourceARN}`)
                 }
-                await this.process(
+                await this.processSqsEvent(
                         {
                             storeType: StoreType.DATASPRAY,
                             storeName: customer,
@@ -57,9 +73,17 @@ export abstract class Entrypoint {
         return sqsBatchResponse;
     }
 
-    abstract process(
+    handleHttpRequest = async (request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> => {
+        return this.processFunctionUrl(request);
+    }
+
+    abstract processSqsEvent(
             metadata: MessageMetadata,
             data: string,
             rawCoordinator: RawCoordinator,
     ): Promise<void> | void;
+
+    abstract processFunctionUrl(
+            request: LambdaFunctionURLEvent,
+    ): Promise<APIGatewayProxyStructuredResultV2>;
 }

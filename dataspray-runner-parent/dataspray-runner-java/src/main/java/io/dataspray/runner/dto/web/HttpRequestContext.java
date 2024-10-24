@@ -20,15 +20,41 @@
  * SOFTWARE.
  */
 
-package io.dataspray.runner;
+package io.dataspray.runner.dto.web;
 
-import java.util.Map;
+import java.time.Instant;
 
 /**
+ * Represents the context of an HTTP request sent to your Lambda function.
+ *
  * @see <a href="https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html#urls-payloads">AWS docs</a>
  */
-public class HttpResponse {
-    int statusCode;
-    Map<String, String> headers;
-    String body;
+public interface HttpRequestContext {
+
+    /**
+     * The ID of the function URL.
+     */
+    String getApiId();
+
+    /**
+     * The domain name of the function URL. Example: {@code <url-id>.lambda-url.us-west-2.on.aws}
+     */
+    String getDomainName();
+
+    /**
+     * The domain prefix of the function URL. Example: {@code <url-id>}
+     */
+    String getDomainPrefix();
+
+    HttpDetails getHttp();
+
+    /**
+     * The ID of the invocation request. You can use this ID to trace invocation logs related to your function.
+     */
+    String getRequestId();
+
+    /**
+     * The timestamp of the request. Example: {@code 1631055022677}
+     */
+    Instant getTime();
 }

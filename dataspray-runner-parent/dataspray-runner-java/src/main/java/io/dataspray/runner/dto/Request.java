@@ -20,8 +20,12 @@
  * SOFTWARE.
  */
 
-package io.dataspray.runner;
+package io.dataspray.runner.dto;
 
+import io.dataspray.runner.dto.sqs.SqsMessage;
+import io.dataspray.runner.dto.sqs.SqsRequest;
+import io.dataspray.runner.dto.web.HttpRequest;
+import io.dataspray.runner.dto.web.HttpRequestContextImpl;
 import lombok.Data;
 
 import java.util.Base64;
@@ -77,6 +81,6 @@ public class Request implements SqsRequest, HttpRequest {
     }
 
     public boolean isHttpRequest() {
-        return httpRequestContext != null;
+        return rawPath != null;
     }
 }
