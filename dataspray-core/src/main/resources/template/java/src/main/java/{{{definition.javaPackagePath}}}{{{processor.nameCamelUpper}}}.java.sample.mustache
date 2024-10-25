@@ -13,6 +13,7 @@ import io.dataspray.runner.dto.web.HttpResponse;
 public class {{{processor.nameCamelUpper}}} implements Processor {
     {{#processor.endpoint}}
 
+    @Override
     HttpResponse handleWebRequest(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder) {
 
         // TODO

@@ -131,13 +131,13 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
     }
 
 
-    private enum TestType {
+    public enum TestType {
         SIMPLE,
         PASSWORD_POLICY,
         MFA_AFTER_SIGN_UP,
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{0}")
     @EnumSource(TestType.class)
     public void test(TestType testType) throws Exception {
         String username = UUID.randomUUID().toString();

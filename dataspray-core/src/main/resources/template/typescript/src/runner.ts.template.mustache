@@ -35,7 +35,7 @@ class Runner extends Entrypoint {
     private processor: Processor = new {{{processor.nameCamelUpper}}}();
     {{#processor.endpoint}}
 
-    processFunctionUrl(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> {
+    handleWebRequest(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> {
         return this.processor.handleWebRequest(request);
     }
     {{/processor.endpoint}}

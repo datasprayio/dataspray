@@ -120,6 +120,7 @@ public class Definition extends Item {
             processor.getEndpoint().ifPresent(endpoint -> {
                 endpoint.setParent(processor);
             });
+            processor.initialize();
         });
         return this;
     }

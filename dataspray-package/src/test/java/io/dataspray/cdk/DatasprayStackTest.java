@@ -52,7 +52,7 @@ class DatasprayStackTest extends AbstractTest {
     @TempDir
     public Path tempDir;
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{0}")
     @EnumSource(value = DeployEnvironment.class, mode = EnumSource.Mode.EXCLUDE, names = {"TEST"})
     void test(DeployEnvironment deployEnv) throws Exception {
         boolean isNative = switch (deployEnv) {

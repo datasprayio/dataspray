@@ -74,7 +74,7 @@ export abstract class Entrypoint {
     }
 
     handleHttpRequest = async (request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> => {
-        return this.processFunctionUrl(request);
+        return this.handleWebRequest(request);
     }
 
     abstract processSqsEvent(
@@ -83,7 +83,7 @@ export abstract class Entrypoint {
             rawCoordinator: RawCoordinator,
     ): Promise<void> | void;
 
-    abstract processFunctionUrl(
+    abstract handleWebRequest(
             request: LambdaFunctionURLEvent,
     ): Promise<APIGatewayProxyStructuredResultV2>;
 }

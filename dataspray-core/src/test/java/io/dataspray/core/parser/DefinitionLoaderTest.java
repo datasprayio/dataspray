@@ -39,7 +39,7 @@ public class DefinitionLoaderTest {
     @Inject
     DefinitionLoader loader;
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{0}")
     @EnumSource(value = SampleProject.class, mode = EnumSource.Mode.INCLUDE, names = {"JAVA", "TYPESCRIPT"})
     public void testSerde(SampleProject sampleProject) throws Exception {
         Definition definition = sampleProject.getDefinitionForName("test");

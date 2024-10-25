@@ -39,7 +39,7 @@ public class Runner extends Entrypoint {
 
     @Override
     public HttpResponse handleWebRequest(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder) {
-        return processor.handleWebRequest(request);
+        return processor.handleWebRequest(request, responseBuilder);
     }
     {{/processor.endpoint}}
     {{^processor.inputStreams.empty}}
@@ -51,10 +51,10 @@ public class Runner extends Entrypoint {
                 && "{{{storeName}}}".equals(metadata.getStoreName())
                 && "{{{streamName}}}".equals(metadata.getStreamName())) {
             {{#dataFormat.isSerdeString}}
-            processor.process{{{uniqueNameCamelUpper}}}(new MessageImpl(metadata, data), coordinator);
+            processor.process{{{uniqueNameCamelUpper}}}(new MessageImpl<>(metadata, data), coordinator);
             {{/dataFormat.isSerdeString}}
             {{^dataFormat.isSerdeString}}
-            processor.process{{{uniqueNameCamelUpper}}}(new MessageImpl(metadata, to{{{dataFormat.nameCamelUpper}}}(data)), coordinator);
+            processor.process{{{uniqueNameCamelUpper}}}(new MessageImpl<>(metadata, to{{{dataFormat.nameCamelUpper}}}(data)), coordinator);
             {{/dataFormat.isSerdeString}}
         } else {{/processor.inputStreams}}{
             throw new RuntimeException("Received unexpected message from " + metadata.getStoreType() + " source " + metadata.getStoreName() + " stream " + metadata.getStreamName());

@@ -54,7 +54,7 @@ public class ExampleLambdaTest extends AbstractLambdaTest {
         private final String expectedBody;
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{0}")
     @EnumSource(TestType.class)
     public void test(TestType testType) {
         assertEquals(

@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @QuarkusTestResource(MotoLifecycleManager.class)
 abstract class AuthorizerBase extends AbstractTest {
 
-    private enum TestType {
+    public enum TestType {
         UNAUTHORIZED_NONE,
         UNAUTHORIZED_EXPIRED,
         AUTHORIZED_UNLIMITED,
@@ -64,7 +64,7 @@ abstract class AuthorizerBase extends AbstractTest {
         AUTHORIZED_QUEUE_WHITELIST,
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{0}")
     @EnumSource(TestType.class)
     void test(TestType testType) throws Exception {
         // Given test setup

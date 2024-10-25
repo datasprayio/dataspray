@@ -10,6 +10,7 @@ import io.dataspray.runner.dto.web.HttpResponse;
 
 {{#util.javaImportsFormat}}
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 {{/util.javaImportsFormat}}
 
 public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
@@ -31,7 +32,7 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
     public void test{{{uniqueNameCamelUpper}}}() {
 
         processor.process{{{uniqueNameCamelUpper}}}(
-            createMessage{{{dataFormat.nameCamelUpper}}}({{>../../stream-sample-data}}),
+            createMessage{{{dataFormat.nameCamelUpper}}}({{>../../stream-test-data}}),
             coordinator);
 
         {{#processor.outputStreams}}

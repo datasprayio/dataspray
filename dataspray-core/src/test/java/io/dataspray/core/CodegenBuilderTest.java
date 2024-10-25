@@ -69,7 +69,7 @@ public class CodegenBuilderTest {
         mockProcessIo.setup();
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{0}")
     @EnumSource(value = SampleProject.class, mode = EnumSource.Mode.INCLUDE, names = {"JAVA", "TYPESCRIPT"})
     @Timeout(value = 300)
     public void test(SampleProject sampleProject) throws Exception {

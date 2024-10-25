@@ -22,14 +22,36 @@
 
 package io.dataspray.core.definition.model;
 
+import com.google.common.collect.ImmutableSet;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
+
+import java.util.EnumSet;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 @Value
 @SuperBuilder(toBuilder = true)
 @EqualsAndHashCode(callSuper = true)
 @RegisterForReflection
 public class TypescriptProcessor extends Processor {
+
+    private static final ImmutableSet<DataFormat.Serde> SUPPORTED_DATA_FORMATS = ImmutableSet.copyOf(EnumSet
+            // Exclude the following unsupported types
+            .complementOf(EnumSet.of(
+                    DataFormat.Serde.PROTOBUF,
+                    DataFormat.Serde.AVRO)));
+
+    @Override
+    public void initialize() {
+        super.initialize();
+
+        getStreams().forEach(stream -> {
+            checkArgument(SUPPORTED_DATA_FORMATS.contains(stream.getDataFormat().getSerde()),
+                    "Data format %s is not supported by Typescript processors under '%s'",
+                    stream.getDataFormat().getSerde(), getName());
+        });
+    }
 }

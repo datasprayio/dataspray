@@ -64,14 +64,14 @@ public abstract class Entrypoint implements RequestHandler<Request, Object> {
      * Handle an HTTP request from Function URL.
      */
     private HttpResponse handleHttpRequest(HttpRequest request) {
-        return processFunctionUrl(request, HttpResponse.builder());
+        return handleWebRequest(request, HttpResponse.builder());
     }
 
     protected void processSqsEvent(MessageMetadata metadata, String data, RawCoordinator coordinator) {
         throw new RuntimeException("No handler defined for SQS events");
     }
 
-    protected HttpResponse processFunctionUrl(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder) {
+    protected HttpResponse handleWebRequest(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder) {
         throw new RuntimeException("No handler defined for web endpoints");
     }
 }

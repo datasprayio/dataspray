@@ -171,6 +171,10 @@ public class Processor extends Item {
                 .collect(ImmutableSet.toImmutableSet());
     }
 
+    public void initialize() {
+        // To be overriden by subclasses
+    }
+
     @Setter
     @NonFinal
     transient Definition parent;
