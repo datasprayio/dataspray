@@ -170,6 +170,7 @@
                             <configOptions>
                                 <supportsES6>true</supportsES6>
                                 <withInterfaces>true</withInterfaces>
+                                <importFileExtension>.js</importFileExtension>
                             </configOptions>
                         </configuration>
                     </execution>

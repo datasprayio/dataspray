@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@types/node": "^20.11.16",
-    "dataspray-client": "^0.0.1"
+    "dataspray-client": "^0.0.2"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

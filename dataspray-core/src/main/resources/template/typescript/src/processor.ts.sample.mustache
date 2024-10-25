@@ -1,5 +1,11 @@
 import { Message } from "dataspray-runner";
 import { Coordinator } from "./coordinator";
+{{#processor.endpoint}}
+import {
+    APIGatewayProxyStructuredResultV2,
+    LambdaFunctionURLEvent,
+} from 'aws-lambda';
+{{/processor.endpoint}}
 {{^processor.jsonInputStreams.empty}}
 import {
 {{#processor.jsonInputStreams}}

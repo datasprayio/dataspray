@@ -5,26 +5,19 @@ import {
     mockRequest,
     {{/processor.endpoint}}
     {{^processor.inputStreams.empty}}
-    mockMessage,
     mockCoordinator,
     {{#processor.inputStreams}}
     mockMessage{{{uniqueNameCamelUpper}}},
     {{/processor.inputStreams}}
     {{/processor.inputStreams.empty}}
-} from "../testUtil";
-{{#processor.endpoint}}
-import {
-    APIGatewayProxyStructuredResultV2,
-    LambdaFunctionURLEvent,
-} from 'aws-lambda';
-{{/processor.endpoint}}
+} from "./testUtil";
 {{^processor.inputStreams.empty}}
 import { Coordinator } from "../coordinator";
 {{/processor.inputStreams.empty}}
 {{#processor.endpoint}}
 
 describe('Web endpoint handler', () => {
-    let processor: {{{processor.nameCamelUpper}}};
+    let processor: Processor;
 
     beforeEach(() => {
         processor = new {{{processor.nameCamelUpper}}}();
@@ -57,8 +50,9 @@ describe('SQS message processors', () => {
             ),
             coordinator,
         );
-        expect(response.status).toBe(200);
-        expect(response.text).toBe('Hello World');
+        {{#processor.outputStreams}}
+        expect(coordinator.sendTo{{{uniqueNameCamelUpper}}}).not.toHaveBeenCalled();
+        {{/processor.outputStreams}}
     });
     {{/processor.inputStreams}}
 });
