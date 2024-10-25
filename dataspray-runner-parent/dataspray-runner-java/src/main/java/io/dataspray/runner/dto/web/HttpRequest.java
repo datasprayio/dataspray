@@ -50,7 +50,7 @@ public interface HttpRequest {
 
     /**
      * The raw string containing the request's query string parameters. Supported characters include a-z, A-Z, 0-9, .,
-     * _, -, %, &, =, and +.
+     * _, -, %, &amp;, =, and +.
      */
     String getRawQueryString();
 
