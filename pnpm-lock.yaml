@@ -32,7 +32,7 @@ importers:
         specifier: ^20.11.16
         version: 20.11.20
       dataspray-client:
-        specifier: ^0.0.1
+        specifier: ^0.0.2
         version: link:../../dataspray-api-parent/dataspray-client-typescript
     devDependencies:
       '@types/aws-lambda':
@@ -1506,7 +1506,6 @@ packages:
     dependencies:
       react: 18.2.0
     dev: false
-    bundledDependencies: false
 
   /@cloudscape-design/component-toolkit@1.0.0-beta.40:
     resolution: {integrity: sha512-YoOzT1c1CrHPuchJ17ek8kDBD7GK3kv+iwjphul7DQWVXL4t3ZjdeyR52jNwvohgbiahAMLTWr9olMDqE3z5Kw==}
@@ -1559,7 +1558,6 @@ packages:
   /@cloudscape-design/global-styles@1.0.21:
     resolution: {integrity: sha512-uXzvmkGLocJfuYf/hII05Z646hcBehAjge1n8CSjmTiknni+KLtZYZeBrGO0adrvSbQ3+NlX1XXonecwGwwYjQ==}
     dev: false
-    bundledDependencies: false
 
   /@cloudscape-design/test-utils-core@1.0.30:
     resolution: {integrity: sha512-ninp9KJUXKjiJRlZvEO+i9PhkvjdDOB92PM5U2vKUMiQm8ENOALV9hyAqiO3pEeVbnZvxVhYZHWyIQzvP33Uqw==}
