@@ -27,7 +27,7 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
                 .build(),
             HttpResponse.builder());
 
-        assertEquals(200, response.getStatusCode());
+        assertEquals(204, response.getStatusCode());
     }
     {{/processor.endpoint}}
     {{#processor.inputStreams}}
