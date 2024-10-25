@@ -34,7 +34,7 @@ import java.util.Map;
  * @see <a href="https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html#urls-payloads">AWS docs</a>
  */
 @Data
-@Builder
+@Builder(toBuilder = true)
 public class HttpResponse {
 
     @Builder.Default

@@ -14,7 +14,7 @@ public class {{{processor.nameCamelUpper}}} implements Processor {
     {{#processor.endpoint}}
 
     @Override
-    HttpResponse handleWebRequest(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder) {
+    public HttpResponse handleWebRequest(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder) {
 
         // TODO
         return responseBuilder.ok().build();

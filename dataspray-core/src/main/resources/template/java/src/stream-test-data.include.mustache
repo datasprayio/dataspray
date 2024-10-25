@@ -6,12 +6,12 @@ new byte[] { 0x42 }
 "Forty two"
 {{/dataFormat.isSerdeString}}
 {{#dataFormat.isSerdeJson}}
-mock({{{dataFormat.nameCamelUpper}}})
+mock({{{dataFormat.nameCamelUpper}}}.class)
 {{/dataFormat.isSerdeJson}}
 {{#dataFormat.isSerdeProtobuf}}
-mock({{{dataFormat.nameCamelUpper}}})
+mock({{{dataFormat.nameCamelUpper}}}.class)
 {{/dataFormat.isSerdeProtobuf}}
 {{#dataFormat.isSerdeAvro}}
-mock({{{dataFormat.nameCamelUpper}}})
+mock({{{dataFormat.nameCamelUpper}}}.class)
 {{/dataFormat.isSerdeAvro}}
 {{/util.trim}}

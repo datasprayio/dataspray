@@ -22,8 +22,11 @@
 
 package io.dataspray.runner.dto.web;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * An HTTP request event sent to your Lambda function.
@@ -87,12 +90,21 @@ public interface HttpRequest {
      *
      * @throws IllegalStateException if the body is base64-encoded
      */
-    String getBodyAsString() throws IllegalStateException;
+    default String getBodyAsString() throws IllegalStateException {
+        checkState(!isBase64Encoded(), "Body is binary, call getBodyAsBinary() instead");
+        return getBody();
+    }
 
     /**
      * The body of the request as a binary array, converting from Base64 if necessary.
      */
-    byte[] getBodyAsBinary();
+    default byte[] getBodyAsBinary() {
+        if (isBase64Encoded()) {
+            return Base64.getDecoder().decode(getBody());
+        } else {
+            return getBody().getBytes();
+        }
+    }
 
     /**
      * TRUE if the body is a binary payload and base64-encoded. FALSE otherwise.

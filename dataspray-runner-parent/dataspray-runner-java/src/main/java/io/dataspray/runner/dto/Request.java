@@ -28,11 +28,8 @@ import io.dataspray.runner.dto.web.HttpRequest;
 import io.dataspray.runner.dto.web.HttpRequestContextImpl;
 import lombok.Data;
 
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkState;
 
 @Data
 public class Request implements SqsRequest, HttpRequest {
@@ -60,21 +57,6 @@ public class Request implements SqsRequest, HttpRequest {
     String body;
 
     boolean isBase64Encoded;
-
-    @Override
-    public String getBodyAsString() throws IllegalStateException {
-        checkState(!isBase64Encoded, "Body is binary, call getBodyAsBinary() instead");
-        return body;
-    }
-
-    @Override
-    public byte[] getBodyAsBinary() {
-        if (isBase64Encoded) {
-            return Base64.getDecoder().decode(body);
-        } else {
-            return body.getBytes();
-        }
-    }
 
     public boolean isSqsRequest() {
         return records != null;

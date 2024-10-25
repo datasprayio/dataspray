@@ -20,7 +20,11 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
     public void testWebRequest() {
 
         HttpResponse response = processor.handleWebRequest(
-            HttpRequest.builder().build(),
+            MockHttpRequest.builder()
+                .method("GET")
+                .path("/")
+                .bodyAsString("ping")
+                .build(),
             HttpResponse.builder());
 
         assertEquals(200, response.getStatusCode());
