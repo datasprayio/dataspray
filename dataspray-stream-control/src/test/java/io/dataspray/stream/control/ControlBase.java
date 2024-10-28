@@ -102,6 +102,8 @@ public abstract class ControlBase extends AbstractLambdaTest {
                                         .allowOrigins(List.of("*"))
                                         .allowMethods(List.of("GET", "POST"))
                                         .allowHeaders(List.of("Content-Type"))
+                                        .exposeHeaders(List.of("Content-Type"))
+                                        .allowCredentials(true)
                                         .maxAge(3600L)))
                         .switchToNow(false))
                 .build())

@@ -89,6 +89,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
 
     @Override
     public TaskVersion deployVersion(String organizationName, String taskId, DeployRequest deployRequest) {
+        log.info("Deploying task {} org {}", taskId, organizationName);
         DeployedVersion deployedVersion = deployer.deployVersion(
                 organizationName,
                 getUsername().orElseThrow(),
@@ -117,6 +118,8 @@ public class ControlResource extends AbstractResource implements ControlApi {
                                                 .maxAge(cors.getMaxAge().intValue())
                                                 .build()))),
                 deployRequest.getSwitchToNow());
+        log.info("Deployed task {} org {} version {} description {}",
+                taskId, organizationName, deployedVersion.getVersion(), deployedVersion.getDescription());
         return new TaskVersion(
                 taskId,
                 deployedVersion.getVersion(),

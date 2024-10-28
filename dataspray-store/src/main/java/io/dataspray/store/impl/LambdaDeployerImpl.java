@@ -228,9 +228,11 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         // A task could also trigger an event outside the declared queue outputs that may cause a loop.
         Optional<List<CycleUtil.Node>> cycleOpt = lambdaStore.checkLoops(organizationName, taskId, inputQueueNames, outputQueueNames);
         if (cycleOpt.isPresent()) {
-            throw new ConflictException("Cycle detected between tasks: " + cycleOpt.get().stream()
+            String cycleDescription = "Cycle detected between tasks: " + cycleOpt.get().stream()
                     .map(n -> n.getName() + " [IN: " + n.getNodeInputs() + ", OUT: " + n.getNodeOutputs() + "]")
-                    .collect(Collectors.joining(", ")));
+                    .collect(Collectors.joining(", "));
+            log.info("Deploy task {} has a cycle in org {}: {}", taskId, organizationName, cycleDescription);
+            throw new ConflictException(cycleDescription);
         }
 
         String functionName = getFunctionName(organizationName, taskId);
@@ -245,7 +247,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             log.debug("Found existing function {}", existingFunctionOpt.get().functionName());
         } catch (ResourceNotFoundException ex) {
             existingFunctionOpt = Optional.empty();
-            log.debug("Function doesn't yet exist {}", functionName);
+            log.info("Function doesn't yet exist {}", functionName);
         }
 
         // Setup function IAM role
@@ -269,7 +271,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                                     "Principal", Map.of(
                                             "Service", List.of("lambda.amazonaws.com")))))))
                     .build());
-            log.debug("Created role {}", functionRoleName);
+            log.info("Created role {}", functionRoleName);
             waiterUtil.resolve(iamClient.waiter().waitUntilRoleExists(GetRoleRequest.builder()
                     .roleName(functionRoleName)
                     .build()));
@@ -342,7 +344,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                                     .build())
                             .build())
                     .version());
-            log.debug("Created function {} with published version {} description {}", functionName, publishedVersion, publishedDescription);
+            log.info("Created function {} with published version {} description {}", functionName, publishedVersion, publishedDescription);
 
             // Wait until function version publishes
             waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionExists(GetFunctionRequest.builder()
@@ -365,7 +367,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .build())
                     .revisionId(existingFunctionOpt.get().revisionId())
                     .build());
-            log.debug("Updated function configuration {} with description {}", functionName, publishedDescription);
+            log.info("Updated function configuration {} with description {}", functionName, publishedDescription);
 
             // Wait until updated
             waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionUpdatedV2(GetFunctionRequest.builder()
@@ -384,7 +386,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             // .revisionId(updateFunctionRevisionId)
                             .build())
                     .version();
-            log.debug("Updated function code {} published version {}", functionName, publishedVersion);
+            log.info("Updated function code {} published version {}", functionName, publishedVersion);
 
             // Wait until updated
             waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionUpdatedV2(GetFunctionRequest.builder()
@@ -409,11 +411,13 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             // We don't want a Function URL
             if (functionUrlConfigOpt.isEmpty()) {
                 // And it doesn't exist, nothing to do
+                log.debug("No function url needed");
             } else {
                 // And it exists, we need to delete it
                 lambdaClient.deleteFunctionUrlConfig(DeleteFunctionUrlConfigRequest.builder()
                         .functionName(functionName)
                         .build());
+                log.info("Deleted function url {}", functionUrlConfigOpt.get().functionUrl());
             }
         } else {
             // We want a Function URL
@@ -429,6 +433,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                         .invokeMode(InvokeMode.BUFFERED)
                         .build());
                 endpointUrlOpt = Optional.of(createFunctionUrlConfigResponse.functionUrl());
+                log.info("Created function url {}", endpointUrlOpt.get());
             } else {
                 // And it already exists, we may have to update it
                 GetFunctionUrlConfigResponse config = functionUrlConfigOpt.get();
@@ -446,8 +451,10 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .invokeMode(InvokeMode.BUFFERED)
                             .build());
                     endpointUrlOpt = Optional.of(updateFunctionUrlConfigResponse.functionUrl());
+                    log.info("Updated function url {}", endpointUrlOpt.get());
                 } else {
                     endpointUrlOpt = Optional.of(functionUrlConfigOpt.get().functionUrl());
+                    log.debug("No update needed for function url {}", endpointUrlOpt.get());
                 }
             }
         }
@@ -480,7 +487,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .functionVersion(publishedVersion)
                     .name(LAMBDA_ACTIVE_QUALIFIER)
                     .build());
-            log.debug("Created function {} alias {} with version {}", functionName, LAMBDA_ACTIVE_QUALIFIER, publishedVersion);
+            log.info("Created function {} alias {} with version {}", functionName, LAMBDA_ACTIVE_QUALIFIER, publishedVersion);
             aliasAlreadyExists = false;
         } catch (LambdaException ex) {
             if (ex instanceof ResourceConflictException
@@ -514,7 +521,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             // Create queue if it doesn't exist
             if (!streamStore.streamExists(organizationName, queueNameToAdd)) {
                 streamStore.createStream(organizationName, queueNameToAdd);
-                log.debug("Created queue {}", queueNameToAdd);
+                log.info("Created queue {}", queueNameToAdd);
             }
 
             // Add the permission for Event Source Mapping on the active qualifier
@@ -536,13 +543,14 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         }
 
         if (switchToImmediately) {
+            log.info("Switching over to deployed task {} version {}", taskId, publishedVersion);
             // Disable unneeded sources
             queueSources.stream()
                     .filter(source -> !inputQueueNames.contains(source.getQueueName()))
                     .forEach(source -> disableSource(taskId, source, "switchover on deploy"));
 
             // Switch active tag
-            // No need to switch if we just craeted it without published version
+            // No need to switch if we just created it without published version
             if (aliasAlreadyExists) {
                 log.info("Updating task {} alias {} to version {} part of switchover on deploy", taskId, LAMBDA_ACTIVE_QUALIFIER, publishedVersion);
                 lambdaClient.updateAlias(UpdateAliasRequest.builder()
@@ -569,7 +577,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .eventSourceArn("arn:aws:sqs:" + awsRegion + ":" + awsAccountId + ":" + streamStore.getAwsQueueName(organizationName, queueNameToAdd))
                             .build())
                     .uuid();
-            log.debug("Created function {}:{} event source mapping for queue {}", functionName, LAMBDA_ACTIVE_QUALIFIER, queueNameToAdd);
+            log.info("Created function {}:{} event source mapping for queue {}", functionName, LAMBDA_ACTIVE_QUALIFIER, queueNameToAdd);
         }
 
         return new DeployedVersion(
