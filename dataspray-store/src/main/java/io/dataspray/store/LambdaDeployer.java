@@ -32,6 +32,7 @@ import jakarta.annotation.Nonnull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Value;
+import software.amazon.awssdk.services.lambda.model.Cors;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
 import software.amazon.awssdk.services.lambda.model.Runtime;
 
@@ -47,8 +48,10 @@ public interface LambdaDeployer {
             String taskId,
             String codeUrl,
             String handler,
-            ImmutableSet<String> queueNames,
+            ImmutableSet<String> inputQueueNames,
+            ImmutableSet<String> outputQueueNames,
             Runtime runtime,
+            Optional<Endpoint> endpointOpt,
             boolean switchToImmediately);
 
     void switchVersion(String organizationName, String taskId, String version);
@@ -73,6 +76,7 @@ public interface LambdaDeployer {
         String taskId;
         FunctionConfiguration function;
         State state;
+        Optional<String> endpointUrlOpt;
     }
 
     @Getter
@@ -107,12 +111,21 @@ public interface LambdaDeployer {
     @RegisterForReflection
     class Versions {
         Status status;
-        ImmutableMap<String, DeployedVersion> taskByVersion;
+        ImmutableMap<String, LambdaVersion> taskByVersion;
+        Optional<String> endpointUrl;
     }
 
     @Value
     @RegisterForReflection
     class DeployedVersion {
+        String version;
+        String description;
+        Optional<String> endpointUrl;
+    }
+
+    @Value
+    @RegisterForReflection
+    class LambdaVersion {
         String version;
         String description;
     }
@@ -149,5 +162,15 @@ public interface LambdaDeployer {
 
         @Nonnull
         String codeUrl;
+    }
+
+    @Value
+    @RegisterForReflection
+    class Endpoint {
+        @Nonnull
+        boolean isPublic;
+
+        @Nonnull
+        Optional<Cors> cors;
     }
 }

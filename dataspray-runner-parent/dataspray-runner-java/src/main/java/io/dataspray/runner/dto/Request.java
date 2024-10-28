@@ -26,12 +26,12 @@ import io.dataspray.runner.dto.sqs.SqsMessage;
 import io.dataspray.runner.dto.sqs.SqsRequest;
 import io.dataspray.runner.dto.web.HttpRequest;
 import io.dataspray.runner.dto.web.HttpRequestContextImpl;
-import lombok.Data;
+import lombok.Value;
 
 import java.util.List;
 import java.util.Map;
 
-@Data
+@Value
 public class Request implements SqsRequest, HttpRequest {
 
     // Sqs request fields

@@ -27,6 +27,7 @@ components:
         - codeUrl
         - handler
         - inputQueueNames
+        - outputQueueNames
         - switchToNow
       properties:
         codeUrl:
@@ -37,12 +38,54 @@ components:
           type: array
           items:
             type: string
+        outputQueueNames:
+          type: array
+          items:
+            type: string
         runtime:
           type: string
           # Subset of software.amazon.awssdk.services.lambda.model.Runtime
           enum:
             - JAVA21
             - NODEJS20_X
+        endpoint:
+          type: object
+          required:
+            - isPublic
+          properties:
+            isPublic:
+              type: boolean
+            cors:
+              type: object
+              required:
+                - allowOrigins
+                - allowMethods
+                - allowHeaders
+                - exposeHeaders
+                - allowCredentials
+                - maxAge
+              properties:
+                allowOrigins:
+                  type: array
+                  items:
+                    type: string
+                allowMethods:
+                  type: array
+                  items:
+                    type: string
+                allowHeaders:
+                  type: array
+                  items:
+                    type: string
+                exposeHeaders:
+                  type: array
+                  items:
+                    type: string
+                allowCredentials:
+                  type: boolean
+                maxAge:
+                  type: integer
+                  format: int64
         switchToNow:
           type: boolean
     TaskVersions:
@@ -57,6 +100,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TaskVersion'
+        endpointUrl:
+          type: string
     TaskVersion:
       type: object
       required:
@@ -109,6 +154,8 @@ components:
             - FAILED
             - IN_PROGRESS
         lastUpdateStatusReason:
+          type: string
+        endpointUrl:
           type: string
     Targets:
       type: object

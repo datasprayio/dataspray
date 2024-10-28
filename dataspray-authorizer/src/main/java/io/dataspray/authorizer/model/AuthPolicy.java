@@ -14,8 +14,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.annotations.SerializedName;
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import lombok.Data;
 import lombok.NonNull;
+import lombok.Value;
 
 import java.util.Map;
 import java.util.Optional;
@@ -39,7 +39,7 @@ import java.util.Optional;
  * @see <a
  * href="https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-lambda-authorizer-output.html">Documentation</a>
  */
-@Data
+@Value
 @JsonInclude(Include.NON_EMPTY)
 @RegisterForReflection
 public class AuthPolicy {

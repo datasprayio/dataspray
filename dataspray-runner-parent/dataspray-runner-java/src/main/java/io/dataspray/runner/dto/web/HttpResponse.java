@@ -23,8 +23,8 @@
 package io.dataspray.runner.dto.web;
 
 import lombok.Builder;
-import lombok.Data;
 import lombok.Singular;
+import lombok.Value;
 
 import java.util.Base64;
 import java.util.List;
@@ -33,7 +33,7 @@ import java.util.Map;
 /**
  * @see <a href="https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html#urls-payloads">AWS docs</a>
  */
-@Data
+@Value
 @Builder(toBuilder = true)
 public class HttpResponse {
 

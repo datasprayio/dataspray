@@ -22,14 +22,14 @@
 
 package io.dataspray.runner.dto.web;
 
-import lombok.Data;
+import lombok.Value;
 
 import java.time.Instant;
 
 /**
  * @see <a href="https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html#urls-payloads">AWS docs</a>
  */
-@Data
+@Value
 public class HttpRequestContextImpl implements HttpRequestContext {
 
     String apiId;

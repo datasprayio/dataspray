@@ -39,7 +39,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -160,9 +159,9 @@ abstract class AuthorizerBase extends AbstractTest {
                 expiryOpt.map(Instant::getEpochSecond).orElse(null));
 
         TableSchema<ApiAccess> apiAccessSchema = getSingleTable().parseTableSchema(ApiAccess.class);
-        getDynamo().putItem(PutItemRequest.builder()
-                .tableName(apiAccessSchema.tableName())
-                .item(apiAccessSchema.toAttrMap(apiAccess)).build());
+        apiAccessSchema.put()
+                .item(apiAccess)
+                .execute(getDynamo());
 
         return apiAccess;
 

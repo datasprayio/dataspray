@@ -23,12 +23,12 @@
 package io.dataspray.runner.dto.sqs;
 
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
-import lombok.Data;
+import lombok.Value;
 
 /**
  * Stripped down interface of {@link SQSMessage}.
  */
-@Data
+@Value
 public class SqsMessage {
 
     String body;

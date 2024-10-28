@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,15 +25,15 @@ package io.dataspray.store.impl;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import io.dataspray.singletable.Expression;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
+import io.dataspray.singletable.builder.PutBuilder;
 import io.dataspray.store.TargetStore;
 import io.quarkus.runtime.Startup;
 import jakarta.inject.Inject;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
 
 import java.time.Duration;
 import java.util.Map;
@@ -105,30 +105,22 @@ public class DynamoTargetStore implements TargetStore {
     @Override
     public Targets updateTargets(Targets targets) {
 
-        // To prevent concurrent modification, we check that the database entry matches our
-        // expected version using dynamo conditions
-        Expression expression;
-        if (targets.getVersion() == INITIAL_VERSION) {
-            expression = targetsSchema.expressionBuilder()
-                    .conditionNotExists().build();
-        } else {
-            expression = targetsSchema.expressionBuilder()
-                    .conditionFieldEquals("version", targets.getVersion()).build();
-        }
-
         // Bump the version
         Targets targetsVersionBumped = targets.toBuilder()
                 .version(targets.getVersion() + 1)
                 .build();
 
+        // To prevent concurrent modification, we check that the database entry matches our
+        // expected version using dynamo conditions
+        PutBuilder<Targets> putBuilder = targetsSchema.put();
+        if (targets.getVersion() == INITIAL_VERSION) {
+            putBuilder.conditionNotExists().build();
+        } else {
+            putBuilder.conditionFieldEquals("version", targets.getVersion()).build();
+        }
         // Make the update
-        dynamo.putItem(PutItemRequest.builder()
-                .tableName(targetsSchema.tableName())
-                .item(targetsSchema.toAttrMap(targetsVersionBumped))
-                .conditionExpression(expression.conditionExpression().orElse(null))
-                .expressionAttributeNames(expression.expressionAttributeNames().orElse(null))
-                .expressionAttributeValues(expression.expressionAttributeValues().orElse(null))
-                .build());
+        PutItemResponse execute = putBuilder.item(targetsVersionBumped)
+                .execute(dynamo);
 
         // Update cache
         targetsByOrganizationNameCache.put(targets.getOrganizationName(), targetsVersionBumped);

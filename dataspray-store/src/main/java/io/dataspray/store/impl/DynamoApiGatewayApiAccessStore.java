@@ -144,10 +144,9 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         getOrCreateUsageKeyApiKey(apiAccess.getUsageKeyType(), apiAccess.getApiKey());
 
         // Add api key in dynamo
-        dynamo.putItem(PutItemRequest.builder()
-                .tableName(apiAccessSchema.tableName())
-                .item(apiAccessSchema.toAttrMap(apiAccess))
-                .build());
+        apiAccessSchema.put()
+                .item(apiAccess)
+                .execute(dynamo);
 
         // Add to cache and return
         apiAccessByApiKeyCache.put(apiAccess.getApiKey(), Optional.of(apiAccess));

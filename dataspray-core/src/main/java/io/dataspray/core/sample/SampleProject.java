@@ -36,6 +36,7 @@ import io.dataspray.core.definition.model.StreamLink;
 import io.dataspray.core.definition.model.TypescriptProcessor;
 
 import java.util.Optional;
+import java.util.Set;
 
 public enum SampleProject {
     EMPTY(name -> Definition.builder()
@@ -148,9 +149,9 @@ public enum SampleProject {
                                     Endpoint.builder()
                                             .isPublic(true)
                                             .cors(Optional.of(Cors.builder()
-                                                    .allowOrigins("example.com")
-                                                    .allowMethods("GET, POST")
-                                                    .allowHeaders("Authorization")
+                                                    .allowOrigins(Set.of("example.com"))
+                                                    .allowMethods(Set.of("GET", "POST"))
+                                                    .allowHeaders(Set.of("Authorization"))
                                                     .build()))
                                             .build()))
                             .build()))

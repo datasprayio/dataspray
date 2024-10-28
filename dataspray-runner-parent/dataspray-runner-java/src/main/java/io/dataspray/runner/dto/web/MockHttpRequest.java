@@ -23,7 +23,7 @@
 package io.dataspray.runner.dto.web;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
 
 import java.time.Instant;
 import java.util.Base64;
@@ -32,7 +32,7 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkState;
 
-@Data
+@Value
 @Builder(toBuilder = true)
 public class MockHttpRequest implements HttpRequest, HttpRequestContext, HttpDetails {
 

@@ -27,25 +27,24 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
+import java.util.Set;
+
 @Value
 @SuperBuilder(toBuilder = true)
 @AllArgsConstructor
 public class Cors {
 
     @Builder.Default
-    String allowOrigins = "*";
+    Set<String> allowOrigins = Set.of("*");
 
     @Builder.Default
-    String allowMethods = "GET, POST, PUT, DELETE, OPTIONS";
+    Set<String> allowMethods = Set.of("GET", "POST", "PUT", "DELETE", "OPTIONS");
 
     @Builder.Default
-    String allowHeaders = "";
+    Set<String> allowHeaders = Set.of();
 
     @Builder.Default
-    String exposeHeaders = "";
-
-    @Builder.Default
-    boolean allowCredentials = true;
+    Set<String> exposeHeaders = Set.of();
 
     @Builder.Default
     long maxAge = 3600;

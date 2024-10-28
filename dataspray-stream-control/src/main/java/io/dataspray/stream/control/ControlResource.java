@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.store.LambdaDeployer;
 import io.dataspray.store.LambdaDeployer.DeployedVersion;
+import io.dataspray.store.LambdaDeployer.Endpoint;
 import io.dataspray.store.LambdaDeployer.State;
 import io.dataspray.store.LambdaDeployer.Status;
 import io.dataspray.store.LambdaDeployer.Versions;
@@ -51,6 +52,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import software.amazon.awssdk.services.lambda.model.Cors;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
 import software.amazon.awssdk.services.lambda.model.Runtime;
 
@@ -97,8 +99,23 @@ public class ControlResource extends AbstractResource implements ControlApi {
                 deployRequest.getInputQueueNames().stream()
                         .distinct()
                         .collect(ImmutableSet.toImmutableSet()),
+                deployRequest.getOutputQueueNames().stream()
+                        .distinct()
+                        .collect(ImmutableSet.toImmutableSet()),
                 Enums.getIfPresent(Runtime.class, deployRequest.getRuntime().name()).toJavaUtil()
                         .orElseThrow(() -> new BadRequestException("Unknown runtime: " + deployRequest.getRuntime())),
+                Optional.ofNullable(deployRequest.getEndpoint())
+                        .map(endpoint -> new Endpoint(
+                                endpoint.getIsPublic(),
+                                Optional.ofNullable(endpoint.getCors())
+                                        .map(cors -> Cors.builder()
+                                                .allowOrigins(cors.getAllowOrigins())
+                                                .allowMethods(cors.getAllowMethods())
+                                                .allowHeaders(cors.getAllowHeaders())
+                                                .exposeHeaders(cors.getExposeHeaders())
+                                                .allowCredentials(cors.getAllowCredentials())
+                                                .maxAge(cors.getMaxAge().intValue())
+                                                .build()))),
                 deployRequest.getSwitchToNow());
         return new TaskVersion(
                 taskId,
@@ -116,7 +133,8 @@ public class ControlResource extends AbstractResource implements ControlApi {
                                 taskId,
                                 v.getVersion(),
                                 v.getDescription()))
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()),
+                versions.getEndpointUrl().orElse(null));
     }
 
     @Override
@@ -201,6 +219,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
                         .map(Enum::name)
                         .flatMap(lastUpdateStatus -> Enums.getIfPresent(TaskStatus.LastUpdateStatusEnum.class, lastUpdateStatus).toJavaUtil())
                         .orElse(null))
+                .endpointUrl(statusOpt.flatMap(Status::getEndpointUrlOpt).orElse(null))
                 .build();
     }
 

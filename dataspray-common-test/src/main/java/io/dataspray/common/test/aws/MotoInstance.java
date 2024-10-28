@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
 package io.dataspray.common.test.aws;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Value;
 import org.testcontainers.containers.GenericContainer;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -39,7 +39,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 
 import java.net.URI;
 
-@Data
+@Value
 @AllArgsConstructor
 public class MotoInstance {
     long awsAccountId;

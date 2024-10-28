@@ -26,6 +26,7 @@ import com.github.rholder.retry.Retryer;
 import com.github.rholder.retry.RetryerBuilder;
 import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.WaitStrategies;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -34,10 +35,14 @@ import com.google.common.primitives.Longs;
 import com.google.gson.Gson;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.common.StringUtil;
+import io.dataspray.singletable.ShardPageResult;
 import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.ApiAccessStore.ApiAccess;
 import io.dataspray.store.LambdaDeployer;
+import io.dataspray.store.LambdaStore;
+import io.dataspray.store.LambdaStore.LambdaRecord;
 import io.dataspray.store.StreamStore;
+import io.dataspray.store.util.CycleUtil;
 import io.dataspray.store.util.WaiterUtil;
 import io.dataspray.store.util.WithCursor;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -61,19 +66,24 @@ import software.amazon.awssdk.services.lambda.model.Architecture;
 import software.amazon.awssdk.services.lambda.model.CreateAliasRequest;
 import software.amazon.awssdk.services.lambda.model.CreateEventSourceMappingRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
+import software.amazon.awssdk.services.lambda.model.CreateFunctionUrlConfigRequest;
+import software.amazon.awssdk.services.lambda.model.CreateFunctionUrlConfigResponse;
 import software.amazon.awssdk.services.lambda.model.DeleteFunctionRequest;
+import software.amazon.awssdk.services.lambda.model.DeleteFunctionUrlConfigRequest;
 import software.amazon.awssdk.services.lambda.model.Environment;
 import software.amazon.awssdk.services.lambda.model.FunctionCode;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
+import software.amazon.awssdk.services.lambda.model.FunctionUrlAuthType;
 import software.amazon.awssdk.services.lambda.model.GetAliasRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionRequest;
+import software.amazon.awssdk.services.lambda.model.GetFunctionUrlConfigRequest;
+import software.amazon.awssdk.services.lambda.model.GetFunctionUrlConfigResponse;
 import software.amazon.awssdk.services.lambda.model.GetPolicyRequest;
 import software.amazon.awssdk.services.lambda.model.InvalidParameterValueException;
+import software.amazon.awssdk.services.lambda.model.InvokeMode;
 import software.amazon.awssdk.services.lambda.model.LambdaException;
 import software.amazon.awssdk.services.lambda.model.ListEventSourceMappingsRequest;
 import software.amazon.awssdk.services.lambda.model.ListEventSourceMappingsResponse;
-import software.amazon.awssdk.services.lambda.model.ListFunctionsRequest;
-import software.amazon.awssdk.services.lambda.model.ListFunctionsResponse;
 import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.PackageType;
@@ -86,6 +96,8 @@ import software.amazon.awssdk.services.lambda.model.UpdateAliasRequest;
 import software.amazon.awssdk.services.lambda.model.UpdateEventSourceMappingRequest;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationRequest;
+import software.amazon.awssdk.services.lambda.model.UpdateFunctionUrlConfigRequest;
+import software.amazon.awssdk.services.lambda.model.UpdateFunctionUrlConfigResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
@@ -151,6 +163,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     @Inject
     LambdaClient lambdaClient;
     @Inject
+    LambdaStore lambdaStore;
+    @Inject
     S3Presigner s3Presigner;
     @Inject
     StreamStore streamStore;
@@ -161,7 +175,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     @Inject
     ApiAccessStore apiAccessStore;
 
-
     @SneakyThrows
     @Override
     public DeployedVersion deployVersion(
@@ -171,9 +184,52 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             String taskId,
             String codeUrl,
             String handler,
-            ImmutableSet<String> queueNames,
+            ImmutableSet<String> inputQueueNames,
+            ImmutableSet<String> outputQueueNames,
             Runtime runtime,
+            Optional<Endpoint> endpointOpt,
             boolean switchToImmediately) {
+        try (AutoCloseable lock = lambdaStore.acquireLock(organizationName, taskId)
+                .orElseThrow(() -> new ConflictException("Task is already locked for editing by another process, try again later."))) {
+            return deployVersionInternal(
+                    organizationName,
+                    username,
+                    apiEndpointOpt,
+                    taskId,
+                    codeUrl,
+                    handler,
+                    inputQueueNames,
+                    outputQueueNames,
+                    runtime,
+                    endpointOpt,
+                    switchToImmediately);
+        }
+    }
+
+    @SneakyThrows
+    private DeployedVersion deployVersionInternal(
+            String organizationName,
+            String username,
+            Optional<String> apiEndpointOpt,
+            String taskId,
+            String codeUrl,
+            String handler,
+            ImmutableSet<String> inputQueueNames,
+            ImmutableSet<String> outputQueueNames,
+            Runtime runtime,
+            Optional<Endpoint> endpointOpt,
+            boolean switchToImmediately) {
+
+        // Check for loops between deployed Tasks and current update/creation of this task.
+        // Note that this is a best-effort check to prevent customers from shooting themselves in the foot.
+        // This check is not perfect as a concurrent deploy to another task could cause a loop.
+        // A task could also trigger an event outside the declared queue outputs that may cause a loop.
+        Optional<List<CycleUtil.Node>> cycleOpt = lambdaStore.checkLoops(organizationName, taskId, inputQueueNames, outputQueueNames);
+        if (cycleOpt.isPresent()) {
+            throw new ConflictException("Cycle detected between tasks: " + cycleOpt.get().stream()
+                    .map(n -> n.getName() + " [IN: " + n.getNodeInputs() + ", OUT: " + n.getNodeOutputs() + "]")
+                    .collect(Collectors.joining(", ")));
+        }
 
         String functionName = getFunctionName(organizationName, taskId);
 
@@ -252,7 +308,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
         // Create or update function configuration and code
         final String publishedVersion;
-        final String publishedDescription = generateVersionDescription(taskId, queueNames);
+        final String publishedDescription = generateVersionDescription(taskId, inputQueueNames, outputQueueNames);
         ImmutableMap.Builder<String, String> envBuilder = ImmutableMap.<String, String>builder()
                 .put(DATASPRAY_API_KEY_ENV, apiKey)
                 .put(DATASPRAY_ORGANIZATION_NAME_ENV, organizationName);
@@ -341,6 +397,74 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .build()));
         }
 
+        // Check if function has a Function URL
+        Optional<GetFunctionUrlConfigResponse> functionUrlConfigOpt;
+        try {
+            functionUrlConfigOpt = Optional.of(lambdaClient.getFunctionUrlConfig(GetFunctionUrlConfigRequest.builder()
+                    .functionName(functionName)
+                    .build()));
+        } catch (ResourceNotFoundException ex) {
+            // Does not have a Function URL
+            functionUrlConfigOpt = Optional.empty();
+        }
+        final Optional<String> endpointUrlOpt;
+        if (endpointOpt.isEmpty()) {
+            endpointUrlOpt = Optional.empty();
+            // We don't want a Function URL
+            if (functionUrlConfigOpt.isEmpty()) {
+                // And it doesn't exist, nothing to do
+            } else {
+                // And it exists, we need to delete it
+                lambdaClient.deleteFunctionUrlConfig(DeleteFunctionUrlConfigRequest.builder()
+                        .functionName(functionName)
+                        .build());
+            }
+        } else {
+            // We want a Function URL
+            Endpoint endpoint = endpointOpt.get();
+            if (functionUrlConfigOpt.isEmpty()) {
+                // And it doesn't exist, we need to create it
+                CreateFunctionUrlConfigResponse createFunctionUrlConfigResponse = lambdaClient.createFunctionUrlConfig(CreateFunctionUrlConfigRequest.builder()
+                        .functionName(functionName)
+                        .authType(endpoint.isPublic()
+                                ? FunctionUrlAuthType.NONE
+                                : FunctionUrlAuthType.AWS_IAM)
+                        .cors(endpoint.getCors().orElse(null))
+                        .invokeMode(InvokeMode.BUFFERED)
+                        .build());
+                endpointUrlOpt = Optional.of(createFunctionUrlConfigResponse.functionUrl());
+            } else {
+                // And it already exists, we may have to update it
+                GetFunctionUrlConfigResponse config = functionUrlConfigOpt.get();
+                if (config.authType().equals(FunctionUrlAuthType.NONE) == endpoint.isPublic()
+                    || config.invokeMode() != InvokeMode.BUFFERED
+                    || !Optional.ofNullable(config.cors()).equals(endpoint.getCors())) {
+
+                    // Settings do not match, update it all
+                    UpdateFunctionUrlConfigResponse updateFunctionUrlConfigResponse = lambdaClient.updateFunctionUrlConfig(UpdateFunctionUrlConfigRequest.builder()
+                            .functionName(functionName)
+                            .authType(endpoint.isPublic()
+                                    ? FunctionUrlAuthType.NONE
+                                    : FunctionUrlAuthType.AWS_IAM)
+                            .cors(endpoint.getCors().orElse(null))
+                            .invokeMode(InvokeMode.BUFFERED)
+                            .build());
+                    endpointUrlOpt = Optional.of(updateFunctionUrlConfigResponse.functionUrl());
+                } else {
+                    endpointUrlOpt = Optional.of(functionUrlConfigOpt.get().functionUrl());
+                }
+            }
+        }
+
+        // Record the Lambda function now that we have the endpoint
+        lambdaStore.set(
+                organizationName,
+                taskId,
+                username,
+                inputQueueNames,
+                outputQueueNames,
+                endpointUrlOpt);
+
         // Persist the Api Key now that we know the task's published version
         ApiAccess apiAccess = apiAccessStore.createApiAccessForTask(
                 apiKey,
@@ -350,7 +474,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 taskId,
                 publishedVersion,
                 ApiAccessStore.UsageKeyType.ORGANIZATION,
-                Optional.of(queueNames));
+                Optional.of(outputQueueNames));
 
         // Create active alias if doesn't exist
         boolean aliasAlreadyExists;
@@ -378,7 +502,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         // Although this is not necessary, as the versioned function is never invoked directly,
         // rather the ACTIVE alias is invoked. However, this is a somewhat elegant way to keep
         // track of function version <--> queue names for later switchover/rollback/resume
-        for (String inputQueueName : queueNames) {
+        for (String inputQueueName : inputQueueNames) {
             addQueuePermissionToFunction(organizationName, taskId, publishedVersion, inputQueueName);
         }
 
@@ -386,7 +510,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         // need to perform the entire switchover now. Firstly we will prepare the new queues, then perform the switchover
         // with the only difference with new queues will be we will create them already enabled.
         ImmutableSet<QueueSource> queueSources = getTaskQueueSources(organizationName, taskId);
-        Set<String> missingQueueSources = Sets.difference(queueNames, queueSources.stream().map(QueueSource::getQueueName).collect(Collectors.toSet()));
+        Set<String> missingQueueSources = Sets.difference(inputQueueNames, queueSources.stream().map(QueueSource::getQueueName).collect(Collectors.toSet()));
 
         // Prepare new queue sources, not creating just yet.
         for (String queueNameToAdd : missingQueueSources) {
@@ -418,7 +542,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         if (switchToImmediately) {
             // Disable unneeded sources
             queueSources.stream()
-                    .filter(source -> !queueNames.contains(source.getQueueName()))
+                    .filter(source -> !inputQueueNames.contains(source.getQueueName()))
                     .forEach(source -> disableSource(taskId, source, "switchover on deploy"));
 
             // Switch active tag
@@ -434,7 +558,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
             //  Enable new sources
             queueSources.stream()
-                    .filter(source -> queueNames.contains(source.getQueueName()))
+                    .filter(source -> inputQueueNames.contains(source.getQueueName()))
                     .forEach(source -> enableSource(taskId, source, "switchover on deploy"));
         }
 
@@ -454,7 +578,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
         return new DeployedVersion(
                 publishedVersion,
-                publishedDescription);
+                publishedDescription,
+                endpointUrlOpt);
     }
 
     @Override
@@ -494,6 +619,9 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
     @Override
     public Versions getVersions(String organizationName, String taskId) {
+        LambdaRecord lambdaRecord = lambdaStore.get(organizationName, taskId)
+                .orElseThrow(() -> new NotFoundException("Task does not exist: " + taskId));
+
         String functionName = getFunctionName(organizationName, taskId);
 
         // Find active version via alias
@@ -501,14 +629,14 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .orElseThrow(() -> new NotFoundException("Task does not exist: " + taskId));
 
         // Fetch all versions
-        ImmutableSet<DeployedVersion> versions = lambdaClient.listVersionsByFunctionPaginator(ListVersionsByFunctionRequest.builder()
+        ImmutableSet<LambdaVersion> versions = lambdaClient.listVersionsByFunctionPaginator(ListVersionsByFunctionRequest.builder()
                         .functionName(functionName)
                         .build())
                 .stream()
                 .map(ListVersionsByFunctionResponse::versions)
                 .flatMap(Collection::stream)
                 .filter(f -> !"$LATEST".equals(f.version()))
-                .map(functionConfiguration -> new DeployedVersion(
+                .map(functionConfiguration -> new LambdaVersion(
                         functionConfiguration.version(),
                         functionConfiguration.description()))
                 .collect(ImmutableSet.toImmutableSet());
@@ -516,7 +644,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         // Clean up old versions
         String activeVersionToKeep = activeStatus.getFunction().version();
         ImmutableSet<String> taskVersionsToDelete = versions.stream()
-                .map(DeployedVersion::getVersion)
+                .map(LambdaVersion::getVersion)
                 .filter(not(activeVersionToKeep::equals))
                 .map(Longs::tryParse)
                 .filter(Objects::nonNull)
@@ -538,12 +666,21 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                         // Don't include the versions we just cleaned up
                         .filter(version -> !taskVersionsToDelete.contains(version.getVersion()))
                         .collect(ImmutableMap.toImmutableMap(
-                                DeployedVersion::getVersion,
-                                version -> version)));
+                                LambdaVersion::getVersion,
+                                version -> version)),
+                lambdaRecord.getEndpointUrlOpt());
     }
 
     @Override
     public Optional<Status> status(String organizationName, String taskId) {
+        return lambdaStore.get(organizationName, taskId)
+                .flatMap(this::status);
+    }
+
+    private Optional<Status> status(LambdaRecord lambdaRecord) {
+        String organizationName = lambdaRecord.getOrganizationName();
+        String taskId = lambdaRecord.getTaskId();
+
         Optional<String> activeVersionOpt = fetchActiveVersion(organizationName, taskId);
         if (activeVersionOpt.isEmpty()) {
             log.debug("Task {} has no active version", taskId);
@@ -562,7 +699,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             return Optional.empty();
         }
 
-        ImmutableSet<String> queueNames = readQueueNamesFromFunctionPermissions(organizationName, taskId, activeVersionOpt.get());
+        ImmutableSet<String> queueNames = lambdaRecord.getInputQueueNames();
         final State state;
         if (queueNames.isEmpty()) {
             state = State.PAUSED;
@@ -585,27 +722,24 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     functionName, activeVersionOpt.get(), state, queueNamesToState);
         }
 
-        return Optional.of(new Status(taskId, function, state));
+        return Optional.of(new Status(
+                taskId,
+                function,
+                state,
+                lambdaRecord.getEndpointUrlOpt()));
     }
 
     @Override
     public WithCursor<ImmutableList<Status>> statusAll(String organizationName, String cursor) {
-        // TODO this doesn't scale well, need to start storing a list of tasks in a database
-        // TODO implement cursor
-        return new WithCursor<>(lambdaClient.listFunctionsPaginator(ListFunctionsRequest.builder()
-                        .build()).stream()
-                .map(ListFunctionsResponse::functions)
-                .flatMap(Collection::stream)
-                .map(FunctionConfiguration::functionName)
-                .map(functionName -> getTaskIdFromFunctionName(organizationName, functionName))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .distinct()
-                .map(taskId -> status(organizationName, taskId))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(ImmutableList.toImmutableList()),
-                Optional.empty());
+        ShardPageResult<LambdaRecord> page = lambdaStore.getForOrganization(organizationName, false, Optional.ofNullable(Strings.emptyToNull(cursor)));
+        return new WithCursor<>(
+                page.getItems()
+                        .stream()
+                        .map(this::status)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .collect(ImmutableList.toImmutableList()),
+                page.getCursorOpt());
     }
 
     @Override
@@ -638,6 +772,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .functionName(getFunctionName(organizationName, taskId))
                 .build());
         apiAccessStore.revokeApiKeysForTaskId(organizationName, taskId);
+        lambdaStore.markDeleted(organizationName, taskId);
     }
 
     @Override
@@ -668,16 +803,16 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         return "arn:aws:lambda:" + awsRegion + ":" + awsAccountId + ":function:" + functionName + ":" + qualifier;
     }
 
-    private String getFunctionName(String customerId, String taskId) {
-        return getFunctionPrefix(customerId) + taskId;
+    private String getFunctionName(String organizationName, String taskId) {
+        return getFunctionPrefix(organizationName) + taskId;
     }
 
-    private String getFunctionRoleName(String customerId, String taskId) {
-        return getFunctionName(customerId, taskId) + "-role";
+    private String getFunctionRoleName(String organizationName, String taskId) {
+        return getFunctionName(organizationName, taskId) + "-role";
     }
 
-    private String getFunctionPrefix(String customerId) {
-        return CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + customerId + "-";
+    private String getFunctionPrefix(String organizationName) {
+        return CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + organizationName + "-";
     }
 
     private Optional<String> getTaskIdFromFunctionName(String customerId, String functionName) {
@@ -687,8 +822,11 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 : Optional.empty();
     }
 
-    private String generateVersionDescription(String taskId, ImmutableSet<String> inputQueueNames) {
-        return "Task " + taskId + " with inputs [" + inputQueueNames.stream().collect(Collectors.joining(", ")) + "] deployed on " + Instant.now();
+    private String generateVersionDescription(String taskId, ImmutableSet<String> inputQueueNames, ImmutableSet<String> outputQueueNames) {
+        return "Task " + taskId
+               + " inputs [" + String.join(", ", inputQueueNames) + "]"
+               + " outputs [" + String.join(", ", outputQueueNames) + "]"
+               + " deployed on " + Instant.now();
     }
 
     private String getCodeKeyPrefix(String customerId) {
@@ -759,11 +897,11 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         }
     }
 
-    private Optional<String> fetchActiveVersion(String customerId, String taskId) {
+    private Optional<String> fetchActiveVersion(String organizationName, String taskId) {
         // Find active version via alias
         try {
             return Optional.of(lambdaClient.getAlias(GetAliasRequest.builder()
-                            .functionName(getFunctionName(customerId, taskId))
+                            .functionName(getFunctionName(organizationName, taskId))
                             .name(LAMBDA_ACTIVE_QUALIFIER)
                             .build())
                     .functionVersion());
@@ -789,6 +927,10 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         }
     }
 
+    /**
+     * Read queue names from permissions, given version. For a list of names for active version, use
+     * {@link LambdaStore#get} instead.
+     */
     private ImmutableSet<String> readQueueNamesFromFunctionPermissions(String customerId, String taskId, String version) {
         String functionName = getFunctionName(customerId, taskId);
         String policyStr = lambdaClient.getPolicy(GetPolicyRequest.builder()

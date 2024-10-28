@@ -28,6 +28,8 @@ import io.dataspray.client.DataSprayClient;
 import io.dataspray.common.test.aws.AbstractLambdaTest;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.stream.control.client.model.DeployRequest;
+import io.dataspray.stream.control.client.model.DeployRequestEndpoint;
+import io.dataspray.stream.control.client.model.DeployRequestEndpointCors;
 import io.dataspray.stream.control.client.model.TaskStatus;
 import io.dataspray.stream.control.client.model.TaskStatuses;
 import io.dataspray.stream.control.client.model.TaskVersion;
@@ -94,6 +96,13 @@ public abstract class ControlBase extends AbstractLambdaTest {
                         .handler("io.dataspray.Runner")
                         .inputQueueNames(List.of("queue1"))
                         .runtime(DeployRequest.RuntimeEnum.JAVA21)
+                        .endpoint(new DeployRequestEndpoint()
+                                .isPublic(true)
+                                .cors(new DeployRequestEndpointCors()
+                                        .allowOrigins(List.of("*"))
+                                        .allowMethods(List.of("GET", "POST"))
+                                        .allowHeaders(List.of("Content-Type"))
+                                        .maxAge(3600L)))
                         .switchToNow(false))
                 .build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())

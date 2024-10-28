@@ -22,9 +22,9 @@
 
 package io.dataspray.runner.dto.web;
 
-import lombok.Data;
+import lombok.Value;
 
-@Data
+@Value
 public class HttpDetailsImpl implements HttpDetails {
 
     String method;
