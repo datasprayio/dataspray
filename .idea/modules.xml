@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-api/dataspray-api.iml" filepath="$PROJECT_DIR$/dataspray-api-parent/dataspray-api/dataspray-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/dataspray-authorizer/dataspray-authorizer.iml" filepath="$PROJECT_DIR$/dataspray-authorizer/dataspray-authorizer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-client-java/dataspray-client.iml" filepath="$PROJECT_DIR$/dataspray-api-parent/dataspray-client-java/dataspray-client.iml" />
       <module fileurl="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-client-typescript/dataspray-client-typescript.iml" filepath="$PROJECT_DIR$/dataspray-api-parent/dataspray-client-typescript/dataspray-client-typescript.iml" />
       <module fileurl="file://$PROJECT_DIR$/dataspray-core/dataspray-core.iml" filepath="$PROJECT_DIR$/dataspray-core/dataspray-core.iml" />
       <module fileurl="file://$PROJECT_DIR$/dataspray-package/dataspray-package.iml" filepath="$PROJECT_DIR$/dataspray-package/dataspray-package.iml" />

@@ -46,9 +46,6 @@ import software.amazon.awssdk.services.apigateway.model.CreateApiKeyResponse;
 import software.amazon.awssdk.services.apigateway.model.CreateUsagePlanKeyRequest;
 import software.amazon.awssdk.services.apigateway.model.CreateUsagePlanKeyResponse;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 
 import java.time.Duration;
@@ -201,12 +198,10 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         }
 
         // Fetch from DB
-        Optional<ApiAccess> apiAccessOpt = Optional.ofNullable(apiAccessSchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
-                        .tableName(apiAccessSchema.tableName())
-                        .key(apiAccessSchema.primaryKey(Map.of(
-                                "apiKey", apiKey)))
-                        .consistentRead(!useCache)
-                        .build()).item()))
+        Optional<ApiAccess> apiAccessOpt = apiAccessSchema.get()
+                .key(Map.of("apiKey", apiKey))
+                .builder(b -> b.consistentRead(!useCache))
+                .execute(dynamo)
                 .filter(ApiAccess::isTtlNotExpired);
 
         // Update cache
@@ -217,11 +212,9 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
 
     @Override
     public void revokeApiKey(String apiKey) {
-        dynamo.deleteItem(DeleteItemRequest.builder()
-                .tableName(apiAccessSchema.tableName())
-                .key(apiAccessSchema.primaryKey(Map.of(
-                        "apiKey", apiKey)))
-                .build());
+        apiAccessSchema.delete()
+                .key(Map.of("apiKey", apiKey))
+                .execute(dynamo);
     }
 
     @Override
@@ -287,11 +280,9 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         // We have fallen through, this means we are fetching an organization key
 
         // Lookup mapping from dynamo
-        Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeyByApiKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
-                .tableName(usageKeyByApiKeySchema.tableName())
-                .key(usageKeyByApiKeySchema.primaryKey(Map.of(
-                        "usageKeyApiKey", apiKey)))
-                .build()).item()));
+        Optional<UsageKey> usageKeyOpt = usageKeyByApiKeySchema.get()
+                .key(Map.of("usageKeyApiKey", apiKey))
+                .execute(dynamo);
 
         // Return existing key if exists
         if (usageKeyOpt.isPresent()) {
@@ -310,10 +301,9 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
 
         // Store mapping in dynamo
         UsageKey usageKey = new UsageKey(apiKey, createApiKeyResponse.id());
-        dynamo.putItem(PutItemRequest.builder()
-                .tableName(usageKeyByApiKeySchema.tableName())
-                .item(usageKeyByApiKeySchema.toAttrMap(usageKey))
-                .build());
+        usageKeyByApiKeySchema.put()
+                .item(usageKey)
+                .execute(dynamo);
 
         return usageKey.getUsageKeyApiKey();
     }

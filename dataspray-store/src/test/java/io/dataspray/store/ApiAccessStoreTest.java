@@ -42,8 +42,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.apigateway.ApiGatewayClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 import java.time.Instant;
 import java.util.Map;
@@ -268,10 +266,9 @@ public class ApiAccessStoreTest extends AbstractTest {
         TableSchema<ApiAccess> apiAccessSchema = singleTable.parseTableSchema(ApiAccess.class);
 
         // Insert into dynamo
-        dynamo.putItem(PutItemRequest.builder()
-                .tableName(apiAccessSchema.tableName())
-                .item(apiAccessSchema.toAttrMap(apiAccess))
-                .build());
+        apiAccessSchema.put()
+                .item(apiAccess)
+                .execute(dynamo);
 
         return apiAccess;
     }
@@ -283,11 +280,9 @@ public class ApiAccessStoreTest extends AbstractTest {
                 Optional.of(apiAccess.getOwnerUsername()),
                 ImmutableSet.of(apiAccess.getOrganizationName()));
         TableSchema<UsageKey> usageKeySchema = singleTable.parseTableSchema(UsageKey.class);
-        Optional<UsageKey> usageKeyOpt = Optional.ofNullable(usageKeySchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
-                .tableName(usageKeySchema.tableName())
-                .key(usageKeySchema.primaryKey(Map.of(
-                        "usageKeyApiKey", usageKeyApiKey)))
-                .build()).item()));
+        Optional<UsageKey> usageKeyOpt = usageKeySchema.get()
+                .key(Map.of("usageKeyApiKey", usageKeyApiKey))
+                .execute(dynamo);
         return usageKeyOpt.isPresent();
     }
 }

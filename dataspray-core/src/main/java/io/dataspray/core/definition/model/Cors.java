@@ -47,5 +47,8 @@ public class Cors {
     Set<String> exposeHeaders = Set.of();
 
     @Builder.Default
+    Boolean allowCredentials = true;
+
+    @Builder.Default
     long maxAge = 3600;
 }

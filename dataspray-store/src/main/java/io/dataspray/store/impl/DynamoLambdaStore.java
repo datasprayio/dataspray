@@ -41,8 +41,6 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
-import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -101,24 +99,20 @@ public class DynamoLambdaStore implements LambdaStore {
                 endpointUrlOpt.orElse(null),
                 false,
                 null);
-        dynamo.putItem(PutItemRequest.builder()
-                .tableName(lambdaRecordSchema.tableName())
-                .item(lambdaRecordSchema.toAttrMap(lamdbaRecord))
-                .build());
+        lambdaRecordSchema.put()
+                .item(lamdbaRecord)
+                .execute(dynamo);
         return lamdbaRecord;
     }
 
     @Override
     public Optional<LambdaRecord> get(String organizationName, String taskId) {
-        return Optional.ofNullable(dynamo.getItem(GetItemRequest.builder()
-                                .tableName(lambdaRecordSchema.tableName())
-                                .key(lambdaRecordSchema.primaryKey(Map.of(
-                                        "organizationName", organizationName,
-                                        "taskId", taskId)))
-                                .consistentRead(true)
-                                .build())
-                        .item())
-                .map(lambdaRecordSchema::fromAttrMap);
+        return lambdaRecordSchema.get()
+                .key(Map.of(
+                        "organizationName", organizationName,
+                        "taskId", taskId))
+                .builder(b -> b.consistentRead(true))
+                .execute(dynamo);
     }
 
     @Override
@@ -190,12 +184,11 @@ public class DynamoLambdaStore implements LambdaStore {
     }
 
     private void releaseLock(String organizationName, String taskId, String reservationId) {
-        dynamo.deleteItem(lambdaMutexSchema.delete()
+        lambdaMutexSchema.delete()
                 .conditionFieldEquals("reservationId", reservationId)
-                .builder()
-                .key(lambdaMutexSchema.primaryKey(Map.of(
+                .key(Map.of(
                         "organizationName", organizationName,
-                        "taskId", taskId)))
-                .build());
+                        "taskId", taskId))
+                .execute(dynamo);
     }
 }

@@ -32,7 +32,6 @@ import io.dataspray.store.TargetStore;
 import io.quarkus.runtime.Startup;
 import jakarta.inject.Inject;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
 
 import java.time.Duration;
@@ -76,20 +75,15 @@ public class DynamoTargetStore implements TargetStore {
         }
 
         // Fetch from DB
-        Targets targets = targetsSchema.fromAttrMap(dynamo.getItem(GetItemRequest.builder()
-                        .tableName(targetsSchema.tableName())
-                        .key(targetsSchema.primaryKey(Map.of(
-                                "organizationName", organizationName)))
-                        .consistentRead(!useCache)
-                        .build())
-                .item());
-        // Construct default if not found
-        if (targets == null) {
-            targets = Targets.builder()
-                    .organizationName(organizationName)
-                    .version(INITIAL_VERSION)
-                    .build();
-        }
+        Targets targets = targetsSchema.get()
+                .key(Map.of("organizationName", organizationName))
+                .builder(b -> b.consistentRead(!useCache))
+                .execute(dynamo)
+                // Construct default if not found
+                .orElseGet(() -> Targets.builder()
+                        .organizationName(organizationName)
+                        .version(INITIAL_VERSION)
+                        .build());
 
         // Update cache
         targetsByOrganizationNameCache.put(organizationName, targets);
@@ -110,15 +104,14 @@ public class DynamoTargetStore implements TargetStore {
                 .version(targets.getVersion() + 1)
                 .build();
 
-        // To prevent concurrent modification, we check that the database entry matches our
-        // expected version using dynamo conditions
+        // Make the update
+        // Prevent concurrent modifications by ensuring expected version
         PutBuilder<Targets> putBuilder = targetsSchema.put();
         if (targets.getVersion() == INITIAL_VERSION) {
-            putBuilder.conditionNotExists().build();
+            putBuilder.conditionNotExists();
         } else {
-            putBuilder.conditionFieldEquals("version", targets.getVersion()).build();
+            putBuilder.conditionFieldEquals("version", targets.getVersion());
         }
-        // Make the update
         PutItemResponse execute = putBuilder.item(targetsVersionBumped)
                 .execute(dynamo);
 

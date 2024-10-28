@@ -31,6 +31,8 @@ import io.dataspray.core.definition.model.StreamLink;
 import io.dataspray.core.definition.model.TypescriptProcessor;
 import io.dataspray.stream.control.client.model.DeployRequest;
 import io.dataspray.stream.control.client.model.DeployRequest.RuntimeEnum;
+import io.dataspray.stream.control.client.model.DeployRequestEndpoint;
+import io.dataspray.stream.control.client.model.DeployRequestEndpointCors;
 import io.dataspray.stream.control.client.model.TaskStatus;
 import io.dataspray.stream.control.client.model.TaskVersion;
 import io.dataspray.stream.control.client.model.TaskVersions;
@@ -167,6 +169,18 @@ public class StreamRuntimeImpl implements StreamRuntime {
                                 .map(StreamLink::getStreamName)
                                 .collect(Collectors.toList()))
                         .codeUrl(codeUrl)
+                        .endpoint(processor.getEndpoint()
+                                .map(endpoint -> new DeployRequestEndpoint()
+                                        .isPublic(endpoint.getIsPublic())
+                                        .cors(endpoint.getCors()
+                                                .map(cors -> new DeployRequestEndpointCors()
+                                                        .allowOrigins(cors.getAllowOrigins().stream().toList())
+                                                        .allowMethods(cors.getAllowMethods().stream().toList())
+                                                        .allowHeaders(cors.getAllowHeaders().stream().toList())
+                                                        .maxAge(cors.getMaxAge())
+                                                        .allowCredentials(cors.getAllowCredentials()))
+                                                .orElse(null)))
+                                .orElse(null))
                         .switchToNow(activateVersion));
 
         if (activateVersion) {
