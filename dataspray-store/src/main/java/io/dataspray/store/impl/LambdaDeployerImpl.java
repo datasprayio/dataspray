@@ -124,6 +124,8 @@ import static java.util.function.Predicate.not;
 @Slf4j
 @ApplicationScoped
 public class LambdaDeployerImpl implements LambdaDeployer {
+    /** Arm is cheaper and also supports Snap-start now */
+    public static final Architecture LAMBDA_ARCHITECTURE = Architecture.ARM64;
     public static final int LAMBDA_DEFAULT_TIMEOUT = 128;
     public static final int LAMBDA_DEFAULT_MEMORY_IN_MB = 900;
     /** Lambda version alias pointing to the active version in use */
@@ -295,12 +297,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             case JAVA11, JAVA17, JAVA21 -> SnapStartApplyOn.PUBLISHED_VERSIONS;
             default -> SnapStartApplyOn.NONE;
         };
-        final Architecture architecture = snapStartApplyOn == SnapStartApplyOn.PUBLISHED_VERSIONS
-                // Snap start only works with x86_64
-                // https://docs.aws.amazon.com/lambda/latest/dg/snapstart.html#snapstart-runtimes
-                ? Architecture.X86_64
-                // Otherwise use ARM as it's cheaper
-                : Architecture.ARM64;
 
         // Generate an API key for task
         // This key does not yet have any access, that will be persisted later once we know the published task version.
@@ -331,7 +327,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .description(publishedDescription)
                             .role(functionRoleArn)
                             .packageType(PackageType.ZIP)
-                            .architectures(architecture)
+                            .architectures(LAMBDA_ARCHITECTURE)
                             .code(FunctionCode.builder()
                                     .s3Bucket(codeBucketName)
                                     .s3Key(getCodeKeyFromUrl(organizationName, codeUrl))
@@ -380,7 +376,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             publishedVersion = lambdaClient.updateFunctionCode(UpdateFunctionCodeRequest.builder()
                             .publish(true)
                             .functionName(functionName)
-                            .architectures(architecture)
+                            .architectures(LAMBDA_ARCHITECTURE)
                             .s3Bucket(codeBucketName)
                             .s3Key(getCodeKeyFromUrl(organizationName, codeUrl))
                             // updateFunctionConfiguration returns invalid revisionId
