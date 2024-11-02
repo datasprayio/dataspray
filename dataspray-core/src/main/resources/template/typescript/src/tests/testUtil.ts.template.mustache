@@ -58,7 +58,7 @@ export const mockCoordinator: () => Coordinator = () => ({
 });
 {{#processor.inputStreams}}
 
-export const mockMessage{{{uniqueNameCamelUpper}}}: (key: string, data: {{{this.dataFormat.nameCamelUpper}}}) => Message<{{{this.dataFormat.nameCamelUpper}}}> = data => new Message({
+export const mockMessage{{{uniqueNameCamelUpper}}} = (key: string, data: {{{this.dataFormat.nameCamelUpper}}}) => new Message({
         storeType: StoreType.{{{storeType}}},
         storeName: '{{{storeName}}}',
         streamName: '{{{streamName}}}',

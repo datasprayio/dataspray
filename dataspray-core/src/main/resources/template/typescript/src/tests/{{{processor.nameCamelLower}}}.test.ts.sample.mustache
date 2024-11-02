@@ -44,7 +44,7 @@ describe('SQS message processors', () => {
     {{#processor.inputStreams}}
 
     it('Process {{{uniqueNameCamelUpper}}}', async () => {
-        await processor.process{{{uniqueNameCamelUpper}}}(
+        processor.process{{{uniqueNameCamelUpper}}}(
             mockMessage{{{uniqueNameCamelUpper}}}('key', {{>../stream-test-data}}),
             coordinator,
         );
