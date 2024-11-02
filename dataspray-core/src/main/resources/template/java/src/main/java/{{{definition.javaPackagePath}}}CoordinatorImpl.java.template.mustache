@@ -18,14 +18,43 @@ import java.io.ByteArrayOutputStream;
 public class CoordinatorImpl implements Coordinator {
 
     private final RawCoordinator rawCoordinator;
+    {{#processor.state.isPresent}}
+    private final String messageKey;
+    {{/processor.state.isPresent}}
 
-    public CoordinatorImpl(RawCoordinator rawCoordinator) {
+    public CoordinatorImpl(
+        RawCoordinator rawCoordinator{{#processor.state.isPresent}},
+        String messageKey{{/processor.state.isPresent}}
+    ) {
         this.rawCoordinator = rawCoordinator;
+        {{#processor.state.isPresent}}
+        this.messageKey = messageKey;
+        {{/processor.state.isPresent}}
     }
+    {{#processor.state.isPresent}}
+    {{#isDynamo}}
+
+    @Override
+    StateManager stateForMessageKey(Optional<Duration> ttl) {
+        return stateForGlobalNamespace(ttl, "{{{processor.taskId}}}", messageKey);
+    }
+
+    @Override
+    StateManager stateForProcessor(Optional<Duration> ttl) {
+        return stateForGlobalNamespace(ttl, "{{{processor.taskId}}}");
+    }
+
+    @Override
+    StateManager stateForNamespace(Optional<Duration> ttl, String... namespace) {
+        return rawCoordinator.getStateManager(namespace, ttl);
+    }
+    {{/isDynamo}}
+    {{/processor.state.isPresent}}
     {{#processor.outputStreams}}
 
+    @Override
     @SneakyThrows
-    public void sendTo{{{uniqueNameCamelUpper}}}({{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
+    public void sendTo{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}, String messageId) {
         {{#dataFormat.isSerdeAvro}}
         byte[] {{{dataFormat.nameCamelLower}}}Bytes;
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
@@ -35,6 +64,7 @@ public class CoordinatorImpl implements Coordinator {
 
         {{/dataFormat.isSerdeAvro}}
         rawCoordinator.send(
+            messageKey,
             {{#dataFormat.isSerdeBinary}}
             {{{dataFormat.nameCamelLower}}},
             {{/dataFormat.isSerdeBinary}}
@@ -52,7 +82,8 @@ public class CoordinatorImpl implements Coordinator {
             {{/dataFormat.isSerdeAvro}}
             StoreType.{{{storeType.name}}},
             "{{{storeName}}}",
-            "{{{streamName}}}");
+            "{{{streamName}}}",
+            messageId);
     }
     {{/processor.outputStreams}}
 }

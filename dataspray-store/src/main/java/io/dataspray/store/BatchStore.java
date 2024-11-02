@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,18 +22,18 @@
 
 package io.dataspray.store;
 
-import io.dataspray.store.TargetStore.BatchRetention;
+import io.dataspray.store.TopicStore.BatchRetention;
 import software.amazon.awssdk.services.glue.model.DataFormat;
 
 public interface BatchStore {
 
     void putRecord(String customerId,
-                   String targetId,
+                   String topicName,
                    byte[] jsonBytes,
                    BatchRetention retention);
 
     void setTableDefinition(String customerId,
-                            String targetId,
+                            String topicName,
                             DataFormat dataFormat,
                             String schemaDefinition,
                             BatchRetention retention);

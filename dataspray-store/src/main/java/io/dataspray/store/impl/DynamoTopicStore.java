@@ -28,7 +28,7 @@ import com.google.common.cache.CacheBuilder;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import io.dataspray.singletable.builder.PutBuilder;
-import io.dataspray.store.TargetStore;
+import io.dataspray.store.TopicStore;
 import io.quarkus.runtime.Startup;
 import jakarta.inject.Inject;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -38,7 +38,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
-public class DynamoTargetStore implements TargetStore {
+public class DynamoTopicStore implements TopicStore {
 
     public static final int INITIAL_VERSION = 0;
 
@@ -64,7 +64,7 @@ public class DynamoTargetStore implements TargetStore {
     }
 
     @Override
-    public Targets getTargets(String organizationName, boolean useCache) {
+    public Targets getTopics(String organizationName, boolean useCache) {
 
         // Check cache first
         if (useCache) {
@@ -92,8 +92,8 @@ public class DynamoTargetStore implements TargetStore {
     }
 
     @Override
-    public Optional<Target> getTarget(String organizationName, String targetName, boolean useCache) {
-        return getTargets(organizationName, useCache).getTarget(targetName);
+    public Optional<Target> getTopic(String organizationName, String targetName, boolean useCache) {
+        return getTopics(organizationName, useCache).getTopic(targetName);
     }
 
     @Override

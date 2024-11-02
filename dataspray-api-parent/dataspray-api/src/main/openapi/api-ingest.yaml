@@ -19,5 +19,5 @@ security:
 paths:
   /v1/health:
     $ref: 'paths-health.yaml#/~1v1~1health'
-  /v1/organization/{organizationName}/target/{targetId}/message:
-    $ref: 'paths-ingest.yaml#/~1v1~1organization~1{organizationName}~1target~1{targetId}~1message'
+  /v1/organization/{organizationName}/topic/{topicName}/message:
+    $ref: 'paths-ingest.yaml#/~1v1~1organization~1{organizationName}~1topic~1{topicName}~1message'

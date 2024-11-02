@@ -25,9 +25,9 @@ package io.dataspray.stream.ingest;
 import io.dataspray.store.BatchStore;
 import io.dataspray.store.CustomerLogger;
 import io.dataspray.store.StreamStore;
-import io.dataspray.store.TargetStore;
-import io.dataspray.store.TargetStore.Stream;
-import io.dataspray.store.TargetStore.Target;
+import io.dataspray.store.TopicStore;
+import io.dataspray.store.TopicStore.Stream;
+import io.dataspray.store.TopicStore.Target;
 import io.dataspray.web.resource.AbstractResource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -51,7 +51,7 @@ public class IngestResource extends AbstractResource implements IngestApi {
     public static final int MESSAGE_MAX_BYTES = 256 * 1024;
 
     @Inject
-    TargetStore targetStore;
+    TopicStore topicStore;
     @Inject
     StreamStore streamStore;
     @Inject
@@ -66,23 +66,23 @@ public class IngestResource extends AbstractResource implements IngestApi {
      */
     @Override
     @SneakyThrows
-    public void message(String organizationName, String targetName, InputStream messageInputStream) {
+    public void message(String organizationName, String topicName, String messageKey, String messageId, InputStream messageInputStream) {
 
         // Sanity check to see if we are authorized
         getUsername().orElseThrow(ForbiddenException::new);
 
         // Fetch target definition
-        Target target = targetStore.getTarget(organizationName, targetName, true)
+        Target target = topicStore.getTopic(organizationName, topicName, true)
                 // If target is not found and default targets are disabled, throw not found
                 .orElseThrow(() -> {
-                    customerLog.warn("Dropping message for undefined stream " + targetName, organizationName);
+                    customerLog.warn("Dropping message for undefined stream " + topicName, organizationName);
                     return new ClientErrorException(Response.Status.NOT_FOUND);
                 });
 
         // Read message
         byte[] messageBytes = messageInputStream.readNBytes(MESSAGE_MAX_BYTES);
         if (messageInputStream.readNBytes(1).length > 0) {
-            customerLog.warn("Dropping message for stream " + targetName + " that is too large (max " + MESSAGE_MAX_BYTES + " bytes)", organizationName);
+            customerLog.warn("Dropping message for stream " + topicName + " that is too large (max " + MESSAGE_MAX_BYTES + " bytes)", organizationName);
             throw new ClientErrorException(Response.Status.REQUEST_ENTITY_TOO_LARGE);
         }
         messageInputStream.close();
@@ -90,22 +90,22 @@ public class IngestResource extends AbstractResource implements IngestApi {
         // Detect media type, needed for both stream and batch processing
         MediaType mediaType = Optional.ofNullable(headers.getMediaType())
                 .orElseGet(() -> {
-                    customerLog.warn("Message for stream " + targetName + " missing media type", organizationName);
+                    customerLog.warn("Message for stream " + topicName + " missing media type", organizationName);
                     return MediaType.APPLICATION_OCTET_STREAM_TYPE;
                 });
 
         // Submit message to all streams for stream processing
         for (Stream stream : target.getStreams()) {
-            streamStore.submit(organizationName, targetName, messageBytes, mediaType);
+            streamStore.submit(organizationName, topicName, messageKey, messageId, messageBytes, mediaType);
         }
 
         // Submit message for batch processing
         if (target.getBatch().isPresent()) {
             // Only JSON supported for now
             if (APPLICATION_JSON_TYPE.equals(mediaType)) {
-                batchStore.putRecord(organizationName, targetName, messageBytes, target.getBatch().get().getRetention());
+                batchStore.putRecord(organizationName, topicName, messageBytes, target.getBatch().get().getRetention());
             } else {
-                customerLog.warn("Message for stream " + targetName + " requires " + APPLICATION_JSON + ", skipping ETL", organizationName);
+                customerLog.warn("Message for stream " + topicName + " requires " + APPLICATION_JSON + ", skipping ETL", organizationName);
             }
         }
     }

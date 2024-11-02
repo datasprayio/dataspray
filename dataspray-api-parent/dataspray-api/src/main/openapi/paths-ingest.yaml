@@ -5,7 +5,7 @@ components:
     Message:
       type: object
 
-/v1/organization/{organizationName}/target/{targetId}/message:
+/v1/organization/{organizationName}/topic/{topicName}/message:
   post:
     operationId: message
     tags: [ Ingest ]
@@ -15,9 +15,21 @@ components:
         required: true
         schema:
           type: string
-      - name: targetId
+      - name: topicName
         in: path
         required: true
+        schema:
+          type: string
+      - name: messageKey
+        description: A key used for determining the target for stream partitioning, maintaining order, and managing state.
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: messageId
+        description: Unique message identifier used for deduplication
+        in: query
+        required: false
         schema:
           type: string
     requestBody:

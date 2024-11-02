@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,12 @@ import java.util.Optional;
 
 public interface StreamStore {
 
-    void submit(String organizationName, String streamName, byte[] messageBytes, MediaType contentType);
+    void submit(String organizationName,
+                String streamName,
+                String messageKey,
+                String messageId,
+                byte[] messageBytes,
+                MediaType contentType);
 
     /** Check whether queue exists */
     boolean streamExists(String organizationName, String streamName);

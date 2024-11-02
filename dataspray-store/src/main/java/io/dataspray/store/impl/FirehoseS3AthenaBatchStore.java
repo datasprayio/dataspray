@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dataspray.store.BatchStore;
 import io.dataspray.store.CustomerLogger;
-import io.dataspray.store.TargetStore.BatchRetention;
+import io.dataspray.store.TopicStore.BatchRetention;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
@@ -79,7 +79,7 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     public static final String GLUE_SCHEMA_FOR_QUEUE_PREFIX = "queue-";
     public static final String ETL_PARTITION_KEY_RETENTION = "_ds_retention";
     public static final String ETL_PARTITION_KEY_ORGANIZATION = "_ds_organization";
-    public static final String ETL_PARTITION_KEY_TARGET = "_ds_target";
+    public static final String ETL_PARTITION_KEY_TOPIC = "_ds_topic";
     public static final String ETL_BUCKET_RETENTION_PREFIX_PREFIX = "retention=";
     public static final String ETL_BUCKET_RETENTION_PREFIX = ETL_BUCKET_RETENTION_PREFIX_PREFIX + "!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}";
     public static final String ETL_BUCKET_ERROR_PREFIX = ETL_BUCKET_RETENTION_PREFIX_PREFIX + BatchRetention.DAY.name() +
@@ -92,16 +92,16 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
                                                          "/";
     public static final String ETL_BUCKET_PREFIX = ETL_BUCKET_RETENTION_PREFIX +
                                                    "/organization=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}" +
-                                                   "/target=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TARGET + "}" +
+                                                   "/topic=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TOPIC + "}" +
                                                    "/year=!{timestamp:yyyy}" +
                                                    "/month=!{timestamp:MM}" +
                                                    "/day=!{timestamp:dd}" +
                                                    "/hour=!{timestamp:HH}" +
                                                    "/";
-    public static final TriFunction<BatchRetention, String, String, String> ETL_BUCKET_TARGET_PREFIX = (etlBatchRetention, customerId, targetId) -> ETL_BUCKET_PREFIX
+    public static final TriFunction<BatchRetention, String, String, String> ETL_BUCKET_TARGET_PREFIX = (etlBatchRetention, customerId, topicName) -> ETL_BUCKET_PREFIX
             .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}", etlBatchRetention.name())
             .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}", customerId)
-            .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TARGET + "}", targetId);
+            .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TOPIC + "}", topicName);
 
     @ConfigProperty(name = "aws.accountId")
     String awsAccountId;
@@ -122,7 +122,7 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     private final ObjectMapper jsonSerde = new ObjectMapper();
 
     @Override
-    public void putRecord(String customerId, String targetId, byte[] jsonBytes, BatchRetention retention) {
+    public void putRecord(String customerId, String topicName, byte[] jsonBytes, BatchRetention retention) {
         // Parse customer message as JSON
         // TODO Optimization: parse only beginning, look for '{', inject metadata, and copy the rest; fallback to this if parsing fails
         final Map<String, Object> json;
@@ -130,19 +130,19 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
             json = jsonSerde.readValue(jsonBytes, new TypeReference<Map<String, Object>>() {
             });
         } catch (IOException ex) {
-            customerLog.warn("Failed to parse message as JSON Object for target " + targetId + ", skipping ETL", customerId);
+            customerLog.warn("Failed to parse message as JSON Object for topic " + topicName + ", skipping ETL", customerId);
             return;
         }
 
         // Add metadata for Firehose dynamic partitioning
         json.put(ETL_PARTITION_KEY_RETENTION, retention.name());
         json.put(ETL_PARTITION_KEY_ORGANIZATION, customerId);
-        json.put(ETL_PARTITION_KEY_TARGET, targetId);
+        json.put(ETL_PARTITION_KEY_TOPIC, topicName);
         final byte[] jsonWithMetadataBytes;
         try {
             jsonWithMetadataBytes = jsonSerde.writeValueAsBytes(json);
         } catch (JsonProcessingException ex) {
-            customerLog.warn("Failed to parse message as JSON for target " + targetId + ", skipping ETL", customerId);
+            customerLog.warn("Failed to parse message as JSON for topic " + topicName + ", skipping ETL", customerId);
             log.warn("Failed to write json with metadata", ex);
             return;
         }
@@ -156,13 +156,13 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     @Override
     public void setTableDefinition(
             String customerId,
-            String targetId,
+            String topicName,
             DataFormat dataFormat,
             String schemaDefinition,
             BatchRetention retention) {
         GetRegistryResponse registry = getOrCreateRegistry(customerId);
 
-        String schemaName = getSchemaNameForQueue(targetId);
+        String schemaName = getSchemaNameForQueue(topicName);
         Optional<GetSchemaResponse> schemaPreviousOpt;
         try {
             schemaPreviousOpt = Optional.of(glueClient.getSchema(GetSchemaRequest.builder()
@@ -186,7 +186,7 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
                     .schemaVersionId();
         } else {
             if (!dataFormat.equals(schemaPreviousOpt.get().dataFormat())) {
-                throw new BadRequestException("Target " + targetId + " format is " + schemaPreviousOpt.get().dataFormat() + ", cannot changge format to " + dataFormat);
+                throw new BadRequestException("Target " + topicName + " format is " + schemaPreviousOpt.get().dataFormat() + ", cannot changge format to " + dataFormat);
             }
             schemaVersionId = glueClient.registerSchemaVersion(RegisterSchemaVersionRequest.builder()
                             .schemaId(SchemaId.builder()
@@ -199,11 +199,11 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
 
         Database database = getOrCreateDatabase(customerId);
 
-        upsertTableAndSchema(customerId, targetId, registry.registryName(), schemaName, schemaVersionId, retention);
+        upsertTableAndSchema(customerId, topicName, registry.registryName(), schemaName, schemaVersionId, retention);
     }
 
-    private String getSchemaNameForQueue(String targetId) {
-        return GLUE_SCHEMA_FOR_QUEUE_PREFIX + targetId;
+    private String getSchemaNameForQueue(String topicName) {
+        return GLUE_SCHEMA_FOR_QUEUE_PREFIX + topicName;
     }
 
     private Database getOrCreateDatabase(String customerId) {
@@ -230,12 +230,12 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
 
     private void upsertTableAndSchema(
             String customerId,
-            String targetId,
+            String topicName,
             String registryName,
             String schemaName,
             String schemaVersionId,
             BatchRetention retention) {
-        String tableName = getTableName(customerId, targetId);
+        String tableName = getTableName(customerId, topicName);
         Optional<Table> tablePreviousOpt;
         try {
             tablePreviousOpt = Optional.of(glueClient.getTable(GetTableRequest.builder()
@@ -257,7 +257,7 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
                                     .location("s3://" + etlBucketName + "/" + ETL_BUCKET_TARGET_PREFIX.apply(
                                             retention,
                                             customerId,
-                                            targetId))
+                                            topicName))
                                     .schemaReference(SchemaReference.builder()
                                             .schemaId(SchemaId.builder()
                                                     .registryName(registryName)
@@ -282,8 +282,8 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
         }
     }
 
-    private String getTableName(String customerId, String targetId) {
-        return GLUE_CUSTOMER_PREFIX + customerId + "-queue-" + targetId;
+    private String getTableName(String customerId, String topicName) {
+        return GLUE_CUSTOMER_PREFIX + customerId + "-queue-" + topicName;
     }
 
     private GetRegistryResponse getOrCreateRegistry(String customerId) {

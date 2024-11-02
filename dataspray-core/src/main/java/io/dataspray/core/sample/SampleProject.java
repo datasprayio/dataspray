@@ -31,6 +31,8 @@ import io.dataspray.core.definition.model.DatasprayStore;
 import io.dataspray.core.definition.model.Definition;
 import io.dataspray.core.definition.model.Endpoint;
 import io.dataspray.core.definition.model.JavaProcessor;
+import io.dataspray.core.definition.model.State;
+import io.dataspray.core.definition.model.State.StateType;
 import io.dataspray.core.definition.model.StoreType;
 import io.dataspray.core.definition.model.StreamLink;
 import io.dataspray.core.definition.model.TypescriptProcessor;
@@ -86,6 +88,10 @@ public enum SampleProject {
                             .endpoint(Optional.of(
                                     Endpoint.builder()
                                             .isPublic(false)
+                                            .build()))
+                            .state(Optional.of(
+                                    State.builder()
+                                            .type(StateType.DYNAMO)
                                             .build()))
                             .build()))
             .datasprayStores(ImmutableSet.of(
@@ -153,6 +159,10 @@ public enum SampleProject {
                                                     .allowMethods(Set.of("GET", "POST"))
                                                     .allowHeaders(Set.of("Authorization"))
                                                     .build()))
+                                            .build()))
+                            .state(Optional.of(
+                                    State.builder()
+                                            .type(StateType.DYNAMO)
                                             .build()))
                             .build()))
             .datasprayStores(ImmutableSet.of(

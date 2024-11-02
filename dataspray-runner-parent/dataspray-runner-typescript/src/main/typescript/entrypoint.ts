@@ -28,20 +28,26 @@ import {
     SQSEvent
 } from 'aws-lambda';
 import {StoreType} from './storeType';
-import {RawCoordinator} from './rawCoordinator';
+import {RawCoordinator, RawCoordinatorImpl} from './rawCoordinator';
 import {MessageMetadata} from "./message";
+import {StateManagerFactoryImpl} from "./stateManagerFactory";
 
 export abstract class Entrypoint {
 
     readonly sqsArnPattern = /customer-(?<customer>[^-]+)-(?<queue>.+)/;
 
     handleRequest: Handler = async (event, context) => {
-        if (!!event['Records']) {
-            return this.handleSqsEvent(event as SQSEvent);
-        } else if (!!event['rawPath']) {
-            return this.handleHttpRequest(event as LambdaFunctionURLEvent);
-        } else {
-            throw new Error(`Unsupported event: ${event}`);
+        try {
+            if (!!event['Records']) {
+                return this.handleSqsEvent(event as SQSEvent);
+            } else if (!!event['rawPath']) {
+                return this.handleHttpRequest(event as LambdaFunctionURLEvent);
+            } else {
+                throw new Error(`Unsupported event: ${event}`);
+            }
+        } finally {
+            StateManagerFactoryImpl.get()
+                    ?.closeAll();
         }
     }
 
@@ -56,14 +62,27 @@ export abstract class Entrypoint {
                 if (!customer || !queue) {
                     throw new Error(`Failed to determine source queue from ARN ${msg.eventSourceARN}`)
                 }
+
+                const messageKey = msg.attributes.MessageGroupId;
+                if (!messageKey) {
+                    throw new Error('SQS message does not have a message group id used as a message key')
+                }
+
+                const messageId = msg.attributes.MessageDeduplicationId;
+                if (!messageId) {
+                    throw new Error('SQS message does not have a message deduplication id used as a message id')
+                }
+
                 await this.processSqsEvent(
                         {
                             storeType: StoreType.DATASPRAY,
                             storeName: customer,
                             streamName: queue,
+                            key: messageKey,
+                            id: messageId,
                         },
                         msg.body,
-                        RawCoordinator.get());
+                        RawCoordinatorImpl.get());
             } catch (error) {
                 sqsBatchResponse.batchItemFailures
                         .push({itemIdentifier: msg.messageId});

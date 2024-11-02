@@ -27,7 +27,7 @@ import com.google.common.collect.ImmutableSet;
 import io.dataspray.cdk.api.ApiFunctionStack;
 import io.dataspray.cdk.store.SingleTableStack;
 import io.dataspray.common.DeployEnvironment;
-import io.dataspray.store.TargetStore;
+import io.dataspray.store.TopicStore;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.Duration;
@@ -105,13 +105,13 @@ public class IngestFunctionStack extends ApiFunctionStack {
                 .autoDeleteObjects(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 // Add different expiry for each retention prefix
-                .lifecycleRules(Arrays.stream(TargetStore.BatchRetention.values()).map(batchRetention -> LifecycleRule.builder()
+                .lifecycleRules(Arrays.stream(TopicStore.BatchRetention.values()).map(batchRetention -> LifecycleRule.builder()
                         .id(batchRetention.name())
                         .expiration(Duration.days(batchRetention.getRetentionInDays()))
                         .prefix(ETL_BUCKET_RETENTION_PREFIX + batchRetention.name())
                         .build()).collect(Collectors.toList()))
                 // Move objects to archive after inactivity to save costs
-                .intelligentTieringConfigurations(Arrays.stream(TargetStore.BatchRetention.values())
+                .intelligentTieringConfigurations(Arrays.stream(TopicStore.BatchRetention.values())
                         // Only makes sense for data stored for more than 4 months (migrated after 3)
                         .filter(batchRetention -> batchRetention.getRetentionInDays() > 120)
                         .map(batchRetention -> IntelligentTieringConfiguration.builder()
@@ -147,7 +147,7 @@ public class IngestFunctionStack extends ApiFunctionStack {
                                         "ParameterValue", "JQ-1.6"),
                                 Map.of("ParameterName", "MetadataExtractionQuery",
                                         "ParameterValue", "{" +
-                                                          Stream.of(ETL_PARTITION_KEY_RETENTION, ETL_PARTITION_KEY_ORGANIZATION, ETL_PARTITION_KEY_TARGET)
+                                                          Stream.of(ETL_PARTITION_KEY_RETENTION, ETL_PARTITION_KEY_ORGANIZATION, ETL_PARTITION_KEY_TOPIC)
                                                                   .map(key -> key + ":." + key)
                                                                   .collect(Collectors.joining(","))
                                                           + "}"))))));

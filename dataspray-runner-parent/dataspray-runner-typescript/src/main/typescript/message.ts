@@ -26,6 +26,8 @@ export interface MessageMetadata {
     storeType: StoreType;
     storeName: string;
     streamName: string;
+    key: string;
+    id: string;
 }
 
 export class Message<T> {

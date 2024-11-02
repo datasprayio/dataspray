@@ -1,6 +1,6 @@
 {
   "name": "dataspray-runner",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Common library for DataSpray tasks",
   "author": {
     "name": "Matus Faro",
@@ -15,6 +15,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.682.0",
     "@types/node": "^20.11.16",
     "dataspray-client": "^0.0.2"
   },

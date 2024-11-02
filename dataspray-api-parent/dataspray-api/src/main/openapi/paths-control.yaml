@@ -157,24 +157,24 @@ components:
           type: string
         endpointUrl:
           type: string
-    Targets:
+    Topics:
       type: object
       required:
         - organizationName
-        - allowUndefinedTargets
-        - targets
+        - allowUndefinedTopics
+        - topics
       properties:
         organizationName:
           type: string
-        allowUndefinedTargets:
+        allowUndefinedTopics:
           type: boolean
-        undefinedTarget:
-          $ref: '#/components/schemas/Target'
-        targets:
+        undefinedTopic:
+          $ref: '#/components/schemas/Topic'
+        topics:
           type: array
           items:
-            $ref: '#/components/schemas/Target'
-    Target:
+            $ref: '#/components/schemas/Topic'
+    Topic:
       type: object
       required:
         - name
@@ -182,18 +182,18 @@ components:
         name:
           type: string
         batch:
-          $ref: '#/components/schemas/TargetBatch'
+          $ref: '#/components/schemas/TopicBatch'
         streams:
           type: array
           items:
-            $ref: '#/components/schemas/TargetStream'
-    TargetBatch:
+            $ref: '#/components/schemas/TopicStream'
+    TopicBatch:
       type: object
       properties:
         retentionInDays:
           type: integer
           format: int64
-    TargetStream:
+    TopicStream:
       type: object
       required:
         - name
@@ -413,9 +413,9 @@ components:
               $ref: '#/components/schemas/TaskStatus'
 
 
-/v1/organization/{organizationName}/targets:
+/v1/organization/{organizationName}/topics:
   get:
-    operationId: getTargets
+    operationId: getTopics
     tags: [ Control ]
     parameters:
       - name: organizationName
@@ -429,4 +429,4 @@ components:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Targets'
+              $ref: '#/components/schemas/Topics'

@@ -1,8 +1,60 @@
 package {{{definition.javaPackage}}};
+{{^processor.outputStreams.empty}}
+
+import jakarta.annotation.Nullable;
+{{/processor.outputStreams.empty}}
 
 public interface Coordinator {
+    {{#processor.state.isPresent}}
+    {{#isDynamo}}
+
+    /**
+     * State management backed by DynamoDB and unique for each message key within a task.
+     * <p>
+     * Identical to calling {@link #stateForGlobalNamespace(ttl, <task_name>, <message_key>)}.
+     * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
+     * @param ttl Optional second-precision time-to-live for the state. Resets on every write.
+     */
+    StateManager stateForMessageKey(Optional<Duration> ttl);
+
+    /**
+     * State management backed by DynamoDB and unique for entire task.
+     * <p>
+     * Identical to calling {@link #stateForNamespace(ttl, <task_name>)}.
+     * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
+     * @param ttl Optional second-precision time-to-live for the state. Resets on every write.
+     */
+    StateManager stateForTask(Optional<Duration> ttl);
+
+    /**
+     * State management backed by DynamoDB with custom namespace.
+     * <p>
+     * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
+     * @param ttl Optional second-precision time-to-live for the state. Resets on every write.
+     * @param namespace Unique key for the state.
+     */
+    StateManager stateForNamespace(Optional<Duration> ttl, String... namespace);
+    {{/isDynamo}}
+    {{/processor.state.isPresent}}
     {{#processor.outputStreams}}
 
-    public void sendTo{{{uniqueNameCamelUpper}}}({{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}});
+    /**
+     * Sends a message to {{{storeName}}} {{{streamName}}}.
+     *
+     * @param messageKey Entity of the message used for partitioning (e.g. Session ID, Email, IP address)
+     * @param {{{dataFormat.nameCamelLower}}} Content of the message
+     */
+    default void sendTo{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
+        sendTo{{{uniqueNameCamelUpper}}}(messageKey, {{{dataFormat.nameCamelLower}}}, null);
+    }
+
+    /**
+     * Sends a message to {{{storeName}}} {{{streamName}}}.
+     *
+     * @param messageKey Entity of the message used for partitioning (e.g. Session ID, Email, IP address)
+     * @param {{{dataFormat.nameCamelLower}}} Content of the message
+     * @param messageId Optional unique ID of the message used for de-duplication (e.g. Transaction ID)
+     */
+    void sendTo{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}, @Nullable tring messageId);
     {{/processor.outputStreams}}
 }

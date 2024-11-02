@@ -107,7 +107,7 @@
                         </goals>
                         <configuration>
                             <name>project.version-pep440</name>
-                            <value>${project.version}</value>
+                            <value>${parent.version}</value>
                             <regex>-</regex>
                             <replacement>+</replacement>
                             <failIfNoMatch>false</failIfNoMatch>
@@ -368,7 +368,7 @@
                                         <filter>@</filter>
                                         <tags>
                                             <tag>latest</tag>
-                                            <tag>${project.version}</tag>
+                                            <tag>${parent.version}</tag>
                                         </tags>
                                         <args>
                                             <PROJECT_VERSION>${project.version-pep440}</PROJECT_VERSION>

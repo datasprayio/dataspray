@@ -8,23 +8,89 @@ import {
 {{/processor.jsonOutputStreams.empty}}
 
 export interface Coordinator {
+    {{#processor.state.isPresent}}
+    {{#isDynamo}}
+
+    /**
+     * State management backed by DynamoDB and unique for each message key within a task.
+     * <p>
+     * Identical to calling {@link #stateForGlobalNamespace(ttl, <task_name>, <message_key>)}.
+     * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
+     * @param ttlInSec Optional second-precision time-to-live for the state. Resets on every write.
+     */
+    stateForMessageKey(ttlInSec?: number): StateManager;
+
+    /**
+     * State management backed by DynamoDB and unique for entire task.
+     * <p>
+     * Identical to calling {@link #stateForNamespace(ttl, <task_name>)}.
+     * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
+     * @param ttlInSec Optional second-precision time-to-live for the state. Resets on every write.
+     */
+    stateForTask(ttlInSec?: number): StateManager;
+
+    /**
+     * State management backed by DynamoDB with custom namespace.
+     * <p>
+     * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
+     * @param namespace Unique key for the state.
+     * @param ttlInSec Optional second-precision time-to-live for the state. Resets on every write.
+     */
+    stateForNamespace(namespace: string[], ttlInSec?: number): StateManager;
+    {{/isDynamo}}
+    {{/processor.state.isPresent}}
     {{#processor.outputStreams}}
 
-    sendTo{{{uniqueNameCamelUpper}}}({{{dataFormat.nameCamelLower}}}: {{{dataFormat.nameCamelUpper}}}): void;
+    /**
+     * Sends a message to {{{storeName}}} {{{streamName}}}.
+     *
+     * @param messageKey Entity of the message used for partitioning (e.g. Session ID, Email, IP address)
+     * @param {{{dataFormat.nameCamelLower}}} Content of the message
+     * @param messageId Optional unique ID of the message used for de-duplication (e.g. Transaction ID)
+     */
+    sendTo{{{uniqueNameCamelUpper}}}(messageKey: string, {{{dataFormat.nameCamelLower}}}: {{{dataFormat.nameCamelUpper}}}, messageId?: string): void;
     {{/processor.outputStreams}}
 }
 
 export class CoordinatorImpl implements Coordinator {
 
     private rawCoordinator: RawCoordinator;
+    {{#processor.state.isPresent}}
+    private messageKey: string;
+    {{/processor.state.isPresent}}
 
-    constructor(rawCoordinator: RawCoordinator) {
+    constructor(
+        rawCoordinator: RawCoordinator,
+        {{#processor.state.isPresent}}
+        messageKey: string,
+        {{/processor.state.isPresent}}
+    ) {
         this.rawCoordinator = rawCoordinator;
+        {{#processor.state.isPresent}}
+        this.messageKey = messageKey;
+        {{/processor.state.isPresent}}
     }
+    {{#processor.state.isPresent}}
+    {{#isDynamo}}
+
+    stateForMessageKey(ttl) {
+        return stateForGlobalNamespace(ttl, "{{{processor.taskId}}}", this.messageKey);
+    }
+
+    stateForProcessor(ttl) {
+        return stateForGlobalNamespace(ttl, "{{{processor.taskId}}}");
+    }
+
+    stateForNamespace(namespace, ttl) {
+        return rawCoordinator.getStateManager(namespace, ttl);
+    }
+    {{/isDynamo}}
+    {{/processor.state.isPresent}}
     {{#processor.outputStreams}}
 
-    sendTo{{{uniqueNameCamelUpper}}}({{{dataFormat.nameCamelLower}}}: {{{dataFormat.nameCamelUpper}}}): void {
+    sendTo{{{uniqueNameCamelUpper}}}(messageKey: string, {{{dataFormat.nameCamelLower}}}: {{{dataFormat.nameCamelUpper}}}, messageId?: string): void {
         this.rawCoordinator.send(
+            messageKey,
             {{#dataFormat.isSerdeString}}
             new Blob([{{{dataFormat.nameCamelLower}}}], { type: 'plain/text' }),
             {{/dataFormat.isSerdeString}}
@@ -33,7 +99,8 @@ export class CoordinatorImpl implements Coordinator {
             {{/dataFormat.isSerdeJson}}
             StoreType.{{{storeType.name}}},
             "{{{storeName}}}",
-            "{{{streamName}}}");
+            "{{{streamName}}}",
+            messageId);
     }
     {{/processor.outputStreams}}
 }

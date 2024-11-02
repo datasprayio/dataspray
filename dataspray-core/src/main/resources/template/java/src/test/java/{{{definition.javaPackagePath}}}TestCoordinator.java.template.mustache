@@ -25,7 +25,7 @@ public class TestCoordinator implements Coordinator {
     {{#processor.outputStreams}}
 
     @SneakyThrows
-    public void sendTo{{{uniqueNameCamelUpper}}}({{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
+    public void sendTo{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}, String messageId) {
         sent{{{dataFormat.nameCamelUpper}}}.add({{{dataFormat.nameCamelLower}}});
     }
     {{/processor.outputStreams}}

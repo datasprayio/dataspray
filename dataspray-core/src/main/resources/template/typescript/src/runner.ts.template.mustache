@@ -42,7 +42,7 @@ class Runner extends Entrypoint {
     {{^processor.inputStreams.empty}}
 
     processSqsEvent(metadata: MessageMetadata, data: string, rawCoordinator: RawCoordinator): Promise<void> | void {
-        const coordinator: Coordinator = new CoordinatorImpl(rawCoordinator);
+        const coordinator: Coordinator = new CoordinatorImpl(rawCoordinator, metadata.key);
         {{#processor.inputStreams}}if (StoreType.{{{storeType.name}}} === metadata.storeType
                 && "{{{storeName}}}" === metadata.storeName
                 && "{{{streamName}}}" === metadata.streamName) {

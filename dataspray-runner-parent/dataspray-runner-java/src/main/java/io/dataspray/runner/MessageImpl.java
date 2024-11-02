@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -44,6 +44,16 @@ public class MessageImpl<T> implements Message<T> {
     @Override
     public String getStreamName() {
         return metadata.getStreamName();
+    }
+
+    @Override
+    public String getKey() {
+        return metadata.getKey();
+    }
+
+    @Override
+    public String getId() {
+        return metadata.getId();
     }
 
     @Override

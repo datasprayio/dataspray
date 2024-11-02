@@ -46,7 +46,7 @@ public class Runner extends Entrypoint {
 
     @Override
     public void processSqsEvent(MessageMetadata metadata, String data, RawCoordinator rawCoordinator) {
-        Coordinator coordinator = new CoordinatorImpl(rawCoordinator);
+        Coordinator coordinator = new CoordinatorImpl(rawCoordinator, metadata.getKey());
         {{#processor.inputStreams}}if (StoreType.{{{storeType.name}}}.equals(metadata.getStoreType())
                 && "{{{storeName}}}".equals(metadata.getStoreName())
                 && "{{{streamName}}}".equals(metadata.getStreamName())) {

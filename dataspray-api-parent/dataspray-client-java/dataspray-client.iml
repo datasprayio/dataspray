@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module version="4">
   <component name="AdditionalModuleElements">
+    <content url="file://$MODULE_DIR$/target/generated-sources/client-ingest/src/main/java" />
     <content url="file://$MODULE_DIR$" dumb="true">
+      <sourceFolder url="file://$MODULE_DIR$/target/generated-sources/client-ingest/src/main/java" isTestSource="false" generated="true" />
       <excludeFolder url="file://$MODULE_DIR$/target/generated-sources/client-control/src/main/java" />
-      <excludeFolder url="file://$MODULE_DIR$/target/generated-sources/client-ingest/src/main/java" />
       <excludeFolder url="file://$MODULE_DIR$/target/generated-sources/client-typescript" />
     </content>
   </component>

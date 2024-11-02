@@ -31,12 +31,12 @@ import io.dataspray.common.test.aws.MotoInstance;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.store.SingleTableProvider;
-import io.dataspray.store.TargetStore.Batch;
-import io.dataspray.store.TargetStore.BatchRetention;
-import io.dataspray.store.TargetStore.Stream;
-import io.dataspray.store.TargetStore.Target;
-import io.dataspray.store.TargetStore.Targets;
-import io.dataspray.store.impl.DynamoTargetStore;
+import io.dataspray.store.TopicStore.Batch;
+import io.dataspray.store.TopicStore.BatchRetention;
+import io.dataspray.store.TopicStore.Stream;
+import io.dataspray.store.TopicStore.Target;
+import io.dataspray.store.TopicStore.Targets;
+import io.dataspray.store.impl.DynamoTopicStore;
 import io.dataspray.store.impl.FirehoseS3AthenaBatchStore;
 import io.dataspray.store.impl.SqsStreamStore;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -100,7 +100,7 @@ public abstract class IngestBase extends AbstractLambdaTest {
                 .tablePrefix(SingleTableProvider.TABLE_PREFIX_DEFAULT)
                 .overrideGson(GsonUtil.get())
                 .build();
-        DynamoTargetStore dynamoTargetStore = new DynamoTargetStore();
+        DynamoTopicStore dynamoTargetStore = new DynamoTopicStore();
         dynamoTargetStore.dynamo = getDynamoClient();
         dynamoTargetStore.singleTable = singleTable;
         dynamoTargetStore.init();
@@ -108,7 +108,7 @@ public abstract class IngestBase extends AbstractLambdaTest {
         // Setup target to perform batch and stream processing
         dynamoTargetStore.updateTargets(Targets.builder()
                 .organizationName(getOrganizationName())
-                .version(DynamoTargetStore.INITIAL_VERSION)
+                .version(DynamoTopicStore.INITIAL_VERSION)
                 .targets(ImmutableSet.of(
                         Target.builder()
                                 .name(targetId)
@@ -187,7 +187,7 @@ public abstract class IngestBase extends AbstractLambdaTest {
                 .putAll(body)
                 .put(ETL_PARTITION_KEY_RETENTION, BatchRetention.YEAR.name())
                 .put(ETL_PARTITION_KEY_ORGANIZATION, getOrganizationName())
-                .put(ETL_PARTITION_KEY_TARGET, targetId)
+                .put(ETL_PARTITION_KEY_TOPIC, targetId)
                 .build(), objectJson);
     }
 }

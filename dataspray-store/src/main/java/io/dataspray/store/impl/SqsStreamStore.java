@@ -65,7 +65,7 @@ public class SqsStreamStore implements StreamStore {
     CustomerLogger customerLog;
 
     @Override
-    public void submit(String organizationName, String streamName, byte[] messageBytes, MediaType contentType) {
+    public void submit(String organizationName, String streamName, String messageKey, String messageId, byte[] messageBytes, MediaType contentType) {
         // Since SQS accepts messages as String, convert each message appropriately
         final String messageStr;
         switch (contentType.toString()) {
@@ -86,22 +86,24 @@ public class SqsStreamStore implements StreamStore {
         }
 
         try {
-            sendMessage(organizationName, streamName, messageStr);
+            sendMessage(organizationName, streamName, messageKey, messageId, messageStr);
         } catch (SqsException ex) {
             if (isQueueDoesNotExist(ex)) {
                 // If the queue does not exist, create it
                 createStream(organizationName, streamName);
 
                 // and retry
-                sendMessage(organizationName, streamName, messageStr);
+                sendMessage(organizationName, streamName, messageKey, messageId, messageStr);
             } else {
                 throw ex;
             }
         }
     }
 
-    private void sendMessage(String organizationName, String streamName, String messageStr) {
+    private void sendMessage(String organizationName, String streamName, String key, String deduplicationId, String messageStr) {
         sqsClient.sendMessage(SendMessageRequest.builder()
+                .messageGroupId(key)
+                .messageDeduplicationId(deduplicationId)
                 .queueUrl(getAwsQueueUrl(organizationName, streamName))
                 .messageBody(messageStr)
                 .build());
@@ -142,10 +144,17 @@ public class SqsStreamStore implements StreamStore {
     public void createStream(String organizationName, String streamName) {
         CreateQueueResponse queueResponse = sqsClient.createQueue(CreateQueueRequest.builder()
                 .queueName(getAwsQueueName(organizationName, streamName))
+                // Docs: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_CreateQueue.html#API_CreateQueue_RequestParameters
                 .attributes(Map.of(
+                        QueueAttributeName.FIFO_QUEUE, Boolean.toString(true),
+                        QueueAttributeName.CONTENT_BASED_DEDUPLICATION, Boolean.toString(true),
+                        // Enables High throughput FIFO queue https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/high-throughput-fifo.html
+                        QueueAttributeName.DEDUPLICATION_SCOPE, "messageGroup",
+                        QueueAttributeName.FIFO_THROUGHPUT_LIMIT, "perMessageGroupId",
                         // Queue visibility timeout cannot be less than function timeout
                         QueueAttributeName.VISIBILITY_TIMEOUT, Integer.toString(LAMBDA_DEFAULT_TIMEOUT),
-                        QueueAttributeName.MESSAGE_RETENTION_PERIOD, String.valueOf(14 * 24 * 60 * 60)))
+                        QueueAttributeName.MESSAGE_RETENTION_PERIOD, String.valueOf(14 * 24 * 60 * 60),
+                        QueueAttributeName.RECEIVE_MESSAGE_WAIT_TIME_SECONDS, String.valueOf(20)))
                 .build());
         customerLog.info("Created new queue " + streamName, organizationName);
     }

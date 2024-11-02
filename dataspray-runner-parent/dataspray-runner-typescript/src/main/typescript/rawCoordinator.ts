@@ -22,6 +22,8 @@
 
 import {StoreType} from "./storeType";
 import {DataSprayClient, IngestApiInterface} from "dataspray-client";
+import {StateManager} from "./stateManager";
+import {StateManagerFactoryImpl} from "./stateManagerFactory";
 
 // Matches io.dataspray.store.LambdaDeployerImpl.DATASPRAY_API_KEY_ENV
 const DATASPRAY_API_KEY_ENV = 'dataspray_api_key';
@@ -30,37 +32,50 @@ const DATASPRAY_ORGANIZATION_NAME_ENV = 'dataspray_organization_name';
 // Matches io.dataspray.store.LambdaDeployerImpl.DATASPRAY_ENDPOINT_ENV
 const DATASPRAY_ENDPOINT_ENV = 'dataspray_endpoint';
 
-export class RawCoordinator {
+export interface RawCoordinator {
+
+    send(messageKey: string, data: Blob, storeType: StoreType, storeName: string, streamName: string, messageId: string | undefined): void;
+
+    getStateManager(key: string[], ttlInEpochSec?: number): StateManager;
+}
+
+export class RawCoordinatorImpl implements RawCoordinator {
 
     private static instance: RawCoordinator | null = null;
     private ingestApi: IngestApiInterface | null = null;
 
     static get(): RawCoordinator {
-        if (this.instance === null) {
-            this.instance = new RawCoordinator();
+        if (RawCoordinatorImpl.instance === null) {
+            RawCoordinatorImpl.instance = new RawCoordinatorImpl();
         }
-        return this.instance;
+        return RawCoordinatorImpl.instance;
     }
 
-    send(data: Blob, storeType: StoreType, storeName: string, streamName: string): void {
+    send(messageKey: string, data: Blob, storeType: StoreType, storeName: string, streamName: string, messageId: string | undefined = undefined): void {
         switch (storeType) {
             case StoreType.DATASPRAY:
-                this.sendToDataSpray(data, storeName, streamName);
+                this.sendToDataSpray(messageKey, data, storeName, streamName, messageId);
                 break;
             default:
                 throw new Error(`Store type not supported: ${storeType}`);
         }
     }
 
-    private sendToDataSpray(data: Blob, organizationName: string, targetId: string): void {
+    getStateManager(key: string[], ttlInSec?: number) {
+        return StateManagerFactoryImpl.getOrCreate().getStateManager(key, ttlInSec);
+    }
+
+    private sendToDataSpray(key: string, data: Blob, organizationName: string, topicName: string, id: string | undefined = undefined): void {
         try {
             this.getIngestApi().message({
+                messageKey: key,
+                messageId: id,
                 organizationName,
-                targetId,
+                topicName: topicName,
                 body: data,
             });
         } catch (ex) {
-            throw new Error(`Failed to send message to DataSpray for organization ${organizationName} targetId ${targetId}: ${ex}`);
+            throw new Error(`Failed to send message to DataSpray for organization ${organizationName} topicName ${topicName}: ${ex}`);
         }
     }
 

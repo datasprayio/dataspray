@@ -66,6 +66,9 @@ public class Processor extends Item {
     @Nonnull
     Optional<Endpoint> endpoint;
 
+    @Nonnull
+    Optional<State> state;
+
     @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public ImmutableList<StreamLink> getStreams() {
         return ImmutableList.<StreamLink>builder()

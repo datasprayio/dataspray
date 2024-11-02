@@ -31,7 +31,7 @@ import io.dataspray.store.LambdaDeployer.Endpoint;
 import io.dataspray.store.LambdaDeployer.State;
 import io.dataspray.store.LambdaDeployer.Status;
 import io.dataspray.store.LambdaDeployer.Versions;
-import io.dataspray.store.TargetStore;
+import io.dataspray.store.TopicStore;
 import io.dataspray.store.util.WithCursor;
 import io.dataspray.stream.control.model.DeployRequest;
 import io.dataspray.stream.control.model.Target;
@@ -73,7 +73,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
     @Inject
     LambdaDeployer deployer;
     @Inject
-    TargetStore targetStore;
+    TopicStore topicStore;
 
     @Override
     public TaskStatus activateVersion(String organizationName, String taskId, String version) {
@@ -174,23 +174,23 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     @Override
-    public Targets getTargets(String organizationName) {
-        TargetStore.Targets targets = targetStore.getTargets(organizationName, true);
+    public Targets getTopics(String organizationName) {
+        TopicStore.Targets targets = topicStore.getTopics(organizationName, true);
         return modelToTargets(organizationName, targets);
     }
 
-    private Targets modelToTargets(String organizationName, TargetStore.Targets targets) {
+    private Targets modelToTargets(String organizationName, TopicStore.Targets targets) {
         return new Targets(
                 organizationName,
                 Boolean.TRUE.equals(targets.getAllowUndefinedTargets()),
                 Optional.ofNullable(targets.getUndefinedTarget()).map(this::modelToTarget).orElse(null),
-                targets.getTargets().stream()
+                targets.getTopics().stream()
                         .map(this::modelToTarget)
                         .collect(ImmutableList.toImmutableList()));
     }
 
 
-    private Target modelToTarget(TargetStore.Target target) {
+    private Target modelToTarget(TopicStore.Target target) {
         return new Target(
                 target.getName(),
                 target.getBatch()

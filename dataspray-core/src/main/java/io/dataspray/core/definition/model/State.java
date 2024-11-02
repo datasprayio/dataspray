@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,19 +20,27 @@
  * SOFTWARE.
  */
 
-package io.dataspray.runner;
+package io.dataspray.core.definition.model;
 
-import lombok.NonNull;
+import lombok.AllArgsConstructor;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
+
+import javax.annotation.Nonnull;
 
 @Value
-public class TestMessage<T> implements Message<T> {
-    @NonNull
-    StoreType storeType;
-    @NonNull
-    String storeName;
-    @NonNull
-    String streamName;
-    @NonNull
-    T data;
+@SuperBuilder(toBuilder = true)
+@AllArgsConstructor
+public class State {
+
+    @Nonnull
+    StateType type;
+
+    public boolean isDynamo() {
+        return type == StateType.DYNAMO;
+    }
+
+    public enum StateType {
+        DYNAMO
+    }
 }

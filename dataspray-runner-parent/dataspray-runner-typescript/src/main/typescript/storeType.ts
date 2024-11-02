@@ -22,4 +22,4 @@
 
 export enum StoreType {
     DATASPRAY
-};
+}

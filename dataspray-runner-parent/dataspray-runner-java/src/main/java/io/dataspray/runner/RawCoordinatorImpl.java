@@ -27,8 +27,10 @@ import io.dataspray.client.Access;
 import io.dataspray.client.DataSprayClient;
 import io.dataspray.stream.ingest.client.ApiException;
 import io.dataspray.stream.ingest.client.IngestApi;
+import jakarta.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.Duration;
 import java.util.Optional;
 
 @Slf4j
@@ -59,10 +61,10 @@ public class RawCoordinatorImpl implements RawCoordinator {
     }
 
     @Override
-    public void send(byte[] data, StoreType storeType, String storeName, String streamName) {
+    public void send(String messageKey, byte[] data, StoreType storeType, String storeName, String streamName, @Nullable String messageId) {
         switch (storeType) {
             case DATASPRAY:
-                sendToDataSpray(data, storeName, streamName);
+                sendToDataSpray(messageKey, data, storeName, streamName, messageId);
                 break;
             case KAFKA:
             default:
@@ -71,9 +73,14 @@ public class RawCoordinatorImpl implements RawCoordinator {
         }
     }
 
-    private void sendToDataSpray(byte[] data, String storeName, String streamName) {
+    @Override
+    public StateManager getStateManager(String[] key, @Nullable Duration ttl) {
+        return StateManagerFactoryImpl.getOrCreate().getStateManager(key, Optional.ofNullable(ttl));
+    }
+
+    private void sendToDataSpray(String messageKey, byte[] data, String storeName, String streamName, @Nullable String messageId) {
         try {
-            getIngestApi().message(storeName, streamName, data);
+            getIngestApi().message(storeName, streamName, messageKey, data, messageId);
         } catch (ApiException ex) {
             log.error("Failed to send message to DataSpray for customer {} stream {}", storeName, streamName);
             throw new RuntimeException("Failed to send message to DataSpray for customer " + storeName + " stream " + streamName, ex);

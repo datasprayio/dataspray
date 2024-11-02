@@ -40,15 +40,15 @@ import java.util.Optional;
 import java.util.Set;
 
 import static io.dataspray.singletable.TableType.Primary;
-import static io.dataspray.store.TargetStore.BatchRetention.THREE_MONTHS;
+import static io.dataspray.store.TopicStore.BatchRetention.THREE_MONTHS;
 
 /**
- * <b>Metadata for ingestion targets.</b> (named endpoints for data ingestion)
+ * <b>Metadata for ingestion topics.</b> (named endpoints for data ingestion)
  * <p>
- * A target is identified by name and defines which stream and batch destinations to write to and how.
+ * A topic is identified by name and defines which stream and batch destinations to write to and how.
  * </p>
  */
-public interface TargetStore {
+public interface TopicStore {
 
     /**
      * For undefined targets, whether to ingest it with default configuration.
@@ -59,9 +59,9 @@ public interface TargetStore {
      */
     BatchRetention DEFAULT_BATCH_RETENTION = THREE_MONTHS;
 
-    Targets getTargets(String organizationName, boolean useCache);
+    Targets getTopics(String organizationName, boolean useCache);
 
-    Optional<Target> getTarget(String organizationName, String targetName, boolean useCache);
+    Optional<Target> getTopic(String organizationName, String targetName, boolean useCache);
 
     Targets updateTargets(Targets targets);
 
@@ -117,7 +117,7 @@ public interface TargetStore {
          * Helper method to return defaults if not specified.
          */
         @NonNull
-        public Optional<Target> getTarget(String target) {
+        public Optional<Target> getTopic(String target) {
             return targets.stream()
                     .filter(t -> t.getName().equals(target))
                     .findFirst()

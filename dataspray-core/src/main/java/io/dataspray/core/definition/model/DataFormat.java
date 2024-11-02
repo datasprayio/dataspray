@@ -22,9 +22,7 @@
 
 package io.dataspray.core.definition.model;
 
-import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
@@ -58,8 +56,6 @@ public class DataFormat extends Item {
         return Serde.AVRO.equals(serde);
     }
 
-    @Getter
-    @AllArgsConstructor
     public enum Serde {
         BINARY,
         STRING,

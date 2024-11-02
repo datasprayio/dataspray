@@ -6,6 +6,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.SQSBatchResponseBuilder;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import io.dataspray.runner.dto.Request;
 import io.dataspray.runner.dto.sqs.SqsMessage;
 import io.dataspray.runner.dto.sqs.SqsRequest;
@@ -13,6 +15,7 @@ import io.dataspray.runner.dto.web.HttpRequest;
 import io.dataspray.runner.dto.web.HttpResponse;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,12 +28,17 @@ public abstract class Entrypoint implements RequestHandler<Request, Object> {
      * Entry point for the Lambda Function.
      */
     public Object handleRequest(Request event, Context context) {
-        if (event.isSqsRequest()) {
-            return handleSqsEvent(event);
-        } else if (event.isHttpRequest()) {
-            return handleHttpRequest(event);
-        } else {
-            throw new IllegalArgumentException("Unsupported event type: " + event.getClass());
+        try {
+            if (event.isSqsRequest()) {
+                return handleSqsEvent(event);
+            } else if (event.isHttpRequest()) {
+                return handleHttpRequest(event);
+            } else {
+                throw new IllegalArgumentException("Unsupported event type: " + event.getClass());
+            }
+        } finally {
+            StateManagerFactoryImpl.get()
+                    .ifPresent(StateManagerFactory::closeAll);
         }
     }
 
@@ -38,26 +46,42 @@ public abstract class Entrypoint implements RequestHandler<Request, Object> {
      * Handle an SQS event containing one or more messages.
      */
     private SQSBatchResponse handleSqsEvent(SqsRequest event) {
+        List<SQSBatchResponse.BatchItemFailure> failures = Lists.newArrayList();
         SQSBatchResponseBuilder responseBuilder = SQSBatchResponse.builder();
 
         for (SqsMessage msg : event.getRecords()) {
             try {
                 Matcher matcher = sqsArnPattern.matcher(msg.getEventSourceArn());
                 if (!matcher.matches()) {
-                    log.error("Failed to determine source queue from ARN {}", msg.getEventSourceArn());
+                    throw new RuntimeException("Failed to determine source queue from ARN:" + msg.getEventSourceArn());
                 }
+
+                String messageKey = msg.getAttributes().get("MessageGroupId");
+                if (Strings.isNullOrEmpty(messageKey)) {
+                    throw new RuntimeException("SQS message does not have a message group id used as a message key");
+                }
+
+                String messageId = msg.getAttributes().get("MessageDeduplicationId");
+                if (Strings.isNullOrEmpty(messageId)) {
+                    throw new RuntimeException("SQS message does not have a message deduplication id used as a message id");
+                }
+
                 this.processSqsEvent(new MessageMetadata(
                                 StoreType.DATASPRAY,
                                 matcher.group("customer"),
-                                matcher.group("queue")),
+                                matcher.group("queue"),
+                                messageKey,
+                                messageId),
                         msg.getBody(),
                         RawCoordinatorImpl.get());
             } catch (Throwable th) {
-                responseBuilder.build();
+                log.error("Failed to process SQS message", th);
+                failures.add(SQSBatchResponse.BatchItemFailure.builder()
+                        .withItemIdentifier(msg.getMessageId()).build());
             }
         }
 
-        return responseBuilder.build();
+        return responseBuilder.withBatchItemFailures(failures).build();
     }
 
     /**
