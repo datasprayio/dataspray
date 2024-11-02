@@ -22,7 +22,7 @@ components:
           type: string
       - name: messageKey
         description: A key used for determining the target for stream partitioning, maintaining order, and managing state.
-        in: path
+        in: query
         required: true
         schema:
           type: string

@@ -22,6 +22,7 @@
 
 package io.dataspray.stream.ingest;
 
+import com.google.common.base.Strings;
 import io.dataspray.store.BatchStore;
 import io.dataspray.store.CustomerLogger;
 import io.dataspray.store.StreamStore;
@@ -29,6 +30,7 @@ import io.dataspray.store.TopicStore;
 import io.dataspray.store.TopicStore.Stream;
 import io.dataspray.store.TopicStore.Topic;
 import io.dataspray.web.resource.AbstractResource;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ClientErrorException;
@@ -66,7 +68,12 @@ public class IngestResource extends AbstractResource implements IngestApi {
      */
     @Override
     @SneakyThrows
-    public void message(String organizationName, String topicName, String messageKey, String messageId, InputStream messageInputStream) {
+    public void message(String organizationName, String topicName, String messageKey, InputStream messageInputStream, @Nullable String messageId) {
+        Optional<String> messageIdOpt = Optional.ofNullable(messageId);
+
+        if (Strings.isNullOrEmpty(messageKey)) {
+            throw new ClientErrorException("Need to provide messageKey query parameter", Response.Status.BAD_REQUEST);
+        }
 
         // Sanity check to see if we are authorized
         getUsername().orElseThrow(ForbiddenException::new);
@@ -96,14 +103,14 @@ public class IngestResource extends AbstractResource implements IngestApi {
 
         // Submit message to all streams for stream processing
         for (Stream stream : topic.getStreams()) {
-            streamStore.submit(organizationName, topicName, messageKey, messageId, messageBytes, mediaType);
+            streamStore.submit(organizationName, topicName, messageIdOpt, messageKey, messageBytes, mediaType);
         }
 
         // Submit message for batch processing
         if (topic.getBatch().isPresent()) {
             // Only JSON supported for now
             if (APPLICATION_JSON_TYPE.equals(mediaType)) {
-                batchStore.putRecord(organizationName, topicName, messageBytes, topic.getBatch().get().getRetention());
+                batchStore.putRecord(organizationName, topicName, messageIdOpt, messageKey, messageBytes, topic.getBatch().get().getRetention());
             } else {
                 customerLog.warn("Message for stream " + topicName + " requires " + APPLICATION_JSON + ", skipping ETL", organizationName);
             }

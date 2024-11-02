@@ -32,8 +32,8 @@ public interface StreamStore {
 
     void submit(String organizationName,
                 String streamName,
+                Optional<String> messageIdOpt,
                 String messageKey,
-                String messageId,
                 byte[] messageBytes,
                 MediaType contentType);
 

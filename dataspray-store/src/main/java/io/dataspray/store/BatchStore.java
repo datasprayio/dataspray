@@ -25,10 +25,14 @@ package io.dataspray.store;
 import io.dataspray.store.TopicStore.BatchRetention;
 import software.amazon.awssdk.services.glue.model.DataFormat;
 
+import java.util.Optional;
+
 public interface BatchStore {
 
     void putRecord(String customerId,
                    String topicName,
+                   Optional<String> messageIdOpt,
+                   String messageKey,
                    byte[] jsonBytes,
                    BatchRetention retention);
 

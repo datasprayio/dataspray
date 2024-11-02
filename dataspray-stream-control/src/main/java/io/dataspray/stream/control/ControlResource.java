@@ -39,6 +39,9 @@ import io.dataspray.stream.control.model.TaskStatus.StatusEnum;
 import io.dataspray.stream.control.model.TaskStatuses;
 import io.dataspray.stream.control.model.TaskVersion;
 import io.dataspray.stream.control.model.TaskVersions;
+import io.dataspray.stream.control.model.Topic;
+import io.dataspray.stream.control.model.TopicBatch;
+import io.dataspray.stream.control.model.TopicStream;
 import io.dataspray.stream.control.model.Topics;
 import io.dataspray.stream.control.model.UploadCodeRequest;
 import io.dataspray.stream.control.model.UploadCodeResponse;
@@ -180,21 +183,21 @@ public class ControlResource extends AbstractResource implements ControlApi {
         return new Topics(
                 organizationName,
                 Boolean.TRUE.equals(topics.getAllowUndefinedTopics()),
-                Optional.ofNullable(topics.getUndefinedTopic()).map(this::modelToTarget).orElse(null),
+                Optional.ofNullable(topics.getUndefinedTopic()).map(this::modelToTopic).orElse(null),
                 topics.getTopics().stream()
-                        .map(this::modelToTarget)
+                        .map(this::modelToTopic)
                         .collect(ImmutableList.toImmutableList()));
     }
 
 
-    private Target modelToTarget(TopicStore.Topic topic) {
-        return new Target(
+    private Topic modelToTopic(TopicStore.Topic topic) {
+        return new Topic(
                 topic.getName(),
                 topic.getBatch()
-                        .map(batch -> new TargetBatch(batch.getRetention().getRetentionInDays()))
+                        .map(batch -> new TopicBatch(batch.getRetention().getRetentionInDays()))
                         .orElse(null),
                 topic.getStreams().stream()
-                        .map(stream -> new TargetStream(stream.getName()))
+                        .map(stream -> new TopicStream(stream.getName()))
                         .collect(ImmutableList.toImmutableList()));
     }
 

@@ -77,6 +77,8 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     public static final String FIREHOSE_STREAM_NAME_PROP_NAME = "etl.firehose.name";
     public static final String GLUE_CUSTOMER_PREFIX = "customer-";
     public static final String GLUE_SCHEMA_FOR_QUEUE_PREFIX = "queue-";
+    public static final String ETL_MESSAGE_ID = "_ds_message_id";
+    public static final String ETL_MESSAGE_KEY = "_ds_message_key";
     public static final String ETL_PARTITION_KEY_RETENTION = "_ds_retention";
     public static final String ETL_PARTITION_KEY_ORGANIZATION = "_ds_organization";
     public static final String ETL_PARTITION_KEY_TOPIC = "_ds_topic";
@@ -122,7 +124,7 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     private final ObjectMapper jsonSerde = new ObjectMapper();
 
     @Override
-    public void putRecord(String customerId, String topicName, byte[] jsonBytes, BatchRetention retention) {
+    public void putRecord(String customerId, String topicName, Optional<String> messageIdOpt, String messageKey, byte[] jsonBytes, BatchRetention retention) {
         // Parse customer message as JSON
         // TODO Optimization: parse only beginning, look for '{', inject metadata, and copy the rest; fallback to this if parsing fails
         final Map<String, Object> json;
@@ -133,6 +135,10 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
             customerLog.warn("Failed to parse message as JSON Object for topic " + topicName + ", skipping ETL", customerId);
             return;
         }
+
+        // Add extra attributes
+        json.put(ETL_MESSAGE_KEY, messageKey);
+        json.put(ETL_MESSAGE_ID, messageIdOpt.orElse(null));
 
         // Add metadata for Firehose dynamic partitioning
         json.put(ETL_PARTITION_KEY_RETENTION, retention.name());

@@ -91,7 +91,9 @@ public abstract class IngestBase extends AbstractLambdaTest {
 
     @Test
     public void test() throws Exception {
-        String targetId = "registration";
+        String topicName = "registration";
+        String messageKey = "message-key";
+        String messageId = "message-id";
         String bucketName = "io-dataspray-etl";
         String firehoseName = "dataspray-ingest-etl";
 
@@ -105,18 +107,18 @@ public abstract class IngestBase extends AbstractLambdaTest {
         dynamoTargetStore.singleTable = singleTable;
         dynamoTargetStore.init();
 
-        // Setup target to perform batch and stream processing
+        // Setup topic to perform batch and stream processing
         dynamoTargetStore.updateTopics(Topics.builder()
                 .organizationName(getOrganizationName())
                 .version(DynamoTopicStore.INITIAL_VERSION)
                 .topics(ImmutableSet.of(
                         Topic.builder()
-                                .name(targetId)
+                                .name(topicName)
                                 .batch(Optional.of(Batch.builder()
                                         .retention(BatchRetention.YEAR).build()))
                                 .streams(ImmutableList.of(
                                         Stream.builder()
-                                                .name(targetId)
+                                                .name(topicName)
                                                 .build()))
                                 .build()))
                 .build());
@@ -150,7 +152,10 @@ public abstract class IngestBase extends AbstractLambdaTest {
         // Submit data to Ingest Resource
         request(Given.builder()
                 .method(HttpMethod.POST)
-                .path("/v1/organization/" + getOrganizationName() + "/target/" + targetId + "/message")
+                .path("/v1/organization/" + getOrganizationName() + "/topic/" + topicName + "/message")
+                .query(Map.of(
+                        "messageKey", List.of(messageKey),
+                        "messageId", List.of(messageId)))
                 .contentType(APPLICATION_JSON_TYPE)
                 .body(body)
                 .build())
@@ -159,7 +164,8 @@ public abstract class IngestBase extends AbstractLambdaTest {
         // Assert message is in queue
         String queueUrl = "https://sqs." + motoInstance.getRegion() + ".amazonaws.com/"
                           + motoInstance.getAwsAccountId() + "/"
-                          + SqsStreamStore.CUSTOMER_QUEUE_PREFIX + getOrganizationName() + "-" + targetId;
+                          + SqsStreamStore.CUSTOMER_QUEUE_PREFIX + getOrganizationName() + "-" + topicName
+                          + SqsStreamStore.CUSTOMER_QUEUE_SUFFIX;
         log.info("Asserting message from queue {}", queueUrl);
         List<Message> messages = getSqsClient().receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(queueUrl)
@@ -185,9 +191,11 @@ public abstract class IngestBase extends AbstractLambdaTest {
         log.info("Object content {}", objectJson);
         assertEquals(ImmutableMap.builder()
                 .putAll(body)
+                .put(ETL_MESSAGE_KEY, messageKey)
+                .put(ETL_MESSAGE_ID, messageId)
                 .put(ETL_PARTITION_KEY_RETENTION, BatchRetention.YEAR.name())
                 .put(ETL_PARTITION_KEY_ORGANIZATION, getOrganizationName())
-                .put(ETL_PARTITION_KEY_TOPIC, targetId)
+                .put(ETL_PARTITION_KEY_TOPIC, topicName)
                 .build(), objectJson);
     }
 }

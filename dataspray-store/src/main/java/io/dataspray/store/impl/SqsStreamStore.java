@@ -50,9 +50,10 @@ import static io.dataspray.store.impl.LambdaDeployerImpl.LAMBDA_DEFAULT_TIMEOUT;
 @ApplicationScoped
 public class SqsStreamStore implements StreamStore {
     public static final String CUSTOMER_QUEUE_PREFIX = "customer-";
+    public static final String CUSTOMER_QUEUE_SUFFIX = ".fifo";
     // ARN with queue name wildcard is supported:
     // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-basic-examples-of-iam-policies.html
-    public static final String CUSTOMER_QUEUE_WILDCARD = CUSTOMER_QUEUE_PREFIX + "*";
+    public static final String CUSTOMER_QUEUE_WILDCARD = CUSTOMER_QUEUE_PREFIX + "*" + CUSTOMER_QUEUE_SUFFIX;
 
     @ConfigProperty(name = "aws.accountId")
     String awsAccountId;
@@ -65,7 +66,7 @@ public class SqsStreamStore implements StreamStore {
     CustomerLogger customerLog;
 
     @Override
-    public void submit(String organizationName, String streamName, String messageKey, String messageId, byte[] messageBytes, MediaType contentType) {
+    public void submit(String organizationName, String streamName, Optional<String> messageIdOpt, String messageKey, byte[] messageBytes, MediaType contentType) {
         // Since SQS accepts messages as String, convert each message appropriately
         final String messageStr;
         switch (contentType.toString()) {
@@ -86,24 +87,24 @@ public class SqsStreamStore implements StreamStore {
         }
 
         try {
-            sendMessage(organizationName, streamName, messageKey, messageId, messageStr);
+            sendMessage(organizationName, streamName, messageKey, messageIdOpt, messageStr);
         } catch (SqsException ex) {
             if (isQueueDoesNotExist(ex)) {
                 // If the queue does not exist, create it
                 createStream(organizationName, streamName);
 
                 // and retry
-                sendMessage(organizationName, streamName, messageKey, messageId, messageStr);
+                sendMessage(organizationName, streamName, messageKey, messageIdOpt, messageStr);
             } else {
                 throw ex;
             }
         }
     }
 
-    private void sendMessage(String organizationName, String streamName, String key, String deduplicationId, String messageStr) {
+    private void sendMessage(String organizationName, String streamName, String groupId, Optional<String> deduplicationId, String messageStr) {
         sqsClient.sendMessage(SendMessageRequest.builder()
-                .messageGroupId(key)
-                .messageDeduplicationId(deduplicationId)
+                .messageGroupId(groupId)
+                .messageDeduplicationId(deduplicationId.orElse(null))
                 .queueUrl(getAwsQueueUrl(organizationName, streamName))
                 .messageBody(messageStr)
                 .build());
@@ -167,14 +168,14 @@ public class SqsStreamStore implements StreamStore {
 
     @Override
     public String getAwsQueueName(String organizationName, String queueName) {
-        return CUSTOMER_QUEUE_PREFIX + organizationName + "-" + queueName;
+        return CUSTOMER_QUEUE_PREFIX + organizationName + "-" + queueName + CUSTOMER_QUEUE_SUFFIX;
     }
 
     @Override
     public Optional<String> extractStreamNameFromAwsQueueName(String organizationName, String awsQueueName) {
         String prefix = CUSTOMER_QUEUE_PREFIX + organizationName + "-";
-        return awsQueueName.startsWith(prefix)
-                ? Optional.of(awsQueueName.substring(prefix.length()))
+        return awsQueueName.startsWith(prefix) && awsQueueName.endsWith(CUSTOMER_QUEUE_SUFFIX)
+                ? Optional.of(awsQueueName.substring(prefix.length(), awsQueueName.length() - CUSTOMER_QUEUE_SUFFIX.length()))
                 : Optional.empty();
     }
 
