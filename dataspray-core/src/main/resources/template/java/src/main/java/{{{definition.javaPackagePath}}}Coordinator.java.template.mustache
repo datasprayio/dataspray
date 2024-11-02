@@ -55,6 +55,6 @@ public interface Coordinator {
      * @param {{{dataFormat.nameCamelLower}}} Content of the message
      * @param messageId Optional unique ID of the message used for de-duplication (e.g. Transaction ID)
      */
-    void sendTo{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}, @Nullable tring messageId);
+    void sendTo{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}, @Nullable String messageId);
     {{/processor.outputStreams}}
 }

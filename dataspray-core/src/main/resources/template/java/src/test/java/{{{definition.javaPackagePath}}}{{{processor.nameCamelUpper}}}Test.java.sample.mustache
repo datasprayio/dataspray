@@ -2,15 +2,14 @@ package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
 import org.junit.Test;
+{{^processor.inputStreams.empty}}
+import org.mockito.Mockito;
+{{/processor.inputStreams.empty}}
 {{#processor.endpoint}}
+import org.junit.Assert;
 import io.dataspray.runner.dto.web.MockHttpRequest;
 import io.dataspray.runner.dto.web.HttpResponse;
 {{/processor.endpoint}}
-{{/util.javaImportsFormat}}
-
-{{#util.javaImportsFormat}}
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 {{/util.javaImportsFormat}}
 
 public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
@@ -27,7 +26,7 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
                 .build(),
             HttpResponse.builder());
 
-        assertEquals(204, response.getStatusCode());
+        Assert.assertEquals(204, response.getStatusCode());
     }
     {{/processor.endpoint}}
     {{#processor.inputStreams}}
@@ -36,7 +35,7 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
     public void test{{{uniqueNameCamelUpper}}}() {
 
         processor.process{{{uniqueNameCamelUpper}}}(
-            createMessage{{{dataFormat.nameCamelUpper}}}({{>../../stream-test-data}}),
+            createMessage{{{dataFormat.nameCamelUpper}}}("key", {{>../../stream-test-data}}),
             coordinator);
 
         {{#processor.outputStreams}}

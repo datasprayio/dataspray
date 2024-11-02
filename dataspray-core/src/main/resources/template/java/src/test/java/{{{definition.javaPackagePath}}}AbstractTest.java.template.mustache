@@ -3,6 +3,7 @@ package {{{definition.javaPackage}}};
 {{#util.javaImportsFormat}}
 import org.junit.Before;
 import io.dataspray.runner.StoreType;
+import java.util.UUID;
 {{/util.javaImportsFormat}}
 
 public class AbstractTest {
@@ -17,8 +18,8 @@ public class AbstractTest {
     }
     {{#processor.inputStreams}}
 
-    public TestMessage<{{{dataFormat.nameCamelUpper}}}> createMessage{{{dataFormat.nameCamelUpper}}}({{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
-        return new TestMessage<>(StoreType.{{{storeType.name}}}, "{{{storeName}}}", "{{{streamName}}}", {{{dataFormat.nameCamelLower}}});
+    public TestMessage<{{{dataFormat.nameCamelUpper}}}> createMessage{{{dataFormat.nameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
+        return new TestMessage<>(StoreType.{{{storeType.name}}}, "{{{storeName}}}", "{{{streamName}}}", messageKey, UUID.randomUUID().toString(), {{{dataFormat.nameCamelLower}}});
     }
     {{/processor.inputStreams}}
 }
