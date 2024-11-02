@@ -34,15 +34,12 @@ import io.dataspray.store.LambdaDeployer.Versions;
 import io.dataspray.store.TopicStore;
 import io.dataspray.store.util.WithCursor;
 import io.dataspray.stream.control.model.DeployRequest;
-import io.dataspray.stream.control.model.Target;
-import io.dataspray.stream.control.model.TargetBatch;
-import io.dataspray.stream.control.model.TargetStream;
-import io.dataspray.stream.control.model.Targets;
 import io.dataspray.stream.control.model.TaskStatus;
 import io.dataspray.stream.control.model.TaskStatus.StatusEnum;
 import io.dataspray.stream.control.model.TaskStatuses;
 import io.dataspray.stream.control.model.TaskVersion;
 import io.dataspray.stream.control.model.TaskVersions;
+import io.dataspray.stream.control.model.Topics;
 import io.dataspray.stream.control.model.UploadCodeRequest;
 import io.dataspray.stream.control.model.UploadCodeResponse;
 import io.dataspray.web.resource.AbstractResource;
@@ -174,29 +171,29 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     @Override
-    public Targets getTopics(String organizationName) {
-        TopicStore.Targets targets = topicStore.getTopics(organizationName, true);
-        return modelToTargets(organizationName, targets);
+    public Topics getTopics(String organizationName) {
+        TopicStore.Topics topics = topicStore.getTopics(organizationName, true);
+        return modelToTargets(organizationName, topics);
     }
 
-    private Targets modelToTargets(String organizationName, TopicStore.Targets targets) {
-        return new Targets(
+    private Topics modelToTargets(String organizationName, TopicStore.Topics topics) {
+        return new Topics(
                 organizationName,
-                Boolean.TRUE.equals(targets.getAllowUndefinedTargets()),
-                Optional.ofNullable(targets.getUndefinedTarget()).map(this::modelToTarget).orElse(null),
-                targets.getTopics().stream()
+                Boolean.TRUE.equals(topics.getAllowUndefinedTopics()),
+                Optional.ofNullable(topics.getUndefinedTopic()).map(this::modelToTarget).orElse(null),
+                topics.getTopics().stream()
                         .map(this::modelToTarget)
                         .collect(ImmutableList.toImmutableList()));
     }
 
 
-    private Target modelToTarget(TopicStore.Target target) {
+    private Target modelToTarget(TopicStore.Topic topic) {
         return new Target(
-                target.getName(),
-                target.getBatch()
+                topic.getName(),
+                topic.getBatch()
                         .map(batch -> new TargetBatch(batch.getRetention().getRetentionInDays()))
                         .orElse(null),
-                target.getStreams().stream()
+                topic.getStreams().stream()
                         .map(stream -> new TargetStream(stream.getName()))
                         .collect(ImmutableList.toImmutableList()));
     }

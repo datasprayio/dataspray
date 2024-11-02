@@ -49,76 +49,76 @@ public class DynamoTopicStore implements TopicStore {
     @VisibleForTesting
     public SingleTable singleTable;
 
-    private TableSchema<Targets> targetsSchema;
-    private Cache<String, Targets> targetsByOrganizationNameCache;
+    private TableSchema<Topics> topicsSchema;
+    private Cache<String, Topics> topicsByOrganizationNameCache;
 
     @Startup
     @VisibleForTesting
     public void init() {
-        targetsByOrganizationNameCache = CacheBuilder.newBuilder()
+        topicsByOrganizationNameCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(Duration.ofMinutes(1))
                 .softValues()
                 .build();
 
-        targetsSchema = singleTable.parseTableSchema(Targets.class);
+        topicsSchema = singleTable.parseTableSchema(Topics.class);
     }
 
     @Override
-    public Targets getTopics(String organizationName, boolean useCache) {
+    public Topics getTopics(String organizationName, boolean useCache) {
 
         // Check cache first
         if (useCache) {
-            Targets targets = targetsByOrganizationNameCache.getIfPresent(organizationName);
-            if (targets != null) {
-                return targets;
+            Topics topics = topicsByOrganizationNameCache.getIfPresent(organizationName);
+            if (topics != null) {
+                return topics;
             }
         }
 
         // Fetch from DB
-        Targets targets = targetsSchema.get()
+        Topics topics = topicsSchema.get()
                 .key(Map.of("organizationName", organizationName))
                 .builder(b -> b.consistentRead(!useCache))
                 .execute(dynamo)
                 // Construct default if not found
-                .orElseGet(() -> Targets.builder()
+                .orElseGet(() -> Topics.builder()
                         .organizationName(organizationName)
                         .version(INITIAL_VERSION)
                         .build());
 
         // Update cache
-        targetsByOrganizationNameCache.put(organizationName, targets);
+        topicsByOrganizationNameCache.put(organizationName, topics);
 
-        return targets;
+        return topics;
     }
 
     @Override
-    public Optional<Target> getTopic(String organizationName, String targetName, boolean useCache) {
-        return getTopics(organizationName, useCache).getTopic(targetName);
+    public Optional<Topic> getTopic(String organizationName, String topicName, boolean useCache) {
+        return getTopics(organizationName, useCache).getTopic(topicName);
     }
 
     @Override
-    public Targets updateTargets(Targets targets) {
+    public Topics updateTopics(Topics topics) {
 
         // Bump the version
-        Targets targetsVersionBumped = targets.toBuilder()
-                .version(targets.getVersion() + 1)
+        Topics topicsVersionBumped = topics.toBuilder()
+                .version(topics.getVersion() + 1)
                 .build();
 
         // Make the update
         // Prevent concurrent modifications by ensuring expected version
-        PutBuilder<Targets> putBuilder = targetsSchema.put();
-        if (targets.getVersion() == INITIAL_VERSION) {
+        PutBuilder<Topics> putBuilder = topicsSchema.put();
+        if (topics.getVersion() == INITIAL_VERSION) {
             putBuilder.conditionNotExists();
         } else {
-            putBuilder.conditionFieldEquals("version", targets.getVersion());
+            putBuilder.conditionFieldEquals("version", topics.getVersion());
         }
-        PutItemResponse execute = putBuilder.item(targetsVersionBumped)
+        PutItemResponse execute = putBuilder.item(topicsVersionBumped)
                 .execute(dynamo);
 
         // Update cache
-        targetsByOrganizationNameCache.put(targets.getOrganizationName(), targetsVersionBumped);
+        topicsByOrganizationNameCache.put(topics.getOrganizationName(), topicsVersionBumped);
 
-        // Return targets with version bumped
-        return targetsVersionBumped;
+        // Return topics with version bumped
+        return topicsVersionBumped;
     }
 }

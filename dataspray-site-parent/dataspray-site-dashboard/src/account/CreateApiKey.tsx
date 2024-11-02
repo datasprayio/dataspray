@@ -43,7 +43,7 @@ export const CreateApiKey = (props: {
 }) => {
     const {currentOrganizationName} = useAuth();
     const [error, setError] = useState<React.ReactNode>();
-    const [selectedTargets, setSelectedTargets] = useState<Option[]>([])
+    const [selectedTopics, setSelectedTopics] = useState<Option[]>([])
 
     return (
             <CloudscapeFormik
@@ -114,7 +114,7 @@ export const CreateApiKey = (props: {
                                                     {
                                                         value: 'system',
                                                         label: 'System',
-                                                        description: 'Access to specific ingestion targets only. Useful for system integrations.',
+                                                        description: 'Access to specific ingestion topics only. Useful for system integrations.',
                                                     },
                                                     {
                                                         value: 'user',
@@ -162,19 +162,19 @@ export const CreateApiKey = (props: {
                                                 />
                                             </FormField>
                                             <FormField
-                                                    label="List of targets to grant access to"
+                                                    label="List of topics to grant access to"
                                                     errorText={errors?.queueWhitelist}
                                             >
                                                 <TargetSelect
                                                         currentOrganizationName={currentOrganizationName}
-                                                        setSelectedTargets={setSelectedTargets}
+                                                        setSelectedTopics={setSelectedTopics}
                                                         {...(values.type === 'user' ? {
-                                                            // Options when all targets are allowed
+                                                            // Options when all topics are allowed
                                                             disabled: true,
-                                                            placeholder: 'All targets granted',
-                                                            selectedTargets: [],
+                                                            placeholder: 'All topics granted',
+                                                            selectedTopics: [],
                                                         } : {
-                                                            selectedTargets,
+                                                            selectedTopics,
                                                         })}
                                                 />
                                             </FormField>

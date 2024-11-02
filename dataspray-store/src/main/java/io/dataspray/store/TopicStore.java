@@ -51,24 +51,24 @@ import static io.dataspray.store.TopicStore.BatchRetention.THREE_MONTHS;
 public interface TopicStore {
 
     /**
-     * For undefined targets, whether to ingest it with default configuration.
+     * For undefined topics, whether to ingest it with default configuration.
      */
-    boolean DEFAULT_ALLOW_UNDEFINED_TARGETS = true;
+    boolean DEFAULT_ALLOW_UNDEFINED_TOPICS = true;
     /**
-     * For undefined targets, default batch retention.
+     * For undefined topics, default batch retention.
      */
     BatchRetention DEFAULT_BATCH_RETENTION = THREE_MONTHS;
 
-    Targets getTopics(String organizationName, boolean useCache);
+    Topics getTopics(String organizationName, boolean useCache);
 
-    Optional<Target> getTopic(String organizationName, String targetName, boolean useCache);
+    Optional<Topic> getTopic(String organizationName, String topicName, boolean useCache);
 
-    Targets updateTargets(Targets targets);
+    Topics updateTopics(Topics topics);
 
     /**
-     * <b>Organization target definitions.</b>
-     * <p>Each organization has a set of targets and their definitions live here.</p>
-     * <p>Each entry defines targets and their definition including a default target if no explicit definition is
+     * <b>Organization topic definitions.</b>
+     * <p>Each organization has a set of topics and their definitions live here.</p>
+     * <p>Each entry defines topics and their definition including a default topic if no explicit definition is
      * defined</p>
      * <p>This object is loaded from Dynamo on a hot-path and needs to stay efficient and small (under 1MB dynamo
      * limit)</p>
@@ -76,9 +76,9 @@ public interface TopicStore {
     @Value
     @AllArgsConstructor
     @Builder(toBuilder = true)
-    @DynamoTable(type = Primary, partitionKeys = "organizationName", rangePrefix = "targets")
+    @DynamoTable(type = Primary, partitionKeys = "organizationName", rangePrefix = "topics")
     @RegisterForReflection
-    class Targets {
+    class Topics {
 
         @NonNull
         String organizationName;
@@ -90,70 +90,70 @@ public interface TopicStore {
         Integer version;
 
         @Nullable
-        Boolean allowUndefinedTargets;
+        Boolean allowUndefinedTopics;
 
         /**
-         * Override configuration for default undefined targets.
+         * Override configuration for default undefined topics.
          */
         @Nullable
-        Target undefinedTarget;
+        Topic undefinedTopic;
 
         @NonNull
         @Builder.Default
-        Set<Target> targets = ImmutableSet.of();
+        Set<Topic> topics = ImmutableSet.of();
 
         /**
-         * For a target with no definition, whether to ingest it with default configuration.
+         * For a topic with no definition, whether to ingest it with default configuration.
          */
-        public boolean isAllowUndefinedTargets() {
-            return allowUndefinedTargets == null
-                    ? DEFAULT_ALLOW_UNDEFINED_TARGETS
-                    : allowUndefinedTargets;
+        public boolean getAllowUndefinedTopics() {
+            return allowUndefinedTopics == null
+                    ? DEFAULT_ALLOW_UNDEFINED_TOPICS
+                    : allowUndefinedTopics;
         }
 
         /**
-         * Get target metadata by name.
+         * Get topic metadata by name.
          * <br />
          * Helper method to return defaults if not specified.
          */
         @NonNull
-        public Optional<Target> getTopic(String target) {
-            return targets.stream()
-                    .filter(t -> t.getName().equals(target))
+        public Optional<Topic> getTopic(String topic) {
+            return topics.stream()
+                    .filter(t -> t.getName().equals(topic))
                     .findFirst()
-                    // If undefined, see if we allow undefined targets
-                    .or(() -> isAllowUndefinedTargets()
-                            // We do, let's see if we have an organization-wide default configuration for undefined targets
-                            ? Optional.ofNullable(undefinedTarget)
-                            // We don't, return DataSpray-wide default configuration for undefined targets
-                            .or(() -> Optional.of(Target.builder()
-                                    .name(target)
-                                    // By default, we enable batching for undefined targets
+                    // If undefined, see if we allow undefined topics
+                    .or(() -> getAllowUndefinedTopics()
+                            // We do, let's see if we have an organization-wide default configuration for undefined topics
+                            ? Optional.ofNullable(undefinedTopic)
+                            // We don't, return DataSpray-wide default configuration for undefined topics
+                            .or(() -> Optional.of(Topic.builder()
+                                    .name(topic)
+                                    // By default, we enable batching for undefined topics
                                     // otherwise there is no point in having a default definition for them
                                     .batch(Optional.of(Batch.builder().build()))
                                     .build()))
-                            // We don't accept targets without definition
+                            // We don't accept topics without definition
                             : Optional.empty());
         }
     }
 
     /**
-     * <b>Target definition.</b>
-     * <p>Each target specifies whether data ingested should be directed towards batch processing and/or stream
+     * <b>Topic definition.</b>
+     * <p>Each topic specifies whether data ingested should be directed towards batch processing and/or stream
      * processing endpoints</p>
      */
     @Value
     @AllArgsConstructor
     @Builder(toBuilder = true)
     @RegisterForReflection
-    class Target {
+    class Topic {
 
         @NonNull
         @SerializedName("n")
         String name;
 
         /**
-         * Whether this target should send data for batch processing (e.g. Firehose -> S3).
+         * Whether this topic should send data for batch processing (e.g. Firehose -> S3).
          */
         @NonNull
         @SerializedName("b")
@@ -161,7 +161,7 @@ public interface TopicStore {
         Optional<Batch> batch = Optional.empty();
 
         /**
-         * Whether this target should send data for stream processing (e.g. SQS queues).
+         * Whether this topic should send data for stream processing (e.g. SQS queues).
          */
         @NonNull
         @SerializedName("s")

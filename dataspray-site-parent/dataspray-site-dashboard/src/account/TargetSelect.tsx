@@ -31,13 +31,13 @@ import Option = MultiselectProps.Option;
 
 export const TargetSelect = (props: {
     currentOrganizationName?: string | null,
-    selectedTargets: Option[],
-    setSelectedTargets: (targets: Option[]) => void,
+    selectedTopics: Option[],
+    setSelectedTopics: (topics: Option[]) => void,
 } & Partial<React.ComponentProps<typeof Multiselect>>) => {
     const {
         currentOrganizationName,
-        selectedTargets,
-        setSelectedTargets,
+        selectedTopics,
+        setSelectedTopics,
         ...multiSelectProps
     } = props;
 
@@ -57,14 +57,14 @@ export const TargetSelect = (props: {
             const result = await getClient().control().getTopics({
                 organizationName: props.currentOrganizationName,
             })
-            setOptions(result.targets.map(target => ({
+            setOptions(result.topics.map(target => ({
                 label: target.name,
                 value: target.name,
             })))
         } catch (e: any) {
             loadInitiated.current = false; // Allow retry
-            console.error('Failed to fetch targets', e ?? 'Unknown error')
-            setError(e?.message || ('Failed to fetch targets: ' + (e || 'Unknown error')))
+            console.error('Failed to fetch topics', e ?? 'Unknown error')
+            setError(e?.message || ('Failed to fetch topics: ' + (e || 'Unknown error')))
         }
         setLoading(false);
     }, [props.currentOrganizationName]);
@@ -83,22 +83,22 @@ export const TargetSelect = (props: {
     return (
             <Multiselect
                     options={options}
-                    selectedOptions={props.selectedTargets}
+                    selectedOptions={props.selectedTopics}
                     onLoadItems={onLoadItems}
-                    onChange={event => props.setSelectedTargets([...event.detail.selectedOptions])}
+                    onChange={event => props.setSelectedTopics([...event.detail.selectedOptions])}
                     statusType={status}
                     filteringType="auto"
 
                     /* Labels */
                     selectedAriaLabel="Selected"
                     deselectAriaLabel={option => `Remove option ${option.label} from selection`}
-                    placeholder="Choose one or more targets"
-                    loadingText="Loading targets"
-                    errorText="Error fetching targets."
+                    placeholder="Choose one or more topics"
+                    loadingText="Loading topics"
+                    errorText="Error fetching topics."
                     recoveryText="Retry"
                     finishedText='End of all results'
-                    empty='No targets'
-                    filteringAriaLabel="Filter targets"
+                    empty='No topics'
+                    filteringAriaLabel="Filter topics"
                     filteringClearAriaLabel="Clear"
                     ariaRequired={true}
 

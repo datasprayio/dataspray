@@ -27,7 +27,7 @@ import io.dataspray.store.CustomerLogger;
 import io.dataspray.store.StreamStore;
 import io.dataspray.store.TopicStore;
 import io.dataspray.store.TopicStore.Stream;
-import io.dataspray.store.TopicStore.Target;
+import io.dataspray.store.TopicStore.Topic;
 import io.dataspray.web.resource.AbstractResource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -72,7 +72,7 @@ public class IngestResource extends AbstractResource implements IngestApi {
         getUsername().orElseThrow(ForbiddenException::new);
 
         // Fetch target definition
-        Target target = topicStore.getTopic(organizationName, topicName, true)
+        Topic topic = topicStore.getTopic(organizationName, topicName, true)
                 // If target is not found and default targets are disabled, throw not found
                 .orElseThrow(() -> {
                     customerLog.warn("Dropping message for undefined stream " + topicName, organizationName);
@@ -95,15 +95,15 @@ public class IngestResource extends AbstractResource implements IngestApi {
                 });
 
         // Submit message to all streams for stream processing
-        for (Stream stream : target.getStreams()) {
+        for (Stream stream : topic.getStreams()) {
             streamStore.submit(organizationName, topicName, messageKey, messageId, messageBytes, mediaType);
         }
 
         // Submit message for batch processing
-        if (target.getBatch().isPresent()) {
+        if (topic.getBatch().isPresent()) {
             // Only JSON supported for now
             if (APPLICATION_JSON_TYPE.equals(mediaType)) {
-                batchStore.putRecord(organizationName, topicName, messageBytes, target.getBatch().get().getRetention());
+                batchStore.putRecord(organizationName, topicName, messageBytes, topic.getBatch().get().getRetention());
             } else {
                 customerLog.warn("Message for stream " + topicName + " requires " + APPLICATION_JSON + ", skipping ETL", organizationName);
             }

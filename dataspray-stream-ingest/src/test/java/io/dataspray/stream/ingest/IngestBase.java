@@ -34,8 +34,8 @@ import io.dataspray.store.SingleTableProvider;
 import io.dataspray.store.TopicStore.Batch;
 import io.dataspray.store.TopicStore.BatchRetention;
 import io.dataspray.store.TopicStore.Stream;
-import io.dataspray.store.TopicStore.Target;
-import io.dataspray.store.TopicStore.Targets;
+import io.dataspray.store.TopicStore.Topic;
+import io.dataspray.store.TopicStore.Topics;
 import io.dataspray.store.impl.DynamoTopicStore;
 import io.dataspray.store.impl.FirehoseS3AthenaBatchStore;
 import io.dataspray.store.impl.SqsStreamStore;
@@ -106,11 +106,11 @@ public abstract class IngestBase extends AbstractLambdaTest {
         dynamoTargetStore.init();
 
         // Setup target to perform batch and stream processing
-        dynamoTargetStore.updateTargets(Targets.builder()
+        dynamoTargetStore.updateTopics(Topics.builder()
                 .organizationName(getOrganizationName())
                 .version(DynamoTopicStore.INITIAL_VERSION)
-                .targets(ImmutableSet.of(
-                        Target.builder()
+                .topics(ImmutableSet.of(
+                        Topic.builder()
                                 .name(targetId)
                                 .batch(Optional.of(Batch.builder()
                                         .retention(BatchRetention.YEAR).build()))
