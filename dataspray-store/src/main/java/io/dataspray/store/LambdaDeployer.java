@@ -52,6 +52,7 @@ public interface LambdaDeployer {
             ImmutableSet<String> outputQueueNames,
             Runtime runtime,
             Optional<Endpoint> endpointOpt,
+            Optional<DynamoState> dynamoState,
             boolean switchToImmediately);
 
     void switchVersion(String organizationName, String taskId, String version);
@@ -172,5 +173,15 @@ public interface LambdaDeployer {
 
         @Nonnull
         Optional<Cors> cors;
+    }
+
+    @Value
+    @RegisterForReflection
+    class DynamoState {
+        @Nonnull
+        Long lsiCount;
+
+        @Nonnull
+        Long gsiCount;
     }
 }

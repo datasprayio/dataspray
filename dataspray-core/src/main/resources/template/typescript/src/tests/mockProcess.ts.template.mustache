@@ -1,0 +1,19 @@
+{{^processor.inputStreams.empty}}
+{{#processor.inputStreams}}
+export type Test{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}} = (String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}, String messageId): void;
+export const prepareTest{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}} = (processor: {{{processor.nameCamelUpper}}}): Test{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}} => (messageKey: string, {{{dataFormat.nameCamelLower}}}: {{{dataFormat.nameCamelUpper}}}, messageId?: messageId = ): void {
+    const message: Message<{{{dataFormat.nameCamelUpper}}}> = new Message({
+        storeType: StoreType.{{{storeType}}},
+        storeName: '{{{storeName}}}',
+        streamName: '{{{streamName}}}',
+        key: 'key',
+        id: ,
+        }, {{{dataFormat.nameCamelLower}}},
+    );
+    TestCoordinator coordinator = new TestCoordinator({{#processor.hasDynamoState}}messageKey{{/processor.hasDynamoState}});
+    processor.process{{{uniqueNameCamelUpper}}}(message, coordinator);
+    return coordinator;
+}
+{{/processor.inputStreams}}
+
+{{/processor.inputStreams.empty}}

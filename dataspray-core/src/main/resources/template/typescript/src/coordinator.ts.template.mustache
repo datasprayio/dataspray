@@ -8,13 +8,12 @@ import {
 {{/processor.jsonOutputStreams.empty}}
 
 export interface Coordinator {
-    {{#processor.state.isPresent}}
-    {{#isDynamo}}
+    {{#processor.hasDynamoState}}
 
     /**
      * State management backed by DynamoDB and unique for each message key within a task.
      * <p>
-     * Identical to calling {@link #stateForGlobalNamespace(ttl, <task_name>, <message_key>)}.
+     * Identical to calling {@link #stateForNamespace}{@code (ttl, "task", <task_name>, "key", <message_key>)}.
      * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
      * @param ttlInSec Optional second-precision time-to-live for the state. Resets on every write.
      */
@@ -23,7 +22,7 @@ export interface Coordinator {
     /**
      * State management backed by DynamoDB and unique for entire task.
      * <p>
-     * Identical to calling {@link #stateForNamespace(ttl, <task_name>)}.
+     * Identical to calling {@link #stateForNamespace}{@code (ttl, "task", <task_name>)}.
      * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
      * @param ttlInSec Optional second-precision time-to-live for the state. Resets on every write.
      */
@@ -36,9 +35,8 @@ export interface Coordinator {
      * @param namespace Unique key for the state.
      * @param ttlInSec Optional second-precision time-to-live for the state. Resets on every write.
      */
-    stateForNamespace(namespace: string[], ttlInSec?: number): StateManager;
-    {{/isDynamo}}
-    {{/processor.state.isPresent}}
+    stateForNamespace(ttlInSec: number | undefined, namespace: string[]): StateManager;
+    {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}
 
     /**
@@ -55,37 +53,35 @@ export interface Coordinator {
 export class CoordinatorImpl implements Coordinator {
 
     private rawCoordinator: RawCoordinator;
-    {{#processor.state.isPresent}}
+    {{#processor.hasDynamoState}}
     private messageKey: string;
-    {{/processor.state.isPresent}}
+    {{/processor.hasDynamoState}}
 
     constructor(
         rawCoordinator: RawCoordinator,
-        {{#processor.state.isPresent}}
+        {{#processor.hasDynamoState}}
         messageKey: string,
-        {{/processor.state.isPresent}}
+        {{/processor.hasDynamoState}}
     ) {
         this.rawCoordinator = rawCoordinator;
-        {{#processor.state.isPresent}}
+        {{#processor.hasDynamoState}}
         this.messageKey = messageKey;
-        {{/processor.state.isPresent}}
+        {{/processor.hasDynamoState}}
     }
-    {{#processor.state.isPresent}}
-    {{#isDynamo}}
+    {{#processor.hasDynamoState}}
 
-    stateForMessageKey(ttl) {
-        return stateForGlobalNamespace(ttl, "{{{processor.taskId}}}", this.messageKey);
-    }
-
-    stateForProcessor(ttl) {
-        return stateForGlobalNamespace(ttl, "{{{processor.taskId}}}");
+    stateForMessageKey(ttlInSec?: number): StateManager {
+        return this.stateForNamespace(ttlInSec, ["task", "{{{processor.taskId}}}", "key", this.messageKey]);
     }
 
-    stateForNamespace(namespace, ttl) {
-        return rawCoordinator.getStateManager(namespace, ttl);
+    stateForTask(ttlInSec?: number): StateManager {
+        return this.stateForNamespace(ttlInSec, ["task", "{{{processor.taskId}}}"]);
     }
-    {{/isDynamo}}
-    {{/processor.state.isPresent}}
+
+    stateForNamespace(ttlInSec: number | undefined, namespace: string[]): StateManager {
+        return this.rawCoordinator.getStateManager(namespace, ttlInSec);
+    }
+    {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}
 
     sendTo{{{uniqueNameCamelUpper}}}(messageKey: string, {{{dataFormat.nameCamelLower}}}: {{{dataFormat.nameCamelUpper}}}, messageId?: string): void {

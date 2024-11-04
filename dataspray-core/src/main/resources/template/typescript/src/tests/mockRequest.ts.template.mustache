@@ -48,23 +48,5 @@ export const mockRequest = (partial: Partial<LambdaFunctionURLEvent>): LambdaFun
     isBase64Encoded: false,
     ...partial,
 });
+
 {{/processor.endpoint}}
-{{^processor.inputStreams.empty}}
-
-export const mockCoordinator: () => Coordinator = () => ({
-    {{#processor.outputStreams}}
-    sendTo{{{uniqueNameCamelUpper}}}: jest.fn(),
-    {{/processor.outputStreams}}
-});
-{{#processor.inputStreams}}
-
-export const mockMessage{{{uniqueNameCamelUpper}}} = (key: string, data: {{{this.dataFormat.nameCamelUpper}}}) => new Message({
-        storeType: StoreType.{{{storeType}}},
-        storeName: '{{{storeName}}}',
-        streamName: '{{{streamName}}}',
-        key,
-        id: Math.random().toString(36).substring(2)
-    }, data,
-);
-{{/processor.inputStreams}}
-{{/processor.inputStreams.empty}}

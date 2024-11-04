@@ -80,6 +80,9 @@ public class Definition extends Item {
     @Builder.Default
     ImmutableSet<KafkaStore> kafkaStores = ImmutableSet.of();
 
+    @Builder.Default
+    Optional<DynamoState> dynamoState = Optional.empty();
+
     @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public ImmutableSet<Store> getStores() {
         return ImmutableSet.<Store>builder()

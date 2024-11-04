@@ -2,17 +2,23 @@ package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
 {{^processor.outputStreams.empty}}
+import io.dataspray.runner.Message;
+import io.dataspray.runner.StoreType;
 import lombok.SneakyThrows;
 import java.util.Collections;
 import java.util.List;
 import com.google.common.collect.Lists;
 import com.google.common.collect.ImmutableList;
 {{/processor.outputStreams.empty}}
+{{#processor.hasDynamoState}}
+import io.dataspray.runner.StateManager;
+import java.time.Duration;
+import java.util.Optional;
+{{/processor.hasDynamoState}}
 {{/util.javaImportsFormat}}
 {{^processor.outputStreams.empty}}
 
 {{#util.javaImportsFormat}}
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 {{/util.javaImportsFormat}}
 {{/processor.outputStreams.empty}}
@@ -20,37 +26,54 @@ import static org.junit.Assert.assertTrue;
 public class TestCoordinator implements Coordinator {
 
     {{#processor.outputStreams}}
-    private final List<{{{dataFormat.nameCamelUpper}}}> sent{{{dataFormat.nameCamelUpper}}} = Collections.synchronizedList(Lists.newArrayList());
+    private final List<Message<{{{dataFormat.nameCamelUpper}}}>> sent{{{uniqueNameCamelUpper}}} = Collections.synchronizedList(Lists.newArrayList());
     {{/processor.outputStreams}}
+    {{#processor.hasDynamoState}}
+    private final String messageKey;
+
+    public TestCoordinator(String messageKey) {
+        this.messageKey = messageKey;
+    }
+
+    @Override
+    public StateManager stateForMessageKey(Optional<Duration> ttl) {
+        return stateForNamespace(ttl, "task", "{{{processor.taskId}}}", "key", messageKey);
+    }
+
+    @Override
+    public StateManager stateForTask(Optional<Duration> ttl) {
+        return stateForNamespace(ttl, "task", "{{{processor.taskId}}}");
+    }
+
+    @Override
+    public StateManager stateForNamespace(Optional<Duration> ttl, String... namespace) {
+        return new TestStateManager(ttl, namespace);
+    }
+    {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}
 
     @SneakyThrows
     public void sendTo{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}, String messageId) {
-        sent{{{dataFormat.nameCamelUpper}}}.add({{{dataFormat.nameCamelLower}}});
+        sent{{{uniqueNameCamelUpper}}}.add(new TestMessage<>(
+                StoreType.{{{storeType.name}}},
+                "{{{storeName}}}",
+                "{{{streamName}}}",
+                messageKey,
+                messageId,
+                {{{dataFormat.nameCamelLower}}}));
     }
     {{/processor.outputStreams}}
     {{#processor.outputStreams}}
 
-    public ImmutableList<{{{dataFormat.nameCamelUpper}}}> getSent{{{dataFormat.nameCamelUpper}}}() {
-        return ImmutableList.copyOf(sent{{{dataFormat.nameCamelUpper}}});
+    public ImmutableList<Message<{{{dataFormat.nameCamelUpper}}}>> getSent{{{dataFormat.nameCamelUpper}}}() {
+        return ImmutableList.copyOf(sent{{{uniqueNameCamelUpper}}});
     }
     {{/processor.outputStreams}}
     {{#processor.outputStreams}}
 
-    public void assertSentNone{{{dataFormat.nameCamelUpper}}}() {
-        assertTrue(sent{{{dataFormat.nameCamelUpper}}}.isEmpty());
-    }
-    {{/processor.outputStreams}}
-    {{#processor.outputStreams}}
-
-    public void assertSentCount{{{dataFormat.nameCamelUpper}}}(int expectedCount) {
-        assertEquals(expectedCount, sent{{{dataFormat.nameCamelUpper}}}.size());
-    }
-    {{/processor.outputStreams}}
-    {{#processor.outputStreams}}
-
-    public void assertSent{{{dataFormat.nameCamelUpper}}}(List<{{{dataFormat.nameCamelUpper}}}> expectedSent) {
-        assertEquals(expectedSent, sent{{{dataFormat.nameCamelUpper}}});
+    public TestCoordinator assertSentNone{{{dataFormat.nameCamelUpper}}}() {
+        assertTrue(sent{{{uniqueNameCamelUpper}}}.isEmpty());
+        return this;
     }
     {{/processor.outputStreams}}
 }

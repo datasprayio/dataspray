@@ -24,3 +24,6 @@ export {StoreType} from './storeType';
 export {RawCoordinator} from './rawCoordinator';
 export {Entrypoint} from './entrypoint';
 export {Message, MessageMetadata} from './message';
+export {StateManager, DynamoStateManager, TTL_IN_EPOCH_SEC_KEY_NAME} from './stateManager';
+export {StateManagerFactory, StateManagerFactoryImpl} from './stateManagerFactory';
+export {mergeStrings, unMergeString} from './util/stringSerdeUtil';

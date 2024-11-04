@@ -29,10 +29,9 @@ import io.dataspray.core.definition.model.DataFormat.Serde;
 import io.dataspray.core.definition.model.DataStream;
 import io.dataspray.core.definition.model.DatasprayStore;
 import io.dataspray.core.definition.model.Definition;
+import io.dataspray.core.definition.model.DynamoState;
 import io.dataspray.core.definition.model.Endpoint;
 import io.dataspray.core.definition.model.JavaProcessor;
-import io.dataspray.core.definition.model.State;
-import io.dataspray.core.definition.model.State.StateType;
 import io.dataspray.core.definition.model.StoreType;
 import io.dataspray.core.definition.model.StreamLink;
 import io.dataspray.core.definition.model.TypescriptProcessor;
@@ -89,10 +88,7 @@ public enum SampleProject {
                                     Endpoint.builder()
                                             .isPublic(false)
                                             .build()))
-                            .state(Optional.of(
-                                    State.builder()
-                                            .type(StateType.DYNAMO)
-                                            .build()))
+                            .hasDynamoState(true)
                             .build()))
             .datasprayStores(ImmutableSet.of(
                     DatasprayStore.builder()
@@ -111,6 +107,10 @@ public enum SampleProject {
                                             .name("last_ip")
                                             .build()))
                             .build()))
+            .dynamoState(Optional.of(DynamoState.builder()
+                    .lsiCount(1)
+                    .gsiCount(0)
+                    .build()))
             .build()
             .initialize()),
     TYPESCRIPT(name -> Definition.builder()
@@ -160,10 +160,7 @@ public enum SampleProject {
                                                     .allowHeaders(Set.of("Authorization"))
                                                     .build()))
                                             .build()))
-                            .state(Optional.of(
-                                    State.builder()
-                                            .type(StateType.DYNAMO)
-                                            .build()))
+                            .hasDynamoState(true)
                             .build()))
             .datasprayStores(ImmutableSet.of(
                     DatasprayStore.builder()
@@ -182,6 +179,10 @@ public enum SampleProject {
                                             .name("last_ip")
                                             .build()))
                             .build()))
+            .dynamoState(Optional.of(DynamoState.builder()
+                    .lsiCount(1)
+                    .gsiCount(0)
+                    .build()))
             .build()
             .initialize());
 

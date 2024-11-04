@@ -19,12 +19,12 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
     public void testWebRequest() {
 
         HttpResponse response = processor.handleWebRequest(
-            MockHttpRequest.builder()
-                .method("GET")
-                .path("/")
-                .bodyAsString("ping")
-                .build(),
-            HttpResponse.builder());
+                MockHttpRequest.builder()
+                        .method("GET")
+                        .path("/")
+                        .bodyAsString("ping")
+                        .build(),
+                HttpResponse.builder());
 
         Assert.assertEquals(204, response.getStatusCode());
     }
@@ -34,13 +34,8 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
     @Test(timeout = 10_000)
     public void test{{{uniqueNameCamelUpper}}}() {
 
-        processor.process{{{uniqueNameCamelUpper}}}(
-            createMessage{{{dataFormat.nameCamelUpper}}}("key", {{>../../stream-test-data}}),
-            coordinator);
-
-        {{#processor.outputStreams}}
-        coordinator.assertSentNone{{{dataFormat.nameCamelUpper}}}();
-        {{/processor.outputStreams}}
+        TestCoordinator coordinator = process{{{uniqueNameCamelUpper}}}("messageKey", {{>../../stream-test-data}}, "messageId"){{#processor.outputStreams}}
+                .assertSentNone{{{dataFormat.nameCamelUpper}}}(){{/processor.outputStreams}};
     }
     {{/processor.inputStreams}}
 }

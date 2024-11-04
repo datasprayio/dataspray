@@ -31,16 +31,11 @@ import javax.annotation.Nonnull;
 @Value
 @SuperBuilder(toBuilder = true)
 @AllArgsConstructor
-public class State {
+public class DynamoState {
 
     @Nonnull
-    StateType type;
+    long lsiCount;
 
-    public boolean isDynamo() {
-        return type == StateType.DYNAMO;
-    }
-
-    public enum StateType {
-        DYNAMO
-    }
+    @Nonnull
+    long gsiCount;
 }

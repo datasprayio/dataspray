@@ -17,15 +17,15 @@ action-deploy-cloud-jvm-%:
 
 # Deploy client libraries to package managers
 client-languages := java typescript
-action-deploy-client: $(addprefix action-deploy-client-,$(runner-languages))
+action-deploy-client: $(addprefix action-deploy-client-,$(client-languages))
 action-deploy-client-%:
-	mvn clean deploy -Pdeploy-client -am -pl dataspray-api,dataspray-client-parent/dataspray-client-$*
+	mvn clean deploy -am -pl dataspray-api,dataspray-client-parent/dataspray-client-$*
 
 # Deploy runner libraries to package managers
 runner-languages := java typescript
 action-deploy-runner: $(addprefix action-deploy-runner-,$(runner-languages))
 action-deploy-runner-%:
-	mvn clean deploy -Pdeploy-runner -am -pl dataspray-runner-parent/dataspray-runner-$*
+	mvn clean deploy -am -pl dataspray-runner-parent/dataspray-runner-$*
 
 deploy-control:
 	make deploy-dataspray-stream-control

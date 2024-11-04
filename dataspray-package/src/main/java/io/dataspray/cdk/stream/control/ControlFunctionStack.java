@@ -119,6 +119,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                 .sid(getConstructIdCamelCase("SingleTable"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
+                        "dynamodb:CreateTable",
                         "dynamodb:GetItem",
                         "dynamodb:BatchGetItem",
                         "dynamodb:Query",
@@ -207,7 +208,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         "iam:PutRolePolicy"))
                 .resources(ImmutableList.of(
                         "arn:aws:iam::" + getAccount() + ":policy/" + LambdaDeployerImpl.CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "*",
-                        "arn:aws:iam::" + getAccount() + ":role/" + LambdaDeployerImpl.CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER.apply(getDeployEnv()) + "*"))
+                        "arn:aws:iam::" + getAccount() + ":role/" + LambdaDeployerImpl.CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(getDeployEnv()) + "*"))
                 .build());
 
         getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()

@@ -1,0 +1,67 @@
+import {
+    RawCoordinator,
+    StoreType,
+    Message,
+} from 'dataspray-runner';
+import {Coordinator} from "../coordinator";
+{{^processor.jsonOutputStreams.empty}}
+import {
+{{#processor.jsonOutputStreams}}
+    {{{dataFormat.nameCamelUpper}}},
+{{/processor.jsonOutputStreams}}
+} from './streams';
+{{/processor.jsonOutputStreams.empty}}
+{{#processor.hasDynamoState}}
+import { TestStateManager } from './testStateManager';
+{{/processor.hasDynamoState}}
+
+export class TestCoordinator implements Coordinator {
+
+    {{#processor.outputStreams}}
+    private sent{{{uniqueNameCamelUpper}}}: {{{dataFormat.nameCamelUpper}}}[] = [];
+    {{/processor.outputStreams}}
+    {{#processor.hasDynamoState}}
+    private messageKey: string;
+
+    constructor(messageKey: string) {
+        this.messageKey = messageKey;
+    }
+
+    stateForMessageKey(ttlInSec?: number): StateManager {
+        return this.stateForNamespace(ttlInSec, ["task", "{{{processor.taskId}}}", "key", this.messageKey]);
+    }
+
+    stateForTask(ttlInSec?: number): StateManager {
+        return this.stateForNamespace(ttlInSec, ["task", "{{{processor.taskId}}}"]);
+    }
+
+    stateForNamespace(ttlInSec: number | undefined, namespace: string[]): StateManager {
+        return new TestStateManager(ttl, namespace);
+    }
+    {{/processor.hasDynamoState}}
+    {{#processor.outputStreams}}
+
+    sendTo{{{uniqueNameCamelUpper}}}(messageKey: string, {{{dataFormat.nameCamelLower}}}: {{{dataFormat.nameCamelUpper}}}, messageId: string): void {
+        this.sent{{{uniqueNameCamelUpper}}}.push(new Message({
+                        storeType: StoreType.{{{storeType}}},
+                        storeName: '{{{storeName}}}',
+                        streamName: '{{{streamName}}}',
+                        key: messageKey,
+                        id: messageId,
+                }, {{{dataFormat.nameCamelLower}}}));
+    }
+    {{/processor.outputStreams}}
+    {{#processor.outputStreams}}
+
+    getSent{{{dataFormat.nameCamelUpper}}}(): Message<{{{dataFormat.nameCamelUpper}}}>[] {
+        return [...this.sent{{{uniqueNameCamelUpper}}}];
+    }
+    {{/processor.outputStreams}}
+    {{#processor.outputStreams}}
+
+    assertSentNone{{{dataFormat.nameCamelUpper}}}(): TestCoordinator {
+        expect(this.sent{{{uniqueNameCamelUpper}}}.length).toBe(0);
+        return this;
+    }
+    {{/processor.outputStreams}}
+}

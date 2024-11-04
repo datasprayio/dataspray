@@ -1,0 +1,105 @@
+import {
+    RawCoordinator,
+    StoreType,
+    TTL_IN_EPOCH_SEC_KEY_NAME,
+} from 'dataspray-runner';
+import { StateManager } from '../stateManager';
+
+export class TestStateManager implements StateManager {
+
+    private store: Map<String, any> = new Map();
+    private ttlInSec?: number;
+    private key: string[];
+
+    constructor(ttlInSec?: number, key: string[]) {
+        this.ttlInSec = ttlInSec;
+        this.key = key;
+    }
+
+    public getKey(): string[] {
+        return this.key;
+    }
+
+    public async touch(): Promise<void> {
+        if (this.ttlInSec === undefined) {
+            return;
+        }
+        const ttlInEpochSec = Math.floor(Date.now() / 1000) + this.ttlInSec;
+        this.store.put(TTL_IN_EPOCH_SEC_KEY_NAME, ttlInEpochSec);
+    }
+
+    public async getJson<T>(String key): Promise<T> {
+        const jsonString = await this.getString(key);
+        return jsonString != null ? JSON.parse(jsonString) : null;
+    }
+
+    public async setJson<T>(key: string, item: T): Promise<void> {
+        this.touch();
+        await this.setString(key, JSON.stringify(item));
+    }
+
+    public async getString(key: string): Promise<string> {
+        return this.store.get(key) || '';
+    }
+
+    public async setString(key: string, value: string): Promise<void> {
+        this.touch();
+        this.store.put(key, value);
+    }
+
+    public async getBoolean(key: string): Promise<boolean> {
+        return this.store.get(key) || false;
+    }
+
+    public async setBoolean(key: string, value: boolean): Promise<void> {
+        this.touch();
+        this.store.put(key, value);
+    }
+
+    public async getNumber(key: string): Promise<number> {
+        return this.store.get(key) || 0;
+    }
+
+    public async setNumber(key: string, number: number): Promise<void> {
+        this.touch();
+        this.store.put(key, number);
+    }
+
+    public async addToNumber(key: string, increment: number): Promise<void> {
+        this.touch();
+        this.store.put(key, await this.getNumber(key) + number);
+    }
+
+    public async getStringSet(key: string): Promise<Set<string>> {
+        return new Set(this.store.get(key) || []);
+    }
+
+    public async setStringSet(key: string, set: Set<string>): Promise<void> {
+        this.touch();
+        this.store.put(key, new Set(set));
+    }
+
+    public async addToStringSet(key: string, ...values: string[]): Promise<void> {
+        this.touch();
+        this.store.put(key, new Set([...await this.getStringSet(key), ...values]));
+    }
+
+    public async deleteFromStringSet(key: string, ...values: string[]): Promise<void> {
+        this.touch();
+        this.store.put(key, new Set([...await this.getStringSet(key)]
+                .filter(value => !values.includes(value))));
+    }
+
+    public async delete(key: string): Promise<void> {
+        this.touch();
+        this.store.delete(key);
+    }
+
+    public async flush(): Promise<void> {
+        // Nothing to flush
+    }
+
+    public async close(): Promise<void> {
+        // Nothing to close
+    }
+}

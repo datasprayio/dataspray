@@ -117,6 +117,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
                                                 .allowCredentials(cors.getAllowCredentials())
                                                 .maxAge(cors.getMaxAge().intValue())
                                                 .build()))),
+                Optional.ofNullable(deployRequest.getDynamoState()).map(state -> new LambdaDeployer.DynamoState(state.getLsiCount(), state.getGsiCount())),
                 deployRequest.getSwitchToNow());
         log.info("Deployed task {} org {} version {} description {}",
                 taskId, organizationName, deployedVersion.getVersion(), deployedVersion.getDescription());

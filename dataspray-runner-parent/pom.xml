@@ -41,15 +41,4 @@
         <module>dataspray-runner-java</module>
         <module>dataspray-runner-typescript</module>
     </modules>
-
-    <profiles>
-        <profile>
-            <id>deploy-runner</id>
-            <activation>
-                <property>
-                    <name>deploy-runner</name>
-                </property>
-            </activation>
-        </profile>
-    </profiles>
 </project>

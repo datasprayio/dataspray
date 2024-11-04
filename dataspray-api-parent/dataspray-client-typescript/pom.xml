@@ -214,6 +214,16 @@
                         </configuration>
                         <phase>prepare-package</phase>
                     </execution>
+                    <execution>
+                        <id>pnpm run publish-if-needed</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run publish-if-needed</arguments>
+                        </configuration>
+                        <phase>deploy</phase>
+                    </execution>
                 </executions>
                 <configuration>
                     <installDirectory>${pom.parent.parent.basedir}</installDirectory>

@@ -13,43 +13,46 @@ import java.nio.charset.StandardCharsets;
 {{^processor.avroOutputStreams.empty}}
 import java.io.ByteArrayOutputStream;
 {{/processor.avroOutputStreams.empty}}
+{{#processor.hasDynamoState}}
+import io.dataspray.runner.StateManager;
+import java.time.Duration;
+import java.util.Optional;
+{{/processor.hasDynamoState}}
 {{/util.javaImportsFormat}}
 
 public class CoordinatorImpl implements Coordinator {
 
     private final RawCoordinator rawCoordinator;
-    {{#processor.state.isPresent}}
+    {{#processor.hasDynamoState}}
     private final String messageKey;
-    {{/processor.state.isPresent}}
+    {{/processor.hasDynamoState}}
 
     public CoordinatorImpl(
-        RawCoordinator rawCoordinator{{#processor.state.isPresent}},
-        String messageKey{{/processor.state.isPresent}}
+        RawCoordinator rawCoordinator{{#processor.hasDynamoState}},
+        String messageKey{{/processor.hasDynamoState}}
     ) {
         this.rawCoordinator = rawCoordinator;
-        {{#processor.state.isPresent}}
+        {{#processor.hasDynamoState}}
         this.messageKey = messageKey;
-        {{/processor.state.isPresent}}
+        {{/processor.hasDynamoState}}
     }
-    {{#processor.state.isPresent}}
-    {{#isDynamo}}
+    {{#processor.hasDynamoState}}
 
     @Override
-    StateManager stateForMessageKey(Optional<Duration> ttl) {
-        return stateForGlobalNamespace(ttl, "{{{processor.taskId}}}", messageKey);
-    }
-
-    @Override
-    StateManager stateForProcessor(Optional<Duration> ttl) {
-        return stateForGlobalNamespace(ttl, "{{{processor.taskId}}}");
+    public StateManager stateForMessageKey(Optional<Duration> ttl) {
+        return stateForNamespace(ttl, "task", "{{{processor.taskId}}}", "key", messageKey);
     }
 
     @Override
-    StateManager stateForNamespace(Optional<Duration> ttl, String... namespace) {
-        return rawCoordinator.getStateManager(namespace, ttl);
+    public StateManager stateForTask(Optional<Duration> ttl) {
+        return stateForNamespace(ttl, "task", "{{{processor.taskId}}}");
     }
-    {{/isDynamo}}
-    {{/processor.state.isPresent}}
+
+    @Override
+    public StateManager stateForNamespace(Optional<Duration> ttl, String... namespace) {
+        return rawCoordinator.getStateManager(namespace, ttl.orElse(null));
+    }
+    {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}
 
     @Override

@@ -24,6 +24,7 @@ package io.dataspray.core;
 
 import com.google.common.base.Strings;
 import io.dataspray.client.DataSprayClient;
+import io.dataspray.core.definition.model.DynamoState;
 import io.dataspray.core.definition.model.Item;
 import io.dataspray.core.definition.model.JavaProcessor;
 import io.dataspray.core.definition.model.Processor;
@@ -31,6 +32,7 @@ import io.dataspray.core.definition.model.StreamLink;
 import io.dataspray.core.definition.model.TypescriptProcessor;
 import io.dataspray.stream.control.client.model.DeployRequest;
 import io.dataspray.stream.control.client.model.DeployRequest.RuntimeEnum;
+import io.dataspray.stream.control.client.model.DeployRequestDynamoState;
 import io.dataspray.stream.control.client.model.DeployRequestEndpoint;
 import io.dataspray.stream.control.client.model.DeployRequestEndpointCors;
 import io.dataspray.stream.control.client.model.TaskStatus;
@@ -181,6 +183,9 @@ public class StreamRuntimeImpl implements StreamRuntime {
                                                         .allowCredentials(cors.getAllowCredentials()))
                                                 .orElse(null)))
                                 .orElse(null))
+                        .dynamoState(!processor.isHasDynamoState() ? null : new DeployRequestDynamoState()
+                                .lsiCount(project.getDefinition().getDynamoState().map(DynamoState::getLsiCount).orElse(0L))
+                                .gsiCount(project.getDefinition().getDynamoState().map(DynamoState::getGsiCount).orElse(0L)))
                         .switchToNow(activateVersion));
 
         if (activateVersion) {

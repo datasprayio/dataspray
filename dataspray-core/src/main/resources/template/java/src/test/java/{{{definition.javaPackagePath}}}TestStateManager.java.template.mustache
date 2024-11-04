@@ -1,0 +1,138 @@
+package {{{definition.javaPackage}}};
+
+{{#util.javaImportsFormat}}
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+import com.google.gson.Gson;
+import io.dataspray.runner.DynamoStateManager;
+import io.dataspray.runner.StateManager;
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+{{/util.javaImportsFormat}}
+
+public class TestStateManager implements StateManager {
+
+    private final Map<String, Object> store = Maps.newHashMap();
+    private final Optional<Duration> ttl;
+    private final String[] key;
+
+    public TestStateManager(Optional<Duration> ttl, String... key) {
+        this.ttl = ttl;
+        this.key = key;
+    }
+
+    @Override
+    public String[] getKey() {
+        return key;
+    }
+
+    @Override
+    public void touch() {
+        if (ttl.isEmpty()) {
+            return;
+        }
+        store.put(DynamoStateManager.TTL_IN_EPOCH_SEC_KEY_NAME, BigDecimal.valueOf(Instant.now().plus(ttl.get()).getEpochSecond()));
+    }
+
+    @Override
+    public <T> Optional<T> getJson(String key, Class<T> type) {
+        return Optional.ofNullable(Strings.emptyToNull(getString(key)))
+                .map(s -> new Gson().fromJson(s, type));
+    }
+
+    @Override
+    public <T> void setJson(String key, T item) {
+        touch();
+        setString(key, new Gson().toJson(item));
+    }
+
+    @Override
+    public String getString(String key) {
+        return (String) store.getOrDefault(key, "");
+    }
+
+    @Override
+    public void setString(String key, String value) {
+        touch();
+        store.put(key, value);
+    }
+
+    @Override
+    public boolean getBoolean(String key) {
+        return (Boolean) store.getOrDefault(key, Boolean.FALSE);
+    }
+
+    @Override
+    public void setBoolean(String key, boolean value) {
+        touch();
+        store.put(key, value);
+    }
+
+    @Override
+    public BigDecimal getNumber(String key) {
+        return (BigDecimal) store.getOrDefault(key, BigDecimal.ZERO);
+    }
+
+    @Override
+    public void setNumber(String key, Number number) {
+        touch();
+        store.put(key, new BigDecimal(number.toString()));
+    }
+
+    @Override
+    public void addToNumber(String key, Number increment) {
+        touch();
+        store.put(key, getNumber(key).add(new BigDecimal(increment.toString())));
+    }
+
+    @Override
+    public Set<String> getStringSet(String key) {
+        return (Set<String>) store.getOrDefault(key, ImmutableSet.of());
+    }
+
+    @Override
+    public void setStringSet(String key, Set<String> set) {
+        touch();
+        store.put(key, ImmutableSet.copyOf(set));
+    }
+
+    @Override
+    public void addToStringSet(String key, String... values) {
+        touch();
+        store.put(key, ImmutableSet.<String>builder()
+                .addAll(getStringSet(key))
+                .add(values)
+                .build());
+    }
+
+    @Override
+    public void deleteFromStringSet(String key, String... values) {
+        touch();
+        store.put(key, ImmutableSet.copyOf(
+                getStringSet(key).stream()
+                        .filter(s -> !Set.of(values).contains(s))
+                        .toArray(String[]::new)
+        ));
+    }
+
+    @Override
+    public void delete(String key) {
+        touch();
+        store.remove(key);
+    }
+
+    @Override
+    public void flush() {
+        // Nothing to flush
+    }
+
+    @Override
+    public void close() throws Exception {
+        // Nothing to close
+    }
+}

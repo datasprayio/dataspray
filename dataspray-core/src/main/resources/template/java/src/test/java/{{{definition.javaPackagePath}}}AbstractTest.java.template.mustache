@@ -9,17 +9,28 @@ import java.util.UUID;
 public class AbstractTest {
 
     protected Processor processor;
-    protected TestCoordinator coordinator;
 
     @Before
     public void initializeAbstractTest() {
         processor = new {{{processor.nameCamelUpper}}}();
-        coordinator = new TestCoordinator();
     }
     {{#processor.inputStreams}}
 
-    public TestMessage<{{{dataFormat.nameCamelUpper}}}> createMessage{{{dataFormat.nameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
-        return new TestMessage<>(StoreType.{{{storeType.name}}}, "{{{storeName}}}", "{{{streamName}}}", messageKey, UUID.randomUUID().toString(), {{{dataFormat.nameCamelLower}}});
+    public TestCoordinator process{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
+        return process{{{uniqueNameCamelUpper}}}(messageKey, {{{dataFormat.nameCamelLower}}}, UUID.randomUUID().toString());
+    }
+
+    public TestCoordinator process{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}, String messageId) {
+        TestMessage<{{{dataFormat.nameCamelUpper}}}> message = new TestMessage<>(
+                StoreType.{{{storeType.name}}},
+                "{{{storeName}}}",
+                "{{{streamName}}}",
+                messageKey,
+                messageId,
+                {{{dataFormat.nameCamelLower}}});
+        TestCoordinator coordinator = new TestCoordinator({{#processor.hasDynamoState}}messageKey{{/processor.hasDynamoState}});
+        processor.process{{{uniqueNameCamelUpper}}}(message, coordinator);
+        return coordinator;
     }
     {{/processor.inputStreams}}
 }

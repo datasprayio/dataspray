@@ -1,17 +1,23 @@
 package {{{definition.javaPackage}}};
-{{^processor.outputStreams.empty}}
 
+{{#util.javaImportsFormat}}
+{{^processor.outputStreams.empty}}
 import jakarta.annotation.Nullable;
 {{/processor.outputStreams.empty}}
+{{#processor.hasDynamoState}}
+import io.dataspray.runner.StateManager;
+import java.time.Duration;
+import java.util.Optional;
+{{/processor.hasDynamoState}}
+{{/util.javaImportsFormat}}
 
 public interface Coordinator {
-    {{#processor.state.isPresent}}
-    {{#isDynamo}}
+    {{#processor.hasDynamoState}}
 
     /**
      * State management backed by DynamoDB and unique for each message key within a task.
      * <p>
-     * Identical to calling {@link #stateForGlobalNamespace(ttl, <task_name>, <message_key>)}.
+     * Identical to calling {@link #stateForNamespace}{@code (ttl, "task", <task_name>, "key", <message_key>)}.
      * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
      * @param ttl Optional second-precision time-to-live for the state. Resets on every write.
      */
@@ -20,7 +26,7 @@ public interface Coordinator {
     /**
      * State management backed by DynamoDB and unique for entire task.
      * <p>
-     * Identical to calling {@link #stateForNamespace(ttl, <task_name>)}.
+     * Identical to calling {@link #stateForNamespace}{@code (ttl, "task", <task_name>)}.
      * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
      * @param ttl Optional second-precision time-to-live for the state. Resets on every write.
      */
@@ -34,8 +40,7 @@ public interface Coordinator {
      * @param namespace Unique key for the state.
      */
     StateManager stateForNamespace(Optional<Duration> ttl, String... namespace);
-    {{/isDynamo}}
-    {{/processor.state.isPresent}}
+    {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}
 
     /**

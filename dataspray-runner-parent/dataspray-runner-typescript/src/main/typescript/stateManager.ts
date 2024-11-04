@@ -76,8 +76,9 @@ export interface StateManager {
     close(): Promise<void>;
 }
 
+export const TTL_IN_EPOCH_SEC_KEY_NAME = "ttlInEpochSec";
+
 export class DynamoStateManager implements StateManager {
-    public static readonly TTL_IN_EPOCH_SEC_KEY_NAME = "ttlInEpochSec";
     private static readonly SORT_KEY = "state";
     private tableName: string;
     private key: string[];
@@ -112,7 +113,7 @@ export class DynamoStateManager implements StateManager {
             return;
         }
         const ttlInEpochSec = Math.floor(Date.now() / 1000) + this.ttlInSec;
-        await this.set(DynamoStateManager.TTL_IN_EPOCH_SEC_KEY_NAME, {N: ttlInEpochSec.toString()});
+        await this.set(TTL_IN_EPOCH_SEC_KEY_NAME, {N: ttlInEpochSec.toString()});
     }
 
     public async getJson<T>(key: string): Promise<T | null> {

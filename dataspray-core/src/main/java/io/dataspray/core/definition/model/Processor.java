@@ -28,6 +28,7 @@ import com.google.common.collect.Lists;
 import com.jcabi.aspects.Cacheable;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.Nonnull;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import lombok.Value;
@@ -67,7 +68,8 @@ public class Processor extends Item {
     Optional<Endpoint> endpoint;
 
     @Nonnull
-    Optional<State> state;
+    @Builder.Default
+    boolean hasDynamoState = false;
 
     @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public ImmutableList<StreamLink> getStreams() {

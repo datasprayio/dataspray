@@ -36,6 +36,7 @@ import com.google.gson.Gson;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.common.StringUtil;
 import io.dataspray.singletable.ShardPageResult;
+import io.dataspray.singletable.SingleTable;
 import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.ApiAccessStore.ApiAccess;
 import io.dataspray.store.LambdaDeployer;
@@ -54,6 +55,7 @@ import jakarta.ws.rs.NotFoundException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.iam.IamClient;
 import software.amazon.awssdk.services.iam.model.CreateRoleRequest;
 import software.amazon.awssdk.services.iam.model.GetRolePolicyRequest;
@@ -137,10 +139,10 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     private static final long CODE_MAX_SIZE_IN_BYTES = 50 * 1024 * 1024;
     public static final String CODE_BUCKET_NAME_PROP_NAME = "deployer.codeBucketName";
     private static final String CODE_KEY_PREFIX = "customer/";
-    public static final Function<DeployEnvironment, String> CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER = deployEnv ->
+    public static final Function<DeployEnvironment, String> CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER = deployEnv ->
             DeployEnvironment.RESOURCE_PREFIX + deployEnv.getSuffix().substring(1 /* Remove duplicate dash */) + "-customer-";
     public static final Function<DeployEnvironment, String> FUN_NAME_WILDCARD_GETTER = deployEnv ->
-            CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + "*";
+            CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + "*";
     private static final String QUEUE_STATEMENT_ID_PREFIX = "customer-queue-statement-for-name-";
     /** Matches {@link io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_API_KEY_ENV} */
     public static final String DATASPRAY_API_KEY_ENV = "dataspray_api_key";
@@ -164,6 +166,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     IamClient iamClient;
     @Inject
     LambdaClient lambdaClient;
+    @Inject
+    DynamoDbClient dynamoClient;
     @Inject
     LambdaStore lambdaStore;
     @Inject
@@ -190,6 +194,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             ImmutableSet<String> outputQueueNames,
             Runtime runtime,
             Optional<Endpoint> endpointOpt,
+            Optional<DynamoState> dynamoState,
             boolean switchToImmediately) {
         try (AutoCloseable lock = lambdaStore.acquireLock(organizationName, taskId)
                 .orElseThrow(() -> new ConflictException("Task is already locked for editing by another process, try again later."))) {
@@ -204,6 +209,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     outputQueueNames,
                     runtime,
                     endpointOpt,
+                    dynamoState,
                     switchToImmediately);
         }
     }
@@ -220,6 +226,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             ImmutableSet<String> outputQueueNames,
             Runtime runtime,
             Optional<Endpoint> endpointOpt,
+            Optional<DynamoState> dynamoState,
             boolean switchToImmediately) {
 
         // Check for loops between deployed Tasks and current update/creation of this task.
@@ -478,6 +485,38 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 publishedVersion,
                 ApiAccessStore.UsageKeyType.ORGANIZATION,
                 Optional.of(outputQueueNames));
+
+        // Create Dynamo for lambda state if needed
+        if (dynamoState.isPresent()) {
+            SingleTable customerSingleTable = SingleTable.builder()
+                    .tablePrefix(getFunctionOrDynamoOrRoleNamePrefix(organizationName))
+                    .overrideGson(gson)
+                    .build();
+            customerSingleTable.createTableIfNotExists(
+                    dynamoClient,
+                    dynamoState.get().getLsiCount().intValue(),
+                    dynamoState.get().getGsiCount().intValue());
+            String tableName = customerSingleTable.getTableName();
+
+            // Give permission to Dynamo
+            String lambdaDynamoPolicyName = CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS + StringUtil.camelCase(functionName, true) + "Dynamo" + tableName;
+            ensurePolicyAttachedToRole(functionRoleName, lambdaDynamoPolicyName, gson.toJson(Map.of(
+                    "Version", "2012-10-17",
+                    "Statement", List.of(Map.of(
+                            "Effect", "Allow",
+                            "Action", List.of(
+                                    "dynamodb:GetItem",
+                                    "dynamodb:BatchGetItem",
+                                    "dynamodb:Query",
+                                    "dynamodb:PutItem",
+                                    "dynamodb:UpdateItem",
+                                    "dynamodb:BatchWriteItem",
+                                    "dynamodb:DeleteItem"),
+                            "Resource", List.of(
+                                    "arn:aws:dynamodb:" + awsRegion + ":" + awsAccountId + ":table/" + tableName,
+                                    "arn:aws:dynamodb:" + awsRegion + ":" + awsAccountId + ":table/" + tableName + "/index/*"
+                            ))))));
+        }
 
         // Create active alias if doesn't exist
         boolean aliasAlreadyExists;
@@ -808,19 +847,19 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     }
 
     private String getFunctionName(String organizationName, String taskId) {
-        return getFunctionPrefix(organizationName) + taskId;
+        return getFunctionOrDynamoOrRoleNamePrefix(organizationName) + taskId;
     }
 
     private String getFunctionRoleName(String organizationName, String taskId) {
         return getFunctionName(organizationName, taskId) + "-role";
     }
 
-    private String getFunctionPrefix(String organizationName) {
-        return CUSTOMER_FUN_AND_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + organizationName + "-";
+    private String getFunctionOrDynamoOrRoleNamePrefix(String organizationName) {
+        return CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + organizationName + "-";
     }
 
     private Optional<String> getTaskIdFromFunctionName(String customerId, String functionName) {
-        String functionPrefix = getFunctionPrefix(customerId);
+        String functionPrefix = getFunctionOrDynamoOrRoleNamePrefix(customerId);
         return functionName.startsWith(functionPrefix)
                 ? Optional.of(functionName.substring(functionPrefix.length()))
                 : Optional.empty();
@@ -896,7 +935,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .policyName(policyName)
                     .policyDocument(policyDocument)
                     .build());
-            log.debug("Created role {} policy {}", roleName, policyName);
+            log.info("Created role {} policy {}", roleName, policyName);
             waiterUtil.resolve(waiterUtil.waitUntilPolicyAttachedToRole(roleName, policyName));
         }
     }

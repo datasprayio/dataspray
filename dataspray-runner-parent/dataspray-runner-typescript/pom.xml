@@ -171,6 +171,16 @@
                         </configuration>
                         <phase>prepare-package</phase>
                     </execution>
+                    <execution>
+                        <id>pnpm run publish-if-needed</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run publish-if-needed</arguments>
+                        </configuration>
+                        <phase>deploy</phase>
+                    </execution>
                 </executions>
                 <configuration>
                     <installDirectory>${pom.parent.parent.basedir}</installDirectory>
@@ -182,30 +192,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>deploy-runner</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>com.github.eirslett</groupId>
-                        <artifactId>frontend-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>pnpm publish</id>
-                                <goals>
-                                    <goal>pnpm</goal>
-                                </goals>
-                                <configuration>
-                                    <arguments>publish</arguments>
-                                </configuration>
-                                <phase>deploy</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

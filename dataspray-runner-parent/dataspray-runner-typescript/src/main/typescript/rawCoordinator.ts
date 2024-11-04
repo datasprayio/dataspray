@@ -36,7 +36,7 @@ export interface RawCoordinator {
 
     send(messageKey: string, data: Blob, storeType: StoreType, storeName: string, streamName: string, messageId: string | undefined): void;
 
-    getStateManager(key: string[], ttlInEpochSec?: number): StateManager;
+    getStateManager(key: string[], ttlInSec?: number): StateManager;
 }
 
 export class RawCoordinatorImpl implements RawCoordinator {

@@ -1,16 +1,18 @@
 {
   "name": "dataspray-runner",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Common library for DataSpray tasks",
   "author": {
     "name": "Matus Faro",
     "email": "matus@dataspray.io"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "publish-if-needed": "can-npm-publish && pnpm publish"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.131",
+    "can-npm-publish": "^1.3.6",
     "esbuild": "^0.19.11",
     "typescript": "^5.3.3"
   },

@@ -86,6 +86,20 @@ components:
                 maxAge:
                   type: integer
                   format: int64
+        dynamoState:
+          type: object
+          required:
+            - lsiCount
+            - gsiCount
+          properties:
+            lsiCount:
+              type: integer
+              format: int64
+              maximum: 10
+            gsiCount:
+              type: integer
+              format: int64
+              maximum: 10
         switchToNow:
           type: boolean
     TaskVersions:

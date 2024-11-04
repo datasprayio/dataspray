@@ -1,18 +1,16 @@
 import { Processor } from "../processor";
 import { {{{processor.nameCamelUpper}}} } from "../{{{processor.nameCamelLower}}}";
-import {
-    {{#processor.endpoint}}
-    mockRequest,
-    {{/processor.endpoint}}
-    {{^processor.inputStreams.empty}}
-    mockCoordinator,
-    {{#processor.inputStreams}}
-    mockMessage{{{uniqueNameCamelUpper}}},
-    {{/processor.inputStreams}}
-    {{/processor.inputStreams.empty}}
-} from "./testUtil";
+{{#processor.endpoint}}
+import { mockRequest } from "./mockRequest";
+{{/processor.endpoint}}
 {{^processor.inputStreams.empty}}
 import { Coordinator } from "../coordinator";
+import {
+    {{#processor.inputStreams}}
+    Test{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}},
+    prepareTest{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}},
+    {{/processor.inputStreams}}
+} from "../mockProcess";
 {{/processor.inputStreams.empty}}
 {{#processor.endpoint}}
 
@@ -35,11 +33,15 @@ describe('Web endpoint handler', () => {
 
 describe('SQS message processors', () => {
     let processor: {{{processor.nameCamelUpper}}};
-    let coordinator: Coordinator;
+    {{#processor.inputStreams}}
+    let process{{{uniqueNameCamelUpper}}}: Test{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}};
+    {{/processor.inputStreams}}
 
     beforeEach(() => {
         processor = new {{{processor.nameCamelUpper}}}();
-        coordinator = mockCoordinator();
+        {{#processor.inputStreams}}
+        process{{{uniqueNameCamelUpper}}} = prepareTest{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}}(processor);
+        {{/processor.inputStreams}}
     });
     {{#processor.inputStreams}}
 
