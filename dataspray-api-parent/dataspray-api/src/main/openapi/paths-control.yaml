@@ -49,59 +49,65 @@ components:
             - JAVA21
             - NODEJS20_X
         endpoint:
-          type: object
-          required:
-            - isPublic
-          properties:
-            isPublic:
-              type: boolean
-            cors:
-              type: object
-              required:
-                - allowOrigins
-                - allowMethods
-                - allowHeaders
-                - exposeHeaders
-                - allowCredentials
-                - maxAge
-              properties:
-                allowOrigins:
-                  type: array
-                  items:
-                    type: string
-                allowMethods:
-                  type: array
-                  items:
-                    type: string
-                allowHeaders:
-                  type: array
-                  items:
-                    type: string
-                exposeHeaders:
-                  type: array
-                  items:
-                    type: string
-                allowCredentials:
-                  type: boolean
-                maxAge:
-                  type: integer
-                  format: int64
+          $ref: '#/components/schemas/DeployRequestEndpoint'
         dynamoState:
-          type: object
-          required:
-            - lsiCount
-            - gsiCount
-          properties:
-            lsiCount:
-              type: integer
-              format: int64
-              maximum: 10
-            gsiCount:
-              type: integer
-              format: int64
-              maximum: 10
+          $ref: '#/components/schemas/DeployRequestDynamoState'
         switchToNow:
           type: boolean
+    DeployRequestEndpoint:
+      type: object
+      required:
+        - isPublic
+      properties:
+        isPublic:
+          type: boolean
+        cors:
+          $ref: '#/components/schemas/DeployRequestEndpointCors'
+    DeployRequestEndpointCors:
+      type: object
+      required:
+        - allowOrigins
+        - allowMethods
+        - allowHeaders
+        - exposeHeaders
+        - allowCredentials
+        - maxAge
+      properties:
+        allowOrigins:
+          type: array
+          items:
+            type: string
+        allowMethods:
+          type: array
+          items:
+            type: string
+        allowHeaders:
+          type: array
+          items:
+            type: string
+        exposeHeaders:
+          type: array
+          items:
+            type: string
+        allowCredentials:
+          type: boolean
+        maxAge:
+          type: integer
+          format: int64
+    DeployRequestDynamoState:
+      type: object
+      required:
+        - lsiCount
+        - gsiCount
+      properties:
+        lsiCount:
+          type: integer
+          format: int64
+          maximum: 10
+        gsiCount:
+          type: integer
+          format: int64
+          maximum: 10
     TaskVersions:
       type: object
       required:
