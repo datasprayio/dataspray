@@ -221,6 +221,11 @@
                         <goals>
                             <goal>remote</goal>
                         </goals>
+                        <configuration>
+                            <repository>${nexusReleaseUrl}</repository>
+                            <property>skipDeployClientJava</property>
+                            <requireGoal>deploy</requireGoal>
+                        </configuration>
                     </execution>
                 </executions>
                 <configuration>
