@@ -2,14 +2,15 @@ import {
     RawCoordinator,
     StoreType,
     Message,
+    StateManager,
 } from 'dataspray-runner';
-import {Coordinator} from "../coordinator";
+import { Coordinator } from "../coordinator";
 {{^processor.jsonOutputStreams.empty}}
 import {
 {{#processor.jsonOutputStreams}}
     {{{dataFormat.nameCamelUpper}}},
 {{/processor.jsonOutputStreams}}
-} from './streams';
+} from '../streams';
 {{/processor.jsonOutputStreams.empty}}
 {{#processor.hasDynamoState}}
 import { TestStateManager } from './testStateManager';
@@ -18,7 +19,7 @@ import { TestStateManager } from './testStateManager';
 export class TestCoordinator implements Coordinator {
 
     {{#processor.outputStreams}}
-    private sent{{{uniqueNameCamelUpper}}}: {{{dataFormat.nameCamelUpper}}}[] = [];
+    private sent{{{uniqueNameCamelUpper}}}: Message<{{{dataFormat.nameCamelUpper}}}>[] = [];
     {{/processor.outputStreams}}
     {{#processor.hasDynamoState}}
     private messageKey: string;
@@ -36,7 +37,7 @@ export class TestCoordinator implements Coordinator {
     }
 
     stateForNamespace(ttlInSec: number | undefined, namespace: string[]): StateManager {
-        return new TestStateManager(ttl, namespace);
+        return new TestStateManager(ttlInSec, namespace);
     }
     {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}

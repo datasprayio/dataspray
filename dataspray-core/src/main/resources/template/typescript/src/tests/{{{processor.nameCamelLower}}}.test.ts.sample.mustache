@@ -4,13 +4,12 @@ import { {{{processor.nameCamelUpper}}} } from "../{{{processor.nameCamelLower}}
 import { mockRequest } from "./mockRequest";
 {{/processor.endpoint}}
 {{^processor.inputStreams.empty}}
-import { Coordinator } from "../coordinator";
 import {
     {{#processor.inputStreams}}
     Test{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}},
     prepareTest{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}},
     {{/processor.inputStreams}}
-} from "../mockProcess";
+} from "./mockProcess";
 {{/processor.inputStreams.empty}}
 {{#processor.endpoint}}
 
@@ -46,13 +45,12 @@ describe('SQS message processors', () => {
     {{#processor.inputStreams}}
 
     it('Process {{{uniqueNameCamelUpper}}}', async () => {
-        processor.process{{{uniqueNameCamelUpper}}}(
-            mockMessage{{{uniqueNameCamelUpper}}}('key', {{>../stream-test-data}}),
-            coordinator,
-        );
-        {{#processor.outputStreams}}
-        expect(coordinator.sendTo{{{uniqueNameCamelUpper}}}).not.toHaveBeenCalled();
-        {{/processor.outputStreams}}
+        process{{{uniqueNameCamelUpper}}}(
+            'messageKey',
+            {{>../stream-test-data}},
+            'messageId',
+        ){{#processor.outputStreams}}
+            .assertSentNone{{{dataFormat.nameCamelUpper}}}(){{/processor.outputStreams}};
     });
     {{/processor.inputStreams}}
 });

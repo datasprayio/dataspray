@@ -1,9 +1,7 @@
 import {
-    RawCoordinator,
-    StoreType,
+    StateManager,
     TTL_IN_EPOCH_SEC_KEY_NAME,
 } from 'dataspray-runner';
-import { StateManager } from '../stateManager';
 
 export class TestStateManager implements StateManager {
 
@@ -11,7 +9,7 @@ export class TestStateManager implements StateManager {
     private ttlInSec?: number;
     private key: string[];
 
-    constructor(ttlInSec?: number, key: string[]) {
+    constructor(ttlInSec: number | undefined, key: string[]) {
         this.ttlInSec = ttlInSec;
         this.key = key;
     }
@@ -25,16 +23,16 @@ export class TestStateManager implements StateManager {
             return;
         }
         const ttlInEpochSec = Math.floor(Date.now() / 1000) + this.ttlInSec;
-        this.store.put(TTL_IN_EPOCH_SEC_KEY_NAME, ttlInEpochSec);
+        this.store.set(TTL_IN_EPOCH_SEC_KEY_NAME, ttlInEpochSec);
     }
 
-    public async getJson<T>(String key): Promise<T> {
+    public async getJson<T>(key: string): Promise<T> {
         const jsonString = await this.getString(key);
         return jsonString != null ? JSON.parse(jsonString) : null;
     }
 
     public async setJson<T>(key: string, item: T): Promise<void> {
-        this.touch();
+        await this.touch();
         await this.setString(key, JSON.stringify(item));
     }
 
@@ -43,8 +41,8 @@ export class TestStateManager implements StateManager {
     }
 
     public async setString(key: string, value: string): Promise<void> {
-        this.touch();
-        this.store.put(key, value);
+        await this.touch();
+        this.store.set(key, value);
     }
 
     public async getBoolean(key: string): Promise<boolean> {
@@ -52,8 +50,8 @@ export class TestStateManager implements StateManager {
     }
 
     public async setBoolean(key: string, value: boolean): Promise<void> {
-        this.touch();
-        this.store.put(key, value);
+        await this.touch();
+        this.store.set(key, value);
     }
 
     public async getNumber(key: string): Promise<number> {
@@ -61,13 +59,13 @@ export class TestStateManager implements StateManager {
     }
 
     public async setNumber(key: string, number: number): Promise<void> {
-        this.touch();
-        this.store.put(key, number);
+        await this.touch();
+        this.store.set(key, number);
     }
 
     public async addToNumber(key: string, increment: number): Promise<void> {
-        this.touch();
-        this.store.put(key, await this.getNumber(key) + number);
+        await this.touch();
+        this.store.set(key, await this.getNumber(key) + increment);
     }
 
     public async getStringSet(key: string): Promise<Set<string>> {
@@ -75,23 +73,23 @@ export class TestStateManager implements StateManager {
     }
 
     public async setStringSet(key: string, set: Set<string>): Promise<void> {
-        this.touch();
-        this.store.put(key, new Set(set));
+        await this.touch();
+        this.store.set(key, new Set(set));
     }
 
     public async addToStringSet(key: string, ...values: string[]): Promise<void> {
-        this.touch();
-        this.store.put(key, new Set([...await this.getStringSet(key), ...values]));
+        await this.touch();
+        this.store.set(key, new Set([...await this.getStringSet(key), ...values]));
     }
 
     public async deleteFromStringSet(key: string, ...values: string[]): Promise<void> {
-        this.touch();
-        this.store.put(key, new Set([...await this.getStringSet(key)]
+        await this.touch();
+        this.store.set(key, new Set([...await this.getStringSet(key)]
                 .filter(value => !values.includes(value))));
     }
 
     public async delete(key: string): Promise<void> {
-        this.touch();
+        await this.touch();
         this.store.delete(key);
     }
 
