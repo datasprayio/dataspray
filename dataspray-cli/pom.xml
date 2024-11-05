@@ -183,12 +183,12 @@
             <!--                                <artifacts>-->
             <!--                                    <artifact>-->
             <!--                                        <path>-->
-            <!--                                            ${app.distribution.directory}/${project.artifactId}-${parent-version}.zip-->
+            <!--                                            ${app.distribution.directory}/${project.artifactId}-0.0.1-SNAPSHOT.zip-->
             <!--                                        </path>-->
             <!--                                    </artifact>-->
             <!--                                    <artifact>-->
             <!--                                        <path>-->
-            <!--                                            ${app.distribution.directory}/${project.artifactId}-${parent-version}.tar.gz-->
+            <!--                                            ${app.distribution.directory}/${project.artifactId}-0.0.1-SNAPSHOT.tar.gz-->
             <!--                                        </path>-->
             <!--                                    </artifact>-->
             <!--                                </artifacts>-->
@@ -204,7 +204,7 @@
             <!--                <configuration>-->
             <!--                    <attach>false</attach>-->
             <!--                    <appendAssemblyId>false</appendAssemblyId>-->
-            <!--                    <finalName>${project.artifactId}-${parent-version}-${os.detected.classifier}</finalName>-->
+            <!--                    <finalName>${project.artifactId}-0.0.1-SNAPSHOT-${os.detected.classifier}</finalName>-->
             <!--                    <outputDirectory>${distribution.directory}</outputDirectory>-->
             <!--                    <workDirectory>${project.build.directory}/assembly/work</workDirectory>-->
             <!--                    <descriptors>-->
@@ -237,7 +237,7 @@
             <!--                            <generateInstaller>true</generateInstaller>-->
             <!--                            <administratorRequired>false</administratorRequired>-->
             <!--                            <platform>auto</platform>-->
-            <!--                            <runnableJar>${project.build.directory}/${project.artifactId}-${parent-version}.jar-->
+            <!--                            <runnableJar>${project.build.directory}/${project.artifactId}-0.0.1-SNAPSHOT.jar-->
             <!--                            </runnableJar>-->
             <!--                            <modules>-->
             <!--                                <module>java.base</module>-->

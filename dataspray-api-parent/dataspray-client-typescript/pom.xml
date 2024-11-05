@@ -140,7 +140,7 @@
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-api</artifactId>
                                     <classifier>schema-control</classifier>
-                                    <version>${parent-version}</version>
+                                    <version>0.0.1-SNAPSHOT</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/openapi/</outputDirectory>

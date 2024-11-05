@@ -27,14 +27,13 @@
 
     <groupId>io.dataspray</groupId>
     <artifactId>dataspray-parent</artifactId>
-    <version>${parent-version}</version>
+    <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>DataSpray Parent</name>
     <url>https://dataspray.io</url>
 
     <properties>
-        <parent-version>0.0.1-SNAPSHOT</parent-version>
         <java.version>21</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
@@ -121,30 +120,30 @@
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-common</artifactId>
-                <version>${parent-version}</version>
+                <version>0.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-common-test</artifactId>
-                <version>${parent-version}</version>
+                <version>0.0.1-SNAPSHOT</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-lambda-web-test</artifactId>
-                <version>${parent-version}</version>
+                <version>0.0.1-SNAPSHOT</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-site-dashboard</artifactId>
                 <classifier>open-next</classifier>
-                <version>${parent-version}</version>
+                <version>0.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-resources</artifactId>
-                <version>${parent-version}</version>
+                <version>0.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
@@ -154,37 +153,37 @@
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-stream-control</artifactId>
-                <version>${parent-version}</version>
+                <version>0.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-stream-ingest</artifactId>
-                <version>${parent-version}</version>
+                <version>0.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-core</artifactId>
-                <version>${parent-version}</version>
+                <version>0.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-lambda-web</artifactId>
-                <version>${parent-version}</version>
+                <version>0.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-store</artifactId>
-                <version>${parent-version}</version>
+                <version>0.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-api</artifactId>
-                <version>${parent-version}</version>
+                <version>0.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>dataspray-authorizer</artifactId>
-                <version>${parent-version}</version>
+                <version>0.0.1-SNAPSHOT</version>
             </dependency>
 
             <dependency>
@@ -620,7 +619,7 @@
                         <trimStackTrace>false</trimStackTrace>
                         <useFile>false</useFile>
                         <environmentVariables>
-                            <PROJECT_VERSION>${parent-version}</PROJECT_VERSION>
+                            <PROJECT_VERSION>0.0.1-SNAPSHOT</PROJECT_VERSION>
                         </environmentVariables>
                         <systemPropertyVariables>
                             <quarkus.test.arg-line>
