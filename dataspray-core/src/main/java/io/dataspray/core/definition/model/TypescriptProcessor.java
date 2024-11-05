@@ -25,6 +25,7 @@ package io.dataspray.core.definition.model;
 import com.google.common.collect.ImmutableSet;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
@@ -34,6 +35,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 @Value
 @SuperBuilder(toBuilder = true)
+@ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @RegisterForReflection
 public class TypescriptProcessor extends Processor {

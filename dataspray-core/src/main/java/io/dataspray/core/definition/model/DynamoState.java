@@ -34,8 +34,8 @@ import javax.annotation.Nonnull;
 public class DynamoState {
 
     @Nonnull
-    long lsiCount;
+    Long lsiCount;
 
     @Nonnull
-    long gsiCount;
+    Long gsiCount;
 }

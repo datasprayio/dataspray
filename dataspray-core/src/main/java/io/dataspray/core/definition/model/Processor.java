@@ -31,6 +31,7 @@ import jakarta.annotation.Nonnull;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
@@ -42,6 +43,7 @@ import java.util.Optional;
 
 @Value
 @SuperBuilder(toBuilder = true)
+@ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @NonFinal
 @RegisterForReflection
@@ -64,8 +66,11 @@ public class Processor extends Item {
     @Nonnull
     ImmutableSet<StreamLink> outputStreams;
 
-    @Nonnull
-    Optional<Endpoint> endpoint;
+    Endpoint endpoint;
+
+    public Optional<Endpoint> getEndpoint() {
+        return Optional.ofNullable(endpoint);
+    }
 
     @Nonnull
     @Builder.Default
@@ -182,5 +187,7 @@ public class Processor extends Item {
 
     @Setter
     @NonFinal
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     transient Definition parent;
 }

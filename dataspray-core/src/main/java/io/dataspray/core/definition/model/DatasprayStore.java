@@ -23,11 +23,13 @@
 package io.dataspray.core.definition.model;
 
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
 @Value
 @SuperBuilder(toBuilder = true)
+@ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class DatasprayStore extends Store {
 }

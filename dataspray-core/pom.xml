@@ -68,6 +68,14 @@
             <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-generator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-module-jackson</artifactId>
+        </dependency>
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>
@@ -104,18 +112,31 @@
                         <goals>
                             <goal>java</goal>
                         </goals>
+                        <configuration>
+                            <mainClass>io.dataspray.core.TemplateFiles</mainClass>
+                            <arguments>
+                                <argument>${project.basedir}/src/main/resources/template/</argument>
+                                <argument>${project.build.directory}/generated-resources/template/</argument>
+                            </arguments>
+                            <!-- Quarkus Small Rye spawns a bunch of threads in io.smallrye.common.ref.References that won't
+                             gracefully shutdown on their own. -->
+                            <cleanupDaemonThreads>false</cleanupDaemonThreads>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-json-schema</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>io.dataspray.core.definition.schema.JsonSchemaGenerator</mainClass>
+                            <arguments>
+                                <argument>${project.build.directory}/generated-resources/jsonschema/</argument>
+                            </arguments>
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <mainClass>io.dataspray.core.TemplateFiles</mainClass>
-                    <arguments>
-                        <argument>${project.basedir}/src/main/resources/template/</argument>
-                        <argument>${project.build.directory}/generated-resources/template/</argument>
-                    </arguments>
-                    <!-- Quarkus Small Rye spawns a bunch of threads in io.smallrye.common.ref.References that won't
-                     gracefully shutdown on their own. -->
-                    <cleanupDaemonThreads>false</cleanupDaemonThreads>
-                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -135,6 +156,25 @@
                                 </resource>
                             </resources>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>${project.basedir}/src/main/assembly/schema-project.xml</descriptor>
+                    </descriptors>
+                    <tarLongFileMode>posix</tarLongFileMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

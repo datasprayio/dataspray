@@ -26,7 +26,9 @@ import com.google.common.collect.Sets;
 import com.jcabi.aspects.Cacheable;
 import io.dataspray.common.StringUtil;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
@@ -94,5 +96,7 @@ public class StreamLink {
 
     @Setter
     @NonFinal
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     transient Processor parent;
 }

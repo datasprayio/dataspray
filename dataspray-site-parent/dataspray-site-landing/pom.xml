@@ -155,6 +155,16 @@
                                     <outputDirectory>${project.basedir}/public/logo/</outputDirectory>
                                     <excludes>favicon.*</excludes>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>io.dataspray</groupId>
+                                    <artifactId>dataspray-core</artifactId>
+                                    <classifier>schema-project</classifier>
+                                    <version>0.0.1-SNAPSHOT</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.basedir}/public/project/</outputDirectory>
+                                    <includes>schema</includes>
+                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>

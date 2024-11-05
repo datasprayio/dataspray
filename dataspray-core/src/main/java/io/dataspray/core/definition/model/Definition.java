@@ -32,6 +32,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
@@ -44,9 +45,13 @@ import java.util.Optional;
  */
 @Value
 @SuperBuilder(toBuilder = true)
+@ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class Definition extends Item {
     public static final int CACHEABLE_METHODS_LIFETIME_IN_MIN = 5;
+
+    @Builder.Default
+    String $schema = "https://dataspray.io/project/schema";
 
     /**
      * Version of DataSpray definition
@@ -80,8 +85,11 @@ public class Definition extends Item {
     @Builder.Default
     ImmutableSet<KafkaStore> kafkaStores = ImmutableSet.of();
 
-    @Builder.Default
-    Optional<DynamoState> dynamoState = Optional.empty();
+    DynamoState dynamoState;
+
+    public Optional<DynamoState> getDynamoState() {
+        return Optional.ofNullable(dynamoState);
+    }
 
     @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public ImmutableSet<Store> getStores() {

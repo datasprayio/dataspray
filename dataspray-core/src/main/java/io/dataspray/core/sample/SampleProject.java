@@ -36,7 +36,6 @@ import io.dataspray.core.definition.model.StoreType;
 import io.dataspray.core.definition.model.StreamLink;
 import io.dataspray.core.definition.model.TypescriptProcessor;
 
-import java.util.Optional;
 import java.util.Set;
 
 public enum SampleProject {
@@ -84,10 +83,9 @@ public enum SampleProject {
                                             .storeName("default")
                                             .streamName("last_ip")
                                             .build()))
-                            .endpoint(Optional.of(
-                                    Endpoint.builder()
-                                            .isPublic(false)
-                                            .build()))
+                            .endpoint(Endpoint.builder()
+                                    .isPublic(false)
+                                    .build())
                             .hasDynamoState(true)
                             .build()))
             .datasprayStores(ImmutableSet.of(
@@ -107,10 +105,10 @@ public enum SampleProject {
                                             .name("last_ip")
                                             .build()))
                             .build()))
-            .dynamoState(Optional.of(DynamoState.builder()
-                    .lsiCount(1)
-                    .gsiCount(0)
-                    .build()))
+            .dynamoState(DynamoState.builder()
+                    .lsiCount(1L)
+                    .gsiCount(0L)
+                    .build())
             .build()
             .initialize()),
     TYPESCRIPT(name -> Definition.builder()
@@ -151,15 +149,14 @@ public enum SampleProject {
                                             .storeName("default")
                                             .streamName("last_ip")
                                             .build()))
-                            .endpoint(Optional.of(
-                                    Endpoint.builder()
-                                            .isPublic(true)
-                                            .cors(Optional.of(Cors.builder()
-                                                    .allowOrigins(Set.of("example.com"))
-                                                    .allowMethods(Set.of("GET", "POST"))
-                                                    .allowHeaders(Set.of("Authorization"))
-                                                    .build()))
-                                            .build()))
+                            .endpoint(Endpoint.builder()
+                                    .isPublic(true)
+                                    .cors(Cors.builder()
+                                            .allowOrigins(Set.of("example.com"))
+                                            .allowMethods(Set.of("GET", "POST"))
+                                            .allowHeaders(Set.of("Authorization"))
+                                            .build())
+                                    .build())
                             .hasDynamoState(true)
                             .build()))
             .datasprayStores(ImmutableSet.of(
@@ -179,10 +176,10 @@ public enum SampleProject {
                                             .name("last_ip")
                                             .build()))
                             .build()))
-            .dynamoState(Optional.of(DynamoState.builder()
-                    .lsiCount(1)
-                    .gsiCount(0)
-                    .build()))
+            .dynamoState(DynamoState.builder()
+                    .lsiCount(1L)
+                    .gsiCount(0L)
+                    .build())
             .build()
             .initialize());
 

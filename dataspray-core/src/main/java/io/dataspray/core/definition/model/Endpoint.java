@@ -23,8 +23,9 @@
 package io.dataspray.core.definition.model;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
@@ -40,10 +41,15 @@ public class Endpoint {
     @Nonnull
     Boolean isPublic;
 
-    @Builder.Default
-    Optional<Cors> cors = Optional.empty();
+    Cors cors;
+
+    public Optional<Cors> getCors() {
+        return Optional.ofNullable(cors);
+    }
 
     @Setter
     @NonFinal
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     transient Processor parent;
 }

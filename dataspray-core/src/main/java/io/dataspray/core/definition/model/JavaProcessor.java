@@ -24,11 +24,13 @@ package io.dataspray.core.definition.model;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
 @Value
 @SuperBuilder(toBuilder = true)
+@ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @RegisterForReflection
 public class JavaProcessor extends Processor {

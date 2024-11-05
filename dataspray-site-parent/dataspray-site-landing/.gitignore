@@ -49,6 +49,7 @@ yarn-error.log*
 public/favicon.*
 public/logo
 public/vscode-web
+public/project
 
 # Generated typescript client
 src/client
