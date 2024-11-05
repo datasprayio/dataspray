@@ -124,7 +124,7 @@
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-authorizer</artifactId>
                                     <classifier>lambda</classifier>
-                                    <version>${parent.version}</version>
+                                    <version>${parent-version}</version>
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/code-authorizer/</outputDirectory>
@@ -134,7 +134,7 @@
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-stream-control</artifactId>
                                     <classifier>lambda</classifier>
-                                    <version>${parent.version}</version>
+                                    <version>${parent-version}</version>
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/code-control/</outputDirectory>
@@ -144,7 +144,7 @@
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-stream-ingest</artifactId>
                                     <classifier>lambda</classifier>
-                                    <version>${parent.version}</version>
+                                    <version>${parent-version}</version>
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/code-ingest/</outputDirectory>
@@ -166,7 +166,7 @@
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-site-landing</artifactId>
                                     <classifier>static-site</classifier>
-                                    <version>${parent.version}</version>
+                                    <version>${parent-version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/site-landing-static/</outputDirectory>
@@ -176,7 +176,7 @@
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-site-docs</artifactId>
                                     <classifier>static-site</classifier>
-                                    <version>${parent.version}</version>
+                                    <version>${parent-version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/site-docs-static/</outputDirectory>
@@ -186,7 +186,7 @@
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-site-dashboard</artifactId>
                                     <classifier>static-site</classifier>
-                                    <version>${parent.version}</version>
+                                    <version>${parent-version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/site-dashboard-static/</outputDirectory>
@@ -196,7 +196,7 @@
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-api</artifactId>
                                     <classifier>schema-control</classifier>
-                                    <version>${parent.version}</version>
+                                    <version>${parent-version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/openapi/</outputDirectory>

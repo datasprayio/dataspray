@@ -139,7 +139,7 @@
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-resources</artifactId>
                                     <classifier>logo</classifier>
-                                    <version>${parent.version}</version>
+                                    <version>${parent-version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.basedir}/public/</outputDirectory>
@@ -149,7 +149,7 @@
                                     <groupId>io.dataspray</groupId>
                                     <artifactId>dataspray-resources</artifactId>
                                     <classifier>logo</classifier>
-                                    <version>${parent.version}</version>
+                                    <version>${parent-version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.basedir}/public/logo/</outputDirectory>
