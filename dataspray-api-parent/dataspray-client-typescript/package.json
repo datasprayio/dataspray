@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "publish-if-needed": "can-npm-publish && pnpm publish"
+    "publish-if-needed": "can-npm-publish && pnpm publish || echo 'Already published, skipping.'"
   },
   "devDependencies": {
     "can-npm-publish": "^1.3.6",

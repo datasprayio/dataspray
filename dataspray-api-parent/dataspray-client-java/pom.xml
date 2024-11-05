@@ -221,12 +221,6 @@
                         <goals>
                             <goal>remote</goal>
                         </goals>
-                        <configuration>
-                            <repository>https://s01.oss.sonatype.org/service/local/repositories/releases/content/
-                            </repository>
-                            <property>skipDeployClientJava</property>
-                            <requireGoal>deploy</requireGoal>
-                        </configuration>
                     </execution>
                 </executions>
                 <configuration>
@@ -288,8 +282,8 @@
                 <extensions>true</extensions>
                 <configuration>
                     <skipNexusStagingDeployMojo>${skipDeployClientJava}</skipNexusStagingDeployMojo>
-                    <serverId>${distributionManagement.repository.id}</serverId>
-                    <nexusUrl>${nexusBaseUrl}</nexusUrl>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
             </plugin>

@@ -61,8 +61,6 @@
         <sqlite4java>1.0.392</sqlite4java>
         <okhttp.version>4.12.0</okhttp.version>
 
-        <nexusBaseUrl>https://s01.oss.sonatype.org/</nexusBaseUrl>
-        <nexusReleaseUrl>${nexusBaseUrl}service/local/repositories/releases/content/</nexusReleaseUrl>
         <lambda-native.phase>package</lambda-native.phase>
         <lambda-native.container-build>false</lambda-native.container-build>
         <lambda-native-it.phase>none</lambda-native-it.phase>
@@ -102,11 +100,11 @@
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
-            <url>${nexusBaseUrl}content/repositories/snapshots</url>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
         <repository>
             <id>ossrh</id>
-            <url>${nexusBaseUrl}service/local/staging/deploy/maven2/</url>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
 
