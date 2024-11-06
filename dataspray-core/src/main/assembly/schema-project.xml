@@ -31,7 +31,7 @@
     <files>
         <file>
             <source>${project.build.directory}/generated-resources/jsonschema/schema.json</source>
-            <destName>schema</destName>
+            <destName>schema.json</destName>
         </file>
     </files>
 </assembly>

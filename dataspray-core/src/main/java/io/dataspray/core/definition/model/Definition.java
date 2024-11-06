@@ -51,7 +51,7 @@ public class Definition extends Item {
     public static final int CACHEABLE_METHODS_LIFETIME_IN_MIN = 5;
 
     @Builder.Default
-    String $schema = "https://dataspray.io/project/schema";
+    String $schema = "https://dataspray.io/project/schema.json";
 
     /**
      * Version of DataSpray definition
