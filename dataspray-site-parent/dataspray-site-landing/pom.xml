@@ -163,7 +163,6 @@
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.basedir}/public/project/</outputDirectory>
-                                    <includes>schema</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
