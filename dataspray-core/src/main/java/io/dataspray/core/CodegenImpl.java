@@ -103,7 +103,7 @@ public class CodegenImpl implements Codegen {
     @Inject
     Gson gson;
     @Inject
-    GsonMergeUtil gsonMergeUtil;
+    MergeStrategies mergeStrategies;
 
     private boolean schemasFolderGenerated = false;
 
@@ -327,11 +327,6 @@ public class CodegenImpl implements Codegen {
                 return;
             }
 
-            if (item.getType() == TemplateFiles.TemplateType.MERGE
-                && !item.getRelativePath().getFileName().toString().endsWith(".json" + CodegenImpl.MUSTACHE_FILE_EXTENSION_MERGE)) {
-                throw new RuntimeException("Cannot merge template file, only json is supported: " + item.getRelativePath());
-            }
-
             Optional<ExpandedFile> expandedFileOpt = expandPath(project, item.getRelativePath(), context);
 
             // Don't create file if expanding template evaluates to empty filename
@@ -420,44 +415,9 @@ public class CodegenImpl implements Codegen {
                 }
             } else if (item.getType() == TemplateFiles.TemplateType.MERGE) {
                 // Perform a merge
-                // First: read the original file
-                JsonObject originalFileJson;
-                try (var reader = Files.newBufferedReader(absoluteFilePath)) {
-                    originalFileJson = gson.fromJson(reader, JsonObject.class);
-                } catch (IOException | JsonIOException ex) {
-                    throw new RuntimeException("Failed to read file: " + absoluteFilePath, ex);
-                } catch (JsonSyntaxException ex) {
-                    throw new RuntimeException("Failed to parse file as JSON: " + absoluteFilePath, ex);
-                }
-
-                // Second: Then parse the mustache template result file
-                JsonObject resultFileJson;
-                try {
-                    resultFileJson = gson.fromJson(resultFileOpt.get(), JsonObject.class);
-                } catch (JsonSyntaxException ex) {
-                    throw new RuntimeException("Failed to parse generated template as JSON: " + absoluteFilePath, ex);
-                }
-
-                // Merge the two Jsons with a custom conflict resolution
-                gsonMergeUtil.merge((String key, JsonObject leftObj, JsonElement leftVal, JsonElement rightVal) -> {
-                            // Handle merge conflicts
-                            if (rightVal.isJsonNull()) {
-                                // A null in template signals original value needs to be removed
-                                leftObj.remove(key);
-                            } else {
-                                // Otherwise template always replaces original
-                                leftObj.add(key, rightVal);
-                            }
-                        },
-                        originalFileJson,
-                        resultFileJson);
-
-                // Finally write out the merged Json back to the file
-                try (var writer = Files.newBufferedWriter(absoluteFilePath)) {
-                    gson.toJson(originalFileJson, writer);
-                } catch (IOException | JsonIOException ex) {
-                    throw new RuntimeException("Failed to read file: " + absoluteFilePath, ex);
-                }
+                mergeStrategies.findMergeStrategy(item)
+                        .orElseThrow(() -> new RuntimeException("Cannot merge template file, no merge strategy found for file: " + item.getRelativePath()))
+                        .merge(resultFileOpt.get(), absoluteFilePath);
             }
         });
         // Remove files that were not generated this round but previously most likely by older template
