@@ -49,7 +49,8 @@ import java.util.Scanner;
 @ApplicationScoped
 public class GitExcludeFileTracker implements FileTracker {
     public static final String NEXT_LINE_HEADER = "# DO NOT EDIT this and next line; managed by DataSpray".trim();
-    public static final String GIT_EXCLUDE_FILE = ".git/info/exclude";
+    /** Path to exclude file within Git Repository's .git metadata folder */
+    public static final String GIT_EXCLUDE_FILE = "info/exclude";
     public static final String GIT_EXCLUDE_TMP_FILE = ".git/info/exclude.tmp";
 
     @Override
@@ -173,7 +174,12 @@ public class GitExcludeFileTracker implements FileTracker {
 
     @SneakyThrows
     private File getOrCreateExcludeFile(Project project) {
-        File excludeFile = project.getPath().resolve(GIT_EXCLUDE_FILE).toFile();
+        File excludeFile = project.getGit()
+                .getRepository()
+                .getDirectory()
+                .toPath()
+                .resolve(GIT_EXCLUDE_FILE)
+                .toFile();
         if (!excludeFile.isFile()) {
             log.debug("Initializing git exclude file {}", excludeFile);
             excludeFile.getParentFile().mkdirs();

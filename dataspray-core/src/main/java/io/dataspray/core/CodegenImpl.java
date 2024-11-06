@@ -28,14 +28,9 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.TemplateLoader;
 import com.samskivert.mustache.MustacheException;
-import io.dataspray.common.json.GsonMergeUtil;
 import io.dataspray.core.TemplateFiles.TemplateFile;
 import io.dataspray.core.definition.model.DataFormat;
 import io.dataspray.core.definition.model.Definition;
@@ -52,7 +47,8 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.errors.RepositoryNotFoundException;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -122,12 +118,7 @@ public class CodegenImpl implements Codegen {
         log.info("Created project folder " + projectPath);
 
         // Initialize Git
-        Git git;
-        try {
-            git = Git.init().setDirectory(projectDir).call();
-        } catch (GitAPIException ex) {
-            throw new IOException("Could not initialize git", ex);
-        }
+        Git git = getOrCreateGit(projectDir);
 
         // Create project definition
         File dsProjectFile = projectPath.resolve(PROJECT_FILENAME).toFile();
@@ -167,7 +158,7 @@ public class CodegenImpl implements Codegen {
         try (FileReader reader = new FileReader(projectPath.resolve(PROJECT_FILENAME).toFile())) {
             definition = definitionLoader.fromYaml(reader);
         }
-        Git git = Git.open(projectPath.toFile());
+        Git git = getOrCreateGit(projectPath.toFile());
         Optional<String> activeProcessorNameOpt = activeSubDirNameOpt.flatMap(activeSubDirName -> definition.getProcessors().stream()
                 .filter(p -> activeSubDirName.equals(p.getNameDir()))
                 .findAny()
@@ -514,6 +505,24 @@ public class CodegenImpl implements Codegen {
         expandedPath = expandedPath.resolve(levelBuilder.toString()).normalize();
         return Optional.of(expandedPath)
                 .filter(Predicate.not(Path.of("")::equals));
+    }
+
+    @SneakyThrows
+    private Git getOrCreateGit(File projectDir) {
+        try {
+            // Read existing repository if exists
+            return Git.wrap(new FileRepositoryBuilder().setWorkTree(projectDir)
+                    .readEnvironment() // scan environment GIT_* variables
+                    .findGitDir()      // search up the file system tree
+                    .setMustExist(true)
+                    .build());
+        } catch (RepositoryNotFoundException ex) {
+            // Initialize a new one
+            log.info("Git repository not found, initializing a new one");
+            return Git.init()
+                    .setDirectory(projectDir)
+                    .call();
+        }
     }
 
     @Value

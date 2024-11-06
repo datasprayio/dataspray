@@ -104,7 +104,7 @@ class GitExcludeFileTrackerTest {
                 "/file10\n"
                 + "!/file9\n");
 
-        log.info("{}:\n{}", GitExcludeFileTracker.GIT_EXCLUDE_FILE, Files.readString(project.getPath().resolve(GitExcludeFileTracker.GIT_EXCLUDE_FILE), StandardCharsets.UTF_8));
+        printExcludeFile(project);
 
         assertTrackedFiles(project, Optional.of(Path.of("dir1")), Optional.empty(), file8);
         assertTrackedFiles(project, Optional.empty(), Optional.of(0L), file6);
@@ -148,6 +148,23 @@ class GitExcludeFileTrackerTest {
         assertFalse(file10.exists());
     }
 
+    @Test
+    void testGitInParentDirectory() throws Exception {
+        Git.init().setDirectory(workingDir.toFile()).call();
+        Path subProjectDir = workingDir.resolve("subdir");
+        subProjectDir.toFile().mkdir();
+        Project project = new Project(subProjectDir, Git.open(workingDir.toFile()), SampleProject.EMPTY.getDefinitionForName("test"), Optional.empty());
+
+        File file1 = createFile("subdir/file1");
+
+        assertTrue(fileTracker.trackFile(project, Path.of("file2")));
+        File file2 = createFile("subdir/file2");
+
+        printExcludeFile(project);
+
+        assertTrackedFiles(project, Optional.empty(), Optional.empty(), file2);
+    }
+
     private void assertTrackedFiles(Project project, Optional<Path> subPath, Optional<Long> maxDepthOpt, File... expectedFiles) {
         assertEquals(
                 Arrays.stream(expectedFiles)
@@ -166,5 +183,14 @@ class GitExcludeFileTrackerTest {
         file.getParentFile().mkdirs();
         FileUtils.writeStringToFile(file, content, StandardCharsets.UTF_8, false);
         return file;
+    }
+
+    private void printExcludeFile(Project project) {
+        log.info("{}:\n{}", GitExcludeFileTracker.GIT_EXCLUDE_FILE, Files.readString(project
+                .getGit()
+                .getRepository()
+                .getDirectory()
+                .toPath()
+                .resolve(GitExcludeFileTracker.GIT_EXCLUDE_FILE), StandardCharsets.UTF_8));
     }
 }
