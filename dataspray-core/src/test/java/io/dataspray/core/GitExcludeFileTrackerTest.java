@@ -185,6 +185,7 @@ class GitExcludeFileTrackerTest {
         return file;
     }
 
+    @SneakyThrows
     private void printExcludeFile(Project project) {
         log.info("{}:\n{}", GitExcludeFileTracker.GIT_EXCLUDE_FILE, Files.readString(project
                 .getGit()
