@@ -84,6 +84,6 @@ public class CodegenBuilderTest {
         codegen.generateAll(project);
         builder.buildAll(project)
                 .forEach(artifact -> log.info("Built artifact {}",
-                        project.getPath().relativize(artifact.getCodeZipFile().toPath())));
+                        project.getAbsolutePath().relativize(artifact.getCodeZipFile().toPath())));
     }
 }

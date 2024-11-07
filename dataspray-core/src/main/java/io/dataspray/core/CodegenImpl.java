@@ -108,20 +108,20 @@ public class CodegenImpl implements Codegen {
     public Project initProject(String basePath, String projectName, SampleProject sample) {
         checkArgument(projectName.matches("^[a-zA-Z0-9-_. ]+$"), "Project name can only contain alphanumeric, spaces and - _ .");
         Definition definition = sample.getDefinitionForName(projectName);
-        Path projectPath = Path.of(basePath, definition.getNameDir());
-        File projectDir = projectPath.toFile();
+        Path projectAbsolutePath = Path.of(basePath).resolve(definition.getNameDir()).toAbsolutePath();
+        File projectAbsoluteDir = projectAbsolutePath.toFile();
 
         // Create project folder
-        if (!projectDir.mkdirs()) {
-            throw new IOException("Failed to create folder already exists: " + projectPath);
+        if (!projectAbsoluteDir.mkdirs()) {
+            throw new IOException("Failed to create folder already exists: " + projectAbsolutePath);
         }
-        log.info("Created project folder " + projectPath);
+        log.info("Created project folder " + projectAbsolutePath);
 
         // Initialize Git
-        Git git = getOrCreateGit(projectDir);
+        Git git = getOrCreateGit(projectAbsoluteDir);
 
         // Create project definition
-        File dsProjectFile = projectPath.resolve(PROJECT_FILENAME).toFile();
+        File dsProjectFile = projectAbsolutePath.resolve(PROJECT_FILENAME).toFile();
         if (!dsProjectFile.createNewFile()) {
             throw new IOException("File already exists: " + dsProjectFile.getPath());
         }
@@ -129,7 +129,7 @@ public class CodegenImpl implements Codegen {
             fos.write(definitionLoader.toYaml(definition).getBytes(StandardCharsets.UTF_8));
         }
 
-        return new Project(projectPath, git, definition, Optional.empty());
+        return new Project(projectAbsolutePath, git, definition, Optional.empty());
     }
 
     @Override
@@ -154,8 +154,9 @@ public class CodegenImpl implements Codegen {
 
     @SneakyThrows
     private Project loadProject(Path projectPath, Optional<String> activeSubDirNameOpt) {
+        Path projectAbsolutePath = projectPath.toAbsolutePath();
         Definition definition;
-        try (FileReader reader = new FileReader(projectPath.resolve(PROJECT_FILENAME).toFile())) {
+        try (FileReader reader = new FileReader(projectAbsolutePath.resolve(PROJECT_FILENAME).toFile())) {
             definition = definitionLoader.fromYaml(reader);
         }
         Git git = getOrCreateGit(projectPath.toFile());
@@ -163,7 +164,7 @@ public class CodegenImpl implements Codegen {
                 .filter(p -> activeSubDirName.equals(p.getNameDir()))
                 .findAny()
                 .map(Item::getName));
-        return new Project(projectPath, git, definition, activeProcessorNameOpt);
+        return new Project(projectAbsolutePath, git, definition, activeProcessorNameOpt);
     }
 
     @Override
@@ -176,7 +177,7 @@ public class CodegenImpl implements Codegen {
     }
 
     private void generateRoot(Project project) {
-        codegen(project, project.getPath(), Template.ROOT, contextBuilder.createForRoot(project), Optional.of(0L));
+        codegen(project, project.getAbsolutePath(), Template.ROOT, contextBuilder.createForRoot(project), Optional.of(0L));
     }
 
     private void generateDataFormat(Project project, DataFormat dataFormat) {
@@ -221,7 +222,7 @@ public class CodegenImpl implements Codegen {
     }
 
     private Path getDataFormatDir(Project project, DataFormat dataFormat) {
-        return project.getPath().resolve(SCHEMAS_FOLDER).resolve(dataFormat.getNameDir());
+        return project.getAbsolutePath().resolve(SCHEMAS_FOLDER).resolve(dataFormat.getNameDir());
     }
 
     private Path createDataFormatDir(Project project, DataFormat dataFormat) {
@@ -229,7 +230,7 @@ public class CodegenImpl implements Codegen {
             schemasFolderGenerated = true;
 
             // Create schemas folder
-            Path schemasPath = project.getPath().resolve(SCHEMAS_FOLDER);
+            Path schemasPath = project.getAbsolutePath().resolve(SCHEMAS_FOLDER);
             if (schemasPath.toFile().mkdir()) {
                 log.info("Created schemas folder " + schemasPath);
             }
@@ -255,7 +256,7 @@ public class CodegenImpl implements Codegen {
     @SneakyThrows
     private void codegen(Project project, Path processorPath, Template template, DatasprayContext processorContext, Optional<Long> maxDepthOpt) {
         // Create templates folder
-        Path templatesPath = project.getPath().resolve(TEMPLATES_FOLDER);
+        Path templatesPath = project.getAbsolutePath().resolve(TEMPLATES_FOLDER);
         if (templatesPath.toFile().mkdir()) {
             log.info("Created templates folder " + templatesPath);
         }
@@ -273,7 +274,7 @@ public class CodegenImpl implements Codegen {
         template.getFilesFromResources().stream().forEach(source -> {
             String sourceFileName = source.getRelativePath().getFileName().toString();
             Path destination = templateInRepoDir.resolve(source.getRelativePath());
-            Path projectRelativePath = project.getPath().relativize(destination);
+            Path projectRelativePath = project.getAbsolutePath().relativize(destination);
             // Check if file was previously tracked
             if (!trackedFiles.remove(projectRelativePath)) {
                 // If not, attempt to track it now
@@ -335,7 +336,7 @@ public class CodegenImpl implements Codegen {
             Path absoluteFilePath = absoluteTemplatePath
                     .resolve(expandedFileOpt.get().getPath())
                     .resolve(filenameWithoutSuffix);
-            Path projectToFilePath = project.getPath().relativize(absoluteFilePath);
+            Path projectToFilePath = project.getAbsolutePath().relativize(absoluteFilePath);
 
             // Throw if its a link, directory or something else
             boolean fileExists = Files.exists(absoluteFilePath, LinkOption.NOFOLLOW_LINKS);

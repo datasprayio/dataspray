@@ -37,7 +37,7 @@ import java.util.Optional;
 @Value
 public class Project {
     @NonNull
-    Path path;
+    Path absolutePath;
     @NonNull
     Git git;
     @NonNull
@@ -56,12 +56,12 @@ public class Project {
 
     @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public Path getProcessorDir(Processor processor) {
-        return getPath().resolve(processor.getNameDir());
+        return getAbsolutePath().resolve(processor.getNameDir());
     }
 
     public Path makeRelativeToGitWorkTree(Path path) {
         Path relativeToProjectPath = path.isAbsolute()
-                ? getPath().relativize(path)
+                ? getAbsolutePath().relativize(path)
                 : path;
         return getRelativePathFromGitWorkTreeToProject()
                 .resolve(relativeToProjectPath);
@@ -70,19 +70,20 @@ public class Project {
     public Path makeAbsoluteFromGitWorkTree(Path path) {
         return path.isAbsolute()
                 ? path
-                : subtractPath(getPath(), getRelativePathFromGitWorkTreeToProject()).resolve(path);
+                : subtractPath(getAbsolutePath(), getRelativePathFromGitWorkTreeToProject()).resolve(path);
     }
 
     /**
      * Get git working path.
      * <p>
      * Note that JGit internally resolves symlinks, so this method ensures the absolute path is constructed with same
-     * common path as project path {@link #getPath} to make sure calls to {@link Path#relativize(Path)} are constructed
+     * common path as project path {@link #getAbsolutePath} to make sure calls to {@link Path#relativize(Path)} are
+     * constructed
      * properly.
      */
     @SneakyThrows
     public Path getGitWorkTreePath() {
-        return subtractPath(getPath(), getRelativePathFromGitWorkTreeToProject());
+        return subtractPath(getAbsolutePath(), getRelativePathFromGitWorkTreeToProject());
     }
 
     @SneakyThrows
@@ -92,7 +93,7 @@ public class Project {
                 .getWorkTree()
                 .toPath()
                 .toRealPath()
-                .relativize(getPath()
+                .relativize(getAbsolutePath()
                         .toRealPath());
     }
 

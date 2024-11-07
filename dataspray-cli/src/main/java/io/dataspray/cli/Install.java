@@ -64,6 +64,6 @@ public class Install implements Runnable {
         }
 
         artifacts.forEach(artifact -> log.info("Built artifact {}",
-                project.getPath().relativize(artifact.getCodeZipFile().toPath())));
+                project.getAbsolutePath().relativize(artifact.getCodeZipFile().toPath())));
     }
 }

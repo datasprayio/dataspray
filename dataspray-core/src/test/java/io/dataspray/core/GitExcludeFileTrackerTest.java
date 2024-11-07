@@ -170,17 +170,17 @@ class GitExcludeFileTrackerTest {
     void testAbsoluteNonExistentPaths() throws Exception {
         Project project = setupProject(Optional.of(Path.of("subdir")));
 
-        fileTracker.getTrackedFiles(project, Optional.of(project.getPath().resolve("nonExistentDir")), Optional.empty());
-        fileTracker.trackFile(project, project.getPath().resolve("nonExistentFile"));
-        fileTracker.unlinkUntrackFiles(project, Set.of(project.getPath().resolve("nonExistentFile")));
+        fileTracker.getTrackedFiles(project, Optional.of(project.getAbsolutePath().resolve("nonExistentDir")), Optional.empty());
+        fileTracker.trackFile(project, project.getAbsolutePath().resolve("nonExistentFile"));
+        fileTracker.unlinkUntrackFiles(project, Set.of(project.getAbsolutePath().resolve("nonExistentFile")));
     }
 
     @SneakyThrows
     private Project setupProject(Optional<Path> projectRelativePath) {
         Git.init().setDirectory(workingDir.toFile()).call();
-        Path subProjectDir = projectRelativePath.map(workingDir::resolve).orElse(workingDir);
-        subProjectDir.toFile().mkdirs();
-        return new Project(subProjectDir, Git.open(workingDir.toFile()), SampleProject.EMPTY.getDefinitionForName("test"), Optional.empty());
+        Path subProjectAbsolutePath = projectRelativePath.map(workingDir::resolve).orElse(workingDir);
+        subProjectAbsolutePath.toFile().mkdirs();
+        return new Project(subProjectAbsolutePath, Git.open(workingDir.toFile()), SampleProject.EMPTY.getDefinitionForName("test"), Optional.empty());
     }
 
     @SneakyThrows
