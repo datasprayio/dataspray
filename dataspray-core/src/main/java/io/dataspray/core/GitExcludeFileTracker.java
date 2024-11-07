@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableSet;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.jgit.lib.Constants;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -49,37 +50,34 @@ import java.util.Scanner;
 @ApplicationScoped
 public class GitExcludeFileTracker implements FileTracker {
     public static final String NEXT_LINE_HEADER = "# DO NOT EDIT this and next line; managed by DataSpray";
-    /** Path to exclude file within Git Repository's .git metadata folder */
-    public static final String GIT_EXCLUDE_FILE = "info/exclude";
-    public static final String GIT_EXCLUDE_TMP_FILE = ".git/info/exclude.tmp";
 
     @Override
-    public void unlinkUntrackFiles(Project project, Collection<Path> paths) {
-        for (Path path : paths) {
+    public void unlinkUntrackFiles(Project project, Collection<Path> relativeToProjectOrAbsolutePaths) {
+        for (Path path : relativeToProjectOrAbsolutePaths) {
             log.info("Deleting file {}", path);
-            makeAbsoluteFromGitWorkTree(project, path).toFile().delete();
+            project.makeAbsoluteFromGitWorkTree(path).toFile().delete();
         }
-        untrackFiles(project, paths);
+        untrackFiles(project, relativeToProjectOrAbsolutePaths);
     }
 
     @Override
     @SneakyThrows
-    public boolean trackFile(Project project, Path relativePath) {
+    public boolean trackFile(Project project, Path relativeToProjectOrAbsolutePath) {
 
         // Check if user has put an override in to not track this file
-        relativePath = makeRelativeToGitWorkTree(project, relativePath);
+        Path relativeToWorkTreePath = project.makeRelativeToGitWorkTree(relativeToProjectOrAbsolutePath);
         GitIgnoreParser gitIgnoreParser = GitIgnoreParser.get(project);
-        Optional<Boolean> fileIgnoredWithDotGitignoreOpt = gitIgnoreParser.isFileIgnoredWithDotGitignore(relativePath);
+        Optional<Boolean> fileIgnoredWithDotGitignoreOpt = gitIgnoreParser.isFileIgnoredWithDotGitignoreOrCustomExclude(relativeToWorkTreePath);
         if (fileIgnoredWithDotGitignoreOpt.isPresent() && !fileIgnoredWithDotGitignoreOpt.get()) {
             return false;
         }
 
         // Add as tracked if needed by including in .git/info/exclude
-        Optional<Boolean> fileIgnoredWithInfoExcludeOpt = gitIgnoreParser.isFileIgnoredWithInfoExclude(relativePath);
+        Optional<Boolean> fileIgnoredWithInfoExcludeOpt = gitIgnoreParser.isFileIgnoredWithInfoExclude(relativeToWorkTreePath);
         if (fileIgnoredWithInfoExcludeOpt.isEmpty() || !fileIgnoredWithInfoExcludeOpt.get()) {
             Files.writeString(
                     getOrCreateExcludeFile(project).toPath(),
-                    System.lineSeparator() + NEXT_LINE_HEADER + System.lineSeparator() + addPrefixSeparator(relativePath.toString()),
+                    System.lineSeparator() + NEXT_LINE_HEADER + System.lineSeparator() + addPrefixSeparator(relativeToWorkTreePath.toString()),
                     StandardOpenOption.APPEND);
         }
 
@@ -89,7 +87,7 @@ public class GitExcludeFileTracker implements FileTracker {
     @Override
     @SneakyThrows
     public ImmutableSet<Path> getTrackedFiles(Project project, Optional<Path> subPathOpt, Optional<Long> maxDepthOpt) {
-        Optional<Path> relativeSubPathOpt = subPathOpt.map(subPath -> makeRelativeToGitWorkTree(project, subPath));
+        Optional<Path> relativeSubPathOpt = subPathOpt.map(project::makeRelativeToGitWorkTree);
         ImmutableSet.Builder<Path> trackedFilesBuilder = ImmutableSet.builder();
         GitIgnoreParser gitignore = GitIgnoreParser.get(project);
         maxDepthOpt = maxDepthOpt.map(maxDepth -> maxDepth + relativeSubPathOpt.map(Path::getNameCount).orElse(0));
@@ -166,7 +164,10 @@ public class GitExcludeFileTracker implements FileTracker {
     }
 
     private File getExcludeTmpFile(Project project) {
-        File tmpFile = project.getPath().resolve(GIT_EXCLUDE_TMP_FILE).toFile();
+        File tmpFile = project.getGitWorkTreePath()
+                .resolve(Constants.DOT_GIT)
+                .resolve(Constants.INFO_EXCLUDE + ".tmp")
+                .toFile();
         tmpFile.getParentFile().mkdirs();
         tmpFile.delete();
         return tmpFile;
@@ -178,7 +179,7 @@ public class GitExcludeFileTracker implements FileTracker {
                 .getRepository()
                 .getDirectory()
                 .toPath()
-                .resolve(GIT_EXCLUDE_FILE)
+                .resolve(Constants.INFO_EXCLUDE)
                 .toFile();
         if (!excludeFile.isFile()) {
             log.debug("Initializing git exclude file {}", excludeFile);
@@ -188,42 +189,4 @@ public class GitExcludeFileTracker implements FileTracker {
         return excludeFile;
     }
 
-    private Path makeRelativeToGitWorkTree(Project project, Path path) {
-        if (path.isAbsolute()) {
-            return getRelativePathFromGitWorkingTreeToProject(project)
-                    .resolve(project
-                            .getPath()
-                            .relativize(path));
-        }
-        return getRelativePathFromGitWorkingTreeToProject(project)
-                .resolve(path);
-    }
-
-    private Path makeAbsoluteFromGitWorkTree(Project project, Path path) {
-        if (!path.isAbsolute()) {
-            return getGitWorkingPath(project)
-                    .resolve(path);
-        }
-        return path;
-    }
-
-    @SneakyThrows
-    private Path getRelativePathFromGitWorkingTreeToProject(Project project) {
-        return getGitWorkingPath(project)
-                .toRealPath()
-                .relativize(project
-                        .getPath()
-                        .toRealPath());
-    }
-
-    /**
-     * Get git working path.
-     * <p>
-     * Note that JGit internally resolves symlinks, so this method may have a different absolute path from
-     * {@link Project#getPath()}. Use {@link Path#toRealPath} to relativize the other path. Keep in mind this method can
-     * only be called on paths that actually point to a real file or directory.
-     */
-    private Path getGitWorkingPath(Project project) {
-        return project.getGit().getRepository().getWorkTree().toPath();
-    }
 }

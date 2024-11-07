@@ -29,14 +29,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.ignore.IgnoreNode;
 import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.Constants;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.util.FS;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.util.Optional;
+
+import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
 public class GitIgnoreParser {
@@ -55,10 +55,9 @@ public class GitIgnoreParser {
     }
 
     @SneakyThrows
-    public Optional<Boolean> isFileIgnored(Path path) {
-        Path relativePath = makeRelativeToProject(path);
-        return isFileIgnoredWithDotGitignore(relativePath)
-                .or(() -> isFileIgnoredWithInfoExclude(relativePath));
+    public Optional<Boolean> isFileIgnored(Path relativeToWorkTreePath) {
+        return isFileIgnoredWithDotGitignoreOrCustomExclude(relativeToWorkTreePath)
+                .or(() -> isFileIgnoredWithInfoExclude(relativeToWorkTreePath));
     }
 
     /**
@@ -66,24 +65,22 @@ public class GitIgnoreParser {
      * has a bug where the order of files is incorrect causing the exclude file to take precedence over user defined
      * local .gitignore file. Once JGit 6.3 is released, this can be simplified; an example implementation can be seen
      * in CGitIgnoreTest.jgitIgnoredAndUntracked method.
-     *
+     * <p>
      * Bug report: https://bugs.eclipse.org/bugs/show_bug.cgi?id=580381
      * Simpler impl once bug is fixed:
      * https://git.eclipse.org/c/jgit/jgit.git/tree/org.eclipse.jgit.test/tst/org/eclipse/jgit/ignore/CGitIgnoreTest.java?h=stable-6.2#n106
      */
     @SneakyThrows
-    public Optional<Boolean> isFileIgnoredWithDotGitignore(Path path) {
-        Path relativeFilePath = makeRelativeToProject(path);
+    public Optional<Boolean> isFileIgnoredWithDotGitignoreOrCustomExclude(Path relativeToWorkTreePath) {
+
         // Iterate over directory hierarchy checking each .gitignore file
-        Optional<Path> currPathOpt = Optional.of(relativeFilePath);
+        Optional<Path> currPathOpt = Optional.of(relativeToWorkTreePath);
         Optional<Boolean> isIgnoredOpt;
-        Repository repo = project.getGit().getRepository();
-        FS fs = repo.getFS();
         do {
             currPathOpt = Optional.ofNullable(currPathOpt.get().getParent());
-            Path currGitIgnorePath = project.getPath().resolve(
+            Path currGitIgnorePath = project.getGitWorkTreePath().resolve(
                     currPathOpt.map(p -> p + File.separator).orElse("") + Constants.GITIGNORE_FILENAME);
-            Path filePathRelativeToGitignore = currPathOpt.map(currPath -> currPath.relativize(relativeFilePath)).orElse(relativeFilePath);
+            Path filePathRelativeToGitignore = currPathOpt.map(currPath -> currPath.relativize(relativeToWorkTreePath)).orElse(relativeToWorkTreePath);
             isIgnoredOpt = isFileIgnored(filePathRelativeToGitignore, currGitIgnorePath);
             if (isIgnoredOpt.isPresent()) {
                 return isIgnoredOpt;
@@ -91,11 +88,11 @@ public class GitIgnoreParser {
         } while (currPathOpt.isPresent());
 
         // Custom info exclude
-        Path customExcludesPath = repo.getConfig().getPath(
+        Path customExcludesPath = project.getGit().getRepository().getConfig().getPath(
                 ConfigConstants.CONFIG_CORE_SECTION, null,
-                ConfigConstants.CONFIG_KEY_EXCLUDESFILE, fs, null, null);
+                ConfigConstants.CONFIG_KEY_EXCLUDESFILE, project.getGit().getRepository().getFS(), null, null);
         if (customExcludesPath != null) {
-            isIgnoredOpt = isFileIgnored(relativeFilePath, customExcludesPath);
+            isIgnoredOpt = isFileIgnored(relativeToWorkTreePath, customExcludesPath);
             if (isIgnoredOpt.isPresent()) {
                 return isIgnoredOpt;
             }
@@ -105,14 +102,18 @@ public class GitIgnoreParser {
     }
 
     @SneakyThrows
-    public Optional<Boolean> isFileIgnoredWithInfoExclude(Path path) {
-        Path relativeFilePath = makeRelativeToProject(path);
-        return isFileIgnored(relativeFilePath, project.getPath().resolve(
-                Constants.DOT_GIT + "/" + Constants.INFO_EXCLUDE));
+    public Optional<Boolean> isFileIgnoredWithInfoExclude(Path relativeToWorkTreePath) {
+        Path excludeFilePath = project.getGit()
+                .getRepository()
+                .getDirectory()
+                .toPath()
+                .resolve(Constants.INFO_EXCLUDE);
+        return isFileIgnored(relativeToWorkTreePath, excludeFilePath);
     }
 
     @SneakyThrows
-    private Optional<Boolean> isFileIgnored(Path filePath, Path gitIgnorePath) {
+    private Optional<Boolean> isFileIgnored(Path relativeToGitignorePath, Path gitIgnorePath) {
+        checkState(!relativeToGitignorePath.isAbsolute());
         IgnoreNode node = nodeCache.getIfPresent(gitIgnorePath.toString());
         if (node == null) {
             node = new IgnoreNode();
@@ -123,13 +124,6 @@ public class GitIgnoreParser {
             }
             nodeCache.put(gitIgnorePath.toString(), node);
         }
-        return Optional.ofNullable(node.checkIgnored(filePath.toString(), false));
-    }
-
-    private Path makeRelativeToProject(Path relativeFilePath) {
-        if (relativeFilePath.isAbsolute()) {
-            return project.getPath().relativize(relativeFilePath);
-        }
-        return relativeFilePath;
+        return Optional.ofNullable(node.checkIgnored(relativeToGitignorePath.toString(), false));
     }
 }

@@ -46,5 +46,5 @@ public interface FileTracker {
      * @return True if file is marked as tracked successfully and unlinked;
      * False if file may or may not be present but definitely cannot be touched
      */
-    boolean trackFile(Project project, Path path);
+    boolean trackFile(Project project, Path relativeToProjectOrAbsolutePath);
 }

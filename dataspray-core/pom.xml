@@ -134,6 +134,7 @@
                             <arguments>
                                 <argument>${project.build.directory}/generated-resources/jsonschema/</argument>
                             </arguments>
+                            <cleanupDaemonThreads>false</cleanupDaemonThreads>
                         </configuration>
                     </execution>
                 </executions>

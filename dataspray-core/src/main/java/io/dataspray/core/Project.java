@@ -22,10 +22,12 @@
 
 package io.dataspray.core;
 
+import com.google.common.base.Preconditions;
 import com.jcabi.aspects.Cacheable;
 import io.dataspray.core.definition.model.Definition;
 import io.dataspray.core.definition.model.Processor;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.Value;
 import org.eclipse.jgit.api.Git;
 
@@ -55,5 +57,67 @@ public class Project {
     @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public Path getProcessorDir(Processor processor) {
         return getPath().resolve(processor.getNameDir());
+    }
+
+    public Path makeRelativeToGitWorkTree(Path path) {
+        Path relativeToProjectPath = path.isAbsolute()
+                ? getPath().relativize(path)
+                : path;
+        return getRelativePathFromGitWorkTreeToProject()
+                .resolve(relativeToProjectPath);
+    }
+
+    public Path makeAbsoluteFromGitWorkTree(Path path) {
+        return path.isAbsolute()
+                ? path
+                : subtractPath(getPath(), getRelativePathFromGitWorkTreeToProject()).resolve(path);
+    }
+
+    /**
+     * Get git working path.
+     * <p>
+     * Note that JGit internally resolves symlinks, so this method ensures the absolute path is constructed with same
+     * common path as project path {@link #getPath} to make sure calls to {@link Path#relativize(Path)} are constructed
+     * properly.
+     */
+    @SneakyThrows
+    public Path getGitWorkTreePath() {
+        return subtractPath(getPath(), getRelativePathFromGitWorkTreeToProject());
+    }
+
+    @SneakyThrows
+    private Path getRelativePathFromGitWorkTreeToProject() {
+        return getGit()
+                .getRepository()
+                .getWorkTree()
+                .toPath()
+                .toRealPath()
+                .relativize(getPath()
+                        .toRealPath());
+    }
+
+    /**
+     * Subtract a path. E.g. given absolutePath of /a/b/c and subtractRelativePath of b/c, the result is /a.
+     */
+    private Path subtractPath(Path absolutePath, Path subtractRelativePath) {
+        absolutePath = absolutePath.normalize();
+        subtractRelativePath = subtractRelativePath.normalize();
+
+        // Path.of("").nameCount() weirdly returns 1, instead check for empty string here
+        if (subtractRelativePath.toString().isEmpty()) {
+            return absolutePath;
+        }
+
+        Preconditions.checkArgument(absolutePath.endsWith(subtractRelativePath), "Cannot subtract paths, '%s' does not end with '%s'", absolutePath, subtractRelativePath);
+
+        // Subtract the relative path
+        int elementsToRemove = subtractRelativePath.getNameCount();
+        Path resultPath = absolutePath;
+        for (int i = 0; i < elementsToRemove; i++) {
+            resultPath = resultPath.getParent();
+        }
+
+        // Ensure we return an absolute path by re-attaching the root if necessary
+        return resultPath.isAbsolute() ? resultPath : absolutePath.getRoot().resolve(resultPath);
     }
 }

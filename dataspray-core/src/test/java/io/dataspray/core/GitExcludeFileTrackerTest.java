@@ -30,6 +30,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.Constants;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -211,11 +212,11 @@ class GitExcludeFileTrackerTest {
 
     @SneakyThrows
     private void printExcludeFile(Project project) {
-        log.info("{}:\n{}", GitExcludeFileTracker.GIT_EXCLUDE_FILE, Files.readString(project
+        log.info("{}:\n{}", Constants.INFO_EXCLUDE, Files.readString(project
                 .getGit()
                 .getRepository()
                 .getDirectory()
                 .toPath()
-                .resolve(GitExcludeFileTracker.GIT_EXCLUDE_FILE), StandardCharsets.UTF_8));
+                .resolve(Constants.INFO_EXCLUDE), StandardCharsets.UTF_8));
     }
 }
