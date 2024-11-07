@@ -35,11 +35,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -71,8 +73,7 @@ class GitExcludeFileTrackerTest {
 
     @Test
     void test() throws Exception {
-        Git.init().setDirectory(workingDir.toFile()).call();
-        Project project = new Project(workingDir, Git.open(workingDir.toFile()), SampleProject.EMPTY.getDefinitionForName("test"), Optional.empty());
+        Project project = setupProject(Optional.empty());
 
         File file1 = createFile("file1");
         File file2 = createFile("file2");
@@ -150,26 +151,49 @@ class GitExcludeFileTrackerTest {
 
     @Test
     void testGitInParentDirectory() throws Exception {
-        Git.init().setDirectory(workingDir.toFile()).call();
-        Path subProjectDir = workingDir.resolve("subdir");
-        subProjectDir.toFile().mkdir();
-        Project project = new Project(subProjectDir, Git.open(workingDir.toFile()), SampleProject.EMPTY.getDefinitionForName("test"), Optional.empty());
+        Project project = setupProject(Optional.of(Path.of("subdir")));
 
         File file1 = createFile("subdir/file1");
 
         assertTrue(fileTracker.trackFile(project, Path.of("file2")));
         File file2 = createFile("subdir/file2");
-
         printExcludeFile(project);
-
         assertTrackedFiles(project, Optional.empty(), Optional.empty(), file2);
+
+        fileTracker.unlinkUntrackFiles(project, fileTracker.getTrackedFiles(project, Optional.empty(), Optional.empty()));
+        printExcludeFile(project);
+        assertTrackedFiles(project, Optional.empty(), Optional.empty());
     }
 
+    @Test
+    void testAbsoluteNonExistentPaths() throws Exception {
+        Project project = setupProject(Optional.of(Path.of("subdir")));
+
+        fileTracker.getTrackedFiles(project, Optional.of(project.getPath().resolve("nonExistentDir")), Optional.empty());
+        fileTracker.trackFile(project, project.getPath().resolve("nonExistentFile"));
+        fileTracker.unlinkUntrackFiles(project, Set.of(project.getPath().resolve("nonExistentFile")));
+    }
+
+    @SneakyThrows
+    private Project setupProject(Optional<Path> projectRelativePath) {
+        Git.init().setDirectory(workingDir.toFile()).call();
+        Path subProjectDir = projectRelativePath.map(workingDir::resolve).orElse(workingDir);
+        subProjectDir.toFile().mkdirs();
+        return new Project(subProjectDir, Git.open(workingDir.toFile()), SampleProject.EMPTY.getDefinitionForName("test"), Optional.empty());
+    }
+
+    @SneakyThrows
     private void assertTrackedFiles(Project project, Optional<Path> subPath, Optional<Long> maxDepthOpt, File... expectedFiles) {
         assertEquals(
                 Arrays.stream(expectedFiles)
                         .map(File::toPath)
-                        .map(p -> project.getPath().relativize(p))
+                        .map(file -> {
+                            try {
+                                return project.getGit().getRepository().getWorkTree().toPath().toRealPath().relativize(file.toRealPath());
+                            } catch (IOException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                        })
                         .collect(ImmutableSet.toImmutableSet()),
                 fileTracker.getTrackedFiles(project, subPath, maxDepthOpt));
     }

@@ -16,15 +16,14 @@
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
         </processorPath>
-        <module name="dataspray-site-landing" />
-        <module name="dataspray-remote-workspace" />
-        <module name="dataspray-client-typescript" />
-        <module name="dataspray-site-dashboard" />
-        <module name="dataspray-client" />
         <module name="dataspray-site-docs" />
         <module name="dataspray-common" />
+        <module name="dataspray-remote-workspace" />
+        <module name="dataspray-client-typescript" />
         <module name="dataspray-resources" />
         <module name="dataspray-runner-typescript" />
+        <module name="dataspray-site-dashboard" />
+        <module name="dataspray-client" />
       </profile>
       <profile name="Annotation profile for dataspray-api" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
@@ -157,6 +156,17 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
         </processorPath>
         <module name="dataspray-stream-ingest" />
+      </profile>
+      <profile name="Annotation profile for dataspray-site-landing" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processor name="lombok.launch.AnnotationProcessorHider$AnnotationProcessor" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
+        </processorPath>
+        <module name="dataspray-site-landing" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="21">

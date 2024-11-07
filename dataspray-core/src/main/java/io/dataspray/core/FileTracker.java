@@ -32,9 +32,17 @@ public interface FileTracker {
 
     ImmutableSet<Path> getTrackedFiles(Project project, Optional<Path> subPath, Optional<Long> maxDepthOpt);
 
-    void unlinkUntrackFiles(Project project, Collection<Path> relativePaths);
+    /**
+     * Deletes files from disk and untracks them.
+     *
+     * @param paths Either absolute paths or relative to project root
+     */
+    void unlinkUntrackFiles(Project project, Collection<Path> paths);
 
     /**
+     * Track specific file. Not required to exist.
+     *
+     * @param path Either absolute path or relative to project root
      * @return True if file is marked as tracked successfully and unlinked;
      * False if file may or may not be present but definitely cannot be touched
      */
