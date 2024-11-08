@@ -32,9 +32,12 @@ import io.dataspray.core.definition.model.Definition;
 import io.dataspray.core.definition.model.DynamoState;
 import io.dataspray.core.definition.model.Endpoint;
 import io.dataspray.core.definition.model.JavaProcessor;
+import io.dataspray.core.definition.model.Parameter;
+import io.dataspray.core.definition.model.PathParameter;
 import io.dataspray.core.definition.model.StoreType;
 import io.dataspray.core.definition.model.StreamLink;
 import io.dataspray.core.definition.model.TypescriptProcessor;
+import io.dataspray.core.definition.model.Web;
 
 import java.util.Set;
 
@@ -83,8 +86,30 @@ public enum SampleProject {
                                             .storeName("default")
                                             .streamName("last_ip")
                                             .build()))
-                            .endpoint(Endpoint.builder()
-                                    .isPublic(false)
+                            .web(Web.builder()
+                                    .isPublic(true)
+                                    .cors(Cors.builder()
+                                            .allowOrigins(Set.of("example.com"))
+                                            .allowMethods(Set.of("GET", "POST"))
+                                            .allowHeaders(Set.of("Authorization"))
+                                            .build())
+                                    .endpoints(ImmutableSet.of(
+                                            Endpoint.builder()
+                                                    .name("byIp")
+                                                    .path("/user/{userId}/ip")
+                                                    .pathParams(ImmutableSet.of(PathParameter.builder()
+                                                            .name("userId")
+                                                            .build()))
+                                                    .queryParams(ImmutableSet.of(
+                                                            Parameter.builder().name("limit").isRequired(true).build(),
+                                                            Parameter.builder().name("cursor").isRequired(false).build()))
+                                                    .cookies(ImmutableSet.of(
+                                                            Parameter.builder().name("session").isRequired(true).build()))
+                                                    .contentTypes(ImmutableSet.of("application/json"))
+                                                    .bodyDataFormatName("register")
+                                                    .headers(ImmutableSet.of(
+                                                            Parameter.builder().name("Authorization").isRequired(true).build()))
+                                                    .build()))
                                     .build())
                             .hasDynamoState(true)
                             .build()))
@@ -149,13 +174,30 @@ public enum SampleProject {
                                             .storeName("default")
                                             .streamName("last_ip")
                                             .build()))
-                            .endpoint(Endpoint.builder()
+                            .web(Web.builder()
                                     .isPublic(true)
                                     .cors(Cors.builder()
                                             .allowOrigins(Set.of("example.com"))
                                             .allowMethods(Set.of("GET", "POST"))
                                             .allowHeaders(Set.of("Authorization"))
                                             .build())
+                                    .endpoints(ImmutableSet.of(
+                                            Endpoint.builder()
+                                                    .name("byIp")
+                                                    .path("/user/{userId}/ip")
+                                                    .pathParams(ImmutableSet.of(PathParameter.builder()
+                                                            .name("userId")
+                                                            .build()))
+                                                    .queryParams(ImmutableSet.of(
+                                                            Parameter.builder().name("limit").isRequired(true).build(),
+                                                            Parameter.builder().name("cursor").isRequired(false).build()))
+                                                    .cookies(ImmutableSet.of(
+                                                            Parameter.builder().name("session").isRequired(true).build()))
+                                                    .contentTypes(ImmutableSet.of("application/json"))
+                                                    .bodyDataFormatName("register")
+                                                    .headers(ImmutableSet.of(
+                                                            Parameter.builder().name("Authorization").isRequired(true).build()))
+                                                    .build()))
                                     .build())
                             .hasDynamoState(true)
                             .build()))

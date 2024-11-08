@@ -24,11 +24,10 @@ package io.dataspray.core.definition.model;
 
 import com.jcabi.aspects.Cacheable;
 import io.dataspray.common.StringUtil;
+import jakarta.annotation.Nonnull;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
-
-import javax.annotation.Nonnull;
 
 @Value
 @SuperBuilder(toBuilder = true)
@@ -54,5 +53,10 @@ public class Item {
     @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public String getNameCamelLower() {
         return StringUtil.camelCase(name, false);
+    }
+
+    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public String getNameSnakeUpper() {
+        return StringUtil.snakeCase(name, true);
     }
 }

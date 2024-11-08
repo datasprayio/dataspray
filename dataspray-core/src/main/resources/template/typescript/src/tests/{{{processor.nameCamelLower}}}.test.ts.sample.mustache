@@ -1,17 +1,17 @@
-import { Processor } from "../processor";
+import { Processor } from "../autogen/processor";
 import { {{{processor.nameCamelUpper}}} } from "../{{{processor.nameCamelLower}}}";
-{{#processor.endpoint}}
-import { mockRequest } from "./mockRequest";
-{{/processor.endpoint}}
+{{#processor.web}}
+import { mockRequest } from "./autogen/mockRequest";
+{{/processor.web}}
 {{^processor.inputStreams.empty}}
 import {
     {{#processor.inputStreams}}
-    Test{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}},
-    prepareTest{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}},
+    Test{{{processor.nameCamelUpper}}}Stream{{{uniqueNameCamelUpper}}},
+    prepareTest{{{processor.nameCamelUpper}}}Stream{{{uniqueNameCamelUpper}}},
     {{/processor.inputStreams}}
-} from "./mockProcess";
+} from "./autogen/mockProcess";
 {{/processor.inputStreams.empty}}
-{{#processor.endpoint}}
+{{#processor.web}}
 
 describe('Web endpoint handler', () => {
     let processor: Processor;
@@ -21,33 +21,33 @@ describe('Web endpoint handler', () => {
     });
 
     it('responds with ok', async () => {
-        const response = await processor.handleWebRequest(mockRequest({
+        const response = await processor.web(mockRequest({
             body: '{}',
         }));
         expect(response.statusCode).toBe(200);
     });
 });
-{{/processor.endpoint}}
+{{/processor.web}}
 {{^processor.inputStreams.empty}}
 
 describe('SQS message processors', () => {
     let processor: {{{processor.nameCamelUpper}}};
     {{#processor.inputStreams}}
-    let process{{{uniqueNameCamelUpper}}}: Test{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}};
+    let stream{{{uniqueNameCamelUpper}}}: Test{{{processor.nameCamelUpper}}}Stream{{{uniqueNameCamelUpper}}};
     {{/processor.inputStreams}}
 
     beforeEach(() => {
         processor = new {{{processor.nameCamelUpper}}}();
         {{#processor.inputStreams}}
-        process{{{uniqueNameCamelUpper}}} = prepareTest{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}}(processor);
+        stream{{{uniqueNameCamelUpper}}} = prepareTest{{{processor.nameCamelUpper}}}Stream{{{uniqueNameCamelUpper}}}(processor);
         {{/processor.inputStreams}}
     });
     {{#processor.inputStreams}}
 
     it('Process {{{uniqueNameCamelUpper}}}', async () => {
-        process{{{uniqueNameCamelUpper}}}(
+        stream{{{uniqueNameCamelUpper}}}(
             'messageKey',
-            {{>../stream-test-data}},
+            {{>stream-test-data}},
             'messageId',
         ){{#processor.outputStreams}}
             .assertSentNone{{{dataFormat.nameCamelUpper}}}(){{/processor.outputStreams}};

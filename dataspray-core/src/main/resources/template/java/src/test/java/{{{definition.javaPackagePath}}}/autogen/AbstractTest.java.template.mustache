@@ -16,11 +16,11 @@ public class AbstractTest {
     }
     {{#processor.inputStreams}}
 
-    public TestCoordinator process{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
-        return process{{{uniqueNameCamelUpper}}}(messageKey, {{{dataFormat.nameCamelLower}}}, UUID.randomUUID().toString());
+    public TestCoordinator stream{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
+        return stream{{{uniqueNameCamelUpper}}}(messageKey, {{{dataFormat.nameCamelLower}}}, UUID.randomUUID().toString());
     }
 
-    public TestCoordinator process{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}, String messageId) {
+    public TestCoordinator stream{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}, String messageId) {
         TestMessage<{{{dataFormat.nameCamelUpper}}}> message = new TestMessage<>(
                 StoreType.{{{storeType.name}}},
                 "{{{storeName}}}",
@@ -29,7 +29,7 @@ public class AbstractTest {
                 messageId,
                 {{{dataFormat.nameCamelLower}}});
         TestCoordinator coordinator = new TestCoordinator({{#processor.hasDynamoState}}messageKey{{/processor.hasDynamoState}});
-        processor.process{{{uniqueNameCamelUpper}}}(message, coordinator);
+        processor.stream{{{uniqueNameCamelUpper}}}(message, coordinator);
         return coordinator;
     }
     {{/processor.inputStreams}}

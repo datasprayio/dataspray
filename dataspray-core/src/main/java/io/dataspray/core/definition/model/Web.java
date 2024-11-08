@@ -23,22 +23,40 @@
 package io.dataspray.core.definition.model;
 
 import com.google.common.collect.ImmutableSet;
+import jakarta.annotation.Nonnull;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
+import lombok.Setter;
 import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
 
+import java.util.Optional;
+
 @Value
-@NonFinal
 @SuperBuilder(toBuilder = true)
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
-public class Store extends Item {
+@AllArgsConstructor
+public class Web {
 
-    ImmutableSet<DataStream> streams;
+    @Nonnull
+    Boolean isPublic;
 
-    ImmutableSet<DataStream> getStreams() {
-        return streams == null ? ImmutableSet.of() : streams;
+    Cors cors;
+
+    public Optional<Cors> getCorsOpt() {
+        return Optional.ofNullable(cors);
     }
+
+    ImmutableSet<Endpoint> endpoints;
+
+    public ImmutableSet<Endpoint> getEndpoints() {
+        return endpoints == null ? ImmutableSet.of() : endpoints;
+    }
+
+    @Setter
+    @NonFinal
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    transient Processor parent;
 }

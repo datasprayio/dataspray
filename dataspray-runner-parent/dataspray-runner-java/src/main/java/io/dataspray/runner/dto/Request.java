@@ -22,14 +22,18 @@
 
 package io.dataspray.runner.dto;
 
+import com.google.common.collect.Maps;
 import io.dataspray.runner.dto.sqs.SqsMessage;
 import io.dataspray.runner.dto.sqs.SqsRequest;
 import io.dataspray.runner.dto.web.HttpRequest;
 import io.dataspray.runner.dto.web.HttpRequestContextImpl;
 import lombok.Value;
+import lombok.experimental.NonFinal;
 
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @Value
 public class Request implements SqsRequest, HttpRequest {
@@ -48,7 +52,36 @@ public class Request implements SqsRequest, HttpRequest {
 
     List<String> cookies;
 
+    @NonFinal
+    transient Map<String, String> cookieMap;
+
+    @Override
+    public Map<String, String> getCookiesCaseInsensitive() {
+        if (this.cookieMap == null) {
+            this.cookieMap = getCookies().stream()
+                    .map(cookie -> cookie.split("=", 2))
+                    .collect(Collectors.toMap(
+                            cookie -> cookie[0],
+                            cookie -> cookie.length > 1 ? cookie[1] : "",
+                            (existing, replacement) -> existing + "; " + replacement,
+                            () -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)));
+        }
+        return this.cookieMap;
+    }
+
     Map<String, String> headers;
+
+    @NonFinal
+    transient Map<String, String> headersCaseInsensitive;
+
+    public Map<String, String> getHeadersCaseInsensitive() {
+        if (this.headersCaseInsensitive == null) {
+            TreeMap<String, String> headersCaseInsensitive = Maps.newTreeMap(String.CASE_INSENSITIVE_ORDER);
+            headersCaseInsensitive.putAll(this.headers);
+            this.headersCaseInsensitive = headersCaseInsensitive;
+        }
+        return this.headersCaseInsensitive;
+    }
 
     Map<String, String> queryStringParameters;
 

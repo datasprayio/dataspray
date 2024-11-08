@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -60,15 +60,19 @@ public class StringUtil {
         return builder.toString();
     }
 
+    public static String snakeCase(String text, boolean upperCase) {
+        return delimited(text, '_', true, upperCase);
+    }
+
     public static String dirName(String text) {
-        return lowerDelimited(text, '-', true);
+        return delimited(text, '-', true, false);
     }
 
     public static String javaPackageName(String text) {
-        return lowerDelimited(text, '.', false);
+        return delimited(text, '.', false, false);
     }
 
-    public static String lowerDelimited(String text, char delimiter, boolean allowBeginWithDigit) {
+    public static String delimited(String text, char delimiter, boolean allowBeginWithDigit, boolean upperCase) {
         StringBuilder builder = new StringBuilder();
         boolean nextCharIsIdentifierStart = true;
         for (int i = 0; i < text.length(); i++) {
@@ -76,7 +80,9 @@ public class StringUtil {
             if (!allowBeginWithDigit && nextCharIsIdentifierStart && Character.isDigit(currentChar)) {
                 continue;
             } else if (Character.isLetterOrDigit(currentChar)) {
-                builder.append(Character.toLowerCase(currentChar));
+                builder.append(upperCase
+                        ? Character.toUpperCase(currentChar)
+                        : Character.toLowerCase(currentChar));
                 nextCharIsIdentifierStart = false;
             } else if (!nextCharIsIdentifierStart) {
                 builder.append(delimiter);

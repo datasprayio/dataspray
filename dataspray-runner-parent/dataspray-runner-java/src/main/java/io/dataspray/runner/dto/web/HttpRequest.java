@@ -63,9 +63,19 @@ public interface HttpRequest {
     List<String> getCookies();
 
     /**
-     * The list of request headers, presented as key-value pairs.
+     * A map containing all cookies and their values, backed by a Map with case-insensitive keys.
+     */
+    Map<String, String> getCookiesCaseInsensitive();
+
+    /**
+     * The list of request headers.
      */
     Map<String, String> getHeaders();
+
+    /**
+     * The list of request headers, backed by a Map with case-insensitive keys.
+     */
+    Map<String, String> getHeadersCaseInsensitive();
 
     /**
      * The query parameters for the request. For example, if the request URL is

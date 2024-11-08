@@ -28,7 +28,6 @@ import com.google.common.collect.Lists;
 import com.jcabi.aspects.Cacheable;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.Nonnull;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import lombok.ToString;
@@ -36,7 +35,6 @@ import lombok.Value;
 import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
 
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -57,24 +55,29 @@ public class Processor extends Item {
         // TODO FLINK
     }
 
-    @Nullable
-    String handler;
-
-    @Nonnull
     ImmutableSet<StreamLink> inputStreams;
 
-    @Nonnull
-    ImmutableSet<StreamLink> outputStreams;
-
-    Endpoint endpoint;
-
-    public Optional<Endpoint> getEndpoint() {
-        return Optional.ofNullable(endpoint);
+    public ImmutableSet<StreamLink> getInputStreams() {
+        return inputStreams == null ? ImmutableSet.of() : inputStreams;
     }
 
-    @Nonnull
-    @Builder.Default
-    boolean hasDynamoState = false;
+    ImmutableSet<StreamLink> outputStreams;
+
+    public ImmutableSet<StreamLink> getOutputStreams() {
+        return outputStreams == null ? ImmutableSet.of() : outputStreams;
+    }
+
+    Web web;
+
+    public Optional<Web> getWebOpt() {
+        return Optional.ofNullable(web);
+    }
+
+    Boolean hasDynamoState;
+
+    public boolean isHasDynamoState() {
+        return Boolean.TRUE.equals(hasDynamoState);
+    }
 
     @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public ImmutableList<StreamLink> getStreams() {
@@ -179,6 +182,19 @@ public class Processor extends Item {
                 .filter(streamLink -> serdes.contains(streamLink.getDataFormat().getSerde()))
                 .distinct()
                 .collect(ImmutableSet.toImmutableSet());
+    }
+
+    /**
+     * Checks whether a stream or a web request has a JSON data format.
+     */
+    public boolean hasJsonDataFormat() {
+        return getStreams().stream()
+                       .anyMatch(streamLink -> streamLink.getDataFormat().getSerde() == DataFormat.Serde.JSON)
+               || getWebOpt()
+                       .stream()
+                       .flatMap(w -> w.getEndpoints().stream())
+                       .anyMatch(e -> e.getBodyDataFormat() != null
+                                      && e.getBodyDataFormat().getSerde() == DataFormat.Serde.JSON);
     }
 
     public void initialize() {

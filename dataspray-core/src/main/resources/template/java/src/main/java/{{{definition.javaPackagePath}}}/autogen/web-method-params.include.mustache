@@ -1,0 +1,25 @@
+        {{#util.trim}}
+        {{#getBodyDataFormat}}
+        {{#isSerdeBinary}}
+        byte[] {{{nameCamelLower}}},
+        {{/isSerdeBinary}}
+        {{#isSerdeString}}
+        @Nonnull String {{{nameCamelLower}}},
+        {{/isSerdeString}}
+        {{#isSerdeJson}}
+        @Nonnull {{{nameCamelUpper}}} {{{nameCamelLower}}},
+        {{/isSerdeJson}}
+        {{/getBodyDataFormat}}
+        {{#pathParams}}
+        {{^isRequired}}@Nullable {{/isRequired}}String {{{nameCamelLower}}}Path,
+        {{/pathParams}}
+        {{#queryParams}}
+        {{^isRequired}}@Nullable {{/isRequired}}String {{{nameCamelLower}}}Query,
+        {{/queryParams}}
+        {{#headers}}
+        {{^isRequired}}@Nullable {{/isRequired}}String {{{nameCamelLower}}}Header,
+        {{/headers}}
+        {{#cookies}}
+        {{^isRequired}}@Nullable {{/isRequired}}String {{{nameCamelLower}}}Cookie,
+        {{/cookies}}
+        {{/util.trim}}

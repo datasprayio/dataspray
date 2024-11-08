@@ -1,0 +1,23 @@
+                    {{#getBodyDataFormat}}
+                    {{#isSerdeBinary}}
+                    request.getBodyAsBinary(),
+                    {{/isSerdeBinary}}
+                    {{#isSerdeString}}
+                    request.getBodyAsString(),
+                    {{/isSerdeString}}
+                    {{#isSerdeJson}}
+                    gson.fromJson(request.getBodyAsString(), {{{nameCamelUpper}}}.class),
+                    {{/isSerdeJson}}
+                    {{/getBodyDataFormat}}
+                    {{#pathParams}}
+                    pathDirs[{{{pathIndex}}}],
+                    {{/pathParams}}
+                    {{#queryParams}}
+                    request.getQueryStringParameters().get("{{{name}}}"),
+                    {{/queryParams}}
+                    {{#headers}}
+                    request.getHeadersCaseInsensitive().get("{{{name}}}"),
+                    {{/headers}}
+                    {{#cookies}}
+                    request.getCookiesCaseInsensitive().get("{{{name}}}"),
+                    {{/cookies}}

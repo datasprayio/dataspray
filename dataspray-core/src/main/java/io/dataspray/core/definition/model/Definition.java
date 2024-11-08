@@ -64,9 +64,13 @@ public class Definition extends Item {
      */
     String namespace;
 
+    Optional<String> getNamespaceOpt() {
+        return Optional.ofNullable(Strings.emptyToNull(namespace));
+    }
+
     @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public String getJavaPackage() {
-        return StringUtil.javaPackageName(Strings.nullToEmpty(getNamespace()));
+        return StringUtil.javaPackageName(getNamespaceOpt().orElse(""));
     }
 
     @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
@@ -76,46 +80,54 @@ public class Definition extends Item {
                 .orElse("");
     }
 
-    @Nonnull
     ImmutableSet<DataFormat> dataFormats;
 
-    @Builder.Default
-    ImmutableSet<DatasprayStore> datasprayStores = ImmutableSet.of();
+    public ImmutableSet<DataFormat> getDataFormats() {
+        return dataFormats == null ? ImmutableSet.of() : dataFormats;
+    }
 
-    @Builder.Default
-    ImmutableSet<KafkaStore> kafkaStores = ImmutableSet.of();
+    ImmutableSet<DatasprayStore> datasprayStores;
+
+    public ImmutableSet<DatasprayStore> getDatasprayStores() {
+        return datasprayStores == null ? ImmutableSet.of() : datasprayStores;
+    }
+
+    ImmutableSet<KafkaStore> kafkaStores;
+
+    public ImmutableSet<KafkaStore> getKafkaStores() {
+        return kafkaStores == null ? ImmutableSet.of() : kafkaStores;
+    }
 
     DynamoState dynamoState;
 
-    public Optional<DynamoState> getDynamoState() {
+    public Optional<DynamoState> getDynamoStateOpt() {
         return Optional.ofNullable(dynamoState);
     }
 
     @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public ImmutableSet<Store> getStores() {
         return ImmutableSet.<Store>builder()
-                .addAll(datasprayStores)
-                .addAll(kafkaStores)
+                .addAll(getDatasprayStores())
+                .addAll(getKafkaStores())
                 .build();
     }
 
     @Cacheable(lifetime = CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public ImmutableSet<Processor> getProcessors() {
         return ImmutableSet.<Processor>builder()
-                .addAll(javaProcessors)
-                .addAll(typescriptProcessors)
+                .addAll(getJavaProcessors())
+                .addAll(getTypescriptProcessors())
                 .build();
     }
 
-    @Builder.Default
-    ImmutableSet<JavaProcessor> javaProcessors = ImmutableSet.of();
-    @Builder.Default
-    ImmutableSet<TypescriptProcessor> typescriptProcessors = ImmutableSet.of();
+    ImmutableSet<JavaProcessor> javaProcessors;
 
     @Nonnull
     public ImmutableSet<JavaProcessor> getJavaProcessors() {
         return javaProcessors == null ? ImmutableSet.of() : javaProcessors;
     }
+
+    ImmutableSet<TypescriptProcessor> typescriptProcessors;
 
     @Nonnull
     public ImmutableSet<TypescriptProcessor> getTypescriptProcessors() {
@@ -128,8 +140,15 @@ public class Definition extends Item {
             processor.getStreams().forEach(stream -> {
                 stream.setParent(processor);
             });
-            processor.getEndpoint().ifPresent(endpoint -> {
-                endpoint.setParent(processor);
+            processor.getWebOpt().ifPresent(web -> {
+                web.setParent(processor);
+                web.getEndpoints().forEach(endpoint -> {
+                    endpoint.setParent(web);
+                    endpoint.initialize();
+                    endpoint.getPathParams().forEach(pathParam -> {
+                        pathParam.setParent(endpoint);
+                    });
+                });
             });
             processor.initialize();
         });

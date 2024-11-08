@@ -3,14 +3,14 @@ import {
 {{#processor.jsonInputStreams}}
     {{{dataFormat.nameCamelUpper}}},
 {{/processor.jsonInputStreams}}
-} from '../streams';
-import { IPExtractor } from "../iPExtractor";
+} from '../../autogen/streams';
+import { {{{processor.nameCamelUpper}}} } from "../../{{{processor.nameCamelLower}}}";
 import { Message, StoreType } from "dataspray-runner";
 import { TestCoordinator } from "./testCoordinator";
 {{#processor.inputStreams}}
 
-export type Test{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}} = (messageKey: string, {{{dataFormat.nameCamelLower}}}: {{{dataFormat.nameCamelUpper}}}, messageId?: string) => TestCoordinator;
-export const prepareTest{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}} = (processor: {{{processor.nameCamelUpper}}}): Test{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelUpper}}} => (messageKey, {{{dataFormat.nameCamelLower}}}, messageId = crypto.randomUUID()) => {
+export type Test{{{processor.nameCamelUpper}}}Stream{{{uniqueNameCamelUpper}}} = (messageKey: string, {{{dataFormat.nameCamelLower}}}: {{{dataFormat.nameCamelUpper}}}, messageId?: string) => TestCoordinator;
+export const prepareTest{{{processor.nameCamelUpper}}}Stream{{{uniqueNameCamelUpper}}} = (processor: {{{processor.nameCamelUpper}}}): Test{{{processor.nameCamelUpper}}}Stream{{{uniqueNameCamelUpper}}} => (messageKey, {{{dataFormat.nameCamelLower}}}, messageId = crypto.randomUUID()) => {
     const message: Message<{{{dataFormat.nameCamelUpper}}}> = new Message({
             storeType: StoreType.{{{storeType}}},
             storeName: '{{{storeName}}}',
@@ -21,7 +21,7 @@ export const prepareTest{{{processor.nameCamelUpper}}}Process{{{uniqueNameCamelU
         {{{dataFormat.nameCamelLower}}},
     );
     const coordinator = new TestCoordinator({{#processor.hasDynamoState}}messageKey{{/processor.hasDynamoState}});
-    processor.process{{{uniqueNameCamelUpper}}}(message, coordinator);
+    processor.stream{{{uniqueNameCamelUpper}}}(message, coordinator);
     return coordinator;
 }
 {{/processor.inputStreams}}

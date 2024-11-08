@@ -1,9 +1,9 @@
-{{#processor.endpoint}}
+{{#processor.web}}
 import {
     APIGatewayProxyStructuredResultV2,
     LambdaFunctionURLEvent,
 } from 'aws-lambda';
-{{/processor.endpoint}}
+{{/processor.web}}
 {{^processor.inputStreams.empty}}
 import {
     Coordinator,
@@ -27,18 +27,18 @@ import {
 {{/processor.jsonInputStreams}}
 } from './streams';
 {{/processor.jsonInputStreams.empty}}
-import { {{{processor.nameCamelUpper}}} } from './{{{processor.nameCamelLower}}}';
+import { {{{processor.nameCamelUpper}}} } from '../{{{processor.nameCamelLower}}}';
 import { Processor } from './processor';
 
 class Runner extends Entrypoint {
 
     private processor: Processor = new {{{processor.nameCamelUpper}}}();
-    {{#processor.endpoint}}
+    {{#processor.web}}
 
-    handleWebRequest(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> {
-        return this.processor.handleWebRequest(request);
+    web(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> {
+        return this.processor.web(request);
     }
-    {{/processor.endpoint}}
+    {{/processor.web}}
     {{^processor.inputStreams.empty}}
 
     processSqsEvent(metadata: MessageMetadata, data: string, rawCoordinator: RawCoordinator): Promise<void> | void {
@@ -47,10 +47,10 @@ class Runner extends Entrypoint {
                 && "{{{storeName}}}" === metadata.storeName
                 && "{{{streamName}}}" === metadata.streamName) {
             {{#dataFormat.isSerdeString}}
-            this.processor.process{{{uniqueNameCamelUpper}}}(new Message(metadata, data), coordinator);
+            this.processor.stream{{{uniqueNameCamelUpper}}}(new Message(metadata, data), coordinator);
             {{/dataFormat.isSerdeString}}
             {{^dataFormat.isSerdeString}}
-            this.processor.process{{{uniqueNameCamelUpper}}}(new Message(metadata, this.to{{{dataFormat.nameCamelUpper}}}(data)), coordinator);
+            this.processor.stream{{{uniqueNameCamelUpper}}}(new Message(metadata, this.to{{{dataFormat.nameCamelUpper}}}(data)), coordinator);
             {{/dataFormat.isSerdeString}}
         } else {{/processor.inputStreams}}{
             throw new Error(`Received unexpected message from ${metadata.storeType} source ${metadata.storeName} stream ${metadata.streamName}`);

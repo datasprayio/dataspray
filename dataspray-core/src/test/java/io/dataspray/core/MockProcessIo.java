@@ -183,7 +183,7 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
         log.warn("Thread {} is not joining, interrupting", thread.getName());
         thread.interrupt();
         thread.join(5_000);
-        log.info("Printing entire log for {}:\n{}\nPrinted entire log for{}",
+        log.info("Printing entire log for {}:\n{}\nPrinted entire log for {}",
                 logFile.getName(), Files.readString(logFile.toPath()), logFile.getName());
         if (!thread.isAlive()) {
             log.warn("Thread {} properly joined", thread.getName());

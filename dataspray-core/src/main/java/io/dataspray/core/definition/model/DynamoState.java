@@ -22,11 +22,10 @@
 
 package io.dataspray.core.definition.model;
 
+import jakarta.annotation.Nonnull;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
-
-import javax.annotation.Nonnull;
 
 @Value
 @SuperBuilder(toBuilder = true)

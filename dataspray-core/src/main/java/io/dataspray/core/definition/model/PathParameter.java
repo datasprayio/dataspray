@@ -22,23 +22,32 @@
 
 package io.dataspray.core.definition.model;
 
-import com.google.common.collect.ImmutableSet;
 import lombok.EqualsAndHashCode;
+import lombok.Setter;
 import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
 
 @Value
-@NonFinal
 @SuperBuilder(toBuilder = true)
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class Store extends Item {
+public class PathParameter extends Item {
 
-    ImmutableSet<DataStream> streams;
-
-    ImmutableSet<DataStream> getStreams() {
-        return streams == null ? ImmutableSet.of() : streams;
+    long getPathIndex() {
+        String[] pathSplit = getParent().getPath().split("/");
+        for (int i = 1; i < pathSplit.length; i++) {
+            if (pathSplit[i].equals("{" + getName() + "}")) {
+                return i;
+            }
+        }
+        throw new RuntimeException("Path parameter " + getName() + " not found in path " + getParent().getPath());
     }
+
+    @Setter
+    @NonFinal
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    transient Endpoint parent;
 }

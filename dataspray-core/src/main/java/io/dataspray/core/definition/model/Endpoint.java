@@ -22,7 +22,10 @@
 
 package io.dataspray.core.definition.model;
 
-import lombok.AllArgsConstructor;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.jcabi.aspects.Cacheable;
+import jakarta.annotation.Nonnull;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import lombok.ToString;
@@ -30,26 +33,112 @@ import lombok.Value;
 import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
 
-import javax.annotation.Nonnull;
-import java.util.Optional;
+import java.util.Arrays;
+import java.util.EnumSet;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 @Value
 @SuperBuilder(toBuilder = true)
-@AllArgsConstructor
-public class Endpoint {
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class Endpoint extends Item {
 
+    private static final ImmutableSet<DataFormat.Serde> SUPPORTED_DATA_FORMATS = ImmutableSet.copyOf(EnumSet
+            // Exclude the following unsupported types
+            .complementOf(EnumSet.of(
+                    DataFormat.Serde.PROTOBUF,
+                    DataFormat.Serde.AVRO)));
+
+    /**
+     * The path of the endpoint.
+     * <p>
+     * Any values in curly braces are considered path parameters.
+     * E.g. /user/{userId}/profile
+     */
     @Nonnull
-    Boolean isPublic;
+    String path;
 
-    Cors cors;
+    public String getPath() {
+        return path.startsWith("/") ? path : "/" + path;
+    }
 
-    public Optional<Cors> getCors() {
-        return Optional.ofNullable(cors);
+    public int getPathDepth() {
+        return getPath().split("/").length;
+    }
+
+    public ImmutableList<RequiredPathDir> getPathRequiredDirs() {
+        ImmutableList.Builder<RequiredPathDir> requiredPathDirsBuilder = ImmutableList.builder();
+        String[] pathDirs = getPath().split("/");
+        for (int i = 1; i < pathDirs.length; i++) {
+            if (!pathDirs[i].startsWith("{")) {
+                requiredPathDirsBuilder.add(RequiredPathDir.builder()
+                        .index(i)
+                        .name(pathDirs[i])
+                        .build());
+            }
+        }
+        return requiredPathDirsBuilder.build();
+    }
+
+    ImmutableSet<PathParameter> pathParams;
+
+    public ImmutableSet<PathParameter> getPathParams() {
+        return pathParams == null ? ImmutableSet.of() : pathParams;
+    }
+
+    public int getPathParamIndex(String pathParamName) {
+        return Arrays.asList(getPath().split("/")).indexOf("{" + pathParamName + "}");
+    }
+
+    ImmutableSet<Parameter> queryParams;
+
+    public ImmutableSet<Parameter> getQueryParams() {
+        return queryParams == null ? ImmutableSet.of() : queryParams;
+    }
+
+    ImmutableSet<Parameter> headers;
+
+    public ImmutableSet<Parameter> getHeaders() {
+        return headers == null ? ImmutableSet.of() : headers;
+    }
+
+    ImmutableSet<Parameter> cookies;
+
+    public ImmutableSet<Parameter> getCookies() {
+        return cookies == null ? ImmutableSet.of() : cookies;
+    }
+
+    String bodyDataFormatName;
+
+    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public DataFormat getBodyDataFormat() {
+        if (bodyDataFormatName == null) {
+            return null;
+        }
+        return getParent().getParent().getParent().getDataFormats().stream()
+                .filter(dataFormat -> dataFormat.getName().equals(getBodyDataFormatName()))
+                .findAny()
+                .orElseThrow(() -> new RuntimeException("Data format not found with name " + getBodyDataFormatName() + " for endpoint " + getPath()));
+    }
+
+    ImmutableSet<String> contentTypes;
+
+    public ImmutableSet<String> getContentTypes() {
+        return contentTypes == null ? ImmutableSet.of() : contentTypes;
+    }
+
+    public void initialize() {
+        if (getBodyDataFormat() != null) {
+            checkArgument(SUPPORTED_DATA_FORMATS.contains(getBodyDataFormat().getSerde()),
+                    "Data format %s is not supported by endpoint body under '%s'",
+                    getBodyDataFormat().getSerde(), getName());
+        }
     }
 
     @Setter
     @NonFinal
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    transient Processor parent;
+    transient Web parent;
 }

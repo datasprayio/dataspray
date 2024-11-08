@@ -22,7 +22,6 @@
 
 package io.dataspray.core;
 
-import com.google.common.base.Strings;
 import io.dataspray.client.DataSprayClient;
 import io.dataspray.core.definition.model.DynamoState;
 import io.dataspray.core.definition.model.Item;
@@ -49,7 +48,6 @@ import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.File;
 import java.util.Iterator;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -145,8 +143,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
         // TODO Eventually this needs to be inferred from definition or project .nvmrc/.sdkman files
         RuntimeEnum runtime;
         if (processor instanceof JavaProcessor) {
-            handler = Optional.ofNullable(Strings.emptyToNull(processor.getHandler()))
-                    .orElseGet(() -> project.getDefinition().getJavaPackage() + ".Runner");
+            handler = project.getDefinition().getJavaPackage() + ".Runner";
             runtime = RuntimeEnum.JAVA21;
         } else if (processor instanceof TypescriptProcessor) {
             // TODO Double check for TS this is the right handler https://docs.aws.amazon.com/lambda/latest/dg/foundation-progmodel.html
@@ -171,10 +168,10 @@ public class StreamRuntimeImpl implements StreamRuntime {
                                 .map(StreamLink::getStreamName)
                                 .collect(Collectors.toList()))
                         .codeUrl(codeUrl)
-                        .endpoint(processor.getEndpoint()
-                                .map(endpoint -> new DeployRequestEndpoint()
-                                        .isPublic(endpoint.getIsPublic())
-                                        .cors(endpoint.getCors()
+                        .endpoint(processor.getWebOpt()
+                                .map(web -> new DeployRequestEndpoint()
+                                        .isPublic(web.getIsPublic())
+                                        .cors(web.getCorsOpt()
                                                 .map(cors -> new DeployRequestEndpointCors()
                                                         .allowOrigins(cors.getAllowOrigins().stream().toList())
                                                         .allowMethods(cors.getAllowMethods().stream().toList())
@@ -184,8 +181,8 @@ public class StreamRuntimeImpl implements StreamRuntime {
                                                 .orElse(null)))
                                 .orElse(null))
                         .dynamoState(!processor.isHasDynamoState() ? null : new DeployRequestDynamoState()
-                                .lsiCount(project.getDefinition().getDynamoState().map(DynamoState::getLsiCount).orElse(0L))
-                                .gsiCount(project.getDefinition().getDynamoState().map(DynamoState::getGsiCount).orElse(0L)))
+                                .lsiCount(project.getDefinition().getDynamoStateOpt().map(DynamoState::getLsiCount).orElse(0L))
+                                .gsiCount(project.getDefinition().getDynamoStateOpt().map(DynamoState::getGsiCount).orElse(0L)))
                         .switchToNow(activateVersion));
 
         if (activateVersion) {

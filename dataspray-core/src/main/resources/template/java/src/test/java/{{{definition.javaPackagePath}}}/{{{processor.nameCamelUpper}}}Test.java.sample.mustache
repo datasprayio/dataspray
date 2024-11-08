@@ -2,23 +2,25 @@ package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
 import org.junit.Test;
+import {{{definition.javaPackage}}}.autogen.AbstractTest;
 {{^processor.inputStreams.empty}}
 import org.mockito.Mockito;
+import {{{definition.javaPackage}}}.autogen.TestCoordinator;
 {{/processor.inputStreams.empty}}
-{{#processor.endpoint}}
+{{#processor.web}}
 import org.junit.Assert;
 import io.dataspray.runner.dto.web.MockHttpRequest;
 import io.dataspray.runner.dto.web.HttpResponse;
-{{/processor.endpoint}}
+{{/processor.web}}
 {{/util.javaImportsFormat}}
 
 public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
-    {{#processor.endpoint}}
+    {{#processor.web}}
 
     @Test(timeout = 10_000)
     public void testWebRequest() {
 
-        HttpResponse response = processor.handleWebRequest(
+        HttpResponse response = processor.web(
                 MockHttpRequest.builder()
                         .method("GET")
                         .path("/")
@@ -28,13 +30,13 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
 
         Assert.assertEquals(204, response.getStatusCode());
     }
-    {{/processor.endpoint}}
+    {{/processor.web}}
     {{#processor.inputStreams}}
 
     @Test(timeout = 10_000)
     public void test{{{uniqueNameCamelUpper}}}() {
 
-        TestCoordinator coordinator = process{{{uniqueNameCamelUpper}}}("messageKey", {{>../../stream-test-data}}, "messageId"){{#processor.outputStreams}}
+        TestCoordinator coordinator = stream{{{uniqueNameCamelUpper}}}("messageKey", {{>stream-test-data}}, "messageId"){{#processor.outputStreams}}
                 .assertSentNone{{{dataFormat.nameCamelUpper}}}(){{/processor.outputStreams}};
     }
     {{/processor.inputStreams}}

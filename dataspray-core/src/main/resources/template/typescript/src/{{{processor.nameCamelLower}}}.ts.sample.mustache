@@ -1,38 +1,42 @@
-import { Processor } from "./processor";
-{{#processor.endpoint}}
+import { Processor } from "./autogen/processor";
+{{#processor.web}}
 import {
     APIGatewayProxyStructuredResultV2,
     LambdaFunctionURLEvent,
 } from 'aws-lambda';
-{{/processor.endpoint}}
+{{/processor.web}}
 {{^processor.inputStreams.empty}}
 import { Message } from "dataspray-runner";
-import { Coordinator } from "./coordinator";
+import { Coordinator } from "./autogen/coordinator";
 {{/processor.inputStreams.empty}}
 {{^processor.jsonInputStreams.empty}}
 import {
 {{#processor.jsonInputStreams}}
     {{{dataFormat.nameCamelUpper}}},
 {{/processor.jsonInputStreams}}
-} from './streams';
+} from './autogen/streams';
 {{/processor.jsonInputStreams.empty}}
 
-export class {{{processor.nameCamelUpper}}} implements Processor {
-    {{#processor.endpoint}}
+export class {{{processor.nameCamelUpper}}} extends Processor {
+    {{#processor.web}}
+    {{#endpoints}}
+    {{/endpoints}}
+    {{#endpoints.empty}}
 
-    async handleWebRequest(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> {
+    async web(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> {
 
         // TODO
         return { statusCode: 200 };
     }
-    {{/processor.endpoint}}
+    {{/endpoints.empty}}
+    {{/processor.web}}
     {{#processor.inputStreams}}
 
-    process{{{uniqueNameCamelUpper}}}(message: Message<{{{this.dataFormat.nameCamelUpper}}}>, coordinator: Coordinator): void {
+    stream{{{uniqueNameCamelUpper}}}(message: Message<{{{this.dataFormat.nameCamelUpper}}}>, coordinator: Coordinator): void {
 
         // TODO
         {{#processor.outputStreams}}
-        //coordinator.sendTo{{{uniqueNameCamelUpper}}}({{>./stream-sample-data}});
+        // coordinator.sendTo{{{uniqueNameCamelUpper}}}({{>stream-sample-data}});
         {{/processor.outputStreams}}
     }
     {{/processor.inputStreams}}

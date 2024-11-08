@@ -63,6 +63,8 @@ public class ContextUtil implements CustomContext {
                 return (Lambda) this::javaImportsFormat;
             case "trim":
                 return (Lambda) (frag, out) -> out.write(frag.execute().strip());
+            case "removeNewlines":
+                return (Lambda) (frag, out) -> out.write(frag.execute().replace("\n", ""));
             case "throw":
                 return (Lambda) (frag, out) -> {
                     throw new RuntimeException(frag.execute());

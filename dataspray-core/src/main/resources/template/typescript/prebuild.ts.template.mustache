@@ -12,7 +12,7 @@ const schemas = [
     .map(filePath => readFileSync(filePath).toString())
     .map(content => JSON.parse(content));
 
-var stream = createWriteStream('./src/streams.ts', { flags: 'w' });
+var stream = createWriteStream('./src/autogen/streams.ts', { flags: 'w' });
 stream.once('open', async fd => {
     // Generate Typescript type
     await Promise.all(schemas.map(async schema => {

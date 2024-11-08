@@ -25,6 +25,7 @@ package io.dataspray.core.definition.model;
 import com.google.common.collect.Sets;
 import com.jcabi.aspects.Cacheable;
 import io.dataspray.common.StringUtil;
+import jakarta.annotation.Nonnull;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
@@ -32,8 +33,6 @@ import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
-
-import javax.annotation.Nonnull;
 
 @Value
 @SuperBuilder(toBuilder = true)

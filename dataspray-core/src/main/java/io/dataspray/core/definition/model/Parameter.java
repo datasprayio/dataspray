@@ -22,7 +22,6 @@
 
 package io.dataspray.core.definition.model;
 
-import com.google.common.collect.ImmutableSet;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
@@ -30,15 +29,11 @@ import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
 
 @Value
-@NonFinal
 @SuperBuilder(toBuilder = true)
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class Store extends Item {
+@NonFinal
+public class Parameter extends Item {
 
-    ImmutableSet<DataStream> streams;
-
-    ImmutableSet<DataStream> getStreams() {
-        return streams == null ? ImmutableSet.of() : streams;
-    }
+    boolean isRequired;
 }

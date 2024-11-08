@@ -22,6 +22,7 @@
 
 package io.dataspray.runner.dto.web;
 
+import com.google.common.collect.Maps;
 import lombok.Builder;
 import lombok.Value;
 
@@ -29,6 +30,8 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -48,8 +51,26 @@ public class MockHttpRequest implements HttpRequest, HttpRequestContext, HttpDet
     @Builder.Default
     List<String> cookies = List.of();
 
+    @Override
+    public Map<String, String> getCookiesCaseInsensitive() {
+        return getCookies().stream()
+                .map(cookie -> cookie.split("=", 2))
+                .collect(Collectors.toMap(
+                        cookie -> cookie[0],
+                        cookie -> cookie.length > 1 ? cookie[1] : "",
+                        (existing, replacement) -> existing + "; " + replacement,
+                        () -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)));
+    }
+
     @Builder.Default
     Map<String, String> headers = Map.of();
+
+    @Override
+    public Map<String, String> getHeadersCaseInsensitive() {
+        TreeMap<String, String> headersCaseInsensitive = Maps.newTreeMap(String.CASE_INSENSITIVE_ORDER);
+        headersCaseInsensitive.putAll(getHeaders());
+        return headersCaseInsensitive;
+    }
 
     @Builder.Default
     Map<String, String> queryStringParameters = Map.of();

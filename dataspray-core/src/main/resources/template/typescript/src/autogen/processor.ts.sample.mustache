@@ -1,11 +1,11 @@
 import { Message } from "dataspray-runner";
 import { Coordinator } from "./coordinator";
-{{#processor.endpoint}}
+{{#processor.web}}
 import {
     APIGatewayProxyStructuredResultV2,
     LambdaFunctionURLEvent,
 } from 'aws-lambda';
-{{/processor.endpoint}}
+{{/processor.web}}
 {{^processor.jsonInputStreams.empty}}
 import {
 {{#processor.jsonInputStreams}}
@@ -14,13 +14,17 @@ import {
 } from './streams';
 {{/processor.jsonInputStreams.empty}}
 
-export interface Processor {
-    {{#processor.endpoint}}
+export abstract class Processor {
+    {{#processor.web}}
+    {{#endpoints}}
+    {{/endpoints}}
 
-    handleWebRequest(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2>;
-    {{/processor.endpoint}}
+    async web(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> {
+        return { statusCode: 404 };
+    }
+    {{/processor.web}}
     {{#processor.inputStreams}}
 
-    process{{{uniqueNameCamelUpper}}}(message: Message<{{{this.dataFormat.nameCamelUpper}}}>, coordinator: Coordinator): void;
+    stream{{{uniqueNameCamelUpper}}}(message: Message<{{{this.dataFormat.nameCamelUpper}}}>, coordinator: Coordinator): void;
     {{/processor.inputStreams}}
 }

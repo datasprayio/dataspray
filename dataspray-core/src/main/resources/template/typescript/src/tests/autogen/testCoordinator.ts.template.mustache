@@ -4,13 +4,13 @@ import {
     Message,
     StateManager,
 } from 'dataspray-runner';
-import { Coordinator } from "../coordinator";
+import { Coordinator } from "../../autogen/coordinator";
 {{^processor.jsonOutputStreams.empty}}
 import {
 {{#processor.jsonOutputStreams}}
     {{{dataFormat.nameCamelUpper}}},
 {{/processor.jsonOutputStreams}}
-} from '../streams';
+} from '../../autogen/streams';
 {{/processor.jsonOutputStreams.empty}}
 {{#processor.hasDynamoState}}
 import { TestStateManager } from './testStateManager';

@@ -28,10 +28,20 @@ import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
+import static com.google.common.base.Preconditions.checkState;
+
 @Value
 @SuperBuilder(toBuilder = true)
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @RegisterForReflection
 public class JavaProcessor extends Processor {
+
+    @Override
+    public void initialize() {
+        super.initialize();
+
+        checkState(getParent().getNamespaceOpt().isPresent(),
+                "Java processors require namespace property to be used as a Java package name");
+    }
 }
