@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -177,10 +178,18 @@ class GitExcludeFileTrackerTest {
 
     @SneakyThrows
     private Project setupProject(Optional<Path> projectRelativePath) {
-        Git.init().setDirectory(workingDir.toFile()).call();
+        Git git = Git.init().setDirectory(workingDir.toFile()).call();
+        if (projectRelativePath.isPresent()) {
+            git.close();
+            // Matches behavior of CodegenImpl.getOrCreateGit
+            git = Git.wrap(new FileRepositoryBuilder()
+                    .findGitDir(workingDir.resolve(projectRelativePath.get()).toFile())
+                    .setMustExist(true)
+                    .build());
+        }
         Path subProjectAbsolutePath = projectRelativePath.map(workingDir::resolve).orElse(workingDir);
         subProjectAbsolutePath.toFile().mkdirs();
-        return new Project(subProjectAbsolutePath, Git.open(workingDir.toFile()), SampleProject.EMPTY.getDefinitionForName("test"), Optional.empty());
+        return new Project(subProjectAbsolutePath, git, SampleProject.EMPTY.getDefinitionForName("test"), Optional.empty());
     }
 
     @SneakyThrows
@@ -212,11 +221,12 @@ class GitExcludeFileTrackerTest {
 
     @SneakyThrows
     private void printExcludeFile(Project project) {
-        log.info("{}:\n{}", Constants.INFO_EXCLUDE, Files.readString(project
+        Path excludeFile = project
                 .getGit()
                 .getRepository()
                 .getDirectory()
                 .toPath()
-                .resolve(Constants.INFO_EXCLUDE), StandardCharsets.UTF_8));
+                .resolve(Constants.INFO_EXCLUDE);
+        log.info("Exclude file {}:\n{}", excludeFile, Files.readString(excludeFile, StandardCharsets.UTF_8));
     }
 }

@@ -109,11 +109,10 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
     @SneakyThrows
     public Map<String, String> start() {
         tempDir = Files.createTempDirectory(UUID.randomUUID().toString());
-        tempDir.toFile().deleteOnExit();
 
-        in = Path.of(tempDir.toString(), "in").toFile();
-        out = Path.of(tempDir.toString(), "out").toFile();
-        err = Path.of(tempDir.toString(), "err").toFile();
+        in = tempDir.resolve("in").toFile();
+        out = tempDir.resolve("out").toFile();
+        err = tempDir.resolve("err").toFile();
 
         return ImmutableMap.of(
                 BuilderImpl.BUILDER_IN, in.toString(),
@@ -122,9 +121,7 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
     }
 
     @SneakyThrows
-    public void setup() {
-        stop();
-
+    public void beforeEach() {
         acceptEof = false;
 
         checkState(in.createNewFile());
@@ -136,35 +133,49 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
         errTailer.start();
     }
 
-    @Override
-    public void stop() {
+    @SneakyThrows
+    public void afterEach() {
         acceptEof = true;
 
+        // Signal finish
+        if (out.exists()) {
+            write(EOF, out);
+        }
+        if (err.exists()) {
+            write(EOF, err);
+        }
+
+        // Join threads, print logs if necessary
+        if (outTailer != null) {
+            attemptJoinThread(outTailer, out);
+            outTailer = null;
+        }
+        if (errTailer != null) {
+            attemptJoinThread(errTailer, err);
+            errTailer = null;
+        }
+
+        // Clear files
         if (in.exists()) {
             checkState(in.delete());
         }
         if (out.exists()) {
-            write(EOF, out);
             checkState(out.delete());
         }
         if (err.exists()) {
-            write(EOF, err);
             checkState(err.delete());
         }
 
+    }
 
-        if (outTailer != null) {
-            attemptJoinThread(outTailer);
-            outTailer = null;
-        }
-        if (errTailer != null) {
-            attemptJoinThread(errTailer);
-            errTailer = null;
-        }
+    @Override
+    public void stop() {
+        tempDir.toFile().delete();
     }
 
     @SneakyThrows
-    private void attemptJoinThread(Thread thread) {
+    private void attemptJoinThread(Thread thread, File logFile) {
+        log.info("Thread {} attempting to join", thread.getName());
         thread.join(10_000);
         if (!thread.isAlive()) {
             return;
@@ -172,7 +183,10 @@ public class MockProcessIo implements QuarkusTestResourceLifecycleManager {
         log.warn("Thread {} is not joining, interrupting", thread.getName());
         thread.interrupt();
         thread.join(5_000);
+        log.info("Printing entire log for {}:\n{}\nPrinted entire log for{}",
+                logFile.getName(), Files.readString(logFile.toPath()), logFile.getName());
         if (!thread.isAlive()) {
+            log.warn("Thread {} properly joined", thread.getName());
             return;
         }
         log.warn("Thread {} is not interrupting, giving up", thread.getName());

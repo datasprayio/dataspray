@@ -159,7 +159,7 @@ public class CodegenImpl implements Codegen {
         try (FileReader reader = new FileReader(projectAbsolutePath.resolve(PROJECT_FILENAME).toFile())) {
             definition = definitionLoader.fromYaml(reader);
         }
-        Git git = getOrCreateGit(projectPath.toFile());
+        Git git = getOrCreateGit(projectAbsolutePath.toFile());
         Optional<String> activeProcessorNameOpt = activeSubDirNameOpt.flatMap(activeSubDirName -> definition.getProcessors().stream()
                 .filter(p -> activeSubDirName.equals(p.getNameDir()))
                 .findAny()
@@ -290,7 +290,7 @@ public class CodegenImpl implements Codegen {
             Optional.ofNullable(destination.toFile().getParentFile())
                     .ifPresent(File::mkdirs);
 
-            log.info("Copying template file {} to {}", sourceFileName, destination);
+            log.debug("Copying template file {} to {}", sourceFileName, destination);
             try (InputStream sourceInputStream = source.openInputStream()) {
                 Files.copy(sourceInputStream, destination, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException ex) {
@@ -511,10 +511,9 @@ public class CodegenImpl implements Codegen {
     @SneakyThrows
     private Git getOrCreateGit(File projectDir) {
         try {
-            // Read existing repository if exists
-            return Git.wrap(new FileRepositoryBuilder().setWorkTree(projectDir)
-                    .readEnvironment() // scan environment GIT_* variables
-                    .findGitDir()      // search up the file system tree
+            // Search for existing repository if exists
+            return Git.wrap(new FileRepositoryBuilder()
+                    .findGitDir(projectDir)
                     .setMustExist(true)
                     .build());
         } catch (RepositoryNotFoundException ex) {

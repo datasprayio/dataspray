@@ -29,6 +29,8 @@ import jakarta.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.eclipse.jgit.api.Git;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -61,12 +63,21 @@ public class CodegenBuilderTest {
             workingDir = Files.createTempDirectory(CodegenBuilderTest.class.getSimpleName() + "-" + sampleProject.name());
             workingDir.toFile().deleteOnExit();
         }
+        log.info("Codegen builder running in dir: {}", workingDir);
+        // Init git, otherwise dst will look up the tree and find the dataspray .git repository
+        Git.init().setDirectory(workingDir.toFile()).call().close();
     }
 
     @BeforeEach
     @SneakyThrows
     public void beforeEach() {
-        mockProcessIo.setup();
+        mockProcessIo.beforeEach();
+    }
+
+    @AfterEach
+    @SneakyThrows
+    public void afterEach() {
+        mockProcessIo.afterEach();
     }
 
     @ParameterizedTest(name = "{0}")

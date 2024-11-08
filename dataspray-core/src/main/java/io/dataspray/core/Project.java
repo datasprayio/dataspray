@@ -59,18 +59,23 @@ public class Project {
         return getAbsolutePath().resolve(processor.getNameDir());
     }
 
-    public Path makeRelativeToGitWorkTree(Path path) {
-        Path relativeToProjectPath = path.isAbsolute()
-                ? getAbsolutePath().relativize(path)
-                : path;
+    public Path makeRelativeToGitWorkTree(Path relativeToProjectOrAbsolutePath) {
+        Path relativeToProjectPath = relativeToProjectOrAbsolutePath.isAbsolute()
+                ? getAbsolutePath().relativize(relativeToProjectOrAbsolutePath)
+                : relativeToProjectOrAbsolutePath;
         return getRelativePathFromGitWorkTreeToProject()
                 .resolve(relativeToProjectPath);
     }
 
-    public Path makeAbsoluteFromGitWorkTree(Path path) {
-        return path.isAbsolute()
-                ? path
-                : subtractPath(getAbsolutePath(), getRelativePathFromGitWorkTreeToProject()).resolve(path);
+    /**
+     * Make a path absolute from the git work tree.
+     * <p>
+     * E.g. given a project path of /a/b/c and a relative path of b/c/d, the result is /a/b/c/d.
+     */
+    public Path makeAbsoluteFromRelativeToProject(Path relativeToProjectOrAbsolutePath) {
+        return relativeToProjectOrAbsolutePath.isAbsolute()
+                ? relativeToProjectOrAbsolutePath
+                : getAbsolutePath().resolve(relativeToProjectOrAbsolutePath);
     }
 
     /**
@@ -98,7 +103,9 @@ public class Project {
     }
 
     /**
-     * Subtract a path. E.g. given absolutePath of /a/b/c and subtractRelativePath of b/c, the result is /a.
+     * Subtract a path.
+     * <p>
+     * E.g. given absolutePath of /a/b/c and subtractRelativePath of b/c, the result is /a.
      */
     private Path subtractPath(Path absolutePath, Path subtractRelativePath) {
         absolutePath = absolutePath.normalize();

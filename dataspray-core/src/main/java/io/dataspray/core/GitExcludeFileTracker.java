@@ -53,9 +53,9 @@ public class GitExcludeFileTracker implements FileTracker {
 
     @Override
     public void unlinkUntrackFiles(Project project, Collection<Path> relativeToProjectOrAbsolutePaths) {
-        for (Path path : relativeToProjectOrAbsolutePaths) {
-            log.info("Deleting file {}", path);
-            project.makeAbsoluteFromGitWorkTree(path).toFile().delete();
+        for (Path relativeToProjectOrAbsolutePath : relativeToProjectOrAbsolutePaths) {
+            log.info("Deleting file {}", relativeToProjectOrAbsolutePath);
+            project.makeAbsoluteFromRelativeToProject(relativeToProjectOrAbsolutePath).toFile().delete();
         }
         untrackFiles(project, relativeToProjectOrAbsolutePaths);
     }
