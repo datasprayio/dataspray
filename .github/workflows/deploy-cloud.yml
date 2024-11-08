@@ -62,6 +62,20 @@ jobs:
           convert -version
           scour --version
 
+      # Import and configure GPG key
+      - name: Import GPG private key
+        run: |
+          # Import the GPG private key from the secret
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --yes --import
+
+          # Extract the key ID of the imported secret key
+          KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | awk '{print $2}' | cut -d'/' -f2)
+
+          # Set the default key for signing
+          echo "default-key $KEY_ID" >> ~/.gnupg/gpg.conf
+
+          # Ensure gpg-agent is used for signing
+          echo "use-agent" >> ~/.gnupg/gpg.conf
 
       # AWS credentials
       - name: Add profile credentials to ~/.aws/credentials
@@ -73,4 +87,9 @@ jobs:
       # Deploy Cloud
       - name: Maven build
         timeout-minutes: 60
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
         run: MAVEN_ARGS="--batch-mode" make action-deploy-cloud-${{ github.event.inputs.lambdaRuntime || 'jvm' }}-${{ github.event.inputs.environment || 'staging' }}
