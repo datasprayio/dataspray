@@ -2,10 +2,15 @@ package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
 import org.junit.Test;
+import com.example.autogen.AbstractTest;
+import com.example.autogen.TestCoordinator;
 import {{{definition.javaPackage}}}.autogen.AbstractTest;
 {{^processor.inputStreams.empty}}
 import org.mockito.Mockito;
 import {{{definition.javaPackage}}}.autogen.TestCoordinator;
+{{#processor.inputStreams}}
+import {{{definition.javaPackage}}}.{{{dataFormat.nameCamelUpper}}};
+{{/processor.inputStreams}}
 {{/processor.inputStreams.empty}}
 {{#processor.web}}
 import org.junit.Assert;

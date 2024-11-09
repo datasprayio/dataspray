@@ -1,9 +1,10 @@
-package {{{definition.javaPackage}}};
+package {{{definition.javaPackage}}}.autogen;
 
 {{#util.javaImportsFormat}}
 import org.junit.Before;
 import io.dataspray.runner.StoreType;
 import java.util.UUID;
+import {{{definition.javaPackage}}}.{{{processor.nameCamelUpper}}};
 {{/util.javaImportsFormat}}
 
 public class AbstractTest {

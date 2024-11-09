@@ -7,8 +7,11 @@ import {{{definition.javaPackage}}}.autogen.Coordinator;
 import {{{definition.javaPackage}}}.autogen.Processor;
 {{/processor.inputStreams.empty}}
 {{#processor.web}}
-import io.dataspray.runner.dto.web.HttpRequest;
+import jakarta.annotation.Nullable;
 import io.dataspray.runner.dto.web.HttpResponse;
+{{#endpoints.empty}}
+import io.dataspray.runner.dto.web.HttpRequest;
+{{/endpoints.empty}}
 {{/processor.web}}
 {{/util.javaImportsFormat}}
 

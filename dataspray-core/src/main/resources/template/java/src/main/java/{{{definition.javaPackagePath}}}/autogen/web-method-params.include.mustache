@@ -4,10 +4,10 @@
         byte[] {{{nameCamelLower}}},
         {{/isSerdeBinary}}
         {{#isSerdeString}}
-        @Nonnull String {{{nameCamelLower}}},
+        String {{{nameCamelLower}}},
         {{/isSerdeString}}
         {{#isSerdeJson}}
-        @Nonnull {{{nameCamelUpper}}} {{{nameCamelLower}}},
+        {{{nameCamelUpper}}} {{{nameCamelLower}}},
         {{/isSerdeJson}}
         {{/getBodyDataFormat}}
         {{#pathParams}}
