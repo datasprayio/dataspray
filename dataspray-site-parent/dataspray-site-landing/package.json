@@ -38,6 +38,6 @@
     "open-next": "^2.3.4",
     "serve": "^14.2.1",
     "typescript": "^5.3.3",
-    "webpack": "^5.89.0"
+    "webpack": "^5.94.0"
   }
 }
