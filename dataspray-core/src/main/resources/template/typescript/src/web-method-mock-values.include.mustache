@@ -1,0 +1,25 @@
+        {{#util.trim}}
+        {{#getBodyDataFormat}}
+        {{#isSerdeBinary}}
+        Buffer.from([0, 1, 2]),
+        {{/isSerdeBinary}}
+        {{#isSerdeString}}
+        "string",
+        {{/isSerdeString}}
+        {{#isSerdeJson}}
+        {} as {{{nameCamelUpper}}},
+        {{/isSerdeJson}}
+        {{/getBodyDataFormat}}
+        {{#pathParams}}
+        {{#isRequired}}"{{{nameCamelLower}}}Path"{{/isRequired}}{{^isRequired}}null{{/isRequired}},
+        {{/pathParams}}
+        {{#queryParams}}
+        {{#isRequired}}"{{{nameCamelLower}}}Query"{{/isRequired}}{{^isRequired}}null{{/isRequired}},
+        {{/queryParams}}
+        {{#headers}}
+        {{#isRequired}}"{{{nameCamelLower}}}Header"{{/isRequired}}{{^isRequired}}null{{/isRequired}},
+        {{/headers}}
+        {{#cookies}}
+        {{#isRequired}}"{{{nameCamelLower}}}Cookie"{{/isRequired}}{{^isRequired}}null{{/isRequired}},
+        {{/cookies}}
+        {{/util.trim}}

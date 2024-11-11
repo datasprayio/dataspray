@@ -3,6 +3,11 @@ import { {{{processor.nameCamelUpper}}} } from "../{{{processor.nameCamelLower}}
 {{#processor.web}}
 import { mockRequest } from "./autogen/mockRequest";
 import { TestCoordinator } from "./autogen/testCoordinator";
+import {
+    {{#processor.jsonInputStreams}}
+    {{{dataFormat.nameCamelUpper}}},
+    {{/processor.jsonInputStreams}}
+} from '../autogen/streams';
 {{/processor.web}}
 {{^processor.inputStreams.empty}}
 import {
@@ -20,16 +25,28 @@ describe('Web endpoint handler', () => {
     beforeEach(() => {
         processor = new {{{processor.nameCamelUpper}}}();
     });
+    {{#endpoints}}
 
-    it('responds with ok', async () => {
+    it('Web {{{nameCamelUpper}}}', async () => {
+        const response = await processor.web{{{nameCamelUpper}}}(
+            {{>../web-method-mock-values}}
+            TestCoordinator.createForWeb(),
+        );
+        expect(response.statusCode).toBe(204);
+    });
+    {{/endpoints}}
+    {{#endpoints.empty}}
+
+    it('Web', async () => {
         const response = await processor.web(
             mockRequest({
                 body: '{}',
             }),
             TestCoordinator.createForWeb(),
         );
-        expect(response.statusCode).toBe(200);
+        expect(response.statusCode).toBe(204);
     });
+    {{/endpoints.empty}}
 });
 {{/processor.web}}
 {{^processor.inputStreams.empty}}
@@ -48,7 +65,7 @@ describe('SQS message processors', () => {
     });
     {{#processor.inputStreams}}
 
-    it('Process {{{uniqueNameCamelUpper}}}', async () => {
+    it('Stream {{{uniqueNameCamelUpper}}}', async () => {
         stream{{{uniqueNameCamelUpper}}}(
             'messageKey',
             {{>stream-test-data}},

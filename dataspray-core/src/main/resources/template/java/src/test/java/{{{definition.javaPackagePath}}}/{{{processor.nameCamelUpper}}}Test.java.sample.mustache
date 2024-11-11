@@ -22,9 +22,27 @@ import io.dataspray.runner.dto.web.HttpResponse;
 
 public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
     {{#processor.web}}
+    {{#endpoints}}
 
     @Test(timeout = 10_000)
-    public void testWebRequest() {
+    public void testWeb{{{nameCamelUpper}}}() {
+
+        TestCoordinator coordinator = TestCoordinator.createForWeb();
+        HttpResponse response = processor.web{{{nameCamelUpper}}}(
+                {{>../../../web-method-mock-values}}
+                HttpResponse.builder(),
+                coordinator);
+
+        Assert.assertEquals(204, response.getStatusCode());
+        {{#processor.outputStreams}}
+        {{#-first}}coordinator{{/-first}}{{^-first}}    {{/-first}}.assertSentNone{{{dataFormat.nameCamelUpper}}}(){{#-last}};{{/-last}}
+        {{/processor.outputStreams}}
+    }
+    {{/endpoints}}
+    {{#endpoints.empty}}
+
+    @Test(timeout = 10_000)
+    public void testWeb() {
 
         TestCoordinator coordinator = TestCoordinator.createForWeb();
         HttpResponse response = processor.web(
@@ -41,6 +59,7 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
         {{#-first}}coordinator{{/-first}}{{^-first}}    {{/-first}}.assertSentNone{{{dataFormat.nameCamelUpper}}}(){{#-last}};{{/-last}}
         {{/processor.outputStreams}}
     }
+    {{/endpoints.empty}}
     {{/processor.web}}
     {{#processor.inputStreams}}
 

@@ -29,28 +29,32 @@ export class {{{processor.nameCamelUpper}}} extends Processor {
     {{^endpoints.empty}}
     {{#endpoints}}
 
-    web{{{nameCamelUpper}}}(
+    async web{{{nameCamelUpper}}}(
         {{>web-method-params}}
-        coordinator: WebCoordinator): Promise<APIGatewayProxyStructuredResultV2> {
-
+        coordinator: WebCoordinator
+    ): Promise<APIGatewayProxyStructuredResultV2> {
         // TODO
-        return { statusCode: 200 };
+        return { statusCode: 204 };
     }
     {{/endpoints}}
     {{/endpoints.empty}}
     {{#endpoints.empty}}
 
-    web(request: LambdaFunctionURLEvent, coordinator: WebCoordinator): Promise<APIGatewayProxyStructuredResultV2> {
-
+    async web(
+        request: LambdaFunctionURLEvent,
+        coordinator: WebCoordinator,
+    ): Promise<APIGatewayProxyStructuredResultV2> {
         // TODO
-        return { statusCode: 200 };
+        return { statusCode: 204 };
     }
     {{/endpoints.empty}}
     {{/processor.web}}
     {{#processor.inputStreams}}
 
-    stream{{{uniqueNameCamelUpper}}}(message: Message<{{{this.dataFormat.nameCamelUpper}}}>, coordinator: StreamCoordinator): void {
-
+    stream{{{uniqueNameCamelUpper}}}(
+        message: Message<{{{this.dataFormat.nameCamelUpper}}}>,
+        coordinator: StreamCoordinator,
+    ): void {
         // TODO
         {{#processor.outputStreams}}
         // coordinator.sendTo{{{uniqueNameCamelUpper}}}({{>stream-sample-data}});

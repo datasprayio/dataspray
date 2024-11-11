@@ -64,7 +64,7 @@ class Runner extends Entrypoint {
         {{#endpoints}}
 
         if (
-{{>web-request-endpoint-match}}
+            {{>../web-request-endpoint-match}}
         ) {
             {{#getBodyDataFormat}}
             {{#isSerdeJson}}
@@ -75,7 +75,7 @@ class Runner extends Entrypoint {
             {{/isSerdeJson}}
             {{/getBodyDataFormat}}
             return this.processor.web{{{nameCamelUpper}}}(
-                {{>web-request-to-params}}
+                {{>../web-request-to-params}}
                 coordinator,
             );
         }

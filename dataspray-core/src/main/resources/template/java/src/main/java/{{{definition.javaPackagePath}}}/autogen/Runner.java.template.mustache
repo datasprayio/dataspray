@@ -65,10 +65,10 @@ public class Runner extends Entrypoint {
         {{#endpoints}}
 
         if (
-{{>web-request-endpoint-match}}
+            {{>../../../../web-request-endpoint-match}}
         ) {
             return processor.web{{{nameCamelUpper}}}(
-                {{>web-request-to-params}}
+                {{>../../../../web-request-to-params}}
                 responseBuilder,
                 coordinator);
         }

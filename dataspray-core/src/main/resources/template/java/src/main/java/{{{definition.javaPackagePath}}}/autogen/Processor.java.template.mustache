@@ -17,7 +17,7 @@ public interface Processor {
     {{#endpoints}}
 
     HttpResponse web{{{nameCamelUpper}}}(
-        {{>web-method-params}}
+        {{>../../../../web-method-params}}
         HttpResponse.HttpResponseBuilder responseBuilder,
         WebCoordinator coordinator);
     {{/endpoints}}

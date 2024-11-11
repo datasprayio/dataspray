@@ -27,7 +27,7 @@ export abstract class Processor {
     {{#endpoints}}
 
     abstract web{{{nameCamelUpper}}}(
-        {{>web-method-params}}
+        {{>../web-method-params}}
         coordinator: WebCoordinator): Promise<APIGatewayProxyStructuredResultV2>;
     {{/endpoints}}
 

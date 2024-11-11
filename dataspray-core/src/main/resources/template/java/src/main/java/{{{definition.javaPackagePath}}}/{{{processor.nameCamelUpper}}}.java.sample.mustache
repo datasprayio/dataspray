@@ -24,9 +24,10 @@ public class {{{processor.nameCamelUpper}}} implements Processor {
     {{#endpoints}}
 
     public HttpResponse web{{{nameCamelUpper}}}(
-        {{>autogen/web-method-params}}
+        {{>../../../web-method-params}}
         HttpResponse.HttpResponseBuilder responseBuilder,
-        WebCoordinator coordinator) {
+        WebCoordinator coordinator
+    ) {
 
         // TODO
         return responseBuilder.ok().build();
@@ -35,8 +36,8 @@ public class {{{processor.nameCamelUpper}}} implements Processor {
     {{#endpoints.empty}}
 
     @Override
-    public HttpResponse web(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder) {
-
+    public HttpResponse web(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder
+    ) {
         // TODO
         return responseBuilder.ok().build();
     }
@@ -47,8 +48,8 @@ public class {{{processor.nameCamelUpper}}} implements Processor {
     @Override
     public void stream{{{uniqueNameCamelUpper}}}(
         Message<{{{this.dataFormat.nameCamelUpper}}}> message,
-        StreamCoordinator coordinator) {
-
+        StreamCoordinator coordinator
+    ) {
         // TODO
         {{#processor.outputStreams}}
         // coordinator.sendTo{{{uniqueNameCamelUpper}}}({{>stream-sample-data}});
