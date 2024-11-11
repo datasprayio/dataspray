@@ -5,6 +5,7 @@ package {{{definition.javaPackage}}}.autogen;
 import io.dataspray.runner.Message;
 {{/processor.inputStreams.empty}}
 {{#processor.web}}
+import jakarta.annotation.Nullable;
 import io.dataspray.runner.dto.web.HttpRequest;
 import io.dataspray.runner.dto.web.HttpResponse;
 {{/processor.web}}
@@ -12,19 +13,26 @@ import io.dataspray.runner.dto.web.HttpResponse;
 
 public interface Processor {
     {{#processor.web}}
+    {{^endpoints.empty}}
     {{#endpoints}}
 
     HttpResponse web{{{nameCamelUpper}}}(
         {{>web-method-params}}
-        HttpResponse.HttpResponseBuilder responseBuilder);
+        HttpResponse.HttpResponseBuilder responseBuilder,
+        WebCoordinator coordinator);
     {{/endpoints}}
 
-    default HttpResponse web(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder) {
+    default HttpResponse web(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder, WebCoordinator coordinator) {
         return HttpResponse.builder().notFound().build();
     }
+    {{/endpoints.empty}}
+    {{#endpoints.empty}}
+
+    HttpResponse web(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder, WebCoordinator coordinator);
+    {{/endpoints.empty}}
     {{/processor.web}}
     {{#processor.inputStreams}}
 
-    void stream{{{uniqueNameCamelUpper}}}(Message<{{{this.dataFormat.nameCamelUpper}}}> {{this.uniqueNameCamelLower}}, Coordinator coordinator);
+    void stream{{{uniqueNameCamelUpper}}}(Message<{{{this.dataFormat.nameCamelUpper}}}> {{this.uniqueNameCamelLower}}, StreamCoordinator coordinator);
     {{/processor.inputStreams}}
 }

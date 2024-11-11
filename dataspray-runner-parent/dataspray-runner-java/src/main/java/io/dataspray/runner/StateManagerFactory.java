@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package io.dataspray.runner;
 
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+
 import java.time.Duration;
 import java.util.Optional;
 
@@ -14,6 +16,8 @@ import java.util.Optional;
 public interface StateManagerFactory {
 
     StateManager getStateManager(String[] key, Optional<Duration> ttl);
+
+    DynamoDbClient getDynamoClient();
 
     void flushAll();
 

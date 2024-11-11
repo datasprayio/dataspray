@@ -1,20 +1,7 @@
 {{#processor.web}}
 import {
-    APIGatewayProxyStructuredResultV2,
     LambdaFunctionURLEvent,
 } from 'aws-lambda';
-{{/processor.web}}
-{{^processor.inputStreams.empty}}
-import { Message, StoreType } from "dataspray-runner";
-import { Coordinator } from "../../autogen/coordinator";
-import { jest } from '@jest/globals';
-import {
-{{#processor.jsonInputStreams}}
-    {{{dataFormat.nameCamelUpper}}},
-{{/processor.jsonInputStreams}}
-} from '../../autogen/streams';
-{{/processor.inputStreams.empty}}
-{{#processor.web}}
 
 export const mockRequest = (partial: Partial<LambdaFunctionURLEvent>): LambdaFunctionURLEvent => ({
     version: '2.0',

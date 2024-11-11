@@ -29,7 +29,7 @@ public class AbstractTest {
                 messageKey,
                 messageId,
                 {{{dataFormat.nameCamelLower}}});
-        TestCoordinator coordinator = new TestCoordinator({{#processor.hasDynamoState}}messageKey{{/processor.hasDynamoState}});
+        TestCoordinator coordinator = TestCoordinator.createForStream({{#processor.hasDynamoState}}messageKey{{/processor.hasDynamoState}});
         processor.stream{{{uniqueNameCamelUpper}}}(message, coordinator);
         return coordinator;
     }

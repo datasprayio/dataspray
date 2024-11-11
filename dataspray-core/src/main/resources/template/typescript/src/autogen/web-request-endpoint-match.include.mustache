@@ -1,0 +1,22 @@
+            pathDirs.length === {{{pathDepth}}}
+            {{#pathRequiredDirs}}
+            && '{{{name}}}' === pathDirs[{{{index}}}]
+            {{/pathRequiredDirs}}
+            {{#queryParams}}
+            {{#isRequired}}
+            && request.queryStringParameters['{{{name}}}'] !== undefined
+            {{/isRequired}}
+            {{/queryParams}}
+            {{#headers}}
+            {{#isRequired}}
+            && request.headersMap.has('{{{nameLower}}}')
+            {{/isRequired}}
+            {{/headers}}
+            {{^contentTypes.empty}}
+            && ENDPOINT_ALLOWED_CONTENT_TYPES_{{{nameSnakeUpper}}}.some(mediaType => mediaType.type === contentType.type)
+            {{/contentTypes.empty}}
+            {{#cookies}}
+            {{#isRequired}}
+            && request.cookiesMap.has('{{{nameLower}}}')
+            {{/isRequired}}
+            {{/cookies}}

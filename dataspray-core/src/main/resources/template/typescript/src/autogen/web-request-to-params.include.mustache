@@ -1,23 +1,23 @@
                 {{#getBodyDataFormat}}
                 {{#isSerdeBinary}}
-                request.getBodyAsBinary(),
+                request.isBase64Encoded ? Buffer.from(request.body, 'base64') : request.body,
                 {{/isSerdeBinary}}
                 {{#isSerdeString}}
-                request.getBodyAsString(),
+                request.body(),
                 {{/isSerdeString}}
                 {{#isSerdeJson}}
-                gson.fromJson(request.getBodyAsString(), {{{nameCamelUpper}}}.class),
+                bodyJson,
                 {{/isSerdeJson}}
                 {{/getBodyDataFormat}}
                 {{#pathParams}}
                 pathDirs[{{{pathIndex}}}],
                 {{/pathParams}}
                 {{#queryParams}}
-                request.getQueryStringParameters().get("{{{name}}}"),
+                request.queryStringParameters['{{{name}}}'],
                 {{/queryParams}}
                 {{#headers}}
-                request.getHeadersCaseInsensitive().get("{{{name}}}"),
+                request.headersMap['{{{name}}}'],
                 {{/headers}}
                 {{#cookies}}
-                request.getCookiesCaseInsensitive().get("{{{name}}}"),
+                request.cookiesMap['{{{name}}}'],
                 {{/cookies}}

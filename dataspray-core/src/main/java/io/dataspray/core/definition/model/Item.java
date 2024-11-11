@@ -41,6 +41,16 @@ public class Item {
         return StringUtil.dirName(name);
     }
 
+    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public String getNameLower() {
+        return name.toLowerCase();
+    }
+
+    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public String getNameUpper() {
+        return name.toUpperCase();
+    }
+
     public String getTaskId() {
         return getNameDir();
     }

@@ -2,6 +2,7 @@ import { Processor } from "../autogen/processor";
 import { {{{processor.nameCamelUpper}}} } from "../{{{processor.nameCamelLower}}}";
 {{#processor.web}}
 import { mockRequest } from "./autogen/mockRequest";
+import { TestCoordinator } from "./autogen/testCoordinator";
 {{/processor.web}}
 {{^processor.inputStreams.empty}}
 import {
@@ -21,9 +22,12 @@ describe('Web endpoint handler', () => {
     });
 
     it('responds with ok', async () => {
-        const response = await processor.web(mockRequest({
-            body: '{}',
-        }));
+        const response = await processor.web(
+            mockRequest({
+                body: '{}',
+            }),
+            TestCoordinator.createForWeb(),
+        );
         expect(response.statusCode).toBe(200);
     });
 });

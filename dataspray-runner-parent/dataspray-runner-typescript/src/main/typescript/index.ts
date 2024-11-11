@@ -27,3 +27,4 @@ export {Message, MessageMetadata} from './message';
 export {StateManager, DynamoStateManager, TTL_IN_EPOCH_SEC_KEY_NAME} from './stateManager';
 export {StateManagerFactory, StateManagerFactoryImpl} from './stateManagerFactory';
 export {mergeStrings, unMergeString} from './util/stringSerdeUtil';
+export {HttpRequest} from './httpRequest';

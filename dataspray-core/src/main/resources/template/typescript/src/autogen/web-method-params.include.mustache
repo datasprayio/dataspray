@@ -1,0 +1,25 @@
+        {{#util.trim}}
+        {{#getBodyDataFormat}}
+        {{#isSerdeBinary}}
+        {{{nameCamelLower}}}: Buffer,
+        {{/isSerdeBinary}}
+        {{#isSerdeString}}
+        {{{nameCamelLower}}}: string,
+        {{/isSerdeString}}
+        {{#isSerdeJson}}
+        {{{nameCamelLower}}}: {{{nameCamelUpper}}},
+        {{/isSerdeJson}}
+        {{/getBodyDataFormat}}
+        {{#pathParams}}
+        {{{nameCamelLower}}}Path: string{{^isRequired}} | undefined{{/isRequired}},
+        {{/pathParams}}
+        {{#queryParams}}
+        {{{nameCamelLower}}}Query: string{{^isRequired}} | undefined{{/isRequired}},
+        {{/queryParams}}
+        {{#headers}}
+        {{{nameCamelLower}}}Header: string{{^isRequired}} | undefined{{/isRequired}},
+        {{/headers}}
+        {{#cookies}}
+        {{{nameCamelLower}}}Cookie: string{{^isRequired}} | undefined{{/isRequired}},
+        {{/cookies}}
+        {{/util.trim}}

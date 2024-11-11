@@ -24,6 +24,7 @@ import {StoreType} from "./storeType";
 import {DataSprayClient, IngestApiInterface} from "dataspray-client";
 import {StateManager} from "./stateManager";
 import {StateManagerFactoryImpl} from "./stateManagerFactory";
+import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
 
 // Matches io.dataspray.store.LambdaDeployerImpl.DATASPRAY_API_KEY_ENV
 const DATASPRAY_API_KEY_ENV = 'dataspray_api_key';
@@ -37,6 +38,8 @@ export interface RawCoordinator {
     send(messageKey: string, data: Blob, storeType: StoreType, storeName: string, streamName: string, messageId: string | undefined): void;
 
     getStateManager(key: string[], ttlInSec?: number): StateManager;
+
+    getDynamoClient(): DynamoDBClient;
 }
 
 export class RawCoordinatorImpl implements RawCoordinator {
@@ -63,6 +66,10 @@ export class RawCoordinatorImpl implements RawCoordinator {
 
     getStateManager(key: string[], ttlInSec?: number) {
         return StateManagerFactoryImpl.getOrCreate().getStateManager(key, ttlInSec);
+    }
+
+    getDynamoClient(): DynamoDBClient {
+        return StateManagerFactoryImpl.getOrCreate().getDynamoClient();
     }
 
     private sendToDataSpray(key: string, data: Blob, organizationName: string, topicName: string, id: string | undefined = undefined): void {

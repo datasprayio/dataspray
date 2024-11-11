@@ -95,7 +95,7 @@ public enum SampleProject {
                                             .build())
                                     .endpoints(ImmutableSet.of(
                                             Endpoint.builder()
-                                                    .name("byIp")
+                                                    .name("receiveRegistration")
                                                     .path("/user/{userId}/ip")
                                                     .pathParams(ImmutableSet.of(PathParameter.builder()
                                                             .name("userId")
@@ -183,7 +183,7 @@ public enum SampleProject {
                                             .build())
                                     .endpoints(ImmutableSet.of(
                                             Endpoint.builder()
-                                                    .name("byIp")
+                                                    .name("receiveRegistration")
                                                     .path("/user/{userId}/ip")
                                                     .pathParams(ImmutableSet.of(PathParameter.builder()
                                                             .name("userId")

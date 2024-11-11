@@ -1,4 +1,12 @@
 import { Processor } from "./autogen/processor";
+import {
+    {{#processor.web}}
+    WebCoordinator,
+    {{/processor.web}}
+    {{^processor.inputStreams.empty}}
+    StreamCoordinator,
+    {{/processor.inputStreams.empty}}
+} from "./autogen/coordinator";
 {{#processor.web}}
 import {
     APIGatewayProxyStructuredResultV2,
@@ -7,7 +15,6 @@ import {
 {{/processor.web}}
 {{^processor.inputStreams.empty}}
 import { Message } from "dataspray-runner";
-import { Coordinator } from "./autogen/coordinator";
 {{/processor.inputStreams.empty}}
 {{^processor.jsonInputStreams.empty}}
 import {
@@ -19,11 +26,21 @@ import {
 
 export class {{{processor.nameCamelUpper}}} extends Processor {
     {{#processor.web}}
+    {{^endpoints.empty}}
     {{#endpoints}}
+
+    web{{{nameCamelUpper}}}(
+        {{>web-method-params}}
+        coordinator: WebCoordinator): Promise<APIGatewayProxyStructuredResultV2> {
+
+        // TODO
+        return { statusCode: 200 };
+    }
     {{/endpoints}}
+    {{/endpoints.empty}}
     {{#endpoints.empty}}
 
-    async web(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> {
+    web(request: LambdaFunctionURLEvent, coordinator: WebCoordinator): Promise<APIGatewayProxyStructuredResultV2> {
 
         // TODO
         return { statusCode: 200 };
@@ -32,7 +49,7 @@ export class {{{processor.nameCamelUpper}}} extends Processor {
     {{/processor.web}}
     {{#processor.inputStreams}}
 
-    stream{{{uniqueNameCamelUpper}}}(message: Message<{{{this.dataFormat.nameCamelUpper}}}>, coordinator: Coordinator): void {
+    stream{{{uniqueNameCamelUpper}}}(message: Message<{{{this.dataFormat.nameCamelUpper}}}>, coordinator: StreamCoordinator): void {
 
         // TODO
         {{#processor.outputStreams}}

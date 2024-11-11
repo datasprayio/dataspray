@@ -35,6 +35,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -120,6 +121,10 @@ public class Endpoint extends Item {
                 .filter(dataFormat -> dataFormat.getName().equals(getBodyDataFormatName()))
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("Data format not found with name " + getBodyDataFormatName() + " for endpoint " + getPath()));
+    }
+
+    public Optional<DataFormat> getBodyDataFormatOpt() {
+        return Optional.ofNullable(getBodyDataFormat());
     }
 
     ImmutableSet<String> contentTypes;

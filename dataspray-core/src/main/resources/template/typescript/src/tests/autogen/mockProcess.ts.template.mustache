@@ -20,7 +20,7 @@ export const prepareTest{{{processor.nameCamelUpper}}}Stream{{{uniqueNameCamelUp
         },
         {{{dataFormat.nameCamelLower}}},
     );
-    const coordinator = new TestCoordinator({{#processor.hasDynamoState}}messageKey{{/processor.hasDynamoState}});
+    const coordinator = TestCoordinator.createForStream({{#processor.hasDynamoState}}messageKey{{/processor.hasDynamoState}});
     processor.stream{{{uniqueNameCamelUpper}}}(message, coordinator);
     return coordinator;
 }

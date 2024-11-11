@@ -66,7 +66,7 @@ public abstract class Entrypoint implements RequestHandler<Request, Object> {
                     throw new RuntimeException("SQS message does not have a message deduplication id used as a message id");
                 }
 
-                this.processSqsEvent(new MessageMetadata(
+                this.stream(new MessageMetadata(
                                 StoreType.DATASPRAY,
                                 matcher.group("customer"),
                                 matcher.group("queue"),
@@ -88,14 +88,14 @@ public abstract class Entrypoint implements RequestHandler<Request, Object> {
      * Handle an HTTP request from Function URL.
      */
     private HttpResponse handleHttpRequest(HttpRequest request) {
-        return handleWebRequest(request, HttpResponse.builder());
+        return web(request, HttpResponse.builder(), RawCoordinatorImpl.get());
     }
 
-    protected void processSqsEvent(MessageMetadata metadata, String data, RawCoordinator coordinator) {
+    protected void stream(MessageMetadata metadata, String data, RawCoordinator coordinator) {
         throw new RuntimeException("No handler defined for SQS events");
     }
 
-    protected HttpResponse handleWebRequest(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder) {
+    protected HttpResponse web(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder, RawCoordinator coordinator) {
         throw new RuntimeException("No handler defined for web endpoints");
     }
 }

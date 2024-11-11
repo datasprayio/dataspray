@@ -17,19 +17,20 @@ import java.io.ByteArrayOutputStream;
 import io.dataspray.runner.StateManager;
 import java.time.Duration;
 import java.util.Optional;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 {{/processor.hasDynamoState}}
 {{/util.javaImportsFormat}}
 
-public class CoordinatorImpl implements Coordinator {
+public class CoordinatorImpl implements {{#processor.web}}WebCoordinator{{#processor.hasInputStreams}}, {{/processor.hasInputStreams}}{{/processor.web}}{{#processor.hasInputStreams}}StreamCoordinator{{/processor.hasInputStreams}} {
 
     private final RawCoordinator rawCoordinator;
     {{#processor.hasDynamoState}}
-    private final String messageKey;
+    private final Optional<String> messageKey;
     {{/processor.hasDynamoState}}
 
     public CoordinatorImpl(
         RawCoordinator rawCoordinator{{#processor.hasDynamoState}},
-        String messageKey{{/processor.hasDynamoState}}
+        Optional<String> messageKey{{/processor.hasDynamoState}}
     ) {
         this.rawCoordinator = rawCoordinator;
         {{#processor.hasDynamoState}}
@@ -37,23 +38,37 @@ public class CoordinatorImpl implements Coordinator {
         {{/processor.hasDynamoState}}
     }
     {{#processor.hasDynamoState}}
+    {{#processor.hasInputStreams}}
 
     @Override
     public StateManager stateForMessageKey(Optional<Duration> ttl) {
-        return stateForNamespace(ttl, "task", "{{{processor.taskId}}}", "key", messageKey);
+        return stateForNamespace(ttl, "task", "{{{processor.taskId}}}", "key", messageKey
+            .orElseThrow(() -> new IllegalStateException("messageKey is not set")));
     }
 
     @Override
     public StateManager stateForTask(Optional<Duration> ttl) {
         return stateForNamespace(ttl, "task", "{{{processor.taskId}}}");
     }
+    {{/processor.hasInputStreams}}
 
     @Override
     public StateManager stateForNamespace(Optional<Duration> ttl, String... namespace) {
         return rawCoordinator.getStateManager(namespace, ttl.orElse(null));
     }
+
+    @Override
+    public DynamoDbClient getDynamoClient() {
+        return rawCoordinator.getDynamoClient();
+    }
     {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}
+
+    @Override
+    @SneakyThrows
+    public void sendTo{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
+        sendTo{{{uniqueNameCamelUpper}}}(messageKey, {{{dataFormat.nameCamelLower}}}, null);
+    }
 
     @Override
     @SneakyThrows

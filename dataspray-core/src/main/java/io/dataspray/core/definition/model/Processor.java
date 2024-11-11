@@ -38,6 +38,7 @@ import lombok.experimental.SuperBuilder;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Value
 @SuperBuilder(toBuilder = true)
@@ -59,6 +60,10 @@ public class Processor extends Item {
 
     public ImmutableSet<StreamLink> getInputStreams() {
         return inputStreams == null ? ImmutableSet.of() : inputStreams;
+    }
+
+    public boolean hasInputStreams() {
+        return !getInputStreams().isEmpty();
     }
 
     ImmutableSet<StreamLink> outputStreams;
@@ -195,6 +200,24 @@ public class Processor extends Item {
                        .flatMap(w -> w.getEndpoints().stream())
                        .anyMatch(e -> e.getBodyDataFormat() != null
                                       && e.getBodyDataFormat().getSerde() == DataFormat.Serde.JSON);
+    }
+
+    /**
+     * Gets all DataFormats across web requests and streams.
+     */
+    public ImmutableSet<DataFormat> getDataFormats() {
+        return ImmutableSet.<DataFormat>builder()
+                .addAll(getStreams().stream()
+                        .map(StreamLink::getDataFormat)
+                        .collect(Collectors.toSet()))
+                .addAll(getWebOpt()
+                        .stream()
+                        .flatMap(w -> w.getEndpoints().stream())
+                        .map(Endpoint::getBodyDataFormatOpt)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .collect(Collectors.toSet()))
+                .build();
     }
 
     public void initialize() {

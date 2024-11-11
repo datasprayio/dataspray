@@ -31,6 +31,7 @@ import {StoreType} from './storeType';
 import {RawCoordinator, RawCoordinatorImpl} from './rawCoordinator';
 import {MessageMetadata} from "./message";
 import {StateManagerFactoryImpl} from "./stateManagerFactory";
+import {toHttpRequest} from "./httpRequest";
 
 export abstract class Entrypoint {
 
@@ -73,7 +74,7 @@ export abstract class Entrypoint {
                     throw new Error('SQS message does not have a message deduplication id used as a message id')
                 }
 
-                await this.processSqsEvent(
+                await this.stream(
                         {
                             storeType: StoreType.DATASPRAY,
                             storeName: customer,
@@ -93,16 +94,19 @@ export abstract class Entrypoint {
     }
 
     handleHttpRequest = async (request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> => {
-        return this.handleWebRequest(request);
+        return this.web(
+                toHttpRequest(request),
+                RawCoordinatorImpl.get());
     }
 
-    abstract processSqsEvent(
+    abstract stream(
             metadata: MessageMetadata,
             data: string,
             rawCoordinator: RawCoordinator,
     ): Promise<void> | void;
 
-    abstract handleWebRequest(
+    abstract web(
             request: LambdaFunctionURLEvent,
+            rawCoordinator: RawCoordinator,
     ): Promise<APIGatewayProxyStructuredResultV2>;
 }

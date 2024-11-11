@@ -4,22 +4,19 @@
             {{/pathRequiredDirs}}
             {{#queryParams}}
             {{#isRequired}}
-            && request.getQueryStringParameters().has("{{{name}}}"))
+            && request.getQueryStringParameters().containsKey("{{{name}}}")
             {{/isRequired}}
             {{/queryParams}}
             {{#headers}}
             {{#isRequired}}
-            && request.getHeadersCaseInsensitive().has("{{{name}}}"))
+            && request.getHeadersCaseInsensitive().containsKey("{{{name}}}")
             {{/isRequired}}
             {{/headers}}
             {{^contentTypes.empty}}
-            && request.getQueryStringParameters().has("Content-Type")
-            && ENDPOINT_ALLOWED_CONTENT_TYPES_{{{nameSnakeUpper}}}.stream.anyMatch(
-                MediaType.valueOf(request.getQueryStringParameters().get("Content-Type"))::isCompatible)
-            {{#contentTypes}}"{{{.}}}"{{/contentTypes}}
+            && ENDPOINT_ALLOWED_CONTENT_TYPES_{{{nameSnakeUpper}}}.stream().anyMatch(mediaType::isCompatible)
             {{/contentTypes.empty}}
             {{#cookies}}
             {{#isRequired}}
-            && request.getCookiesCaseInsensitive().has("{{{name}}}"))
+            && request.getCookiesCaseInsensitive().containsKey("{{{name}}}")
             {{/isRequired}}
             {{/cookies}}

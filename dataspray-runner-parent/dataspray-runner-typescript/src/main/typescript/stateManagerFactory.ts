@@ -27,13 +27,14 @@ export interface StateManagerFactory {
 
     getStateManager(key: string[], ttlInEpochSec?: number): StateManager;
 
+    getDynamoClient(): DynamoDBClient;
+
     flushAll(): void;
 
     closeAll(): void;
 }
 
 export class StateManagerFactoryImpl implements StateManagerFactory {
-
     private static instance: StateManagerFactory | null = null;
     private readonly tableName: string;
     private readonly dynamo: DynamoDBClient;
@@ -65,6 +66,10 @@ export class StateManagerFactoryImpl implements StateManagerFactory {
             this.stateManagers.set(key, stateManager);
         }
         return stateManager;
+    }
+
+    getDynamoClient(): DynamoDBClient {
+        return this.dynamo;
     }
 
     public flushAll(): void {

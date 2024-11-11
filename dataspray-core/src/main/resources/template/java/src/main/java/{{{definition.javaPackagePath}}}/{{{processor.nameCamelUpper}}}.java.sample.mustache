@@ -1,14 +1,18 @@
 package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
+{{#processor.dataFormats}}
+import {{{definition.javaPackage}}}.autogen.{{{nameCamelUpper}}};
+{{/processor.dataFormats}}
 {{^processor.inputStreams.empty}}
 import io.dataspray.runner.Message;
-import {{{definition.javaPackage}}}.autogen.Coordinator;
+import {{{definition.javaPackage}}}.autogen.StreamCoordinator;
 import {{{definition.javaPackage}}}.autogen.Processor;
 {{/processor.inputStreams.empty}}
 {{#processor.web}}
 import jakarta.annotation.Nullable;
 import io.dataspray.runner.dto.web.HttpResponse;
+import {{{definition.javaPackage}}}.autogen.WebCoordinator;
 {{#endpoints.empty}}
 import io.dataspray.runner.dto.web.HttpRequest;
 {{/endpoints.empty}}
@@ -19,9 +23,10 @@ public class {{{processor.nameCamelUpper}}} implements Processor {
     {{#processor.web}}
     {{#endpoints}}
 
-    HttpResponse web{{{nameCamelUpper}}}(
+    public HttpResponse web{{{nameCamelUpper}}}(
         {{>autogen/web-method-params}}
-        HttpResponse.HttpResponseBuilder responseBuilder) {
+        HttpResponse.HttpResponseBuilder responseBuilder,
+        WebCoordinator coordinator) {
 
         // TODO
         return responseBuilder.ok().build();
@@ -40,7 +45,9 @@ public class {{{processor.nameCamelUpper}}} implements Processor {
     {{#processor.inputStreams}}
 
     @Override
-    public void stream{{{uniqueNameCamelUpper}}}(Message<{{{this.dataFormat.nameCamelUpper}}}> message, Coordinator coordinator) {
+    public void stream{{{uniqueNameCamelUpper}}}(
+        Message<{{{this.dataFormat.nameCamelUpper}}}> message,
+        StreamCoordinator coordinator) {
 
         // TODO
         {{#processor.outputStreams}}

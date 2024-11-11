@@ -43,9 +43,6 @@ public class DefinitionLoaderTest {
     @EnumSource(value = SampleProject.class, mode = EnumSource.Mode.INCLUDE, names = {"JAVA", "TYPESCRIPT"})
     public void testSerde(SampleProject sampleProject) throws Exception {
         Definition definition = sampleProject.getDefinitionForName("test");
-        log.info("Yaml:\n{}", loader.toYaml(definition));
-        log.info("Json:\n{}", loader.toJson(definition, false));
-        log.info("Json pretty:\n{}", loader.toJson(definition, true));
         Assertions.assertEquals(definition, loader.fromYaml(loader.toYaml(definition)));
         Assertions.assertEquals(definition, loader.fromJson(loader.toJson(definition, true)));
         Assertions.assertEquals(definition, loader.fromJson(loader.toJson(definition, false)));

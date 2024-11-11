@@ -36,6 +36,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
@@ -48,7 +53,7 @@
         <dependency>
             <groupId>io.dataspray</groupId>
             <artifactId>dataspray-runner</artifactId>
-            <version>0.0.5</version>
+            <version>0.0.7</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -146,7 +151,7 @@
                         {{/processor.jsonStreams}}
                     </sourcePaths>
                     <outputDirectory>${project.build.directory}/generated-sources/json</outputDirectory>
-                    <targetPackage>{{{definition.javaPackage}}}</targetPackage>
+                    <targetPackage>{{{definition.javaPackage}}}.autogen</targetPackage>
 
                     <!-- Code generation directives -->
                     <annotationStyle>gson</annotationStyle>

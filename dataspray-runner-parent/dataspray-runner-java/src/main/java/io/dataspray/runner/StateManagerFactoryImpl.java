@@ -73,6 +73,11 @@ public class StateManagerFactoryImpl implements StateManagerFactory {
     }
 
     @Override
+    public DynamoDbClient getDynamoClient() {
+        return dynamo;
+    }
+
+    @Override
     public void flushAll() {
         stateManagers.values().forEach(StateManager::flush);
     }

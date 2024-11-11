@@ -4,6 +4,9 @@ package {{{definition.javaPackage}}}.autogen;
 import java.util.Base64;
 import lombok.SneakyThrows;
 import {{{definition.javaPackage}}}.{{{processor.nameCamelUpper}}};
+{{#processor.dataFormats}}
+import {{{definition.javaPackage}}}.autogen.{{{nameCamelUpper}}};
+{{/processor.dataFormats}}
 {{^processor.avroInputStreams.empty}}
 import java.io.IOException;
 {{/processor.avroInputStreams.empty}}
@@ -12,9 +15,6 @@ import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 {{/processor.jsonInputStreams.empty}}
-{{#processor.inputStreams}}
-import {{{definition.javaPackage}}}.{{{dataFormat.nameCamelUpper}}};
-{{/processor.inputStreams}}
 import io.dataspray.runner.Entrypoint;
 import io.dataspray.runner.MessageImpl;
 import io.dataspray.runner.MessageMetadata;
@@ -26,6 +26,9 @@ import java.nio.charset.StandardCharsets;
 {{#processor.web}}
 import io.dataspray.runner.dto.web.HttpRequest;
 import io.dataspray.runner.dto.web.HttpResponse;
+import jakarta.ws.rs.core.MediaType;
+import com.google.common.collect.ImmutableList;
+import java.util.Optional;
 {{/processor.web}}
 {{/util.javaImportsFormat}}
 
@@ -34,7 +37,7 @@ public class Runner extends Entrypoint {
     {{#processor.web}}
     {{#endpoints}}
     {{^contentTypes.empty}}
-    private static final List<MediaType> ENDPOINT_ALLOWED_CONTENT_TYPES_{{{nameSnakeUpper}}} = ImmutableList.of({{#contentTypes}}MediaType.valueOf("{{{.}}}"){{^-last}}, {{/-last}}{{/contentTypes}});
+    private static final ImmutableList<MediaType> ENDPOINT_ALLOWED_CONTENT_TYPES_{{{nameSnakeUpper}}} = ImmutableList.of({{#contentTypes}}MediaType.valueOf("{{{.}}}"){{^-last}}, {{/-last}}{{/contentTypes}});
     {{/contentTypes.empty}}
     {{/endpoints}}
     {{/processor.web}}
@@ -48,33 +51,40 @@ public class Runner extends Entrypoint {
     {{#processor.web}}
 
     @Override
-    public HttpResponse web(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder) {
+    public HttpResponse web(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder, RawCoordinator rawCoordinator) {
+
+        WebCoordinator coordinator = new CoordinatorImpl(
+            rawCoordinator{{#processor.hasDynamoState}},
+            Optional.empty(){{/processor.hasDynamoState}}
+        );
         {{^endpoints.empty}}
 
-        String[] pathDirs = request.getPath().split("/");
+        String[] pathDirs = request.getRawPath().split("/");
+        MediaType mediaType = MediaType.valueOf(request.getHeaders().getOrDefault("Content-Type", "text/plain"));
         {{/endpoints.empty}}
         {{#endpoints}}
 
         if (
-            {{>web-request-endpoint-match}}
+{{>web-request-endpoint-match}}
         ) {
             return processor.web{{{nameCamelUpper}}}(
                 {{>web-request-to-params}}
-                responseBuilder
-            );
+                responseBuilder,
+                coordinator);
         }
         {{/endpoints}}
 
-        return processor.web(request, responseBuilder);
+        return processor.web(request, responseBuilder, coordinator);
     }
     {{/processor.web}}
     {{^processor.inputStreams.empty}}
 
     @Override
-    public void processSqsEvent(MessageMetadata metadata, String data, RawCoordinator rawCoordinator) {
-        Coordinator coordinator = new CoordinatorImpl(
+    public void stream(MessageMetadata metadata, String data, RawCoordinator rawCoordinator) {
+
+        StreamCoordinator coordinator = new CoordinatorImpl(
             rawCoordinator{{#processor.hasDynamoState}},
-            metadata.getKey(){{/processor.hasDynamoState}}
+            Optional.of(metadata.getKey()){{/processor.hasDynamoState}}
         );
         {{#processor.inputStreams}}if (StoreType.{{{storeType.name}}}.equals(metadata.getStoreType())
                 && "{{{storeName}}}".equals(metadata.getStoreName())

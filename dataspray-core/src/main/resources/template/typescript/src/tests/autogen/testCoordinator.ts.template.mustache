@@ -4,7 +4,14 @@ import {
     Message,
     StateManager,
 } from 'dataspray-runner';
-import { Coordinator } from "../../autogen/coordinator";
+import {
+    {{#processor.web}}
+    WebCoordinator,
+    {{/processor.web}}
+    {{^processor.inputStreams.empty}}
+    StreamCoordinator,
+    {{/processor.inputStreams.empty}}
+} from "../../autogen/coordinator";
 {{^processor.jsonOutputStreams.empty}}
 import {
 {{#processor.jsonOutputStreams}}
@@ -14,19 +21,38 @@ import {
 {{/processor.jsonOutputStreams.empty}}
 {{#processor.hasDynamoState}}
 import { TestStateManager } from './testStateManager';
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { mockClient } from "aws-sdk-client-mock";
 {{/processor.hasDynamoState}}
 
-export class TestCoordinator implements Coordinator {
+export class TestCoordinator implements {{#processor.web}}WebCoordinator{{#processor.hasInputStreams}}, {{/processor.hasInputStreams}}{{/processor.web}}{{#processor.hasInputStreams}}StreamCoordinator{{/processor.hasInputStreams}} {
 
     {{#processor.outputStreams}}
     private sent{{{uniqueNameCamelUpper}}}: Message<{{{dataFormat.nameCamelUpper}}}>[] = [];
     {{/processor.outputStreams}}
     {{#processor.hasDynamoState}}
     private messageKey: string;
+    private dynamoMock: ReturnType<typeof mockClient> = mockClient(DynamoDBClient);
+    {{/processor.hasDynamoState}}
 
-    constructor(messageKey: string) {
+    constructor({{#processor.hasDynamoState}}messageKey: string{{/processor.hasDynamoState}}) {
+        {{#processor.hasDynamoState}}
         this.messageKey = messageKey;
+        {{/processor.hasDynamoState}}
     }
+    {{#processor.hasInputStreams}}
+
+    static createForStream({{#processor.hasDynamoState}}messageKey: string{{/processor.hasDynamoState}}): TestCoordinator {
+        return new TestCoordinator({{#processor.hasDynamoState}}messageKey{{/processor.hasDynamoState}});
+    }
+    {{/processor.hasInputStreams}}
+    {{#processor.web}}
+
+    static createForWeb(): TestCoordinator {
+        return new TestCoordinator({{#processor.hasDynamoState}}null{{/processor.hasDynamoState}});
+    }
+    {{/processor.web}}
+    {{#processor.hasDynamoState}}
 
     stateForMessageKey(ttlInSec?: number): StateManager {
         return this.stateForNamespace(ttlInSec, ["task", "{{{processor.taskId}}}", "key", this.messageKey]);
@@ -38,6 +64,10 @@ export class TestCoordinator implements Coordinator {
 
     stateForNamespace(ttlInSec: number | undefined, namespace: string[]): StateManager {
         return new TestStateManager(ttlInSec, namespace);
+    }
+
+    getDynamoClient(): ReturnType<typeof mockClient> & DynamoDBClient {
+        return this.dynamoMock as any;
     }
     {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}

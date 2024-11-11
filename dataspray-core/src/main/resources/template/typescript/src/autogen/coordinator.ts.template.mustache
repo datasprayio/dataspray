@@ -1,4 +1,10 @@
-import { RawCoordinator, StoreType } from 'dataspray-runner';
+import {
+    RawCoordinator,
+    StoreType,
+    {{#processor.hasDynamoState}}
+    StateManager,
+    {{/processor.hasDynamoState}}
+} from 'dataspray-runner';
 {{^processor.jsonOutputStreams.empty}}
 import {
 {{#processor.jsonOutputStreams}}
@@ -6,8 +12,12 @@ import {
 {{/processor.jsonOutputStreams}}
 } from './streams';
 {{/processor.jsonOutputStreams.empty}}
+{{#processor.hasDynamoState}}
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+{{/processor.hasDynamoState}}
 
-export interface Coordinator {
+
+export interface StreamCoordinator {
     {{#processor.hasDynamoState}}
 
     /**
@@ -36,6 +46,13 @@ export interface Coordinator {
      * @param ttlInSec Optional second-precision time-to-live for the state. Resets on every write.
      */
     stateForNamespace(ttlInSec: number | undefined, namespace: string[]): StateManager;
+
+    /**
+     * Returns the raw DynamoDB client.
+     * <p>
+     * Use this method to perform advanced operations on DynamoDB.
+     */
+    getDynamoClient(): DynamoDBClient;
     {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}
 
@@ -50,17 +67,58 @@ export interface Coordinator {
     {{/processor.outputStreams}}
 }
 
-export class CoordinatorImpl implements Coordinator {
+export interface WebCoordinator {
+    {{#processor.hasDynamoState}}
+
+    /**
+     * State management backed by DynamoDB and unique for entire task.
+     * <p>
+     * Identical to calling {@link #stateForNamespace}{@code (ttl, "task", <task_name>)}.
+     * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
+     * @param ttlInSec Optional second-precision time-to-live for the state. Resets on every write.
+     */
+    stateForTask(ttlInSec?: number): StateManager;
+
+    /**
+     * State management backed by DynamoDB with custom namespace.
+     * <p>
+     * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
+     * @param namespace Unique key for the state.
+     * @param ttlInSec Optional second-precision time-to-live for the state. Resets on every write.
+     */
+    stateForNamespace(ttlInSec: number | undefined, namespace: string[]): StateManager;
+
+    /**
+     * Returns the raw DynamoDB client.
+     * <p>
+     * Use this method to perform advanced operations on DynamoDB.
+     */
+    getDynamoClient(): DynamoDBClient;
+    {{/processor.hasDynamoState}}
+    {{#processor.outputStreams}}
+
+    /**
+     * Sends a message to {{{storeName}}} {{{streamName}}}.
+     *
+     * @param messageKey Entity of the message used for partitioning (e.g. Session ID, Email, IP address)
+     * @param {{{dataFormat.nameCamelLower}}} Content of the message
+     * @param messageId Optional unique ID of the message used for de-duplication (e.g. Transaction ID)
+     */
+    sendTo{{{uniqueNameCamelUpper}}}(messageKey: string, {{{dataFormat.nameCamelLower}}}: {{{dataFormat.nameCamelUpper}}}, messageId?: string): void;
+    {{/processor.outputStreams}}
+}
+
+export class CoordinatorImpl implements {{#processor.web}}WebCoordinator{{#processor.hasInputStreams}}, {{/processor.hasInputStreams}}{{/processor.web}}{{#processor.hasInputStreams}}StreamCoordinator{{/processor.hasInputStreams}} {
 
     private rawCoordinator: RawCoordinator;
     {{#processor.hasDynamoState}}
-    private messageKey: string;
+    private messageKey?: string;
     {{/processor.hasDynamoState}}
 
     constructor(
         rawCoordinator: RawCoordinator,
         {{#processor.hasDynamoState}}
-        messageKey: string,
+        messageKey?: string,
         {{/processor.hasDynamoState}}
     ) {
         this.rawCoordinator = rawCoordinator;
@@ -71,6 +129,9 @@ export class CoordinatorImpl implements Coordinator {
     {{#processor.hasDynamoState}}
 
     stateForMessageKey(ttlInSec?: number): StateManager {
+        if (this.messageKey === undefined) {
+            throw new Error('messageKey is not set');
+        }
         return this.stateForNamespace(ttlInSec, ["task", "{{{processor.taskId}}}", "key", this.messageKey]);
     }
 
@@ -80,6 +141,10 @@ export class CoordinatorImpl implements Coordinator {
 
     stateForNamespace(ttlInSec: number | undefined, namespace: string[]): StateManager {
         return this.rawCoordinator.getStateManager(namespace, ttlInSec);
+    }
+
+    getDynamoClient(): DynamoDBClient {
+        return this.rawCoordinator.getDynamoClient();
     }
     {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}

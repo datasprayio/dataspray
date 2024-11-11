@@ -4,14 +4,23 @@ import {
     LambdaFunctionURLEvent,
 } from 'aws-lambda';
 {{/processor.web}}
+import { typer } from 'media-typer';
 {{^processor.inputStreams.empty}}
 import {
-    Coordinator,
+    {{#processor.web}}
+    WebCoordinator,
+    {{/processor.web}}
+    {{^processor.inputStreams.empty}}
+    StreamCoordinator,
+    {{/processor.inputStreams.empty}}
     CoordinatorImpl,
 } from './coordinator';
 {{/processor.inputStreams.empty}}
 import {
     Entrypoint,
+    {{#processor.web}}
+    HttpRequest,
+    {{/processor.web}}
     {{^processor.inputStreams.empty}}
     Message,
     MessageMetadata,
@@ -30,19 +39,55 @@ import {
 import { {{{processor.nameCamelUpper}}} } from '../{{{processor.nameCamelLower}}}';
 import { Processor } from './processor';
 
+{{#processor.web}}
+{{#endpoints}}
+{{^contentTypes.empty}}
+const ENDPOINT_ALLOWED_CONTENT_TYPES_{{{nameSnakeUpper}}} = [{{#contentTypes}}typer.parse("{{{.}}}"){{^-last}}, {{/-last}}{{/contentTypes}}];
+{{#-last}}
+
+{{/-last}}
+{{/contentTypes.empty}}
+{{/endpoints}}
+{{/processor.web}}
 class Runner extends Entrypoint {
 
     private processor: Processor = new {{{processor.nameCamelUpper}}}();
     {{#processor.web}}
 
-    web(request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> {
-        return this.processor.web(request);
+    web(request: HttpRequest, rawCoordinator: RawCoordinator): Promise<APIGatewayProxyStructuredResultV2> {
+        const coordinator: WebCoordinator = new CoordinatorImpl(rawCoordinator);
+        {{^endpoints.empty}}
+
+        const pathDirs: string[] = request.rawPath.split("/");
+        const contentType = typer.parse(request.headersMap['content-type'] || 'text/plain')
+        {{/endpoints.empty}}
+        {{#endpoints}}
+
+        if (
+{{>web-request-endpoint-match}}
+        ) {
+            {{#getBodyDataFormat}}
+            {{#isSerdeJson}}
+            const bodyJson = JSON.parse(request.body);
+            if (!validate{{{nameCamelUpper}}}(bodyJson)) {
+                throw new Error(validate{{{nameCamelUpper}}}['errors']);
+            }
+            {{/isSerdeJson}}
+            {{/getBodyDataFormat}}
+            return this.processor.web{{{nameCamelUpper}}}(
+                {{>web-request-to-params}}
+                coordinator,
+            );
+        }
+        {{/endpoints}}
+
+        return this.processor.web(request, coordinator);
     }
     {{/processor.web}}
     {{^processor.inputStreams.empty}}
 
-    processSqsEvent(metadata: MessageMetadata, data: string, rawCoordinator: RawCoordinator): Promise<void> | void {
-        const coordinator: Coordinator = new CoordinatorImpl(rawCoordinator, metadata.key);
+    stream(metadata: MessageMetadata, data: string, rawCoordinator: RawCoordinator): Promise<void> | void {
+        const coordinator: StreamCoordinator = new CoordinatorImpl(rawCoordinator{{#processor.hasDynamoState}}, metadata.key{{/processor.hasDynamoState}});
         {{#processor.inputStreams}}if (StoreType.{{{storeType.name}}} === metadata.storeType
                 && "{{{storeName}}}" === metadata.storeName
                 && "{{{streamName}}}" === metadata.streamName) {

@@ -29,6 +29,7 @@ import io.dataspray.stream.ingest.client.ApiException;
 import io.dataspray.stream.ingest.client.IngestApi;
 import jakarta.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -76,6 +77,11 @@ public class RawCoordinatorImpl implements RawCoordinator {
     @Override
     public StateManager getStateManager(String[] key, @Nullable Duration ttl) {
         return StateManagerFactoryImpl.getOrCreate().getStateManager(key, Optional.ofNullable(ttl));
+    }
+
+    @Override
+    public DynamoDbClient getDynamoClient() {
+        return StateManagerFactoryImpl.getOrCreate().getDynamoClient();
     }
 
     private void sendToDataSpray(String messageKey, byte[] data, String storeName, String streamName, @Nullable String messageId) {
