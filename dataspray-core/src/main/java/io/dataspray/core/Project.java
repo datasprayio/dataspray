@@ -68,15 +68,25 @@ public class Project {
     }
 
     /**
-     * Make a path absolute from the git work tree.
-     * <p>
-     * E.g. given a project path of /a/b/c and a relative path of b/c/d, the result is /a/b/c/d.
+     * Make a path absolute from the project.
      */
     public Path makeAbsoluteFromRelativeToProject(Path relativeToProjectOrAbsolutePath) {
         return relativeToProjectOrAbsolutePath.isAbsolute()
                 ? relativeToProjectOrAbsolutePath
                 : getAbsolutePath().resolve(relativeToProjectOrAbsolutePath);
     }
+
+    /**
+     * Make a path absolute from the git work tree.
+     * <p>
+     * E.g. given a project path of /a/b/c and a relative path of b/c/d, the result is /a/b/c/d.
+     */
+    public Path makeAbsoluteFromGitWorkTree(Path relativeToProjectOrAbsolutePath) {
+        return relativeToProjectOrAbsolutePath.isAbsolute()
+                ? relativeToProjectOrAbsolutePath
+                : getGitWorkTreePath().resolve(relativeToProjectOrAbsolutePath);
+    }
+
 
     /**
      * Get git working path.

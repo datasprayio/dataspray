@@ -29,6 +29,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
 import io.dataspray.common.json.GsonUtil;
+import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -81,7 +82,7 @@ public class TemplateFiles {
     /**
      * Template files backed by on-disk resources
      */
-    TemplateFiles(Template template, Path templateDir) {
+    TemplateFiles(Template template, @Nullable Path templateDir) {
         this.template = template;
         this.templateDirOpt = Optional.ofNullable(templateDir);
         this.filesByType = walkFiles();

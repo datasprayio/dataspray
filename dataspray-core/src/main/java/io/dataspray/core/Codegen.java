@@ -31,7 +31,7 @@ public interface Codegen {
 
     Project loadProject(String projectPath);
 
-    void generateAll(Project project);
+    void generateAll(Project project, boolean overwriteWriteableTemplate);
 
-    void generateProcessor(Project project, String processorName);
+    void generateProcessor(Project project, String processorName, boolean overwriteWriteableTemplate);
 }

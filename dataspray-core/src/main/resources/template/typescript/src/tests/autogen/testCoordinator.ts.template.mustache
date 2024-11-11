@@ -12,13 +12,13 @@ import {
     StreamCoordinator,
     {{/processor.inputStreams.empty}}
 } from "../../autogen/coordinator";
-{{^processor.jsonOutputStreams.empty}}
+{{^processor.dataFormats.empty}}
 import {
-{{#processor.jsonOutputStreams}}
-    {{{dataFormat.nameCamelUpper}}},
-{{/processor.jsonOutputStreams}}
+    {{#processor.dataFormats}}
+    {{{nameCamelUpper}}},
+    {{/processor.dataFormats}}
 } from '../../autogen/streams';
-{{/processor.jsonOutputStreams.empty}}
+{{/processor.dataFormats.empty}}
 {{#processor.hasDynamoState}}
 import { TestStateManager } from './testStateManager';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";

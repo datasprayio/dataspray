@@ -134,6 +134,15 @@ public class Definition extends Item {
         return typescriptProcessors == null ? ImmutableSet.of() : typescriptProcessors;
     }
 
+    Boolean showTemplateFiles;
+
+    /**
+     * Whether to eject all template files under .template folder to the project root in order for them to be editable.
+     */
+    public Boolean getShowTemplateFiles() {
+        return Boolean.TRUE.equals(showTemplateFiles);
+    }
+
     public Definition initialize() {
         getProcessors().forEach(processor -> {
             processor.setParent(this);

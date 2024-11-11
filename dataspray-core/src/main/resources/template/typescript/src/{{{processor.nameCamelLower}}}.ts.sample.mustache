@@ -16,13 +16,13 @@ import {
 {{^processor.inputStreams.empty}}
 import { Message } from "dataspray-runner";
 {{/processor.inputStreams.empty}}
-{{^processor.jsonInputStreams.empty}}
+{{^processor.dataFormats.empty}}
 import {
-{{#processor.jsonInputStreams}}
-    {{{dataFormat.nameCamelUpper}}},
-{{/processor.jsonInputStreams}}
+    {{#processor.dataFormats}}
+    {{{nameCamelUpper}}},
+    {{/processor.dataFormats}}
 } from './autogen/streams';
-{{/processor.jsonInputStreams.empty}}
+{{/processor.dataFormats.empty}}
 
 export class {{{processor.nameCamelUpper}}} extends Processor {
     {{#processor.web}}

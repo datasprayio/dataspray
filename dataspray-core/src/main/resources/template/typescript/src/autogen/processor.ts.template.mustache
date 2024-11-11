@@ -13,13 +13,13 @@ import {
     LambdaFunctionURLEvent,
 } from 'aws-lambda';
 {{/processor.web}}
-{{^processor.jsonInputStreams.empty}}
+{{^processor.dataFormats.empty}}
 import {
-{{#processor.jsonInputStreams}}
-    {{{dataFormat.nameCamelUpper}}},
-{{/processor.jsonInputStreams}}
+    {{#processor.dataFormats}}
+    {{{nameCamelUpper}}},
+    {{/processor.dataFormats}}
 } from './streams';
-{{/processor.jsonInputStreams.empty}}
+{{/processor.dataFormats.empty}}
 
 export abstract class Processor {
     {{#processor.web}}

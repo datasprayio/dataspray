@@ -37,7 +37,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -197,13 +196,6 @@ class GitExcludeFileTrackerTest {
         assertEquals(
                 Arrays.stream(expectedFiles)
                         .map(File::toPath)
-                        .map(file -> {
-                            try {
-                                return project.getGit().getRepository().getWorkTree().toPath().toRealPath().relativize(file.toRealPath());
-                            } catch (IOException ex) {
-                                throw new RuntimeException(ex);
-                            }
-                        })
                         .collect(ImmutableSet.toImmutableSet()),
                 fileTracker.getTrackedFiles(project, subPath, maxDepthOpt));
     }

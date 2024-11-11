@@ -30,14 +30,21 @@ import java.util.Optional;
 
 public interface FileTracker {
 
+    /**
+     * Get all tracked files.
+     *
+     * @param subPath Optional sub-path to filter by
+     * @param maxDepthOpt Optional maximum depth of sub-path
+     * @return Absolute paths to tracked files
+     */
     ImmutableSet<Path> getTrackedFiles(Project project, Optional<Path> subPath, Optional<Long> maxDepthOpt);
 
     /**
      * Deletes files from disk and untracks them.
      *
-     * @param paths Either absolute paths or relative to project root
+     * @param relativeToProjectOrAbsolutePaths Either absolute paths or relative to project root
      */
-    void unlinkUntrackFiles(Project project, Collection<Path> paths);
+    void unlinkUntrackFiles(Project project, Collection<Path> relativeToProjectOrAbsolutePaths);
 
     /**
      * Track specific file. Not required to exist.

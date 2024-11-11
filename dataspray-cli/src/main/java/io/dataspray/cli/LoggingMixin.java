@@ -26,7 +26,6 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ParseResult;
 import picocli.CommandLine.Spec;
 
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -110,14 +109,5 @@ public class LoggingMixin {
 
         // Change default level
         root.setLevel(level);
-    }
-
-    @SneakyThrows
-    private Object callMethodReflectively(Object obj, String methodName, Object... params) {
-        return obj.getClass()
-                .getMethod(methodName, Arrays.stream(params)
-                        .map(Object::getClass)
-                        .toArray(Class[]::new))
-                .invoke(obj, params);
     }
 }

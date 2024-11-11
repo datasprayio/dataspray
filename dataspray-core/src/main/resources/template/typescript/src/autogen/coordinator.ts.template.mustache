@@ -5,13 +5,13 @@ import {
     StateManager,
     {{/processor.hasDynamoState}}
 } from 'dataspray-runner';
-{{^processor.jsonOutputStreams.empty}}
+{{^processor.dataFormats.empty}}
 import {
-{{#processor.jsonOutputStreams}}
-    {{{dataFormat.nameCamelUpper}}},
-{{/processor.jsonOutputStreams}}
+    {{#processor.dataFormats}}
+    {{{nameCamelUpper}}},
+    {{/processor.dataFormats}}
 } from './streams';
-{{/processor.jsonOutputStreams.empty}}
+{{/processor.dataFormats.empty}}
 {{#processor.hasDynamoState}}
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 {{/processor.hasDynamoState}}

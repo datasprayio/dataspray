@@ -51,6 +51,6 @@ public class Init implements Runnable {
     @Override
     public void run() {
         Project project = codegen.initProject(".", name, sample);
-        codegen.generateAll(project);
+        codegen.generateAll(project, true);
     }
 }

@@ -111,7 +111,7 @@ public class GitExcludeFileTracker implements FileTracker {
                     if (!gitignore.isFileIgnored(trackedRelativePath).orElse(true)) {
                         continue;
                     }
-                    trackedFilesBuilder.add(trackedRelativePath);
+                    trackedFilesBuilder.add(project.makeAbsoluteFromGitWorkTree(trackedRelativePath));
                 }
             }
         }
@@ -119,13 +119,14 @@ public class GitExcludeFileTracker implements FileTracker {
     }
 
     @SneakyThrows
-    private void untrackFiles(Project project, Collection<Path> trackedPathsToUntrack) {
-        if (trackedPathsToUntrack.isEmpty()) {
+    private void untrackFiles(Project project, Collection<Path> relativeToProjectOrAbsolutePaths) {
+        if (relativeToProjectOrAbsolutePaths.isEmpty()) {
             return;
         }
         File excludeFile = getOrCreateExcludeFile(project);
         File excludeTmpFile = getExcludeTmpFile(project);
-        ImmutableSet<String> trackedPathStrsToUntrack = trackedPathsToUntrack.stream()
+        ImmutableSet<String> relativeToProjectOrAbsolutePathStrs = relativeToProjectOrAbsolutePaths.stream()
+                .map(project::makeRelativeToGitWorkTree)
                 .map(Path::toString)
                 .map(this::addPrefixSeparator)
                 .collect(ImmutableSet.toImmutableSet());
@@ -142,7 +143,7 @@ public class GitExcludeFileTracker implements FileTracker {
                     }
                 } else {
                     nextLineIsManaged = false;
-                    if (!trackedPathStrsToUntrack.contains(nextLine)) {
+                    if (!relativeToProjectOrAbsolutePathStrs.contains(nextLine)) {
                         excludeTmpFileWriter.write(System.lineSeparator() + NEXT_LINE_HEADER + System.lineSeparator() + nextLine);
                     }
                 }

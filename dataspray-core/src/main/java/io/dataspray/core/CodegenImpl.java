@@ -89,6 +89,7 @@ public class CodegenImpl implements Codegen {
      * Can be used with sample template to set initial file.
      */
     public static final String MUSTACHE_FILE_EXTENSION_MERGE = ".merge" + MUSTACHE_FILE_EXTENSION;
+    public static final String OVERWRITE_BACKUP_SUFFIX = ".original";
 
     @Inject
     DefinitionLoader definitionLoader;
@@ -168,45 +169,46 @@ public class CodegenImpl implements Codegen {
     }
 
     @Override
-    public void generateAll(Project project) {
-        generateRoot(project);
+    public void generateAll(Project project, boolean overwriteWriteableTemplate) {
+        generateRoot(project, overwriteWriteableTemplate);
         project.getDefinition().getDataFormats()
-                .forEach(dataFormat -> generateDataFormat(project, dataFormat));
+                .forEach(dataFormat -> generateDataFormat(project, dataFormat, overwriteWriteableTemplate));
         project.getDefinition().getProcessors()
-                .forEach(processor -> generateProcessor(project, processor));
+                .forEach(processor -> generateProcessor(project, processor, overwriteWriteableTemplate));
     }
 
-    private void generateRoot(Project project) {
-        codegen(project, project.getAbsolutePath(), Template.ROOT, contextBuilder.createForRoot(project), Optional.of(0L));
+    private void generateRoot(Project project, boolean overwriteWriteableTemplate) {
+        codegen(project, project.getAbsolutePath(), Template.ROOT, contextBuilder.createForRoot(project), Optional.of(0L), overwriteWriteableTemplate);
     }
 
-    private void generateDataFormat(Project project, DataFormat dataFormat) {
+    private void generateDataFormat(Project project, DataFormat dataFormat, boolean overwriteWriteableTemplate) {
         switch (dataFormat.getSerde()) {/* Format is schemaless, Nothing to do*/
             case BINARY:
             case STRING:
                 break;
             case JSON:
-                codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_JSON, contextBuilder.createForDataFormat(project, dataFormat));
+                codegen(project, createDataFormatDir(project, dataFormat, overwriteWriteableTemplate), Template.DATA_FORMAT_JSON, contextBuilder.createForDataFormat(project, dataFormat), Optional.empty(), overwriteWriteableTemplate);
                 break;
             case PROTOBUF:
-                codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_PROTOBUF, contextBuilder.createForDataFormat(project, dataFormat));
+                codegen(project, createDataFormatDir(project, dataFormat, overwriteWriteableTemplate), Template.DATA_FORMAT_PROTOBUF, contextBuilder.createForDataFormat(project, dataFormat), Optional.empty(), overwriteWriteableTemplate);
                 break;
             case AVRO:
-                codegen(project, createDataFormatDir(project, dataFormat), Template.DATA_FORMAT_AVRO, contextBuilder.createForDataFormat(project, dataFormat));
+                codegen(project, createDataFormatDir(project, dataFormat, overwriteWriteableTemplate), Template.DATA_FORMAT_AVRO, contextBuilder.createForDataFormat(project, dataFormat), Optional.empty(), overwriteWriteableTemplate);
                 break;
         }
     }
 
     @Override
-    public void generateProcessor(Project project, String processorName) {
+    public void generateProcessor(Project project, String processorName, boolean overwriteWriteableTemplate) {
         generateProcessor(project, Optional.ofNullable(project.getDefinition().getProcessors()).stream()
-                .flatMap(Collection::stream)
-                .filter(p -> p.getName().equals(processorName))
-                .findAny()
-                .orElseThrow(() -> new RuntimeException("Cannot find processor with name " + processorName)));
+                        .flatMap(Collection::stream)
+                        .filter(p -> p.getName().equals(processorName))
+                        .findAny()
+                        .orElseThrow(() -> new RuntimeException("Cannot find processor with name " + processorName)),
+                overwriteWriteableTemplate);
     }
 
-    public void generateProcessor(Project project, Processor processor) {
+    public void generateProcessor(Project project, Processor processor, boolean overwriteWriteableTemplate) {
         Template template;
         if (processor instanceof JavaProcessor) {
             template = Template.JAVA;
@@ -218,14 +220,14 @@ public class CodegenImpl implements Codegen {
 
         Path processorPath = project.getProcessorDir(processor);
         createDir(processorPath);
-        codegen(project, processorPath, template, contextBuilder.createForProcessor(project, processor));
+        codegen(project, processorPath, template, contextBuilder.createForProcessor(project, processor), Optional.empty(), overwriteWriteableTemplate);
     }
 
     private Path getDataFormatDir(Project project, DataFormat dataFormat) {
         return project.getAbsolutePath().resolve(SCHEMAS_FOLDER).resolve(dataFormat.getNameDir());
     }
 
-    private Path createDataFormatDir(Project project, DataFormat dataFormat) {
+    private Path createDataFormatDir(Project project, DataFormat dataFormat, boolean overwriteWriteableTemplate) {
         if (!schemasFolderGenerated) {
             schemasFolderGenerated = true;
 
@@ -236,7 +238,7 @@ public class CodegenImpl implements Codegen {
             }
 
             // Initialize templates folder
-            applyTemplate(project, Template.SCHEMAS.getFilesFromResources(), schemasPath, Optional.of(0L), contextBuilder.createForTemplates(project));
+            applyTemplate(project, Template.SCHEMAS.getFilesFromResources(), schemasPath, Optional.of(0L), contextBuilder.createForTemplates(project), overwriteWriteableTemplate);
         }
         return createDir(getDataFormatDir(project, dataFormat));
     }
@@ -249,64 +251,67 @@ public class CodegenImpl implements Codegen {
     }
 
     @SneakyThrows
-    private void codegen(Project project, Path processorPath, Template template, DatasprayContext processorContext) {
-        codegen(project, processorPath, template, processorContext, Optional.empty());
-    }
-
-    @SneakyThrows
-    private void codegen(Project project, Path processorPath, Template template, DatasprayContext processorContext, Optional<Long> maxDepthOpt) {
-        // Create templates folder
-        Path templatesPath = project.getAbsolutePath().resolve(TEMPLATES_FOLDER);
-        if (templatesPath.toFile().mkdir()) {
-            log.info("Created templates folder " + templatesPath);
-        }
-
+    private void codegen(Project project, Path processorPath, Template template, DatasprayContext processorContext, Optional<Long> maxDepthOpt, boolean overwriteWriteableTemplate) {
         // Initialize templates folder
-        applyTemplate(project, Template.TEMPLATES.getFilesFromResources(), templatesPath, Optional.of(0L), contextBuilder.createForTemplates(project));
+        final TemplateFiles templateFiles;
+        if (project.getDefinition().getShowTemplateFiles()) {
 
-        // Copy our template from resources to repo (Skipping over overriden files)
-        Path templateInRepoDir = templatesPath.resolve(template.getResourceName());
-        Set<Path> trackedFiles = Sets.newHashSet(fileTracker.getTrackedFiles(project, Optional.of(templateInRepoDir), Optional.empty()));
-        if (templateInRepoDir.toFile().mkdir()) {
-            log.info("Created {} template folder {}", template.getResourceName(), templateInRepoDir);
-        }
-        log.info("Walking over template {}", template);
-        template.getFilesFromResources().stream().forEach(source -> {
-            String sourceFileName = source.getRelativePath().getFileName().toString();
-            Path destination = templateInRepoDir.resolve(source.getRelativePath());
-            Path projectRelativePath = project.getAbsolutePath().relativize(destination);
-            // Check if file was previously tracked
-            if (!trackedFiles.remove(projectRelativePath)) {
-                // If not, attempt to track it now
-                if (!fileTracker.trackFile(project, projectRelativePath)) {
-                    log.debug("Skipping file overriden by user {}", projectRelativePath);
-                    return;
+            // Create templates folder
+            Path templatesAbsolutePath = project.getAbsolutePath().resolve(TEMPLATES_FOLDER);
+            if (templatesAbsolutePath.toFile().mkdir()) {
+                log.info("Created templates folder " + templatesAbsolutePath);
+            }
+
+            applyTemplate(project, Template.TEMPLATES.getFilesFromResources(), templatesAbsolutePath, Optional.of(0L), contextBuilder.createForTemplates(project), overwriteWriteableTemplate);
+
+            // Copy our template from resources to repo (Skipping over overriden files)
+            Path templateInRepoAbsoluteDir = templatesAbsolutePath.resolve(template.getResourceName());
+            Set<Path> trackedFilesAbsolutePath = Sets.newHashSet(fileTracker.getTrackedFiles(project, Optional.of(templateInRepoAbsoluteDir), Optional.empty()));
+            if (templateInRepoAbsoluteDir.toFile().mkdir()) {
+                log.info("Created {} template folder {}", template.getResourceName(), templateInRepoAbsoluteDir);
+            }
+            log.info("Walking over template {}", template);
+            template.getFilesFromResources().stream().forEach(source -> {
+                String sourceFileName = source.getRelativePath().getFileName().toString();
+                Path destinationAbsolutePath = templateInRepoAbsoluteDir.resolve(source.getRelativePath());
+                Path destinationProjectRelativePath = project.getAbsolutePath().relativize(destinationAbsolutePath);
+                // Check if file was previously tracked
+                if (!trackedFilesAbsolutePath.remove(destinationAbsolutePath)) {
+                    // If not, attempt to track it now
+                    if (!fileTracker.trackFile(project, destinationAbsolutePath)) {
+                        log.debug("Skipping file overriden by user {}", destinationProjectRelativePath);
+                        return;
+                    } else {
+                        log.debug("Creating generated file {}", destinationProjectRelativePath);
+                    }
                 } else {
-                    log.debug("Creating generated file {}", projectRelativePath);
+                    log.debug("Overwriting generated file {}", destinationProjectRelativePath);
                 }
-            } else {
-                log.debug("Overwriting generated file {}", projectRelativePath);
-            }
-            Optional.ofNullable(destination.toFile().getParentFile())
-                    .ifPresent(File::mkdirs);
+                Optional.ofNullable(destinationAbsolutePath.toFile().getParentFile())
+                        .ifPresent(File::mkdirs);
 
-            log.debug("Copying template file {} to {}", sourceFileName, destination);
-            try (InputStream sourceInputStream = source.openInputStream()) {
-                Files.copy(sourceInputStream, destination, StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        });
-        // Remove files that were not generated this round but previously most likely by older template
-        fileTracker.unlinkUntrackFiles(project, trackedFiles);
+                log.debug("Copying template file {} to {}", sourceFileName, destinationAbsolutePath);
+                try (InputStream sourceInputStream = source.openInputStream()) {
+                    Files.copy(sourceInputStream, destinationAbsolutePath, StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            });
+            // Remove files that were not generated this round but previously most likely by older template
+            fileTracker.unlinkUntrackFiles(project, trackedFilesAbsolutePath);
+
+            templateFiles = template.getFilesFromDisk(templateInRepoAbsoluteDir);
+        } else {
+            templateFiles = template.getFilesFromResources();
+        }
 
         // Finally, apply our template
-        applyTemplate(project, template.getFilesFromDisk(templateInRepoDir), processorPath, maxDepthOpt, processorContext);
+        applyTemplate(project, templateFiles, processorPath, maxDepthOpt, processorContext, overwriteWriteableTemplate);
     }
 
     @SneakyThrows
-    private void applyTemplate(Project project, TemplateFiles files, Path absoluteTemplatePath, Optional<Long> maxDepthOpt, DatasprayContext context) {
-        Set<Path> trackedFiles = Sets.newHashSet(fileTracker.getTrackedFiles(project, Optional.of(absoluteTemplatePath), maxDepthOpt));
+    private void applyTemplate(Project project, TemplateFiles files, Path absoluteTemplatePath, Optional<Long> maxDepthOpt, DatasprayContext context, boolean overwriteWriteableTemplate) {
+        Set<Path> trackedFilesAbsolutePath = Sets.newHashSet(fileTracker.getTrackedFiles(project, Optional.of(absoluteTemplatePath), maxDepthOpt));
         files.stream(
                 // First process samples if files don't exist
                 TemplateFiles.TemplateType.SAMPLE,
@@ -348,9 +353,9 @@ public class CodegenImpl implements Codegen {
                 case REPLACE:
                     // Non-sample files are overwritten every time unless user explicitly excluded the file from gitignore
                     // Check if file was previously tracked
-                    if (!trackedFiles.remove(projectToFilePath)) {
+                    if (!trackedFilesAbsolutePath.remove(absoluteFilePath)) {
                         // If not, attempt to track it now
-                        if (!fileTracker.trackFile(project, projectToFilePath)) {
+                        if (!fileTracker.trackFile(project, absoluteFilePath)) {
                             log.trace("Skipping creating template file overriden by user {}", projectToFilePath);
                             return;
                         } else {
@@ -390,7 +395,23 @@ public class CodegenImpl implements Codegen {
 
                 // Set it to writeable in case we unset it before
                 if (absoluteFilePath.toFile().exists()) {
-                    setFileWriteable(absoluteFilePath, true);
+                    if (item.getType() == TemplateFiles.TemplateType.REPLACE
+                        && getFileWriteable(absoluteFilePath)) {
+                        if (!overwriteWriteableTemplate) {
+                            log.warn("Template file found to have write permission restored, likely edited externally; creating copy with {} suffix: {}", OVERWRITE_BACKUP_SUFFIX, item.getRelativePath());
+                            try {
+                                Files.move(absoluteFilePath,
+                                        absoluteFilePath.resolveSibling(absoluteFilePath.getFileName() + OVERWRITE_BACKUP_SUFFIX),
+                                        StandardCopyOption.REPLACE_EXISTING);
+                            } catch (IOException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                        } else {
+                            log.info("Overwriting template file found to have write permission: {}", item.getRelativePath());
+                        }
+                    } else {
+                        setFileWriteable(absoluteFilePath, true);
+                    }
                 }
 
                 // Write out the file
@@ -413,10 +434,14 @@ public class CodegenImpl implements Codegen {
             }
         });
         // Remove files that were not generated this round but previously most likely by older template
-        fileTracker.unlinkUntrackFiles(project, trackedFiles);
+        fileTracker.unlinkUntrackFiles(project, trackedFilesAbsolutePath);
     }
 
-    private static void setFileWriteable(Path absoluteFilePath, boolean writeable) {
+    private boolean getFileWriteable(Path absoluteFilePath) {
+        return absoluteFilePath.toFile().canWrite();
+    }
+
+    private void setFileWriteable(Path absoluteFilePath, boolean writeable) {
         if (!absoluteFilePath.toFile().setWritable(writeable, false)) {
             throw new RuntimeException("Cannot modify write permission on file: " + absoluteFilePath);
         }

@@ -92,7 +92,7 @@ public class CodegenBuilderTest {
     }
 
     private void generateAndBuildAll(Project project) {
-        codegen.generateAll(project);
+        codegen.generateAll(project, false);
         builder.buildAll(project)
                 .forEach(artifact -> log.info("Built artifact {}",
                         project.getAbsolutePath().relativize(artifact.getCodeZipFile().toPath())));

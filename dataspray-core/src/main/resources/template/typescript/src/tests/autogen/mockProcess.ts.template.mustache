@@ -1,8 +1,8 @@
 {{^processor.inputStreams.empty}}
 import {
-{{#processor.jsonInputStreams}}
-    {{{dataFormat.nameCamelUpper}}},
-{{/processor.jsonInputStreams}}
+    {{#processor.dataFormats}}
+    {{{nameCamelUpper}}},
+    {{/processor.dataFormats}}
 } from '../../autogen/streams';
 import { {{{processor.nameCamelUpper}}} } from "../../{{{processor.nameCamelLower}}}";
 import { Message, StoreType } from "dataspray-runner";

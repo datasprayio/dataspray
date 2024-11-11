@@ -3,12 +3,14 @@ import { {{{processor.nameCamelUpper}}} } from "../{{{processor.nameCamelLower}}
 {{#processor.web}}
 import { mockRequest } from "./autogen/mockRequest";
 import { TestCoordinator } from "./autogen/testCoordinator";
-import {
-    {{#processor.jsonInputStreams}}
-    {{{dataFormat.nameCamelUpper}}},
-    {{/processor.jsonInputStreams}}
-} from '../autogen/streams';
 {{/processor.web}}
+{{^processor.dataFormats.empty}}
+import {
+    {{#processor.dataFormats}}
+    {{{nameCamelUpper}}},
+    {{/processor.dataFormats}}
+} from '../autogen/streams';
+{{/processor.dataFormats.empty}}
 {{^processor.inputStreams.empty}}
 import {
     {{#processor.inputStreams}}

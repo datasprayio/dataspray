@@ -1,0 +1,25 @@
+import type { JestConfigWithTsJest } from 'ts-jest'
+import { existsSync } from 'fs';
+import { resolve } from 'path';
+
+// If you want to make changes to this file,
+// you should create a `jest.config.override.ts`
+// file in the same directory to override the
+// auto-generated configuration.
+
+const jestConfig: JestConfigWithTsJest = {
+    preset: 'ts-jest',
+    testEnvironment: 'node',
+    verbose: true,
+}
+
+// Path to the override config
+const overrideConfigPath = resolve(__dirname, 'jest.config.override.ts');
+
+// Check if the override config exists and merge if it does
+if (existsSync(overrideConfigPath)) {
+    const overrideConfig = require(overrideConfigPath).default;
+    Object.assign(jestConfig, overrideConfig);
+}
+
+export default jestConfig

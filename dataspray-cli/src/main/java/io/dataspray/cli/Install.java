@@ -43,6 +43,8 @@ public class Install implements Runnable {
     LoggingMixin loggingMixin;
     @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id to deploy; otherwise all tasks are used if ran from root directory or specific task if ran from within a task directory")
     private String taskId;
+    @Option(names = {"-o", "--overwrite-writeable-template"}, description = "force overwrite of template files if they were given writeable permissions; typically this means someone has modified a template file accidentally")
+    private boolean overwriteWriteableTemplate;
 
     @Inject
     Codegen codegen;
@@ -56,10 +58,10 @@ public class Install implements Runnable {
 
         ImmutableSet<Artifact> artifacts;
         if (activeProcessor.isEmpty()) {
-            codegen.generateAll(project);
+            codegen.generateAll(project, overwriteWriteableTemplate);
             artifacts = builder.buildAll(project);
         } else {
-            codegen.generateProcessor(project, activeProcessor.get());
+            codegen.generateProcessor(project, activeProcessor.get(), overwriteWriteableTemplate);
             artifacts = ImmutableSet.of(builder.build(project, activeProcessor.get()));
         }
 
