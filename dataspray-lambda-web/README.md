@@ -36,24 +36,26 @@ This project allows you to deploy an OpenApi spec with a Quarkus Lambda applicat
                 <templateDirectory>${project.build.directory}/openapi/template/jaxrs-cxf
                 </templateDirectory>
                 <typeMappings>OffsetDateTime=Instant</typeMappings>
-                <additionalProperties>java8=true
-                    ,modelPackage=io.dataspray.stream.server.model
-                    ,apiPackage=io.dataspray.stream.server
-                    ,invokerPackage=io.dataspray.stream.server
-                    ,groupId=io.dataspray
-                    ,artifactId=dataspray
-                    ,dateLibrary=java8
-                    ,disableHtmlEscaping=true
-                    ,generateApiTests=false
-                    ,generateApiDocumentation=false
-                    ,generateModelTests=false
-                    ,generateModelDocumentation=false
-                    ,generateSupportingFiles=false
-                    ,hideGenerationTimestamp=true
-                    ,addConsumesProducesJson=true
-                    ,useBeanValidation=true
-                    ,removeEnumValuePrefix=false
-                    ,sourceFolder=src/main/java
+                <importMappings>java.time.OffsetDateTime=java.time.Instant</importMappings>
+                <additionalProperties>
+                    <additionalProperty>java8=true</additionalProperty>
+                    <additionalProperty>modelPackage=io.dataspray.stream.server.model</additionalProperty>
+                    <additionalProperty>apiPackage=io.dataspray.stream.server</additionalProperty>
+                    <additionalProperty>invokerPackage=io.dataspray.stream.server</additionalProperty>
+                    <additionalProperty>groupId=io.dataspray</additionalProperty>
+                    <additionalProperty>artifactId=dataspray</additionalProperty>
+                    <additionalProperty>dateLibrary=java8</additionalProperty>
+                    <additionalProperty>disableHtmlEscaping=true</additionalProperty>
+                    <additionalProperty>generateApiTests=false</additionalProperty>
+                    <additionalProperty>generateApiDocumentation=false</additionalProperty>
+                    <additionalProperty>generateModelTests=false</additionalProperty>
+                    <additionalProperty>generateModelDocumentation=false</additionalProperty>
+                    <additionalProperty>generateSupportingFiles=false</additionalProperty>
+                    <additionalProperty>hideGenerationTimestamp=true</additionalProperty>
+                    <additionalProperty>addConsumesProducesJson=true</additionalProperty>
+                    <additionalProperty>useBeanValidation=true</additionalProperty>
+                    <additionalProperty>removeEnumValuePrefix=false</additionalProperty>
+                    <additionalProperty>sourceFolder=src/main/java</additionalProperty>
                 </additionalProperties>
                 <output>${project.build.directory}/generated-sources/server</output>
                 <configOptions>

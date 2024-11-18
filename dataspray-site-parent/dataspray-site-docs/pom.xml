@@ -200,7 +200,9 @@
                             <ignoreFileOverride>${project.basedir}/openapi/template/markdown/.openapi-generator-ignore
                             </ignoreFileOverride>
                             <output>${project.basedir}/src/pages/openapi</output>
-                            <additionalProperties>global-property=models,apis</additionalProperties>
+                            <additionalProperties>
+                                <additionalProperty>global-property=models,apis</additionalProperty>
+                            </additionalProperties>
                             <configOptions>
                                 <sourceFolder>src/main/java</sourceFolder>
                             </configOptions>

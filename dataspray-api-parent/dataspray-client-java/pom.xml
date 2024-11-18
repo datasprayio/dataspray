@@ -84,6 +84,10 @@
             <groupId>jakarta.ws.rs</groupId>
             <artifactId>jakarta.ws.rs-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -155,18 +159,22 @@
                             </ignoreFileOverride>
                             <templateDirectory>${project.basedir}/src/main/openapi/template/java</templateDirectory>
                             <typeMappings>OffsetDateTime=Instant</typeMappings>
-                            <additionalProperties>java8=true
-                                ,modelPackage=io.dataspray.stream.control.client.model
-                                ,apiPackage=io.dataspray.stream.control.client
-                                ,invokerPackage=io.dataspray.stream.control.client
-                                ,groupId=io.dataspray.stream.control.client
-                                ,artifactId=client
-                                ,dateLibrary=java8
-                                ,disableHtmlEscaping=true
-                                ,hideGenerationTimestamp=true
-                                ,useBeanValidation=true
-                                ,removeEnumValuePrefix=false
-                                ,sourceFolder=target/main/java
+                            <importMappings>java.time.OffsetDateTime=java.time.Instant</importMappings>
+                            <additionalProperties>
+                                <additionalProperty>java8=true</additionalProperty>
+                                <additionalProperty>modelPackage=io.dataspray.stream.control.client.model
+                                </additionalProperty>
+                                <additionalProperty>apiPackage=io.dataspray.stream.control.client</additionalProperty>
+                                <additionalProperty>invokerPackage=io.dataspray.stream.control.client
+                                </additionalProperty>
+                                <additionalProperty>groupId=io.dataspray.stream.control.client</additionalProperty>
+                                <additionalProperty>artifactId=client</additionalProperty>
+                                <additionalProperty>dateLibrary=java8</additionalProperty>
+                                <additionalProperty>disableHtmlEscaping=true</additionalProperty>
+                                <additionalProperty>hideGenerationTimestamp=true</additionalProperty>
+                                <additionalProperty>useBeanValidation=true</additionalProperty>
+                                <additionalProperty>removeEnumValuePrefix=false</additionalProperty>
+                                <additionalProperty>sourceFolder=target/main/java</additionalProperty>
                             </additionalProperties>
                             <output>${project.build.directory}/generated-sources/client-control</output>
                             <configOptions>
@@ -188,18 +196,22 @@
                             </ignoreFileOverride>
                             <templateDirectory>${project.basedir}/src/main/openapi/template/java</templateDirectory>
                             <typeMappings>OffsetDateTime=Instant,File=byte[]</typeMappings>
-                            <additionalProperties>java8=true
-                                ,modelPackage=io.dataspray.stream.ingest.client.model
-                                ,apiPackage=io.dataspray.stream.ingest.client
-                                ,invokerPackage=io.dataspray.stream.ingest.client
-                                ,groupId=io.dataspray.stream.ingest.client
-                                ,artifactId=client
-                                ,dateLibrary=java8
-                                ,disableHtmlEscaping=true
-                                ,hideGenerationTimestamp=true
-                                ,useBeanValidation=true
-                                ,removeEnumValuePrefix=false
-                                ,sourceFolder=target/main/java
+                            <importMappings>java.time.OffsetDateTime=java.time.Instant</importMappings>
+                            <additionalProperties>
+                                <additionalProperty>java8=true</additionalProperty>
+                                <additionalProperty>modelPackage=io.dataspray.stream.ingest.client.model
+                                </additionalProperty>
+                                <additionalProperty>apiPackage=io.dataspray.stream.ingest.client</additionalProperty>
+                                <additionalProperty>invokerPackage=io.dataspray.stream.ingest.client
+                                </additionalProperty>
+                                <additionalProperty>groupId=io.dataspray.stream.ingest.client</additionalProperty>
+                                <additionalProperty>artifactId=client</additionalProperty>
+                                <additionalProperty>dateLibrary=java8</additionalProperty>
+                                <additionalProperty>disableHtmlEscaping=true</additionalProperty>
+                                <additionalProperty>hideGenerationTimestamp=true</additionalProperty>
+                                <additionalProperty>useBeanValidation=true</additionalProperty>
+                                <additionalProperty>removeEnumValuePrefix=false</additionalProperty>
+                                <additionalProperty>sourceFolder=target/main/java</additionalProperty>
                             </additionalProperties>
                             <output>${project.build.directory}/generated-sources/client-ingest</output>
                             <configOptions>

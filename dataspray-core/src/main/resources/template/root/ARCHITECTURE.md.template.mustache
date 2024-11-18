@@ -5,11 +5,19 @@ graph TB;
 {{#definition.processors}}
     {{taskId}}[{{name}}];
     {{#inputStreams}}
-        {{{uniqueNameCamelUpper}}}([{{{uniqueNameCamelUpper}}}]) --> {{taskId}};
+        Queue{{{uniqueNameCamelUpper}}}([Queue {{{uniqueNameCamelUpper}}}]) --> {{taskId}};
     {{/inputStreams}}
     {{#outputStreams}}
-        {{taskId}} --> {{{uniqueNameCamelUpper}}}([{{{uniqueNameCamelUpper}}}]);
+        {{taskId}} --> Queue{{{uniqueNameCamelUpper}}}([Queue {{{uniqueNameCamelUpper}}}]);
     {{/outputStreams}}
+    {{#web}}
+    {{#endpoints}}
+        Web{{{nameCamelUpper}}}([Web {{{nameCamelUpper}}}]) --> {{taskId}};
+    {{/endpoints}}
+    {{#endpoints.empty}}
+        Web{{{nameCamelUpper}}}([Web]) --> {{taskId}};
+    {{/endpoints.empty}}
+    {{/web}}
 {{/definition.processors}}
 ```
 

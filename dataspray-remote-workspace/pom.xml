@@ -170,9 +170,10 @@
                             <generatorName>typescript-fetch</generatorName>
                             <templateDirectory>${project.basedir}/src/main/openapi/template/typescript-fetch
                             </templateDirectory>
-                            <additionalProperties>typescriptThreePlus=true
-                                ,supportsES6=true
-                                ,enumPropertyNaming=original
+                            <additionalProperties>
+                                <additionalProperty>typescriptThreePlus=true</additionalProperty>
+                                <additionalProperty>supportsES6=true</additionalProperty>
+                                <additionalProperty>enumPropertyNaming=original</additionalProperty>
                             </additionalProperties>
                         </configuration>
                     </execution>
@@ -188,7 +189,9 @@
                             <generatorName>python-fastapi</generatorName>
                             <templateDirectory>${project.basedir}/src/main/openapi/template/python-fastapi
                             </templateDirectory>
-                            <additionalProperties>packageName=dataspray,packageVersion=${project.version-pep440}
+                            <additionalProperties>
+                                <additionalProperty>packageName=dataspray</additionalProperty>
+                                <additionalProperty>packageVersion=${project.version-pep440}</additionalProperty>
                             </additionalProperties>
                         </configuration>
                     </execution>

@@ -32,6 +32,7 @@ import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.TemplateLoader;
 import com.samskivert.mustache.MustacheException;
 import io.dataspray.core.TemplateFiles.TemplateFile;
+import io.dataspray.core.TemplateFiles.TemplateType;
 import io.dataspray.core.definition.model.DataFormat;
 import io.dataspray.core.definition.model.Definition;
 import io.dataspray.core.definition.model.Item;
@@ -314,11 +315,11 @@ public class CodegenImpl implements Codegen {
         Set<Path> trackedFilesAbsolutePath = Sets.newHashSet(fileTracker.getTrackedFiles(project, Optional.of(absoluteTemplatePath), maxDepthOpt));
         files.stream(
                 // First process samples if files don't exist
-                TemplateFiles.TemplateType.SAMPLE,
+                TemplateType.SAMPLE,
                 // Replace any files that need replacing
-                TemplateFiles.TemplateType.REPLACE,
+                TemplateType.REPLACE,
                 // Finally merge existing files; may be combined with samples
-                TemplateFiles.TemplateType.MERGE
+                TemplateType.MERGE
         ).forEach(item -> {
             if (maxDepthOpt.isPresent() && (item.getRelativePath().getNameCount() - 1) > maxDepthOpt.get()) {
                 return;
@@ -343,36 +344,33 @@ public class CodegenImpl implements Codegen {
                     .resolve(filenameWithoutSuffix);
             Path projectToFilePath = project.getAbsolutePath().relativize(absoluteFilePath);
 
-            // Throw if its a link, directory or something else
             boolean fileExists = Files.exists(absoluteFilePath, LinkOption.NOFOLLOW_LINKS);
+            if (item.getType() == TemplateType.SAMPLE && fileExists) {
+                // Sample files are not tracked using Git tracking, they are simply created if they don't exist.
+                // If they exist, it's assumed the user may have modified it for their own purposes.
+                log.trace("Skipping creating sample file which already exists {}", projectToFilePath);
+                return;
+            }
+
+            // Throw if its a link, directory or something else we can't replace
             if (fileExists && !Files.isRegularFile(absoluteFilePath, LinkOption.NOFOLLOW_LINKS)) {
                 throw new RuntimeException("Cannot create template file, not a regular file in its place: " + projectToFilePath);
             }
 
-            switch (item.getType()) {
-                case REPLACE:
-                    // Non-sample files are overwritten every time unless user explicitly excluded the file from gitignore
-                    // Check if file was previously tracked
-                    if (!trackedFilesAbsolutePath.remove(absoluteFilePath)) {
-                        // If not, attempt to track it now
-                        if (!fileTracker.trackFile(project, absoluteFilePath)) {
-                            log.trace("Skipping creating template file overriden by user {}", projectToFilePath);
-                            return;
-                        } else {
-                            log.debug("Creating template file {}", projectToFilePath);
-                        }
-                    } else {
-                        log.debug("Overwriting previously generated file {}", projectToFilePath);
-                    }
-                    break;
-                case SAMPLE:
-                    // Sample files are not tracked using Git tracking, they are simply created if they don't exist.
-                    // If they exist, it's assumed the user may have modified it for their own purposes.
-                    if (fileExists) {
-                        log.trace("Skipping creating sample file which already exists {}", projectToFilePath);
+            if (item.getType() == TemplateType.REPLACE) {
+                // Non-sample files are overwritten every time unless user explicitly excluded the file from gitignore
+                // Check if file was previously tracked
+                if (!trackedFilesAbsolutePath.remove(absoluteFilePath)) {
+                    // If not, attempt to track it now
+                    if (!fileTracker.trackFile(project, absoluteFilePath)) {
+                        log.trace("Skipping creating template file overriden by user {}", projectToFilePath);
                         return;
+                    } else {
+                        log.debug("Creating template file {}", projectToFilePath);
                     }
-                    break;
+                } else {
+                    log.debug("Overwriting previously generated file {}", projectToFilePath);
+                }
             }
 
             // Execute the template
@@ -383,10 +381,10 @@ public class CodegenImpl implements Codegen {
                 return;
             }
 
-            if (item.getType() == TemplateFiles.TemplateType.REPLACE
-                || item.getType() == TemplateFiles.TemplateType.SAMPLE
+            if (item.getType() == TemplateType.REPLACE
+                || item.getType() == TemplateType.SAMPLE
                 // If merging, but file doesn't exist, replace it
-                || (item.getType() == TemplateFiles.TemplateType.MERGE && !fileExists)) {
+                || (item.getType() == TemplateType.MERGE && !fileExists)) {
 
                 // Create parent directories if needed
                 Optional.ofNullable(absoluteFilePath.getParent())
@@ -395,7 +393,7 @@ public class CodegenImpl implements Codegen {
 
                 // Set it to writeable in case we unset it before
                 if (absoluteFilePath.toFile().exists()) {
-                    if (item.getType() == TemplateFiles.TemplateType.REPLACE
+                    if (item.getType() == TemplateType.REPLACE
                         && getFileWriteable(absoluteFilePath)) {
                         if (!overwriteWriteableTemplate) {
                             log.warn("Template file found to have write permission restored, likely edited externally; creating copy with {} suffix: {}", OVERWRITE_BACKUP_SUFFIX, item.getRelativePath());
@@ -423,10 +421,10 @@ public class CodegenImpl implements Codegen {
 
                 // If file is tracked, remove the write permission
                 // This is an extra warning for the user that the file will be re-generated and should not be modified
-                if (item.getType() == TemplateFiles.TemplateType.REPLACE) {
+                if (item.getType() == TemplateType.REPLACE) {
                     setFileWriteable(absoluteFilePath, false);
                 }
-            } else if (item.getType() == TemplateFiles.TemplateType.MERGE) {
+            } else if (item.getType() == TemplateType.MERGE) {
                 // Perform a merge
                 mergeStrategies.findMergeStrategy(item)
                         .orElseThrow(() -> new RuntimeException("Cannot merge template file, no merge strategy found for file: " + item.getRelativePath()))
@@ -458,7 +456,7 @@ public class CodegenImpl implements Codegen {
                     .getParent()
                     .resolve(requestedFilename + MUSTACHE_FILE_EXTENSION_INCLUDE)
                     .normalize();
-            return mustacheFile.getTemplateFiles().stream(TemplateFiles.TemplateType.INCLUDE)
+            return mustacheFile.getTemplateFiles().stream(TemplateType.INCLUDE)
                     .filter(f -> f.getRelativePath().equals(requestedPath))
                     .map(f -> new InputStreamReader(f.openInputStream(), Charsets.UTF_8))
                     .findAny()

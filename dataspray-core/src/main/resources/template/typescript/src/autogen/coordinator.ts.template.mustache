@@ -42,8 +42,8 @@ export interface StreamCoordinator {
      * State management backed by DynamoDB with custom namespace.
      * <p>
      * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
-     * @param namespace Unique key for the state.
      * @param ttlInSec Optional second-precision time-to-live for the state. Resets on every write.
+     * @param namespace Unique key for the state.
      */
     stateForNamespace(ttlInSec: number | undefined, namespace: string[]): StateManager;
 
@@ -83,8 +83,8 @@ export interface WebCoordinator {
      * State management backed by DynamoDB with custom namespace.
      * <p>
      * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
-     * @param namespace Unique key for the state.
      * @param ttlInSec Optional second-precision time-to-live for the state. Resets on every write.
+     * @param namespace Unique key for the state.
      */
     stateForNamespace(ttlInSec: number | undefined, namespace: string[]): StateManager;
 
