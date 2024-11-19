@@ -4,18 +4,10 @@ package {{{definition.javaPackage}}}.autogen;
 import lombok.SneakyThrows;
 import io.dataspray.runner.RawCoordinator;
 import io.dataspray.runner.StoreType;
-{{#processor.hasJsonDataFormat}}
 import io.dataspray.runner.util.GsonUtil;
-{{/processor.hasJsonDataFormat}}
-{{^processor.stringOutputStreams.empty}}
 import java.nio.charset.StandardCharsets;
-{{/processor.stringOutputStreams.empty}}
-{{^processor.jsonOutputStreams.empty}}
 import java.nio.charset.StandardCharsets;
-{{/processor.jsonOutputStreams.empty}}
-{{^processor.avroOutputStreams.empty}}
 import java.io.ByteArrayOutputStream;
-{{/processor.avroOutputStreams.empty}}
 {{#processor.hasDynamoState}}
 import io.dataspray.runner.StateManager;
 import java.time.Duration;

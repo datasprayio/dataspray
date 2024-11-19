@@ -1,13 +1,13 @@
-{{^processor.jsonStreams.empty}}
+{{^processor.jsonDataFormats.empty}}
 import Ajv from 'ajv'
 import standaloneCode from 'ajv/dist/standalone/index.js'
 import { createWriteStream, readFileSync, writeFileSync } from 'fs'
 import { compile, compileFromFile } from 'json-schema-to-typescript'
 
 const schemas = [
-{{#processor.jsonStreams}}
-    '../{{{util.dataFormatsFolder}}}/{{{this.dataFormat.nameDir}}}/{{{this.dataFormat.nameCamelLower}}}.schema.json',
-{{/processor.jsonStreams}}
+{{#processor.jsonDataFormats}}
+    '../{{{util.dataFormatsFolder}}}/{{{nameDir}}}/{{{nameCamelLower}}}.schema.json',
+{{/processor.jsonDataFormats}}
 ]
     .map(filePath => readFileSync(filePath).toString())
     .map(content => JSON.parse(content));
@@ -44,4 +44,4 @@ stream.once('open', async fd => {
     stream.end();
 });
 
-{{/processor.jsonStreams.empty}}
+{{/processor.jsonDataFormats.empty}}

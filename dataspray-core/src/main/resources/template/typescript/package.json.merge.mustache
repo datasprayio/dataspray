@@ -2,9 +2,9 @@
   "main": "src/index.ts",
   "scripts": {
     "test": "jest",
-    {{^processor.jsonStreams.empty}}
+    {{^processor.jsonDataFormats.empty}}
     "prebuild": "ts-node ./prebuild.ts",
-    {{/processor.jsonStreams.empty}}
+    {{/processor.jsonDataFormats.empty}}
     "build": "esbuild src/index.ts --bundle --minify --sourcemap --platform=node --target=es2020 --outfile=dist/index.js",
     "postbuild": "ts-node ./postbuild.ts"
   },
@@ -22,10 +22,10 @@
     {{#processor.hasDynamoState}}
     "aws-sdk-client-mock": "^4.1.0",
     {{/processor.hasDynamoState}}
-    {{^processor.jsonStreams.empty}}
+    {{^processor.jsonDataFormats.empty}}
     "ajv": "^8.12.0",
     "json-schema-to-typescript": "^13.1.2",
-    {{/processor.jsonStreams.empty}}
+    {{/processor.jsonDataFormats.empty}}
     {{#processor.web}}
     "media-typer": "^1.1.0",
     {{/processor.web}}

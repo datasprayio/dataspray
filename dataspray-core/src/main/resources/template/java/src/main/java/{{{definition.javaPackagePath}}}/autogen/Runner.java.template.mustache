@@ -7,20 +7,14 @@ import {{{definition.javaPackage}}}.{{{processor.nameCamelUpper}}};
 {{#processor.dataFormats}}
 import {{{definition.javaPackage}}}.autogen.{{{nameCamelUpper}}};
 {{/processor.dataFormats}}
-{{^processor.avroInputStreams.empty}}
 import java.io.IOException;
-{{/processor.avroInputStreams.empty}}
-{{#processor.hasJsonDataFormat}}
 import io.dataspray.runner.util.GsonUtil;
-{{/processor.hasJsonDataFormat}}
 import io.dataspray.runner.Entrypoint;
 import io.dataspray.runner.MessageImpl;
 import io.dataspray.runner.MessageMetadata;
 import io.dataspray.runner.RawCoordinator;
 import io.dataspray.runner.StoreType;
-{{^processor.stringInputStreams.empty}}
 import java.nio.charset.StandardCharsets;
-{{/processor.stringInputStreams.empty}}
 {{#processor.web}}
 import io.dataspray.runner.dto.web.HttpRequest;
 import io.dataspray.runner.dto.web.HttpResponse;

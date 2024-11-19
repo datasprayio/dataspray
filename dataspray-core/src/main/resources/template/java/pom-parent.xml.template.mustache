@@ -23,15 +23,15 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <lombok.version>1.18.30</lombok.version>
         <guava.version>33.3.1-jre</guava.version>
-        {{^processor.jsonStreams.empty}}
+        {{^processor.jsonDataFormats.empty}}
         <gson.version>2.9.0</gson.version>
-        {{/processor.jsonStreams.empty}}
-        {{^processor.protobufStreams.empty}}
+        {{/processor.jsonDataFormats.empty}}
+        {{^processor.protobufDataFormats.empty}}
         <protobuf.version>3.7.0</protobuf.version>
-        {{/processor.protobufStreams.empty}}
-        {{^processor.avroStreams.empty}}
+        {{/processor.protobufDataFormats.empty}}
+        {{^processor.avroDataFormats.empty}}
         <avro.version>1.11.0</avro.version>
-        {{/processor.avroStreams.empty}}
+        {{/processor.avroDataFormats.empty}}
     </properties>
 
     <dependencies>
@@ -65,7 +65,7 @@
             <artifactId>aws-lambda-java-events</artifactId>
             <version>3.11.1</version>
         </dependency>
-        {{^processor.jsonStreams.empty}}
+        {{^processor.jsonDataFormats.empty}}
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
@@ -76,8 +76,8 @@
             <artifactId>jsr305</artifactId>
             <version>3.0.2</version>
         </dependency>
-        {{/processor.jsonStreams.empty}}
-        {{^processor.protobufStreams.empty}}
+        {{/processor.jsonDataFormats.empty}}
+        {{^processor.protobufDataFormats.empty}}
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
@@ -88,14 +88,14 @@
             <artifactId>protobuf-java-util</artifactId>
             <version>${protobuf.version}</version>
         </dependency>
-        {{/processor.protobufStreams.empty}}
-        {{^processor.avroStreams.empty}}
+        {{/processor.protobufDataFormats.empty}}
+        {{^processor.avroDataFormats.empty}}
         <dependency>
           <groupId>org.apache.avro</groupId>
           <artifactId>avro</artifactId>
           <version>${avro.version}</version>
         </dependency>
-        {{/processor.avroStreams.empty}}
+        {{/processor.avroDataFormats.empty}}
 
         <!-- Test dependencies -->
         <dependency>
@@ -107,7 +107,7 @@
     </dependencies>
 
     <build>
-        {{^processor.protobufStreams.empty}}
+        {{^processor.protobufDataFormats.empty}}
         <extensions>
             <extension>
                 <groupId>kr.motd.maven</groupId>
@@ -115,7 +115,7 @@
                 <version>1.7.0</version>
             </extension>
         </extensions>
-        {{/processor.protobufStreams.empty}}
+        {{/processor.protobufDataFormats.empty}}
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -137,7 +137,7 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
-            {{^processor.jsonStreams.empty}}
+            {{^processor.jsonDataFormats.empty}}
 
             <!-- Mapping json schema(s) to Java POJOs -->
             <plugin>
@@ -146,9 +146,9 @@
                 <version>1.1.2</version>
                 <configuration>
                     <sourcePaths>
-                        {{#processor.jsonStreams}}
-                        <sourcePath>${project.basedir}/../{{{util.dataFormatsFolder}}}/{{{this.dataFormat.nameDir}}}/</sourcePath>
-                        {{/processor.jsonStreams}}
+                        {{#processor.jsonDataFormats}}
+                        <sourcePath>${project.basedir}/../{{{util.dataFormatsFolder}}}/{{{nameDir}}}/</sourcePath>
+                        {{/processor.jsonDataFormats}}
                     </sourcePaths>
                     <outputDirectory>${project.build.directory}/generated-sources/json</outputDirectory>
                     <targetPackage>{{{definition.javaPackage}}}.autogen</targetPackage>
@@ -183,8 +183,8 @@
                     </execution>
                 </executions>
             </plugin>
-            {{/processor.jsonStreams.empty}}
-            {{^processor.protobufStreams.empty}}
+            {{/processor.jsonDataFormats.empty}}
+            {{^processor.protobufDataFormats.empty}}
 
             <!-- Mapping Protobuf schema(s) to Java POJOs -->
             <plugin>
@@ -203,16 +203,16 @@
                 <configuration>
                     <protoSourceRoot>${project.basedir}/../{{{util.dataFormatsFolder}}}/</protoSourceRoot>
                     <includes>
-                        {{#processor.protobufStreams}}
-                        <include>{{{this.dataFormat.nameDir}}}/**/*.proto</include>
-                        {{/processor.protobufStreams}}
+                        {{#processor.protobufDataFormats}}
+                        <include>{{{nameDir}}}/**/*.proto</include>
+                        {{/processor.protobufDataFormats}}
                     </includes>
                     <outputDirectory>${project.build.directory}/generated-sources/protobuf</outputDirectory>
                     <protocArtifact>com.google.protobuf:protoc:3.7.0:exe:${os.detected.classifier}</protocArtifact>
                 </configuration>
             </plugin>
-            {{/processor.protobufStreams.empty}}
-            {{^processor.avroStreams.empty}}
+            {{/processor.protobufDataFormats.empty}}
+            {{^processor.avroDataFormats.empty}}
 
             <!-- Mapping Avro schema(s) to Java POJOs -->
             <plugin>
@@ -222,9 +222,9 @@
                 <configuration>
                     <sourceDirectory>${project.basedir}/../{{{util.dataFormatsFolder}}}/</sourceDirectory>
                     <includes>
-                        {{#processor.avroStreams}}
-                        <include>{{{this.dataFormat.nameDir}}}/**/*.avsc</include>
-                        {{/processor.avroStreams}}
+                        {{#processor.avroDataFormats}}
+                        <include>{{{nameDir}}}/**/*.avsc</include>
+                        {{/processor.avroDataFormats}}
                     </includes>
                     <outputDirectory>${project.build.directory}/generated-sources/avro/</outputDirectory>
                     <stringType>String</stringType>
@@ -242,7 +242,7 @@
                     </execution>
                 </executions>
             </plugin>
-            {{/processor.avroStreams.empty}}
+            {{/processor.avroDataFormats.empty}}
 
             <!-- Create final uber jar for upload -->
             <plugin>

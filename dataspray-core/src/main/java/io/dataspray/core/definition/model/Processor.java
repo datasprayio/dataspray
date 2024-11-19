@@ -24,7 +24,6 @@ package io.dataspray.core.definition.model;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.jcabi.aspects.Cacheable;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.Nonnull;
@@ -35,8 +34,6 @@ import lombok.Value;
 import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -93,119 +90,10 @@ public class Processor extends Item {
                 .build();
     }
 
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getJsonStreams() {
-        return getStreams(true, true, DataFormat.Serde.JSON);
-    }
-
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getProtobufStreams() {
-        return getStreams(true, true, DataFormat.Serde.PROTOBUF);
-    }
-
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getAvroStreams() {
-        return getStreams(true, true, DataFormat.Serde.AVRO);
-    }
-
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getBinaryInputStreams() {
-        return getStreams(true, false, DataFormat.Serde.BINARY);
-    }
-
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getStringInputStreams() {
-        return getStreams(true, false, DataFormat.Serde.STRING);
-    }
-
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getGeneratedInputStreams() {
-        return getStreams(true, false,
-                DataFormat.Serde.JSON,
-                DataFormat.Serde.PROTOBUF,
-                DataFormat.Serde.AVRO);
-    }
-
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getJsonInputStreams() {
-        return getStreams(true, false, DataFormat.Serde.JSON);
-    }
-
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getProtobufInputStreams() {
-        return getStreams(true, false, DataFormat.Serde.PROTOBUF);
-    }
-
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getAvroInputStreams() {
-        return getStreams(true, false, DataFormat.Serde.AVRO);
-    }
-
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getBinaryOutputStreams() {
-        return getStreams(false, true, DataFormat.Serde.BINARY);
-    }
-
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getStringOutputStreams() {
-        return getStreams(false, true, DataFormat.Serde.STRING);
-    }
-
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getGeneratedOutputStreams() {
-        return getStreams(false, true,
-                DataFormat.Serde.JSON,
-                DataFormat.Serde.PROTOBUF,
-                DataFormat.Serde.AVRO);
-    }
-
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getJsonOutputStreams() {
-        return getStreams(false, true, DataFormat.Serde.JSON);
-    }
-
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getProtobufOutputStreams() {
-        return getStreams(false, true, DataFormat.Serde.PROTOBUF);
-    }
-
-    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public ImmutableSet<StreamLink> getAvroOutputStreams() {
-        return getStreams(false, true, DataFormat.Serde.AVRO);
-    }
-
-    private ImmutableSet<StreamLink> getStreams(boolean includeInputs, boolean includeOutputs, DataFormat.Serde... serdesArray) {
-        List<ImmutableSet<StreamLink>> streamSets = Lists.newArrayList();
-        ImmutableSet<DataFormat.Serde> serdes = ImmutableSet.copyOf(serdesArray);
-        if (includeInputs) {
-            streamSets.add(getInputStreams());
-        }
-        if (includeOutputs) {
-            streamSets.add(getOutputStreams());
-        }
-        return streamSets.stream()
-                .flatMap(Collection::stream)
-                .filter(streamLink -> serdes.contains(streamLink.getDataFormat().getSerde()))
-                .distinct()
-                .collect(ImmutableSet.toImmutableSet());
-    }
-
-    /**
-     * Checks whether a stream or a web request has a JSON data format.
-     */
-    public boolean hasJsonDataFormat() {
-        return getStreams().stream()
-                       .anyMatch(streamLink -> streamLink.getDataFormat().getSerde() == DataFormat.Serde.JSON)
-               || getWebOpt()
-                       .stream()
-                       .flatMap(w -> w.getEndpoints().stream())
-                       .anyMatch(e -> e.getRequestDataFormat() != null
-                                      && e.getRequestDataFormat().getSerde() == DataFormat.Serde.JSON);
-    }
-
     /**
      * Gets all DataFormats across web requests and streams.
      */
+    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public ImmutableSet<DataFormat> getDataFormats() {
         return ImmutableSet.<DataFormat>builder()
                 .addAll(getStreams().stream()
@@ -214,13 +102,34 @@ public class Processor extends Item {
                 .addAll(getWebOpt()
                         .stream()
                         .flatMap(w -> w.getEndpoints().stream())
-                        .flatMap(endpoint -> Stream.of(
-                                endpoint.getRequestDataFormatOpt(),
-                                endpoint.getResponseDataFormatOpt()))
+                        .flatMap(e -> Stream.of(
+                                e.getRequestDataFormatOpt(),
+                                e.getResponseDataFormatOpt()))
                         .filter(Optional::isPresent)
                         .map(Optional::get)
                         .collect(Collectors.toSet()))
                 .build();
+    }
+
+    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public ImmutableSet<DataFormat> getJsonDataFormats() {
+        return getDataFormats().stream()
+                .filter(d -> d.getSerde() == DataFormat.Serde.JSON)
+                .collect(ImmutableSet.toImmutableSet());
+    }
+
+    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public ImmutableSet<DataFormat> getAvroDataFormats() {
+        return getDataFormats().stream()
+                .filter(d -> d.getSerde() == DataFormat.Serde.AVRO)
+                .collect(ImmutableSet.toImmutableSet());
+    }
+
+    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public ImmutableSet<DataFormat> getProtobufDataFormats() {
+        return getDataFormats().stream()
+                .filter(d -> d.getSerde() == DataFormat.Serde.PROTOBUF)
+                .collect(ImmutableSet.toImmutableSet());
     }
 
     public void initialize() {

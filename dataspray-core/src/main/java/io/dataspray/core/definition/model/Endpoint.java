@@ -45,7 +45,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 @EqualsAndHashCode(callSuper = true)
 public class Endpoint extends Item {
 
-    private static final ImmutableSet<DataFormat.Serde> SUPPORTED_DATA_FORMATS = ImmutableSet.copyOf(EnumSet
+    private static final ImmutableSet<DataFormat.Serde> REQUEST_SUPPORTED_DATA_FORMATS = ImmutableSet.copyOf(EnumSet
+            // Exclude the following unsupported types
+            .complementOf(EnumSet.of(
+                    DataFormat.Serde.PROTOBUF,
+                    DataFormat.Serde.AVRO)));
+    private static final ImmutableSet<DataFormat.Serde> RESPONSE_SUPPORTED_DATA_FORMATS = ImmutableSet.copyOf(EnumSet
             // Exclude the following unsupported types
             .complementOf(EnumSet.of(
                     DataFormat.Serde.PROTOBUF,
@@ -152,9 +157,14 @@ public class Endpoint extends Item {
 
     public void initialize() {
         if (getRequestDataFormat() != null) {
-            checkArgument(SUPPORTED_DATA_FORMATS.contains(getRequestDataFormat().getSerde()),
-                    "Data format %s is not supported by endpoint body under '%s'",
+            checkArgument(REQUEST_SUPPORTED_DATA_FORMATS.contains(getRequestDataFormat().getSerde()),
+                    "Request data format %s is not supported by endpoint body under '%s'",
                     getRequestDataFormat().getSerde(), getName());
+        }
+        if (getResponseDataFormat() != null) {
+            checkArgument(RESPONSE_SUPPORTED_DATA_FORMATS.contains(getResponseDataFormat().getSerde()),
+                    "Response data format %s is not supported by endpoint body under '%s'",
+                    getResponseDataFormat().getSerde(), getName());
         }
     }
 

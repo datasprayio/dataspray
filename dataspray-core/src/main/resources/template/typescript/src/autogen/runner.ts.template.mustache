@@ -33,9 +33,9 @@ import {
     {{#processor.dataFormats}}
     {{{nameCamelUpper}}},
     {{/processor.dataFormats}}
-    {{#processor.jsonInputStreams}}
-    validate{{{dataFormat.nameCamelUpper}}},
-    {{/processor.jsonInputStreams}}
+    {{#processor.jsonDataFormats}}
+    validate{{{nameCamelUpper}}},
+    {{/processor.jsonDataFormats}}
 } from './streams';
 {{/processor.dataFormats.empty}}
 import { {{{processor.nameCamelUpper}}} } from '../{{{processor.nameCamelLower}}}';
