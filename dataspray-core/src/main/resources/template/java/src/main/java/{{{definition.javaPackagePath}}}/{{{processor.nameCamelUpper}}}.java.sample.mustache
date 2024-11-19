@@ -1,17 +1,18 @@
 package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
+import {{{definition.javaPackage}}}.autogen.Processor;
 {{#processor.dataFormats}}
 import {{{definition.javaPackage}}}.autogen.{{{nameCamelUpper}}};
 {{/processor.dataFormats}}
 {{^processor.inputStreams.empty}}
 import io.dataspray.runner.Message;
 import {{{definition.javaPackage}}}.autogen.StreamCoordinator;
-import {{{definition.javaPackage}}}.autogen.Processor;
 {{/processor.inputStreams.empty}}
 {{#processor.web}}
 import jakarta.annotation.Nullable;
 import io.dataspray.runner.dto.web.HttpResponse;
+import io.dataspray.runner.dto.web.HttpResponse.HttpResponseBuilder;
 import {{{definition.javaPackage}}}.autogen.WebCoordinator;
 {{#endpoints.empty}}
 import io.dataspray.runner.dto.web.HttpRequest;
@@ -25,7 +26,7 @@ public class {{{processor.nameCamelUpper}}} implements Processor {
 
     public HttpResponse web{{{nameCamelUpper}}}(
         {{>../../../web-method-params}}
-        HttpResponse.HttpResponseBuilder responseBuilder,
+        HttpResponseBuilder<{{#responseDataFormat}}{{{nameCamelUpper}}}{{/responseDataFormat}}{{^responseDataFormat}}Object{{/responseDataFormat}}> responseBuilder,
         WebCoordinator coordinator
     ) {
 
@@ -36,7 +37,7 @@ public class {{{processor.nameCamelUpper}}} implements Processor {
     {{#endpoints.empty}}
 
     @Override
-    public HttpResponse web(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder
+    public HttpResponse web(HttpRequest request, HttpResponseBuilder<Object> responseBuilder
     ) {
         // TODO
         return responseBuilder.ok().build();

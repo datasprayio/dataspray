@@ -1,4 +1,4 @@
-                {{#getBodyDataFormat}}
+                {{#requestDataFormat}}
                 {{#isSerdeBinary}}
                 request.getBodyAsBinary(),
                 {{/isSerdeBinary}}
@@ -6,9 +6,9 @@
                 request.getBodyAsString(),
                 {{/isSerdeString}}
                 {{#isSerdeJson}}
-                gson.fromJson(request.getBodyAsString(), {{{nameCamelUpper}}}.class),
+                GsonUtil.get().fromJson(request.getBodyAsString(), {{{nameCamelUpper}}}.class),
                 {{/isSerdeJson}}
-                {{/getBodyDataFormat}}
+                {{/requestDataFormat}}
                 {{#pathParams}}
                 pathDirs[{{{pathIndex}}}],
                 {{/pathParams}}

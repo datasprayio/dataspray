@@ -3,16 +3,11 @@ package {{{definition.javaPackage}}};
 {{#util.javaImportsFormat}}
 import org.junit.Test;
 import {{{definition.javaPackage}}}.autogen.AbstractTest;
-{{#processor.dataFormats}}
-import {{{definition.javaPackage}}}.autogen.{{{nameCamelUpper}}};
-{{/processor.dataFormats}}
-{{^processor.inputStreams.empty}}
-import org.mockito.Mockito;
 import {{{definition.javaPackage}}}.autogen.TestCoordinator;
+import org.mockito.Mockito;
 {{#processor.dataFormats}}
 import {{{definition.javaPackage}}}.autogen.{{{nameCamelUpper}}};
 {{/processor.dataFormats}}
-{{/processor.inputStreams.empty}}
 {{#processor.web}}
 import org.junit.Assert;
 import io.dataspray.runner.dto.web.MockHttpRequest;

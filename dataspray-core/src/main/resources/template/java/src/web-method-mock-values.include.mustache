@@ -1,5 +1,5 @@
             {{#util.trim}}
-            {{#getBodyDataFormat}}
+            {{#requestDataFormat}}
             {{#isSerdeBinary}}
             new byte[] {0x00, 0x01, 0x02},
             {{/isSerdeBinary}}
@@ -9,7 +9,7 @@
             {{#isSerdeJson}}
             Mockito.mock({{{nameCamelUpper}}}.class),
             {{/isSerdeJson}}
-            {{/getBodyDataFormat}}
+            {{/requestDataFormat}}
             {{#pathParams}}
             {{#isRequired}}"{{{nameCamelLower}}}Path"{{/isRequired}}{{^isRequired}}null{{/isRequired}},
             {{/pathParams}}

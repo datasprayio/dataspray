@@ -110,21 +110,21 @@ public class Endpoint extends Item {
         return cookies == null ? ImmutableSet.of() : cookies;
     }
 
-    String bodyDataFormatName;
+    String requestDataFormatName;
 
     @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
-    public DataFormat getBodyDataFormat() {
-        if (bodyDataFormatName == null) {
+    public DataFormat getRequestDataFormat() {
+        if (requestDataFormatName == null) {
             return null;
         }
         return getParent().getParent().getParent().getDataFormats().stream()
-                .filter(dataFormat -> dataFormat.getName().equals(getBodyDataFormatName()))
+                .filter(dataFormat -> dataFormat.getName().equals(getRequestDataFormatName()))
                 .findAny()
-                .orElseThrow(() -> new RuntimeException("Data format not found with name " + getBodyDataFormatName() + " for endpoint " + getPath()));
+                .orElseThrow(() -> new RuntimeException("Request data format not found with name " + getRequestDataFormatName() + " for endpoint " + getPath()));
     }
 
-    public Optional<DataFormat> getBodyDataFormatOpt() {
-        return Optional.ofNullable(getBodyDataFormat());
+    public Optional<DataFormat> getRequestDataFormatOpt() {
+        return Optional.ofNullable(getRequestDataFormat());
     }
 
     ImmutableSet<String> contentTypes;
@@ -133,11 +133,28 @@ public class Endpoint extends Item {
         return contentTypes == null ? ImmutableSet.of() : contentTypes;
     }
 
+    String responseDataFormatName;
+
+    @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
+    public DataFormat getResponseDataFormat() {
+        if (responseDataFormatName == null) {
+            return null;
+        }
+        return getParent().getParent().getParent().getDataFormats().stream()
+                .filter(dataFormat -> dataFormat.getName().equals(getResponseDataFormatName()))
+                .findAny()
+                .orElseThrow(() -> new RuntimeException("Response data format not found with name " + getResponseDataFormatName() + " for endpoint " + getPath()));
+    }
+
+    public Optional<DataFormat> getResponseDataFormatOpt() {
+        return Optional.ofNullable(getResponseDataFormat());
+    }
+
     public void initialize() {
-        if (getBodyDataFormat() != null) {
-            checkArgument(SUPPORTED_DATA_FORMATS.contains(getBodyDataFormat().getSerde()),
+        if (getRequestDataFormat() != null) {
+            checkArgument(SUPPORTED_DATA_FORMATS.contains(getRequestDataFormat().getSerde()),
                     "Data format %s is not supported by endpoint body under '%s'",
-                    getBodyDataFormat().getSerde(), getName());
+                    getRequestDataFormat().getSerde(), getName());
         }
     }
 

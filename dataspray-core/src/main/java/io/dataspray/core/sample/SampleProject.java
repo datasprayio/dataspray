@@ -106,7 +106,8 @@ public enum SampleProject {
                                                     .cookies(ImmutableSet.of(
                                                             Parameter.builder().name("session").isRequired(true).build()))
                                                     .contentTypes(ImmutableSet.of("application/json"))
-                                                    .bodyDataFormatName("register")
+                                                    .requestDataFormatName("register")
+                                                    .responseDataFormatName("register")
                                                     .headers(ImmutableSet.of(
                                                             Parameter.builder().name("Authorization").isRequired(true).build()))
                                                     .build()))
@@ -194,7 +195,8 @@ public enum SampleProject {
                                                     .cookies(ImmutableSet.of(
                                                             Parameter.builder().name("session").isRequired(true).build()))
                                                     .contentTypes(ImmutableSet.of("application/json"))
-                                                    .bodyDataFormatName("register")
+                                                    .requestDataFormatName("register")
+                                                    .responseDataFormatName("register")
                                                     .headers(ImmutableSet.of(
                                                             Parameter.builder().name("Authorization").isRequired(true).build()))
                                                     .build()))

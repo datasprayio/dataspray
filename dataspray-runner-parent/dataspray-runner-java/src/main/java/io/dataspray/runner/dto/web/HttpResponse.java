@@ -22,6 +22,7 @@
 
 package io.dataspray.runner.dto.web;
 
+import io.dataspray.runner.util.GsonUtil;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
@@ -52,19 +53,19 @@ public class HttpResponse {
     @Builder.Default
     boolean isBase64Encoded = false;
 
-    public static class HttpResponseBuilder {
+    public static class HttpResponseBuilder<T> {
 
         /**
          * The server successfully processed the request, and is not returning any content.
          */
-        public HttpResponseBuilder ok() {
+        public HttpResponseBuilder<T> ok() {
             return statusCode(204);
         }
 
         /**
          * The server successfully processed the request, and is returning content.
          */
-        public HttpResponseBuilder ok(String bodyStr) {
+        public HttpResponseBuilder<T> ok(String bodyStr) {
             return statusCode(200)
                     .body(bodyStr);
         }
@@ -72,7 +73,7 @@ public class HttpResponse {
         /**
          * The server successfully processed the request, and is returning content.
          */
-        public HttpResponseBuilder ok(byte[] bodyBytes) {
+        public HttpResponseBuilder<T> ok(byte[] bodyBytes) {
             return statusCode(200)
                     .body(bodyBytes);
         }
@@ -80,14 +81,14 @@ public class HttpResponse {
         /**
          * The requested resource could not be found but may be available in the future.
          */
-        public HttpResponseBuilder notFound() {
+        public HttpResponseBuilder<T> notFound() {
             return statusCode(404);
         }
 
         /**
          * The request contained valid data and was understood by the server, but the server is refusing action.
          */
-        public HttpResponseBuilder forbidden() {
+        public HttpResponseBuilder<T> forbidden() {
             return statusCode(403);
         }
 
@@ -95,28 +96,28 @@ public class HttpResponse {
          * Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not
          * yet been provided.
          */
-        public HttpResponseBuilder unauthorized() {
+        public HttpResponseBuilder<T> unauthorized() {
             return statusCode(401);
         }
 
         /**
          * A generic server error has occurred.
          */
-        public HttpResponseBuilder internalServerError() {
+        public HttpResponseBuilder<T> internalServerError() {
             return statusCode(500);
         }
 
         /**
          * Tea pot requesting to brew coffee.
          */
-        public HttpResponseBuilder teaPot() {
+        public HttpResponseBuilder<T> teaPot() {
             return statusCode(418);
         }
 
         /**
          * String body without base64 encoding.
          */
-        public HttpResponseBuilder body(String bodyStr) {
+        public HttpResponseBuilder<T> body(String bodyStr) {
             this.isBase64Encoded(false);
             this.body$value = bodyStr;
             this.body$set = true;
@@ -129,13 +130,21 @@ public class HttpResponse {
         /**
          * Binary body with base64 encoding.
          */
-        public HttpResponseBuilder body(byte[] bodyBytes) {
+        public HttpResponseBuilder<T> body(byte[] bodyBytes) {
             this.isBase64Encoded(true);
             this.body$value = Base64.getEncoder().encodeToString(bodyBytes);
             this.body$set = true;
             if (this.statusCode$value == 204) {
                 this.statusCode(200);
             }
+            return this;
+        }
+
+        /**
+         * Custom type as body.
+         */
+        public HttpResponseBuilder<T> body(T body) {
+            body(GsonUtil.get().toJson(body));
             return this;
         }
     }

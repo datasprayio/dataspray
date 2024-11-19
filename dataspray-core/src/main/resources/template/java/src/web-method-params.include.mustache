@@ -1,5 +1,5 @@
         {{#util.trim}}
-        {{#getBodyDataFormat}}
+        {{#requestDataFormat}}
         {{#isSerdeBinary}}
         byte[] {{{nameCamelLower}}},
         {{/isSerdeBinary}}
@@ -9,7 +9,7 @@
         {{#isSerdeJson}}
         {{{nameCamelUpper}}} {{{nameCamelLower}}},
         {{/isSerdeJson}}
-        {{/getBodyDataFormat}}
+        {{/requestDataFormat}}
         {{#pathParams}}
         {{^isRequired}}@Nullable {{/isRequired}}String {{{nameCamelLower}}}Path,
         {{/pathParams}}

@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Value
 @SuperBuilder(toBuilder = true)
@@ -198,8 +199,8 @@ public class Processor extends Item {
                || getWebOpt()
                        .stream()
                        .flatMap(w -> w.getEndpoints().stream())
-                       .anyMatch(e -> e.getBodyDataFormat() != null
-                                      && e.getBodyDataFormat().getSerde() == DataFormat.Serde.JSON);
+                       .anyMatch(e -> e.getRequestDataFormat() != null
+                                      && e.getRequestDataFormat().getSerde() == DataFormat.Serde.JSON);
     }
 
     /**
@@ -213,7 +214,9 @@ public class Processor extends Item {
                 .addAll(getWebOpt()
                         .stream()
                         .flatMap(w -> w.getEndpoints().stream())
-                        .map(Endpoint::getBodyDataFormatOpt)
+                        .flatMap(endpoint -> Stream.of(
+                                endpoint.getRequestDataFormatOpt(),
+                                endpoint.getResponseDataFormatOpt()))
                         .filter(Optional::isPresent)
                         .map(Optional::get)
                         .collect(Collectors.toSet()))

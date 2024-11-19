@@ -1,4 +1,4 @@
-                {{#getBodyDataFormat}}
+                {{#requestDataFormat}}
                 {{#isSerdeBinary}}
                 request.isBase64Encoded ? Buffer.from(request.body, 'base64') : request.body,
                 {{/isSerdeBinary}}
@@ -8,7 +8,7 @@
                 {{#isSerdeJson}}
                 bodyJson,
                 {{/isSerdeJson}}
-                {{/getBodyDataFormat}}
+                {{/requestDataFormat}}
                 {{#pathParams}}
                 pathDirs[{{{pathIndex}}}],
                 {{/pathParams}}

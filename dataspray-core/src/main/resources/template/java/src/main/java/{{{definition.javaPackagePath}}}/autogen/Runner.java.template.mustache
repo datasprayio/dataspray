@@ -10,11 +10,9 @@ import {{{definition.javaPackage}}}.autogen.{{{nameCamelUpper}}};
 {{^processor.avroInputStreams.empty}}
 import java.io.IOException;
 {{/processor.avroInputStreams.empty}}
-{{^processor.jsonInputStreams.empty}}
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-{{/processor.jsonInputStreams.empty}}
+{{#processor.hasJsonDataFormat}}
+import io.dataspray.runner.util.GsonUtil;
+{{/processor.hasJsonDataFormat}}
 import io.dataspray.runner.Entrypoint;
 import io.dataspray.runner.MessageImpl;
 import io.dataspray.runner.MessageMetadata;
@@ -26,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 {{#processor.web}}
 import io.dataspray.runner.dto.web.HttpRequest;
 import io.dataspray.runner.dto.web.HttpResponse;
+import io.dataspray.runner.dto.web.HttpResponse.HttpResponseBuilder;
 import jakarta.ws.rs.core.MediaType;
 import com.google.common.collect.ImmutableList;
 import java.util.Optional;
@@ -42,16 +41,10 @@ public class Runner extends Entrypoint {
     {{/endpoints}}
     {{/processor.web}}
     private final Processor processor = new {{{processor.nameCamelUpper}}}();
-    {{#processor.hasJsonDataFormat}}
-    private final Gson gson = new GsonBuilder()
-        .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
-        .disableHtmlEscaping()
-        .create();
-    {{/processor.hasJsonDataFormat}}
     {{#processor.web}}
 
     @Override
-    public HttpResponse web(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder, RawCoordinator rawCoordinator) {
+    public HttpResponse web(HttpRequest request, RawCoordinator rawCoordinator) {
 
         WebCoordinator coordinator = new CoordinatorImpl(
             rawCoordinator{{#processor.hasDynamoState}},
@@ -69,12 +62,15 @@ public class Runner extends Entrypoint {
         ) {
             return processor.web{{{nameCamelUpper}}}(
                 {{>../../../../web-request-to-params}}
-                responseBuilder,
+                HttpResponse.<{{#responseDataFormat}}{{{nameCamelUpper}}}{{/responseDataFormat}}{{^responseDataFormat}}Object{{/responseDataFormat}}>builder(),
                 coordinator);
         }
         {{/endpoints}}
 
-        return processor.web(request, responseBuilder, coordinator);
+        return processor.web(
+            request,
+            HttpResponse.<Object>builder(),
+            coordinator);
     }
     {{/processor.web}}
     {{^processor.inputStreams.empty}}
@@ -108,7 +104,7 @@ public class Runner extends Entrypoint {
         return Base64.getDecoder().decode(data);
         {{/dataFormat.isSerdeBinary}}
         {{#dataFormat.isSerdeJson}}
-        return gson.fromJson(data, {{{dataFormat.nameCamelUpper}}}.class);
+        return GsonUtil.get().fromJson(data, {{{dataFormat.nameCamelUpper}}}.class);
         {{/dataFormat.isSerdeJson}}
         {{#dataFormat.isSerdeProtobuf}}
         return {{{dataFormat.nameCamelUpper}}}.parseFrom(Base64.getDecoder().decode(data));

@@ -53,7 +53,7 @@
         <dependency>
             <groupId>io.dataspray</groupId>
             <artifactId>dataspray-runner</artifactId>
-            <version>0.0.7</version>
+            <version>0.0.8</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -147,7 +147,7 @@
                 <configuration>
                     <sourcePaths>
                         {{#processor.jsonStreams}}
-                        <sourcePath>${project.basedir}/../{{{util.dataFormatsFolder}}}/{{{this.dataFormat.name}}}/</sourcePath>
+                        <sourcePath>${project.basedir}/../{{{util.dataFormatsFolder}}}/{{{this.dataFormat.nameDir}}}/</sourcePath>
                         {{/processor.jsonStreams}}
                     </sourcePaths>
                     <outputDirectory>${project.build.directory}/generated-sources/json</outputDirectory>
@@ -204,7 +204,7 @@
                     <protoSourceRoot>${project.basedir}/../{{{util.dataFormatsFolder}}}/</protoSourceRoot>
                     <includes>
                         {{#processor.protobufStreams}}
-                        <include>{{{this.dataFormat.name}}}/**/*.proto</include>
+                        <include>{{{this.dataFormat.nameDir}}}/**/*.proto</include>
                         {{/processor.protobufStreams}}
                     </includes>
                     <outputDirectory>${project.build.directory}/generated-sources/protobuf</outputDirectory>
@@ -223,7 +223,7 @@
                     <sourceDirectory>${project.basedir}/../{{{util.dataFormatsFolder}}}/</sourceDirectory>
                     <includes>
                         {{#processor.avroStreams}}
-                        <include>{{{this.dataFormat.name}}}/**/*.avsc</include>
+                        <include>{{{this.dataFormat.nameDir}}}/**/*.avsc</include>
                         {{/processor.avroStreams}}
                     </includes>
                     <outputDirectory>${project.build.directory}/generated-sources/avro/</outputDirectory>

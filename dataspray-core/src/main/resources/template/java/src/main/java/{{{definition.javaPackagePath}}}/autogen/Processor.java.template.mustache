@@ -8,6 +8,7 @@ import io.dataspray.runner.Message;
 import jakarta.annotation.Nullable;
 import io.dataspray.runner.dto.web.HttpRequest;
 import io.dataspray.runner.dto.web.HttpResponse;
+import io.dataspray.runner.dto.web.HttpResponse.HttpResponseBuilder;
 {{/processor.web}}
 {{/util.javaImportsFormat}}
 
@@ -18,17 +19,17 @@ public interface Processor {
 
     HttpResponse web{{{nameCamelUpper}}}(
         {{>../../../../web-method-params}}
-        HttpResponse.HttpResponseBuilder responseBuilder,
+        HttpResponseBuilder<{{#responseDataFormat}}{{{nameCamelUpper}}}{{/responseDataFormat}}{{^responseDataFormat}}Object{{/responseDataFormat}}> responseBuilder,
         WebCoordinator coordinator);
     {{/endpoints}}
 
-    default HttpResponse web(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder, WebCoordinator coordinator) {
-        return HttpResponse.builder().notFound().build();
+    default HttpResponse web(HttpRequest request, HttpResponseBuilder<Object> responseBuilder, WebCoordinator coordinator) {
+        return responseBuilder.notFound().build();
     }
     {{/endpoints.empty}}
     {{#endpoints.empty}}
 
-    HttpResponse web(HttpRequest request, HttpResponse.HttpResponseBuilder responseBuilder, WebCoordinator coordinator);
+    HttpResponse web(HttpRequest request, HttpResponseBuilder<Object> responseBuilder, WebCoordinator coordinator);
     {{/endpoints.empty}}
     {{/processor.web}}
     {{#processor.inputStreams}}

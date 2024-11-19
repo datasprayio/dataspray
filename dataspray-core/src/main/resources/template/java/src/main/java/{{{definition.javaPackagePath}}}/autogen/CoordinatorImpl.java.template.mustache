@@ -4,6 +4,9 @@ package {{{definition.javaPackage}}}.autogen;
 import lombok.SneakyThrows;
 import io.dataspray.runner.RawCoordinator;
 import io.dataspray.runner.StoreType;
+{{#processor.hasJsonDataFormat}}
+import io.dataspray.runner.util.GsonUtil;
+{{/processor.hasJsonDataFormat}}
 {{^processor.stringOutputStreams.empty}}
 import java.nio.charset.StandardCharsets;
 {{/processor.stringOutputStreams.empty}}
@@ -45,12 +48,12 @@ public class CoordinatorImpl implements {{#processor.web}}WebCoordinator{{#proce
         return stateForNamespace(ttl, "task", "{{{processor.taskId}}}", "key", messageKey
             .orElseThrow(() -> new IllegalStateException("messageKey is not set")));
     }
+    {{/processor.hasInputStreams}}
 
     @Override
     public StateManager stateForTask(Optional<Duration> ttl) {
         return stateForNamespace(ttl, "task", "{{{processor.taskId}}}");
     }
-    {{/processor.hasInputStreams}}
 
     @Override
     public StateManager stateForNamespace(Optional<Duration> ttl, String... namespace) {
@@ -90,7 +93,7 @@ public class CoordinatorImpl implements {{#processor.web}}WebCoordinator{{#proce
             {{{dataFormat.nameCamelLower}}}.getBytes(StandardCharsets.UTF_8),
             {{/dataFormat.isSerdeString}}
             {{#dataFormat.isSerdeJson}}
-            gson.toJson({{{dataFormat.nameCamelLower}}}).getBytes(StandardCharsets.UTF_8),
+            GsonUtil.get().toJson({{{dataFormat.nameCamelLower}}}).getBytes(StandardCharsets.UTF_8),
             {{/dataFormat.isSerdeJson}}
             {{#dataFormat.isSerdeProtobuf}}
             {{{nameCamelUpper}}}.toByteArray(),
