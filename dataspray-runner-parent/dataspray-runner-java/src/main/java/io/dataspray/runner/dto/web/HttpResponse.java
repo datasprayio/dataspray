@@ -79,6 +79,14 @@ public class HttpResponse {
         }
 
         /**
+         * The server successfully processed the request, and is returning content.
+         */
+        public HttpResponseBuilder<T> ok(T body) {
+            return statusCode(200)
+                    .body(body);
+        }
+
+        /**
          * The requested resource could not be found but may be available in the future.
          */
         public HttpResponseBuilder<T> notFound() {

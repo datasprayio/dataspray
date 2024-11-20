@@ -131,7 +131,7 @@ public class BuilderImpl implements Builder {
         Path codeZipPath;
         if (processor instanceof JavaProcessor) {
             codeZipPath = project.getProcessorDir(processor)
-                    .resolve(Path.of("target", processor.getTaskId() + ".jar"));
+                    .resolve(Path.of("target", processor.getProcessorId() + ".jar"));
         } else if (processor instanceof TypescriptProcessor) {
             codeZipPath = project.getProcessorDir(processor)
                     .resolve(Path.of("dist", "index.zip"));

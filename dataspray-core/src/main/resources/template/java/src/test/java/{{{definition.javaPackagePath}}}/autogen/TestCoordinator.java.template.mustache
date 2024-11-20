@@ -55,13 +55,13 @@ public class TestCoordinator implements {{#processor.web}}WebCoordinator{{#proce
     @Override
     public StateManager stateForMessageKey(Optional<Duration> ttl) {
         checkState(messageKey != null, "messageKey is not set");
-        return stateForNamespace(ttl, "task", "{{{processor.taskId}}}", "key", messageKey);
+        return stateForNamespace(ttl, "task", "{{{processor.processorId}}}", "key", messageKey);
     }
     {{/processor.hasInputStreams}}
 
     @Override
     public StateManager stateForTask(Optional<Duration> ttl) {
-        return stateForNamespace(ttl, "task", "{{{processor.taskId}}}");
+        return stateForNamespace(ttl, "task", "{{{processor.processorId}}}");
     }
 
     @Override

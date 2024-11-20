@@ -144,12 +144,14 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     public static final Function<DeployEnvironment, String> FUN_NAME_WILDCARD_GETTER = deployEnv ->
             CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + "*";
     private static final String QUEUE_STATEMENT_ID_PREFIX = "customer-queue-statement-for-name-";
-    /** Matches {@link io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_API_KEY_ENV} */
+    /** Matches io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_API_KEY_ENV */
     public static final String DATASPRAY_API_KEY_ENV = "dataspray_api_key";
-    /** Matches {@link io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_ORGANIZATION_NAME_ENV} */
+    /** Matches io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_ORGANIZATION_NAME_ENV */
     public static final String DATASPRAY_ORGANIZATION_NAME_ENV = "dataspray_organization_name";
-    /** Matches {@link io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_ENDPOINT_ENV} */
+    /** Matches io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_ENDPOINT_ENV */
     public static final String DATASPRAY_ENDPOINT_ENV = "dataspray_endpoint";
+    /** Matches io.dataspray.runner.StateManagerFactoryImpl.DATASPRAY_STATE_TABLE_NAME_ENV */
+    public static final String DATASPRAY_STATE_TABLE_NAME_ENV = "dataspray_state_table_name";
 
     @ConfigProperty(name = "aws.accountId")
     String awsAccountId;
@@ -311,6 +313,12 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         // This key does not yet have any access, that will be persisted later once we know the published task version.
         String apiKey = apiAccessStore.generateApiKey();
 
+        // Prepare SingleTable ahead of time to generate table name
+        Optional<SingleTable> customerSingleTableOpt = dynamoState.map(s -> SingleTable.builder()
+                .tableName(getFunctionOrDynamoOrRoleNamePrefix(organizationName))
+                .overrideGson(gson)
+                .build());
+
         // Create or update function configuration and code
         final String publishedVersion;
         final String publishedDescription = generateVersionDescription(taskId, inputQueueNames, outputQueueNames);
@@ -319,6 +327,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .put(DATASPRAY_ORGANIZATION_NAME_ENV, organizationName);
         apiEndpointOpt.ifPresent(endpoint -> envBuilder
                 .put(DATASPRAY_ENDPOINT_ENV, endpoint));
+        customerSingleTableOpt.ifPresent(customerSingleTable -> envBuilder
+                .put(DATASPRAY_STATE_TABLE_NAME_ENV, customerSingleTable.getTableName()));
         Environment env = Environment.builder()
                 .variables(envBuilder.build()).build();
         if (existingFunctionOpt.isEmpty()) {
@@ -487,18 +497,14 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 Optional.of(outputQueueNames));
 
         // Create Dynamo for lambda state if needed
-        if (dynamoState.isPresent()) {
-            SingleTable customerSingleTable = SingleTable.builder()
-                    .tablePrefix(getFunctionOrDynamoOrRoleNamePrefix(organizationName))
-                    .overrideGson(gson)
-                    .build();
-            customerSingleTable.createTableIfNotExists(
+        if (dynamoState.isPresent() && customerSingleTableOpt.isPresent()) {
+            customerSingleTableOpt.get().createTableIfNotExists(
                     dynamoClient,
                     dynamoState.get().getLsiCount().intValue(),
                     dynamoState.get().getGsiCount().intValue());
-            String tableName = customerSingleTable.getTableName();
 
             // Give permission to Dynamo
+            String tableName = customerSingleTableOpt.get().getTableName();
             String lambdaDynamoPolicyName = CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS + StringUtil.camelCase(functionName, true) + "Dynamo" + tableName;
             ensurePolicyAttachedToRole(functionRoleName, lambdaDynamoPolicyName, gson.toJson(Map.of(
                     "Version", "2012-10-17",

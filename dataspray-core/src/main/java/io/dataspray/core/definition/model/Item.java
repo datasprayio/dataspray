@@ -51,10 +51,6 @@ public class Item {
         return name.toUpperCase();
     }
 
-    public String getTaskId() {
-        return getNameDir();
-    }
-
     @Cacheable(lifetime = Definition.CACHEABLE_METHODS_LIFETIME_IN_MIN)
     public String getNameCamelUpper() {
         return StringUtil.camelCase(name, true);

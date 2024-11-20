@@ -36,6 +36,9 @@ import java.util.concurrent.ConcurrentMap;
 @Slf4j
 public class StateManagerFactoryImpl implements StateManagerFactory {
 
+    /** Matches io.dataspray.store.LambdaDeployerImpl.DATASPRAY_STATE_TABLE_NAME_ENV */
+    public static final String DATASPRAY_STATE_TABLE_NAME_ENV = "dataspray_state_table_name";
+
     private final String tableName;
     private final Gson gson = new Gson();
     private final DynamoDbClient dynamo;
@@ -57,7 +60,7 @@ public class StateManagerFactoryImpl implements StateManagerFactory {
             synchronized (StateManagerFactoryImpl.class) {
                 if (INSTANCE == null) {
                     INSTANCE = new StateManagerFactoryImpl(
-                            System.getenv("STATE_TABLE_NAME"),
+                            System.getenv(DATASPRAY_STATE_TABLE_NAME_ENV),
                             DynamoDbClient.create()
                     );
                 }

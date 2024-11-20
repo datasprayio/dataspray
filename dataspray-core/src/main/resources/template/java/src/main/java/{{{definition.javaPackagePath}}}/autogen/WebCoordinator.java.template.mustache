@@ -39,6 +39,13 @@ public interface WebCoordinator {
      * Use this method to perform advanced operations on DynamoDB.
      */
     DynamoDbClient getDynamoClient();
+    {{#processor.includeSingleTableLibrary}}
+
+    /**
+     * Returns an instance of SingleTable which is a convenience wrapper on top of DynamoDB client.
+     */
+    SingleTable getSingleTable();
+    {{/processor.includeSingleTableLibrary}}
     {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}
 

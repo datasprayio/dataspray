@@ -23,6 +23,9 @@
 import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
 import {DynamoStateManager, StateManager} from "./stateManager";
 
+// Matches io.dataspray.store.LambdaDeployerImpl.DATASPRAY_STATE_TABLE_NAME_ENV
+const DATASPRAY_STATE_TABLE_NAME_ENV = "dataspray_state_table_name";
+
 export interface StateManagerFactory {
 
     getStateManager(key: string[], ttlInEpochSec?: number): StateManager;
@@ -52,7 +55,7 @@ export class StateManagerFactoryImpl implements StateManagerFactory {
     static getOrCreate(): StateManagerFactory {
         if (StateManagerFactoryImpl.instance === null) {
             StateManagerFactoryImpl.instance = new StateManagerFactoryImpl(
-                    process.env.STATE_TABLE_NAME!,
+                    process.env[DATASPRAY_STATE_TABLE_NAME_ENV]!,
                     new DynamoDBClient()
             );
         }

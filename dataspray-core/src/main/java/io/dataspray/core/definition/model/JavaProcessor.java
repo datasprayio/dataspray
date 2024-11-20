@@ -37,6 +37,8 @@ import static com.google.common.base.Preconditions.checkState;
 @RegisterForReflection
 public class JavaProcessor extends Processor {
 
+    Boolean includeSingleTableLibrary;
+
     @Override
     public void initialize() {
         super.initialize();

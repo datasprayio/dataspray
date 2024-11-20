@@ -119,7 +119,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
         UploadCodeResponse uploadCodeResponse = DataSprayClient.get(organization.toAccess())
                 .control()
                 .uploadCode(organization.getName(), new UploadCodeRequest()
-                        .taskId(processor.getTaskId())
+                        .taskId(processor.getProcessorId())
                         .contentLengthBytes(codeZipFile.length()));
 
         // Upload to S3
@@ -161,7 +161,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 handler);
         TaskVersion deployedVersion = DataSprayClient.get(organization.toAccess())
                 .control()
-                .deployVersion(organization.getName(), processor.getTaskId(), new DeployRequest()
+                .deployVersion(organization.getName(), processor.getProcessorId(), new DeployRequest()
                         .runtime(runtime)
                         .handler(handler)
                         .inputQueueNames(processor.getInputStreams().stream()
@@ -206,7 +206,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
         log.info("Activating version {} for task {}", version, processorName);
         TaskStatus taskStatus = DataSprayClient.get(organization.toAccess())
                 .control()
-                .activateVersion(organization.getName(), processor.getTaskId(), version);
+                .activateVersion(organization.getName(), processor.getProcessorId(), version);
         log.info("Version active!");
 
         return taskStatus;
@@ -219,10 +219,10 @@ public class StreamRuntimeImpl implements StreamRuntime {
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
 
-        log.info("Pausing {}", processor.getTaskId());
+        log.info("Pausing {}", processor.getProcessorId());
         TaskStatus taskStatus = DataSprayClient.get(organization.toAccess())
                 .control()
-                .pause(organization.getName(), processor.getTaskId());
+                .pause(organization.getName(), processor.getProcessorId());
         log.info("Task set to be paused");
         printStatus(taskStatus);
 
@@ -236,10 +236,10 @@ public class StreamRuntimeImpl implements StreamRuntime {
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
 
-        log.info("Resuming {}", processor.getTaskId());
+        log.info("Resuming {}", processor.getProcessorId());
         TaskStatus taskStatus = DataSprayClient.get(organization.toAccess())
                 .control()
-                .resume(organization.getName(), processor.getTaskId());
+                .resume(organization.getName(), processor.getProcessorId());
         log.info("Task set to be resumed");
         printStatus(taskStatus);
 
@@ -255,7 +255,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
         TaskVersions versions = DataSprayClient.get(organization.toAccess())
                 .control()
-                .getVersions(organization.getName(), processor.getTaskId());
+                .getVersions(organization.getName(), processor.getProcessorId());
         printVersions(versions);
 
         return versions;
@@ -270,7 +270,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
         TaskStatus status = DataSprayClient.get(organization.toAccess())
                 .control()
-                .delete(organization.getName(), processor.getTaskId());
+                .delete(organization.getName(), processor.getProcessorId());
 
         printStatus(status);
 

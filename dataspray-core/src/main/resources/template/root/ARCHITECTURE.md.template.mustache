@@ -3,19 +3,19 @@
 ```mermaid
 graph TB;
 {{#definition.processors}}
-    {{taskId}}[{{name}}];
+    {{processorId}}[{{name}}];
     {{#inputStreams}}
-        Queue{{{uniqueNameCamelUpper}}}([Queue {{{uniqueNameCamelUpper}}}]) --> {{taskId}};
+        Queue{{{uniqueNameCamelUpper}}}([Queue {{{uniqueNameCamelUpper}}}]) --> {{processorId}};
     {{/inputStreams}}
     {{#outputStreams}}
-        {{taskId}} --> Queue{{{uniqueNameCamelUpper}}}([Queue {{{uniqueNameCamelUpper}}}]);
+        {{processorId}} --> Queue{{{uniqueNameCamelUpper}}}([Queue {{{uniqueNameCamelUpper}}}]);
     {{/outputStreams}}
     {{#web}}
     {{#endpoints}}
-        Web{{{nameCamelUpper}}}([Web {{{nameCamelUpper}}}]) --> {{taskId}};
+        Web{{{nameCamelUpper}}}([Web {{{nameCamelUpper}}}]) --> {{processorId}};
     {{/endpoints}}
     {{#endpoints.empty}}
-        Web{{{nameCamelUpper}}}([Web]) --> {{taskId}};
+        Web{{{nameCamelUpper}}}([Web]) --> {{processorId}};
     {{/endpoints.empty}}
     {{/web}}
 {{/definition.processors}}

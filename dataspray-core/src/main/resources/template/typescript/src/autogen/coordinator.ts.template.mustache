@@ -132,11 +132,11 @@ export class CoordinatorImpl implements {{#processor.web}}WebCoordinator{{#proce
         if (this.messageKey === undefined) {
             throw new Error('messageKey is not set');
         }
-        return this.stateForNamespace(ttlInSec, ["task", "{{{processor.taskId}}}", "key", this.messageKey]);
+        return this.stateForNamespace(ttlInSec, ["task", "{{{processor.processorId}}}", "key", this.messageKey]);
     }
 
     stateForTask(ttlInSec?: number): StateManager {
-        return this.stateForNamespace(ttlInSec, ["task", "{{{processor.taskId}}}"]);
+        return this.stateForNamespace(ttlInSec, ["task", "{{{processor.processorId}}}"]);
     }
 
     stateForNamespace(ttlInSec: number | undefined, namespace: string[]): StateManager {

@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.io.ByteArrayOutputStream;
 {{#processor.hasDynamoState}}
 import io.dataspray.runner.StateManager;
+import io.dataspray.runner.StateManagerFactoryImpl;
 import java.time.Duration;
 import java.util.Optional;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -37,14 +38,14 @@ public class CoordinatorImpl implements {{#processor.web}}WebCoordinator{{#proce
 
     @Override
     public StateManager stateForMessageKey(Optional<Duration> ttl) {
-        return stateForNamespace(ttl, "task", "{{{processor.taskId}}}", "key", messageKey
+        return stateForNamespace(ttl, "task", "{{{processor.processorId}}}", "key", messageKey
             .orElseThrow(() -> new IllegalStateException("messageKey is not set")));
     }
     {{/processor.hasInputStreams}}
 
     @Override
     public StateManager stateForTask(Optional<Duration> ttl) {
-        return stateForNamespace(ttl, "task", "{{{processor.taskId}}}");
+        return stateForNamespace(ttl, "task", "{{{processor.processorId}}}");
     }
 
     @Override
@@ -56,6 +57,16 @@ public class CoordinatorImpl implements {{#processor.web}}WebCoordinator{{#proce
     public DynamoDbClient getDynamoClient() {
         return rawCoordinator.getDynamoClient();
     }
+    {{#processor.includeSingleTableLibrary}}
+
+    @Override
+    public SingleTable getSingleTable() {
+        return SingleTable.builder()
+            .tableName(System.getenv(StateManagerFactoryImpl.DATASPRAY_STATE_TABLE_NAME_ENV))
+            .overrideGson(GsonUtil.get())
+            .build()
+    }
+    {{/processor.includeSingleTableLibrary}}
     {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}
 

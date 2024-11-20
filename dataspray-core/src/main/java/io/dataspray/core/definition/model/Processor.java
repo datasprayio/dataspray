@@ -45,6 +45,11 @@ import java.util.stream.Stream;
 @NonFinal
 @RegisterForReflection
 public class Processor extends Item {
+
+    public String getProcessorId() {
+        return getNameDir();
+    }
+
     @Nonnull
     Target target;
 
