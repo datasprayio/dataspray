@@ -23,7 +23,6 @@
 package io.dataspray.cli;
 
 import com.google.common.collect.ImmutableSet;
-import io.dataspray.core.Builder;
 import io.dataspray.core.Builder.Artifact;
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
@@ -36,9 +35,9 @@ import picocli.CommandLine.Option;
 import java.util.Optional;
 
 @Slf4j
-@Command(name = "install",
-        description = "install task(s)")
-public class Install implements Runnable {
+@Command(name = "generate",
+        description = "generate template boilerplate files for task(s)")
+public class Generate implements Runnable {
     @Mixin
     LoggingMixin loggingMixin;
     @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id; otherwise all tasks are used if ran from root directory or specific task if ran from within a task directory")
@@ -48,8 +47,6 @@ public class Install implements Runnable {
 
     @Inject
     Codegen codegen;
-    @Inject
-    Builder builder;
 
     @Override
     public void run() {
@@ -58,12 +55,11 @@ public class Install implements Runnable {
 
         ImmutableSet<Artifact> artifacts;
         if (activeProcessor.isEmpty()) {
-            artifacts = builder.buildAll(project);
+            codegen.generateAll(project, overwriteWriteableTemplate);
+            log.info("Generated for all");
         } else {
-            artifacts = ImmutableSet.of(builder.build(project, activeProcessor.get()));
+            codegen.generateProcessor(project, activeProcessor.get(), overwriteWriteableTemplate);
+            log.info("Generated for {}", activeProcessor.get());
         }
-
-        artifacts.forEach(artifact -> log.info("Built artifact {}",
-                project.getAbsolutePath().relativize(artifact.getCodeZipFile().toPath())));
     }
 }

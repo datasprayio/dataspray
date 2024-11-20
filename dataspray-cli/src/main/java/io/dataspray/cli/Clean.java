@@ -23,7 +23,6 @@
 package io.dataspray.cli;
 
 import com.google.common.collect.ImmutableSet;
-import io.dataspray.core.Builder;
 import io.dataspray.core.Builder.Artifact;
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
@@ -36,20 +35,16 @@ import picocli.CommandLine.Option;
 import java.util.Optional;
 
 @Slf4j
-@Command(name = "install",
-        description = "install task(s)")
-public class Install implements Runnable {
+@Command(name = "clean",
+        description = "clean all generated template boilerplate files for task(s)")
+public class Clean implements Runnable {
     @Mixin
     LoggingMixin loggingMixin;
     @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id; otherwise all tasks are used if ran from root directory or specific task if ran from within a task directory")
     private String taskId;
-    @Option(names = {"-o", "--overwrite-writeable-template"}, description = "force overwrite of template files if they were given writeable permissions; typically this means someone has modified a template file accidentally")
-    private boolean overwriteWriteableTemplate;
 
     @Inject
     Codegen codegen;
-    @Inject
-    Builder builder;
 
     @Override
     public void run() {
@@ -58,12 +53,11 @@ public class Install implements Runnable {
 
         ImmutableSet<Artifact> artifacts;
         if (activeProcessor.isEmpty()) {
-            artifacts = builder.buildAll(project);
+            codegen.cleanAll(project);
+            log.info("Cleaned for all");
         } else {
-            artifacts = ImmutableSet.of(builder.build(project, activeProcessor.get()));
+            codegen.cleanProcessor(project, activeProcessor.get());
+            log.info("Cleaned for {}", activeProcessor.get());
         }
-
-        artifacts.forEach(artifact -> log.info("Built artifact {}",
-                project.getAbsolutePath().relativize(artifact.getCodeZipFile().toPath())));
     }
 }

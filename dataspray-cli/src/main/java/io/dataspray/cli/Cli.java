@@ -35,6 +35,8 @@ import picocli.CommandLine.Spec;
         subcommandsRepeatable = true,
         subcommands = {
                 Init.class,
+                Clean.class,
+                Generate.class,
                 Install.class,
                 Run.class,
                 Env.class,

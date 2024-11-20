@@ -25,6 +25,7 @@ package io.dataspray.core;
 import com.google.common.base.Ascii;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
@@ -67,15 +68,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.function.Predicate.not;
 
 @Slf4j
 @ApplicationScoped
 public class CodegenImpl implements Codegen {
     public static final String PROJECT_FILENAME = "ds_project.yml";
-    public static final String SCHEMAS_FOLDER = ".schema";
+    public static final String SCHEMAS_FOLDER = "schema";
     public static final String TEMPLATES_FOLDER = ".template";
     public static final String MUSTACHE_FILE_EXTENSION = ".mustache";
     /** Template files, always overwritten unless overriden by user */
@@ -152,6 +153,30 @@ public class CodegenImpl implements Codegen {
     @Override
     public Project loadProject(String projectPathStr) {
         return loadProject(Path.of(projectPathStr), Optional.empty());
+    }
+
+    @Override
+    public void cleanAll(Project project) {
+        clean(project, Optional.empty());
+    }
+
+    @Override
+    public void cleanProcessor(Project project, String processorName) {
+        clean(project, Optional.of(Path.of(project.getProcessorByName(processorName).getNameDir())));
+    }
+
+    private void clean(Project project, Optional<Path> subPath) {
+        ImmutableSet<Path> absoluteTrackedPathsToDelete = fileTracker.getTrackedFiles(project, subPath, Optional.empty())
+                .stream()
+                .filter(p -> {
+                    boolean fileWriteable = getFileWriteable(p);
+                    if (fileWriteable) {
+                        log.warn("Template file found to have write permission restored, likely edited externally; not deleting: {}", p);
+                    }
+                    return !fileWriteable;
+                })
+                .collect(ImmutableSet.toImmutableSet());
+        fileTracker.unlinkUntrackFiles(project, absoluteTrackedPathsToDelete);
     }
 
     @SneakyThrows
@@ -498,7 +523,7 @@ public class CodegenImpl implements Codegen {
         }
         return Optional.of(expandedPath)
                 .map(Path::normalize)
-                .filter(Predicate.not(Path.of("")::equals))
+                .filter(not(Path.of("")::equals))
                 .map(p -> new ExpandedFile(
                         Optional.ofNullable(p.getParent()).orElse(Path.of("")),
                         p.getFileName().toString()));
@@ -528,7 +553,7 @@ public class CodegenImpl implements Codegen {
         }
         expandedPath = expandedPath.resolve(levelBuilder.toString()).normalize();
         return Optional.of(expandedPath)
-                .filter(Predicate.not(Path.of("")::equals));
+                .filter(not(Path.of("")::equals));
     }
 
     @SneakyThrows
