@@ -13,6 +13,7 @@ import io.dataspray.runner.dto.sqs.SqsMessage;
 import io.dataspray.runner.dto.sqs.SqsRequest;
 import io.dataspray.runner.dto.web.HttpRequest;
 import io.dataspray.runner.dto.web.HttpResponse;
+import io.dataspray.runner.dto.web.HttpResponseException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -88,7 +89,11 @@ public abstract class Entrypoint implements RequestHandler<Request, Object> {
      * Handle an HTTP request from Function URL.
      */
     private HttpResponse handleHttpRequest(HttpRequest request) {
-        return web(request, RawCoordinatorImpl.get());
+        try {
+            return web(request, RawCoordinatorImpl.get());
+        } catch (HttpResponseException ex) {
+            return ex.getResponse();
+        }
     }
 
     protected void stream(MessageMetadata metadata, String data, RawCoordinator coordinator) {

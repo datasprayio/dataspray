@@ -113,6 +113,7 @@ public enum SampleProject {
                                                     .build()))
                                     .build())
                             .hasDynamoState(true)
+                            .includeSingleTableLibrary(true)
                             .build()))
             .datasprayStores(ImmutableSet.of(
                     DatasprayStore.builder()

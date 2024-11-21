@@ -14,6 +14,9 @@ import io.dataspray.runner.StateManagerFactoryImpl;
 import java.time.Duration;
 import java.util.Optional;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+{{#processor.includeSingleTableLibrary}}
+import io.dataspray.singletable.SingleTable;
+{{/processor.includeSingleTableLibrary}}
 {{/processor.hasDynamoState}}
 {{/util.javaImportsFormat}}
 
@@ -64,7 +67,7 @@ public class CoordinatorImpl implements {{#processor.web}}WebCoordinator{{#proce
         return SingleTable.builder()
             .tableName(System.getenv(StateManagerFactoryImpl.DATASPRAY_STATE_TABLE_NAME_ENV))
             .overrideGson(GsonUtil.get())
-            .build()
+            .build();
     }
     {{/processor.includeSingleTableLibrary}}
     {{/processor.hasDynamoState}}

@@ -9,6 +9,9 @@ import io.dataspray.runner.StateManager;
 import java.time.Duration;
 import java.util.Optional;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+{{#processor.includeSingleTableLibrary}}
+import io.dataspray.singletable.SingleTable;
+{{/processor.includeSingleTableLibrary}}
 {{/processor.hasDynamoState}}
 {{/util.javaImportsFormat}}
 
