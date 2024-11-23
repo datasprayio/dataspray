@@ -50,6 +50,11 @@ public abstract class AbstractTest {
     }
 
     @SneakyThrows
+    protected byte[] getTestResourceBytes(String fileName) {
+        return getTestResourceBytes(fileName, this.getClass());
+    }
+
+    @SneakyThrows
     protected byte[] getTestResourceBytes(String fileName, Class testClazz) {
         String filePath = testClazz.getCanonicalName().replace(".", File.separator)
                           + File.separator + fileName;

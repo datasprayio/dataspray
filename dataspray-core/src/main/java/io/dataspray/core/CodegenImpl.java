@@ -451,7 +451,7 @@ public class CodegenImpl implements Codegen {
                 }
             } else if (item.getType() == TemplateType.MERGE) {
                 // Perform a merge
-                mergeStrategies.findMergeStrategy(item)
+                mergeStrategies.findMergeStrategy(item.getRelativePath().getFileName().toString())
                         .orElseThrow(() -> new RuntimeException("Cannot merge template file, no merge strategy found for file: " + item.getRelativePath()))
                         .merge(resultFileOpt.get(), absoluteFilePath);
             }

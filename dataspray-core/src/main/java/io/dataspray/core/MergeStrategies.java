@@ -24,16 +24,17 @@ package io.dataspray.core;
 
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import io.dataspray.common.json.GsonMergeUtil;
-import io.dataspray.core.TemplateFiles.TemplateFile;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,17 +46,25 @@ import java.util.Optional;
 @ApplicationScoped
 public class MergeStrategies {
 
+    @FunctionalInterface
     public interface MergeStrategy {
         void merge(String mergeTemplateResult, Path targetAbsoluteFilePath);
     }
 
+    @FunctionalInterface
+    public interface JsonConflictResolution {
+        void resolve(String key, JsonObject originalJson, JsonElement originalElement, JsonElement templateElement);
+    }
+
+    @FunctionalInterface
+    public interface XmlConflictResolution {
+        void resolve(Element originalElement, Element templateElement, Document targetDocument);
+    }
+
     @Inject
     Gson gson;
-    @Inject
-    GsonMergeUtil gsonMergeUtil;
 
-    public Optional<MergeStrategy> findMergeStrategy(TemplateFile file) {
-        String fileName = file.getRelativePath().getFileName().toString();
+    public Optional<MergeStrategy> findMergeStrategy(String fileName) {
         if (fileName.endsWith(".json" + CodegenImpl.MUSTACHE_FILE_EXTENSION_MERGE)) {
             return Optional.of(this::applyJson);
         } else if (fileName.endsWith(".gitignore" + CodegenImpl.MUSTACHE_FILE_EXTENSION_MERGE)) {
@@ -86,14 +95,14 @@ public class MergeStrategies {
         }
 
         // Merge the two Jsons with a custom conflict resolution
-        gsonMergeUtil.merge((String key, JsonObject leftObj, JsonElement leftVal, JsonElement rightVal) -> {
+        mergeJson((String key, JsonObject originalJson, JsonElement originalElement, JsonElement templateElement) -> {
                     // Handle merge conflicts
-                    if (rightVal.isJsonNull()) {
+                    if (templateElement.isJsonNull()) {
                         // A null in template signals original value needs to be removed
-                        leftObj.remove(key);
+                        originalJson.remove(key);
                     } else {
                         // Otherwise template always replaces original
-                        leftObj.add(key, rightVal);
+                        originalJson.add(key, templateElement);
                     }
                 },
                 originalFileJson,
@@ -104,6 +113,39 @@ public class MergeStrategies {
             gson.toJson(originalFileJson, writer);
         } catch (IOException | JsonIOException ex) {
             throw new RuntimeException("Failed to read file: " + targetAbsoluteFilePath, ex);
+        }
+    }
+
+    /**
+     * Utility to merge two JSON objects.
+     *
+     * @see <a href="https://stackoverflow.com/a/34092374">Reference implementation</a>
+     */
+    private void mergeJson(JsonConflictResolution conflictResolution, JsonObject leftObj, JsonObject rightObj) {
+        for (Map.Entry<String, JsonElement> rightEntry : rightObj.entrySet()) {
+            String rightKey = rightEntry.getKey();
+            JsonElement rightVal = rightEntry.getValue();
+            if (leftObj.has(rightKey)) {
+                // conflict
+                JsonElement leftVal = leftObj.get(rightKey);
+                if (leftVal.isJsonArray() && rightVal.isJsonArray()) {
+                    JsonArray leftArr = leftVal.getAsJsonArray();
+                    JsonArray rightArr = rightVal.getAsJsonArray();
+                    // concat the arrays -- there cannot be a conflict in an array, it's just a collection of stuff
+                    for (int i = 0; i < rightArr.size(); i++) {
+                        leftArr.add(rightArr.get(i));
+                    }
+                } else if (leftVal.isJsonObject() && rightVal.isJsonObject()) {
+                    // recursive merging
+                    mergeJson(conflictResolution, leftVal.getAsJsonObject(), rightVal.getAsJsonObject());
+                } else {
+                    // not both arrays or objects, normal merge with conflict resolution
+                    conflictResolution.resolve(rightKey, leftObj, leftVal, rightVal);
+                }
+            } else {
+                // no conflict, add to the object
+                leftObj.add(rightKey, rightVal);
+            }
         }
     }
 

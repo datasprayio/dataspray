@@ -131,8 +131,7 @@ abstract class AuthorizerBase extends AbstractTest {
                             .body("policyDocument", jsonStringEqualTo(new String(getTestResourceBytes(
                                     testType == TestType.AUTHORIZED_QUEUE_WHITELIST
                                             ? "authorized-queue-whitelist.json"
-                                            : "authorized.json",
-                                    AuthorizerBase.class))));
+                                            : "authorized.json"))));
                     break;
                 default:
                     fail();
