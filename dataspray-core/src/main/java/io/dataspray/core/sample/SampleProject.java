@@ -96,6 +96,7 @@ public enum SampleProject {
                                     .endpoints(ImmutableSet.of(
                                             Endpoint.builder()
                                                     .name("receiveRegistration")
+                                                    .method(Endpoint.HttpMethod.POST)
                                                     .path("/user/{userId}/ip")
                                                     .pathParams(ImmutableSet.of(PathParameter.builder()
                                                             .name("userId")
@@ -186,6 +187,7 @@ public enum SampleProject {
                                     .endpoints(ImmutableSet.of(
                                             Endpoint.builder()
                                                     .name("receiveRegistration")
+                                                    .method(Endpoint.HttpMethod.POST)
                                                     .path("/user/{userId}/ip")
                                                     .pathParams(ImmutableSet.of(PathParameter.builder()
                                                             .name("userId")

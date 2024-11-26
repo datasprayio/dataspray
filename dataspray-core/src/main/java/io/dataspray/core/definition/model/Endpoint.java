@@ -56,6 +56,13 @@ public class Endpoint extends Item {
                     DataFormat.Serde.PROTOBUF,
                     DataFormat.Serde.AVRO)));
 
+    @Nonnull
+    HttpMethod method;
+
+    public enum HttpMethod {
+        GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
+    }
+
     /**
      * The path of the endpoint.
      * <p>
