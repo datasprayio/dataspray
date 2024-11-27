@@ -41,14 +41,12 @@ public class StateManagerFactoryImpl implements StateManagerFactory {
 
     private final String tableName;
     private final Gson gson = new Gson();
-    private final DynamoDbClient dynamo;
     private final ConcurrentMap<String[], StateManager> stateManagers = Maps.newConcurrentMap();
     private static volatile StateManagerFactory INSTANCE;
 
     @VisibleForTesting
-    StateManagerFactoryImpl(String tableName, DynamoDbClient dynamo) {
+    StateManagerFactoryImpl(String tableName) {
         this.tableName = tableName;
-        this.dynamo = dynamo;
     }
 
     public static Optional<StateManagerFactory> get() {
@@ -60,8 +58,7 @@ public class StateManagerFactoryImpl implements StateManagerFactory {
             synchronized (StateManagerFactoryImpl.class) {
                 if (INSTANCE == null) {
                     INSTANCE = new StateManagerFactoryImpl(
-                            System.getenv(DATASPRAY_STATE_TABLE_NAME_ENV),
-                            DynamoDbClient.create()
+                            System.getenv(DATASPRAY_STATE_TABLE_NAME_ENV)
                     );
                 }
             }
@@ -72,12 +69,12 @@ public class StateManagerFactoryImpl implements StateManagerFactory {
     @Override
     public StateManager getStateManager(String[] key, Optional<Duration> ttl) {
         return stateManagers.computeIfAbsent(key,
-                k -> new DynamoStateManager(tableName, gson, dynamo, k, ttl));
+                k -> new DynamoStateManager(tableName, gson, DynamoProvider.get(), k, ttl));
     }
 
     @Override
     public DynamoDbClient getDynamoClient() {
-        return dynamo;
+        return DynamoProvider.get();
     }
 
     @Override

@@ -1,0 +1,41 @@
+package {{{definition.javaPackage}}};
+
+{{#util.javaImportsFormat}}
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.runner.util.GsonUtil;
+import static io.dataspray.runner.StateManagerFactoryImpl.DATASPRAY_STATE_TABLE_NAME_ENV;
+import com.google.common.annotations.VisibleForTesting;
+import static com.google.common.base.Preconditions.checkNotNull;
+{{/util.javaImportsFormat}}
+
+public class SingleTableProvider {
+
+    private static volatile SingleTable instance;
+
+    public static SingleTable get() {
+        if (instance == null) {
+            synchronized (SingleTableProvider.class) {
+                if (instance == null) {
+                    instance = SingleTable.builder()
+                            .tableName(checkNotNull(
+                                    System.getenv(DATASPRAY_STATE_TABLE_NAME_ENV),
+                                    "Could not find environment variable "
+                                    + DATASPRAY_STATE_TABLE_NAME_ENV
+                                    + " to configure SingleTable."))
+                            .overrideGson(GsonUtil.get())
+                            .build();
+                }
+            }
+        }
+        return instance;
+    }
+
+    @VisibleForTesting
+    public static void override(SingleTable instance) {
+        SingleTableProvider.instance = instance;
+    }
+
+    /** Disable constructor */
+    private SingleTableProvider() {
+    }
+}

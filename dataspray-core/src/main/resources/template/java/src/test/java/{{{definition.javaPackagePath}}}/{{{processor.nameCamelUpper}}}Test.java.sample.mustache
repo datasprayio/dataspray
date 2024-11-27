@@ -2,11 +2,11 @@ package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
 import org.junit.Test;
-import {{{definition.javaPackage}}}.autogen.AbstractTest;
-import {{{definition.javaPackage}}}.autogen.TestCoordinator;
+import {{{definition.javaPackage}}}.AbstractTest;
+import {{{definition.javaPackage}}}.TestCoordinator;
 import org.mockito.Mockito;
 {{#processor.dataFormats}}
-import {{{definition.javaPackage}}}.autogen.{{{nameCamelUpper}}};
+import {{{definition.javaPackage}}}.{{{nameCamelUpper}}};
 {{/processor.dataFormats}}
 {{#processor.web}}
 import org.junit.Assert;

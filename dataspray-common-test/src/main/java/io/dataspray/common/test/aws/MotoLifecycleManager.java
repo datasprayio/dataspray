@@ -78,7 +78,7 @@ public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager
 
     /** Quarkus wrapper when used with {@link QuarkusTestResource} */
     @Override
-    public final Map<String, String> start() {
+    public Map<String, String> start() {
         String region = "us-east-1";
         long awsAccountId = 100000000001L;
         String awsAccessKey = UUID.randomUUID().toString();
@@ -165,7 +165,7 @@ public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager
 
     /** Quarkus wrapper when used with {@link QuarkusTestResource} */
     @Override
-    public final void stop() {
+    public void stop() {
         instanceOpt
                 .map(MotoInstance::getMotoContainer)
                 .ifPresent(GenericContainer::stop);

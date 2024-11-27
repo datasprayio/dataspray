@@ -1,0 +1,78 @@
+package {{{definition.javaPackage}}};
+
+{{#util.javaImportsFormat}}
+import org.junit.Before;
+import io.dataspray.runner.StoreType;
+import java.util.UUID;
+import {{{definition.javaPackage}}}.{{{processor.nameCamelUpper}}};
+{{#processor.hasDynamoState}}
+import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
+import com.amazonaws.services.dynamodbv2.local.shared.access.AmazonDynamoDBLocal;
+import io.dataspray.runner.util.GsonUtil;
+import org.junit.BeforeClass;
+import org.junit.AfterClass;
+import io.dataspray.singletable.SingleTable;
+import {{{definition.javaPackage}}}.SingleTableProvider;
+import java.util.UUID;
+import io.dataspray.runner.DynamoProvider;
+{{/processor.hasDynamoState}}
+{{/util.javaImportsFormat}}
+
+public class AbstractTest {
+
+    {{#processor.hasDynamoState}}
+    protected static AmazonDynamoDBLocal dynamoServer;
+    {{/processor.hasDynamoState}}
+    protected Processor processor;
+    {{#processor.hasDynamoState}}
+
+    @BeforeClass
+    public static void beforeClassAbstractTest() {
+        dynamoServer = DynamoDBEmbedded.create();
+    }
+    {{/processor.hasDynamoState}}
+
+    @Before
+    public void beforeAbstractTest() {
+        {{#processor.hasDynamoState}}
+        DynamoProvider.override(dynamoServer.dynamoDbClient());
+        SingleTableProvider.override(SingleTable.builder()
+                .tableName(UUID.randomUUID().toString())
+                .overrideGson(GsonUtil.get())
+                .build());
+        {{#definition.dynamoState}}
+        SingleTableProvider.get().createTableIfNotExists(
+                DynamoProvider.get(),
+                {{{lsiCount}}},
+                {{{gsiCount}}});
+        {{/definition.dynamoState}}
+        {{/processor.hasDynamoState}}
+        processor = new {{{processor.nameCamelUpper}}}();
+    }
+    {{#processor.hasDynamoState}}
+
+    @AfterClass
+    public static void afterClassAbstractTest() {
+        dynamoServer.shutdown();
+    }
+    {{/processor.hasDynamoState}}
+    {{#processor.inputStreams}}
+
+    public TestCoordinator stream{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}) {
+        return stream{{{uniqueNameCamelUpper}}}(messageKey, {{{dataFormat.nameCamelLower}}}, UUID.randomUUID().toString());
+    }
+
+    public TestCoordinator stream{{{uniqueNameCamelUpper}}}(String messageKey, {{{dataFormat.nameCamelUpper}}} {{{dataFormat.nameCamelLower}}}, String messageId) {
+        TestMessage<{{{dataFormat.nameCamelUpper}}}> message = new TestMessage<>(
+                StoreType.{{{storeType.name}}},
+                "{{{storeName}}}",
+                "{{{streamName}}}",
+                messageKey,
+                messageId,
+                {{{dataFormat.nameCamelLower}}});
+        TestCoordinator coordinator = TestCoordinator.createForStream({{#processor.hasDynamoState}}messageKey{{/processor.hasDynamoState}});
+        processor.stream{{{uniqueNameCamelUpper}}}(message, coordinator);
+        return coordinator;
+    }
+    {{/processor.inputStreams}}
+}

@@ -32,6 +32,9 @@
         {{^processor.avroDataFormats.empty}}
         <avro.version>1.11.0</avro.version>
         {{/processor.avroDataFormats.empty}}
+        {{#processor.hasDynamoState}}
+        <sqlite4java>1.0.392</sqlite4java>
+        {{/processor.hasDynamoState}}
     </properties>
 
     <dependencies>
@@ -53,7 +56,7 @@
         <dependency>
             <groupId>io.dataspray</groupId>
             <artifactId>dataspray-runner</artifactId>
-            <version>0.0.10</version>
+            <version>0.0.11</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -66,13 +69,65 @@
             <version>3.11.1</version>
         </dependency>
         {{#processor.hasDynamoState}}
-        {{#processor.includeSingleTableLibrary}}
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>DynamoDBLocal</artifactId>
+            <version>2.5.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.almworks.sqlite4java</groupId>
+            <artifactId>sqlite4java</artifactId>
+            <version>${sqlite4java}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.almworks.sqlite4java</groupId>
+            <artifactId>sqlite4java-win32-x86</artifactId>
+            <version>${sqlite4java}</version>
+            <type>dll</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.almworks.sqlite4java</groupId>
+            <artifactId>sqlite4java-win32-x64</artifactId>
+            <version>${sqlite4java}</version>
+            <type>dll</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.almworks.sqlite4java</groupId>
+            <artifactId>libsqlite4java-osx</artifactId>
+            <version>${sqlite4java}</version>
+            <type>dylib</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.almworks.sqlite4java</groupId>
+            <artifactId>libsqlite4java-linux-i386</artifactId>
+            <version>${sqlite4java}</version>
+            <type>so</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.almworks.sqlite4java</groupId>
+            <artifactId>libsqlite4java-linux-amd64</artifactId>
+            <version>${sqlite4java}</version>
+            <type>so</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ganadist.sqlite4java</groupId>
+            <artifactId>libsqlite4java-osx-aarch64</artifactId>
+            <version>${sqlite4java}</version>
+            <type>dylib</type>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.dataspray</groupId>
             <artifactId>single-table</artifactId>
             <version>2.2.5</version>
         </dependency>
-        {{/processor.includeSingleTableLibrary}}
         {{/processor.hasDynamoState}}
         {{^processor.jsonDataFormats.empty}}
         <dependency>
@@ -127,6 +182,37 @@
         {{/processor.protobufDataFormats.empty}}
         <plugins>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>add-generated-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/src/main/generated-java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-generate-test-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/src/test/generated-java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.0</version>
@@ -146,6 +232,44 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            {{#processor.hasDynamoState}}
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <includeTypes>dylib,dll,so</includeTypes>
+                            <outputDirectory>${project.build.directory}/native-libs</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <sqlite4java.library.path>${project.build.directory}/native-libs</sqlite4java.library.path>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <sqlite4java.library.path>${project.build.directory}/native-libs</sqlite4java.library.path>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            {{/processor.hasDynamoState}}
             {{^processor.jsonDataFormats.empty}}
 
             <!-- Mapping json schema(s) to Java POJOs -->
@@ -160,7 +284,7 @@
                         {{/processor.jsonDataFormats}}
                     </sourcePaths>
                     <outputDirectory>${project.build.directory}/generated-sources/json</outputDirectory>
-                    <targetPackage>{{{definition.javaPackage}}}.autogen</targetPackage>
+                    <targetPackage>{{{definition.javaPackage}}}</targetPackage>
 
                     <!-- Code generation directives -->
                     <annotationStyle>gson</annotationStyle>

@@ -1,19 +1,19 @@
 package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
-import {{{definition.javaPackage}}}.autogen.Processor;
+import {{{definition.javaPackage}}}.Processor;
 {{#processor.dataFormats}}
-import {{{definition.javaPackage}}}.autogen.{{{nameCamelUpper}}};
+import {{{definition.javaPackage}}}.{{{nameCamelUpper}}};
 {{/processor.dataFormats}}
 {{^processor.inputStreams.empty}}
 import io.dataspray.runner.Message;
-import {{{definition.javaPackage}}}.autogen.StreamCoordinator;
+import {{{definition.javaPackage}}}.StreamCoordinator;
 {{/processor.inputStreams.empty}}
 {{#processor.web}}
 import jakarta.annotation.Nullable;
 import io.dataspray.runner.dto.web.HttpResponse;
 import io.dataspray.runner.dto.web.HttpResponse.HttpResponseBuilder;
-import {{{definition.javaPackage}}}.autogen.WebCoordinator;
+import {{{definition.javaPackage}}}.WebCoordinator;
 {{#endpoints.empty}}
 import io.dataspray.runner.dto.web.HttpRequest;
 {{/endpoints.empty}}

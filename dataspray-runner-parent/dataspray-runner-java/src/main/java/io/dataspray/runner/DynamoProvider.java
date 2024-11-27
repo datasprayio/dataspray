@@ -20,28 +20,32 @@
  * SOFTWARE.
  */
 
-package io.dataspray.core.definition.model;
+package io.dataspray.runner;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
-import lombok.Value;
-import lombok.experimental.SuperBuilder;
+import com.google.common.annotations.VisibleForTesting;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-import static com.google.common.base.Preconditions.checkState;
+public class DynamoProvider {
 
-@Value
-@SuperBuilder(toBuilder = true)
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
-@RegisterForReflection
-public class JavaProcessor extends Processor {
+    private static volatile DynamoDbClient instance;
 
-    @Override
-    public void initialize() {
-        super.initialize();
+    public static DynamoDbClient get() {
+        if (instance == null) {
+            synchronized (DynamoProvider.class) {
+                if (instance == null) {
+                    instance = DynamoDbClient.create();
+                }
+            }
+        }
+        return instance;
+    }
 
-        checkState(getParent().getNamespaceOpt().isPresent(),
-                "Java processors require namespace property to be used as a Java package name");
+    @VisibleForTesting
+    public static void override(DynamoDbClient instance) {
+        DynamoProvider.instance = instance;
+    }
+
+    /** Disable constructor */
+    private DynamoProvider() {
     }
 }

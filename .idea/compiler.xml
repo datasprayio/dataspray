@@ -14,15 +14,16 @@
         <outputRelativeToContentRoot value="true" />
         <processor name="lombok.launch.AnnotationProcessorHider$AnnotationProcessor" />
         <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar" />
         </processorPath>
-        <module name="dataspray-site-landing" />
         <module name="dataspray-stream-ingest" />
+        <module name="dataspray-site-landing" />
         <module name="dataspray-remote-workspace" />
         <module name="dataspray-client-typescript" />
         <module name="dataspray-store" />
         <module name="dataspray-core" />
         <module name="dataspray-lambda-web" />
+        <module name="dataspray-runner" />
         <module name="dataspray-site-dashboard" />
         <module name="dataspray-client" />
         <module name="dataspray-api" />

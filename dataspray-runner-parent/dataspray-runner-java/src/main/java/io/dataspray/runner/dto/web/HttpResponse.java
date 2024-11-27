@@ -53,6 +53,10 @@ public class HttpResponse {
     @Builder.Default
     boolean isBase64Encoded = false;
 
+    public static <T> HttpResponseBuilder<T> builder() {
+        return new HttpResponseBuilder<T>();
+    }
+
     public static class HttpResponseBuilder<T> {
 
         /**

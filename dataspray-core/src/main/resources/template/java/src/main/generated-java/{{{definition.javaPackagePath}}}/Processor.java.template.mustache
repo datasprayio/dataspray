@@ -1,4 +1,4 @@
-package {{{definition.javaPackage}}}.autogen;
+package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
 {{^processor.inputStreams.empty}}
@@ -18,7 +18,7 @@ public interface Processor {
     {{#endpoints}}
 
     HttpResponse web{{{nameCamelUpper}}}(
-        {{>../../../../web-method-params}}
+        {{>../../../web-method-params}}
         HttpResponseBuilder<{{#responseDataFormat}}{{{nameCamelUpper}}}{{/responseDataFormat}}{{^responseDataFormat}}Object{{/responseDataFormat}}> responseBuilder,
         WebCoordinator coordinator);
     {{/endpoints}}

@@ -290,7 +290,6 @@ public class DynamoStateManager implements StateManager {
         return itemOpt;
     }
 
-
     private Map<String, AttributeValue> getItem() {
         Map<String, AttributeValue> item = itemOpt.orElse(null);
         if (item == null) {

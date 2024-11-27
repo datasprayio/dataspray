@@ -1,4 +1,4 @@
-package {{{definition.javaPackage}}}.autogen;
+package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
 {{^processor.outputStreams.empty}}
@@ -9,14 +9,21 @@ import io.dataspray.runner.StateManager;
 import java.time.Duration;
 import java.util.Optional;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-{{#processor.includeSingleTableLibrary}}
 import io.dataspray.singletable.SingleTable;
-{{/processor.includeSingleTableLibrary}}
 {{/processor.hasDynamoState}}
 {{/util.javaImportsFormat}}
 
-public interface WebCoordinator {
+public interface StreamCoordinator {
     {{#processor.hasDynamoState}}
+
+    /**
+     * State management backed by DynamoDB and unique for each message key within a task.
+     * <p>
+     * Identical to calling {@link #stateForNamespace}{@code (ttl, "task", <task_name>, "key", <message_key>)}.
+     * Each state has a combined limit of 1MB. Writes are buffered and flushed after each message batch.
+     * @param ttl Optional second-precision time-to-live for the state. Resets on every write.
+     */
+    StateManager stateForMessageKey(Optional<Duration> ttl);
 
     /**
      * State management backed by DynamoDB and unique for entire task.
@@ -42,13 +49,11 @@ public interface WebCoordinator {
      * Use this method to perform advanced operations on DynamoDB.
      */
     DynamoDbClient getDynamoClient();
-    {{#processor.includeSingleTableLibrary}}
 
     /**
      * Returns an instance of SingleTable which is a convenience wrapper on top of DynamoDB client.
      */
     SingleTable getSingleTable();
-    {{/processor.includeSingleTableLibrary}}
     {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}
 

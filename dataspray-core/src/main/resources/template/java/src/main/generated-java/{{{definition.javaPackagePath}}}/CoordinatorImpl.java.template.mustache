@@ -1,4 +1,4 @@
-package {{{definition.javaPackage}}}.autogen;
+package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
 import lombok.SneakyThrows;
@@ -14,9 +14,8 @@ import io.dataspray.runner.StateManagerFactoryImpl;
 import java.time.Duration;
 import java.util.Optional;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-{{#processor.includeSingleTableLibrary}}
 import io.dataspray.singletable.SingleTable;
-{{/processor.includeSingleTableLibrary}}
+import {{{definition.javaPackage}}}.SingleTableProvider;
 {{/processor.hasDynamoState}}
 {{/util.javaImportsFormat}}
 
@@ -60,16 +59,11 @@ public class CoordinatorImpl implements {{#processor.web}}WebCoordinator{{#proce
     public DynamoDbClient getDynamoClient() {
         return rawCoordinator.getDynamoClient();
     }
-    {{#processor.includeSingleTableLibrary}}
 
     @Override
     public SingleTable getSingleTable() {
-        return SingleTable.builder()
-            .tableName(System.getenv(StateManagerFactoryImpl.DATASPRAY_STATE_TABLE_NAME_ENV))
-            .overrideGson(GsonUtil.get())
-            .build();
+        return SingleTableProvider.get();
     }
-    {{/processor.includeSingleTableLibrary}}
     {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}
 

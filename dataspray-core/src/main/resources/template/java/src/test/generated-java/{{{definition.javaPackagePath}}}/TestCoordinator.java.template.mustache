@@ -1,4 +1,4 @@
-package {{{definition.javaPackage}}}.autogen;
+package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
 {{^processor.outputStreams.empty}}
@@ -19,9 +19,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import jakarta.annotation.Nullable;
 import static com.google.common.base.Preconditions.checkState;
 import org.mockito.Mockito;
-{{#processor.includeSingleTableLibrary}}
 import io.dataspray.singletable.SingleTable;
-{{/processor.includeSingleTableLibrary}}
+import {{{definition.javaPackage}}}.SingleTableProvider;
 {{/processor.hasDynamoState}}
 {{/util.javaImportsFormat}}
 
@@ -32,9 +31,6 @@ public class TestCoordinator implements {{#processor.web}}WebCoordinator{{#proce
     {{/processor.outputStreams}}
     {{#processor.hasDynamoState}}
     private final DynamoDbClient dynamo = Mockito.mock(DynamoDbClient.class);
-    {{#processor.includeSingleTableLibrary}}
-    private final SingleTable singleTable = Mockito.mock(SingleTable.class);
-    {{/processor.includeSingleTableLibrary}}
     @Nullable private final String messageKey;
     {{/processor.hasDynamoState}}
 
@@ -79,13 +75,11 @@ public class TestCoordinator implements {{#processor.web}}WebCoordinator{{#proce
     public DynamoDbClient getDynamoClient() {
         return dynamo;
     }
-    {{#processor.includeSingleTableLibrary}}
 
     @Override
     public SingleTable getSingleTable() {
-        return singleTable;
+        return SingleTableProvider.get();
     }
-    {{/processor.includeSingleTableLibrary}}
     {{/processor.hasDynamoState}}
     {{#processor.outputStreams}}
 

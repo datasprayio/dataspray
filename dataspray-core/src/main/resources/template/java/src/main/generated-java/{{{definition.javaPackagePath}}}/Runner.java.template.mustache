@@ -1,11 +1,11 @@
-package {{{definition.javaPackage}}}.autogen;
+package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
 import java.util.Base64;
 import lombok.SneakyThrows;
 import {{{definition.javaPackage}}}.{{{processor.nameCamelUpper}}};
 {{#processor.dataFormats}}
-import {{{definition.javaPackage}}}.autogen.{{{nameCamelUpper}}};
+import {{{definition.javaPackage}}}.{{{nameCamelUpper}}};
 {{/processor.dataFormats}}
 import java.io.IOException;
 import io.dataspray.runner.util.GsonUtil;
@@ -52,10 +52,10 @@ public class Runner extends Entrypoint {
         {{#endpoints}}
 
         if (
-            {{>../../../../web-request-endpoint-match}}
+            {{>../../../web-request-endpoint-match}}
         ) {
             return processor.web{{{nameCamelUpper}}}(
-                {{>../../../../web-request-to-params}}
+                {{>../../../web-request-to-params}}
                 HttpResponse.<{{#responseDataFormat}}{{{nameCamelUpper}}}{{/responseDataFormat}}{{^responseDataFormat}}Object{{/responseDataFormat}}>builder(),
                 coordinator);
         }
