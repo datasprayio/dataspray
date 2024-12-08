@@ -45,4 +45,4 @@ jobs:
       # Test entire project
       - name: Maven build
         timeout-minutes: 30
-        run: MAVEN_ARGS="--batch-mode" make action-test
+        run: MAVEN_ARGS="--no-transfer-progress" make action-test
