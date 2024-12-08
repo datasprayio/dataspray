@@ -26,8 +26,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import io.dataspray.singletable.IndexSchema;
 import io.dataspray.singletable.ShardPageResult;
+import io.dataspray.singletable.ShardedIndexSchema;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import io.dataspray.store.LambdaStore;
@@ -72,14 +72,14 @@ public class DynamoLambdaStore implements LambdaStore {
     CycleUtil cycleUtil;
 
     private TableSchema<LambdaRecord> lambdaRecordSchema;
-    private IndexSchema<LambdaRecord> lambdasByOrganizationScanAllSchema;
+    private ShardedIndexSchema<LambdaRecord> lambdasByOrganizationScanAllSchema;
     private TableSchema<LambdaMutex> lambdaMutexSchema;
 
     @Startup
     @VisibleForTesting
     public void init() {
         lambdaRecordSchema = singleTable.parseTableSchema(LambdaRecord.class);
-        lambdasByOrganizationScanAllSchema = singleTable.parseGlobalSecondaryIndexSchema(1, LambdaRecord.class);
+        lambdasByOrganizationScanAllSchema = singleTable.parseShardedGlobalSecondaryIndexSchema(1, LambdaRecord.class);
         lambdaMutexSchema = singleTable.parseTableSchema(LambdaMutex.class);
     }
 
@@ -90,19 +90,17 @@ public class DynamoLambdaStore implements LambdaStore {
                             ImmutableSet<String> inputQueueNames,
                             ImmutableSet<String> outputQueueNames,
                             Optional<String> endpointUrlOpt) {
-        LambdaRecord lamdbaRecord = new LambdaRecord(
-                organizationName,
-                taskId,
-                username,
-                inputQueueNames,
-                outputQueueNames,
-                endpointUrlOpt.orElse(null),
-                false,
-                null);
-        lambdaRecordSchema.put()
-                .item(lamdbaRecord)
-                .execute(dynamo);
-        return lamdbaRecord;
+        return lambdaRecordSchema.put()
+                .item(new LambdaRecord(
+                        organizationName,
+                        taskId,
+                        username,
+                        inputQueueNames,
+                        outputQueueNames,
+                        endpointUrlOpt.orElse(null),
+                        false,
+                        null))
+                .executeGetNew(dynamo);
     }
 
     @Override
@@ -112,7 +110,7 @@ public class DynamoLambdaStore implements LambdaStore {
                         "organizationName", organizationName,
                         "taskId", taskId))
                 .builder(b -> b.consistentRead(true))
-                .execute(dynamo);
+                .executeGet(dynamo);
     }
 
     @Override
@@ -146,8 +144,7 @@ public class DynamoLambdaStore implements LambdaStore {
                 .key(Map.of(
                         "organizationName", organizationName,
                         "taskId", taskId))
-                .execute(dynamo)
-                .orElseThrow();
+                .executeGetUpdated(dynamo);
     }
 
     @Override

@@ -32,7 +32,6 @@ import io.dataspray.store.TopicStore;
 import io.quarkus.runtime.Startup;
 import jakarta.inject.Inject;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
 
 import java.time.Duration;
 import java.util.Map;
@@ -78,7 +77,7 @@ public class DynamoTopicStore implements TopicStore {
         Topics topics = topicsSchema.get()
                 .key(Map.of("organizationName", organizationName))
                 .builder(b -> b.consistentRead(!useCache))
-                .execute(dynamo)
+                .executeGet(dynamo)
                 // Construct default if not found
                 .orElseGet(() -> Topics.builder()
                         .organizationName(organizationName)
@@ -112,7 +111,7 @@ public class DynamoTopicStore implements TopicStore {
         } else {
             putBuilder.conditionFieldEquals("version", topics.getVersion());
         }
-        PutItemResponse execute = putBuilder.item(topicsVersionBumped)
+        putBuilder.item(topicsVersionBumped)
                 .execute(dynamo);
 
         // Update cache

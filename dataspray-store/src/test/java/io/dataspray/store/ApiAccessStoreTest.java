@@ -282,7 +282,7 @@ public class ApiAccessStoreTest extends AbstractTest {
         TableSchema<UsageKey> usageKeySchema = singleTable.parseTableSchema(UsageKey.class);
         Optional<UsageKey> usageKeyOpt = usageKeySchema.get()
                 .key(Map.of("usageKeyApiKey", usageKeyApiKey))
-                .execute(dynamo);
+                .executeGet(dynamo);
         return usageKeyOpt.isPresent();
     }
 }

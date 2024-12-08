@@ -42,6 +42,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Optional;
 
 @Slf4j
@@ -73,7 +75,9 @@ public class GsonUtil {
                             .registerTypeAdapterFactory(ImmutableAdapterFactory.forGuava())
                             .registerTypeAdapterFactory(new NonnullAdapterFactory())
                             .registerTypeAdapter(Instant.class, new InstantTypeConverter())
+                            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeConverter())
                             .registerTypeAdapter(LocalDate.class, new LocalDateTypeConverter())
+                            .registerTypeAdapter(LocalTime.class, new LocalTimeTypeConverter())
                             .registerTypeAdapter(Optional.class, new JavaOptionalTypeConverter<>())
                             .registerTypeAdapterFactory(ExplicitNull.get())
                             .create();
@@ -110,6 +114,19 @@ public class GsonUtil {
         }
     }
 
+    private static class LocalDateTimeTypeConverter
+            implements JsonSerializer<LocalDateTime>, JsonDeserializer<LocalDateTime> {
+        @Override
+        public JsonElement serialize(LocalDateTime src, Type srcType, JsonSerializationContext context) {
+            return new JsonPrimitive(src.toString());
+        }
+
+        @Override
+        public LocalDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            return LocalDateTime.parse(json.getAsString());
+        }
+    }
+
     private static class LocalDateTypeConverter
             implements JsonSerializer<LocalDate>, JsonDeserializer<LocalDate> {
         @Override
@@ -120,6 +137,19 @@ public class GsonUtil {
         @Override
         public LocalDate deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
             return LocalDate.parse(json.getAsString());
+        }
+    }
+
+    private static class LocalTimeTypeConverter
+            implements JsonSerializer<LocalTime>, JsonDeserializer<LocalTime> {
+        @Override
+        public JsonElement serialize(LocalTime src, Type srcType, JsonSerializationContext context) {
+            return new JsonPrimitive(src.toString());
+        }
+
+        @Override
+        public LocalTime deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            return LocalTime.parse(json.getAsString());
         }
     }
 

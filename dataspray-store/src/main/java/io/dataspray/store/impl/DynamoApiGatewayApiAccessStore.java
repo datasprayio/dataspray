@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.singletable.IndexSchema;
 import io.dataspray.singletable.ShardPageResult;
+import io.dataspray.singletable.ShardedIndexSchema;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import io.dataspray.store.ApiAccessStore;
@@ -83,7 +84,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     private TableSchema<ApiAccess> apiAccessSchema;
     private IndexSchema<ApiAccess> apiAccessByOrganizationSchema;
     private TableSchema<UsageKey> usageKeyByApiKeySchema;
-    private IndexSchema<UsageKey> usageKeyScanAllSchema;
+    private ShardedIndexSchema<UsageKey> usageKeyScanAllSchema;
     private Cache<String, Optional<ApiAccess>> apiAccessByApiKeyCache;
 
     @Startup
@@ -96,7 +97,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         apiAccessSchema = singleTable.parseTableSchema(ApiAccess.class);
         apiAccessByOrganizationSchema = singleTable.parseGlobalSecondaryIndexSchema(1, ApiAccess.class);
         usageKeyByApiKeySchema = singleTable.parseTableSchema(UsageKey.class);
-        usageKeyScanAllSchema = singleTable.parseGlobalSecondaryIndexSchema(1, UsageKey.class);
+        usageKeyScanAllSchema = singleTable.parseShardedGlobalSecondaryIndexSchema(1, UsageKey.class);
     }
 
     @Override
@@ -201,7 +202,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         Optional<ApiAccess> apiAccessOpt = apiAccessSchema.get()
                 .key(Map.of("apiKey", apiKey))
                 .builder(b -> b.consistentRead(!useCache))
-                .execute(dynamo)
+                .executeGet(dynamo)
                 .filter(ApiAccess::isTtlNotExpired);
 
         // Update cache
@@ -282,7 +283,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
         // Lookup mapping from dynamo
         Optional<UsageKey> usageKeyOpt = usageKeyByApiKeySchema.get()
                 .key(Map.of("usageKeyApiKey", apiKey))
-                .execute(dynamo);
+                .executeGet(dynamo);
 
         // Return existing key if exists
         if (usageKeyOpt.isPresent()) {
@@ -300,12 +301,10 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
                 .usagePlanId(usagePlanIdOrganization).build());
 
         // Store mapping in dynamo
-        UsageKey usageKey = new UsageKey(apiKey, createApiKeyResponse.id());
-        usageKeyByApiKeySchema.put()
-                .item(usageKey)
-                .execute(dynamo);
-
-        return usageKey.getUsageKeyApiKey();
+        return usageKeyByApiKeySchema.put()
+                .item(new UsageKey(apiKey, createApiKeyResponse.id()))
+                .executeGetNew(dynamo)
+                .getUsageKeyApiKey();
     }
 
     @Override

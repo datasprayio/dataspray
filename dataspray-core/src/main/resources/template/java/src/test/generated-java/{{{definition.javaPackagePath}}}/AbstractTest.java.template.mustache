@@ -1,7 +1,7 @@
 package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import io.dataspray.runner.StoreType;
 import java.util.UUID;
 import {{{definition.javaPackage}}}.{{{processor.nameCamelUpper}}};
@@ -9,8 +9,8 @@ import {{{definition.javaPackage}}}.{{{processor.nameCamelUpper}}};
 import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
 import com.amazonaws.services.dynamodbv2.local.shared.access.AmazonDynamoDBLocal;
 import io.dataspray.runner.util.GsonUtil;
-import org.junit.BeforeClass;
-import org.junit.AfterClass;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
 import io.dataspray.singletable.SingleTable;
 import {{{definition.javaPackage}}}.SingleTableProvider;
 import java.util.UUID;
@@ -26,13 +26,13 @@ public class AbstractTest {
     protected Processor processor;
     {{#processor.hasDynamoState}}
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClassAbstractTest() {
         dynamoServer = DynamoDBEmbedded.create();
     }
     {{/processor.hasDynamoState}}
 
-    @Before
+    @BeforeEach
     public void beforeAbstractTest() {
         {{#processor.hasDynamoState}}
         DynamoProvider.override(dynamoServer.dynamoDbClient());
@@ -51,7 +51,7 @@ public class AbstractTest {
     }
     {{#processor.hasDynamoState}}
 
-    @AfterClass
+    @AfterAll
     public static void afterClassAbstractTest() {
         dynamoServer.shutdown();
     }

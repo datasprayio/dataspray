@@ -1,7 +1,7 @@
 package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import {{{definition.javaPackage}}}.AbstractTest;
 import {{{definition.javaPackage}}}.TestCoordinator;
 import org.mockito.Mockito;
@@ -9,7 +9,7 @@ import org.mockito.Mockito;
 import {{{definition.javaPackage}}}.{{{nameCamelUpper}}};
 {{/processor.dataFormats}}
 {{#processor.web}}
-import org.junit.Assert;
+import static org.junit.jupiter.api.Assertions.*;
 import io.dataspray.runner.dto.web.MockHttpRequest;
 import io.dataspray.runner.dto.web.HttpResponse;
 {{/processor.web}}
@@ -19,7 +19,7 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
     {{#processor.web}}
     {{#endpoints}}
 
-    @Test(timeout = 10_000)
+    @Test
     public void testWeb{{{nameCamelUpper}}}() {
 
         TestCoordinator coordinator = TestCoordinator.createForWeb();
@@ -28,7 +28,7 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
                 HttpResponse.builder(),
                 coordinator);
 
-        Assert.assertEquals(204, response.getStatusCode());
+        assertEquals(204, response.getStatusCode());
         {{#processor.outputStreams}}
         {{#-first}}coordinator{{/-first}}{{^-first}}    {{/-first}}.assertSentNone{{{dataFormat.nameCamelUpper}}}(){{#-last}};{{/-last}}
         {{/processor.outputStreams}}
@@ -36,7 +36,7 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
     {{/endpoints}}
     {{#endpoints.empty}}
 
-    @Test(timeout = 10_000)
+    @Test
     public void testWeb() {
 
         TestCoordinator coordinator = TestCoordinator.createForWeb();
@@ -49,7 +49,7 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
                 HttpResponse.builder(),
                 coordinator);
 
-        Assert.assertEquals(204, response.getStatusCode());
+        assertEquals(204, response.getStatusCode());
         {{#processor.outputStreams}}
         {{#-first}}coordinator{{/-first}}{{^-first}}    {{/-first}}.assertSentNone{{{dataFormat.nameCamelUpper}}}(){{#-last}};{{/-last}}
         {{/processor.outputStreams}}
@@ -58,7 +58,7 @@ public class {{{processor.nameCamelUpper}}}Test extends AbstractTest {
     {{/processor.web}}
     {{#processor.inputStreams}}
 
-    @Test(timeout = 10_000)
+    @Test
     public void test{{{uniqueNameCamelUpper}}}() {
 
         stream{{{uniqueNameCamelUpper}}}("messageKey", {{>stream-test-data}}, "messageId"){{#processor.outputStreams}}

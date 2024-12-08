@@ -22,6 +22,7 @@
 
 package io.dataspray.runner.util;
 
+import com.dampcake.gson.immutable.ImmutableAdapterFactory;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -33,8 +34,13 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Optional;
 
 public class GsonUtil {
 
@@ -47,7 +53,12 @@ public class GsonUtil {
                     gson = new GsonBuilder()
                             .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
                             .disableHtmlEscaping()
+                            .registerTypeAdapterFactory(ImmutableAdapterFactory.forGuava())
                             .registerTypeAdapter(Instant.class, new InstantTypeConverter())
+                            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeConverter())
+                            .registerTypeAdapter(LocalDate.class, new LocalDateTypeConverter())
+                            .registerTypeAdapter(LocalTime.class, new LocalTimeTypeConverter())
+                            .registerTypeAdapter(Optional.class, new JavaOptionalTypeConverter<>())
                             .create();
                 }
             }
@@ -65,6 +76,62 @@ public class GsonUtil {
         @Override
         public Instant deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
             return Instant.parse(json.getAsString());
+        }
+    }
+
+    private static class LocalDateTimeTypeConverter
+            implements JsonSerializer<LocalDateTime>, JsonDeserializer<LocalDateTime> {
+        @Override
+        public JsonElement serialize(LocalDateTime src, Type srcType, JsonSerializationContext context) {
+            return new JsonPrimitive(src.toString());
+        }
+
+        @Override
+        public LocalDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            return LocalDateTime.parse(json.getAsString());
+        }
+    }
+
+    private static class LocalDateTypeConverter
+            implements JsonSerializer<LocalDate>, JsonDeserializer<LocalDate> {
+        @Override
+        public JsonElement serialize(LocalDate src, Type srcType, JsonSerializationContext context) {
+            return new JsonPrimitive(src.toString());
+        }
+
+        @Override
+        public LocalDate deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            return LocalDate.parse(json.getAsString());
+        }
+    }
+
+    private static class LocalTimeTypeConverter
+            implements JsonSerializer<LocalTime>, JsonDeserializer<LocalTime> {
+        @Override
+        public JsonElement serialize(LocalTime src, Type srcType, JsonSerializationContext context) {
+            return new JsonPrimitive(src.toString());
+        }
+
+        @Override
+        public LocalTime deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            return LocalTime.parse(json.getAsString());
+        }
+    }
+
+    private static class JavaOptionalTypeConverter<T>
+            implements JsonSerializer<Optional<T>>, JsonDeserializer<Optional<T>> {
+
+        @Override
+        public Optional<T> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+                throws JsonParseException {
+            Type actualType = ((ParameterizedType) typeOfT).getActualTypeArguments()[0];
+            T value = context.deserialize(json, actualType);
+            return Optional.ofNullable(value);
+        }
+
+        @Override
+        public JsonElement serialize(Optional<T> src, Type typeOfSrc, JsonSerializationContext context) {
+            return context.serialize(src.orElse(null));
         }
     }
 }

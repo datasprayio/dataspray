@@ -1,6 +1,7 @@
 package {{{definition.javaPackage}}};
 
 {{#util.javaImportsFormat}}
+import jakarta.annotation.Nullable;
 import lombok.NonNull;
 import lombok.Value;
 import io.dataspray.runner.Message;
@@ -17,7 +18,7 @@ public class TestMessage<T> implements Message<T> {
     String streamName;
     @NonNull
     String key;
-    @NonNull
+    @Nullable
     String id;
     @NonNull
     T data;
