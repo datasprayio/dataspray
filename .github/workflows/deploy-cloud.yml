@@ -34,19 +34,14 @@ jobs:
     if: "github.event_name != 'push' || (!contains(github.event.head_commit.message, '[release]') && !contains(github.event.head_commit.message, '[skip deploy]'))"
     runs-on: ubuntu-latest
     steps:
+
       - uses: actions/checkout@v3
-      - uses: sdkman/sdkman-action@b1f9b696c79148b66d3d3a06f7ea801820318d0f
-      - uses: actions/setup-java@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: graalvm
           java-version: 21
-          jdkFile: ${{ steps.sdkman.outputs.file }}
-          server-id: ossrh
-          server-username: ${{ secrets.OSSRH_USERNAME }}
-          server-password: ${{ secrets.OSSRH_TOKEN }}
-          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
-          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
-          cache: maven
+          cache: 'maven'
       - uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
@@ -58,6 +53,30 @@ jobs:
           chmod a+x /usr/local/bin/convert
           convert -version
           scour --version
+
+      - name: Import GPG private key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --yes --no-tty --import
+          KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | awk '{print $2}' | cut -d'/' -f2)
+          echo "default-key $KEY_ID" >> ~/.gnupg/gpg.conf
+          echo "use-agent" >> ~/.gnupg/gpg.conf
+          export GPG_TTY=$(tty)
+      - name: Set up Maven settings.xml
+        run: |
+          mkdir -p ~/.m2
+          cat <<EOF > ~/.m2/settings.xml
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+            <servers>
+              <server>
+                <id>ossrh</id>
+                <username>${{ secrets.OSSRH_USERNAME }}</username>
+                <password>${{ secrets.OSSRH_TOKEN }}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
       - name: Add profile credentials to ~/.aws/credentials
         run: |
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} --profile dataspray
