@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2023 Matus Faro
+  ~ Copyright 2024 Matus Faro
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy
   ~ of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,18 @@
         xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
-    <id>dist</id>
+    <id>binary</id>
     <formats>
-        <format>tar.gz</format>
         <format>zip</format>
-        <format>dir</format>
     </formats>
-    <files>
-        <file>
-            <source>${project.build.directory}/${project.artifactId}-${project.version}-runner${executable-suffix}
-            </source>
-            <outputDirectory>./bin</outputDirectory>
-            <destName>${project.artifactId}${executable-suffix}</destName>
-        </file>
-    </files>
+    <baseDirectory>/</baseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/quarkus-app</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+        </fileSet>
+    </fileSets>
 </assembly>
