@@ -88,4 +88,5 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.JRELEASER_GITHUB_TOKEN }}
         run: make action-deploy-cloud-${{ github.event.inputs.lambdaRuntime || 'jvm' }}-${{ github.event.inputs.environment || 'staging' }}
