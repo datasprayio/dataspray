@@ -31,7 +31,7 @@
     </parent>
 
     <artifactId>dataspray-cli</artifactId>
-    <version>0.0.9</version>
+    <version>0.0.10</version>
     <packaging>jar</packaging>
 
     <name>DataSpray CLI</name>
@@ -275,6 +275,7 @@
                                     <owner>datasprayio</owner>
                                     <name>asdf-${binary.name}</name>
                                 </repository>
+                                <branch>main</branch>
                                 <downloadUrl>
                                     https://github.com/datasprayio/dataspray/releases/download/cli-$version/dst-jar-$version.zip
                                 </downloadUrl>
@@ -297,7 +298,7 @@
                                 </update>
                                 <tagName>cli-{{projectVersion}}</tagName>
                                 <files>true</files>
-                                <draft>false</draft>
+                                <branch>main</branch>
                                 <issues>
                                     <enabled>true</enabled>
                                 </issues>
