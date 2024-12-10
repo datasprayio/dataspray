@@ -23,8 +23,10 @@
 package io.dataspray.cli;
 
 import io.dataspray.common.VersionUtil;
+import jakarta.enterprise.context.ApplicationScoped;
 import picocli.CommandLine.IVersionProvider;
 
+@ApplicationScoped
 public class VersionProvider implements IVersionProvider {
 
     private final VersionUtil versionUtil = new VersionUtil();

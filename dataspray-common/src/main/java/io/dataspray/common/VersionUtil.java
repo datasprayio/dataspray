@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2024 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,12 +27,28 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.Optional;
 
+import static java.util.function.Predicate.not;
+
 @ApplicationScoped
 public class VersionUtil {
 
     public String getVersion() {
-        return Optional.ofNullable(Strings.emptyToNull(getClass().getPackage().getImplementationVersion()))
-                .or(() -> Optional.ofNullable(Strings.emptyToNull(System.getenv("PROJECT_VERSION"))))
+        return getVersionFromManifest()
+                .or(this::getVersionFromQuarkusConfig)
                 .orElse("UNKNOWN");
+    }
+
+    private Optional<String> getVersionFromManifest() {
+        return Optional.ofNullable(Strings.emptyToNull(getClass().getPackage().getImplementationVersion()))
+                .filter(not("0.0.1-SNAPSHOT"::equals));
+    }
+
+    private Optional<String> getVersionFromQuarkusConfig() {
+        try {
+            return Optional.ofNullable(Strings.emptyToNull(org.eclipse.microprofile.config.ConfigProvider.getConfig()
+                    .getValue("quarkus.application.version", String.class)));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
 }

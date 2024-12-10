@@ -634,9 +634,6 @@
                         <perCoreThreadCount>true</perCoreThreadCount>
                         <trimStackTrace>false</trimStackTrace>
                         <useFile>false</useFile>
-                        <environmentVariables>
-                            <PROJECT_VERSION>0.0.1-SNAPSHOT</PROJECT_VERSION>
-                        </environmentVariables>
                         <systemPropertyVariables>
                             <quarkus.test.arg-line>
                                 -agentlib:native-image-agent=trace-output=${project.build.directory}/native-image-agent-trace.json
