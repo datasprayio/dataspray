@@ -274,8 +274,8 @@
                                 <repository>
                                     <owner>datasprayio</owner>
                                     <name>asdf-${binary.name}</name>
+                                    <branch>main</branch>
                                 </repository>
-                                <branch>main</branch>
                                 <downloadUrl>
                                     https://github.com/datasprayio/dataspray/releases/download/cli-$version/dst-jar-$version.zip
                                 </downloadUrl>
