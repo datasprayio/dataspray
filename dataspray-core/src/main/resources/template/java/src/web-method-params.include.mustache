@@ -11,7 +11,7 @@
         {{/isSerdeJson}}
         {{/requestDataFormat}}
         {{#pathParams}}
-        {{^isRequired}}@Nullable {{/isRequired}}String {{{nameCamelLower}}}Path,
+        String {{{nameCamelLower}}}Path,
         {{/pathParams}}
         {{#queryParams}}
         {{^isRequired}}@Nullable {{/isRequired}}String {{{nameCamelLower}}}Query,
