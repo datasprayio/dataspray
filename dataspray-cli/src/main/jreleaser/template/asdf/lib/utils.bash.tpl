@@ -100,6 +100,7 @@ install_version() {
     local tool_cmd
     eval "$install_path/bin/$TOOL_TEST" >/dev/null 2>&1
     if [ $? -ne 0 ]; then
+        eval "$install_path/bin/$TOOL_TEST"
         fail "Failed to test run tool with $install_path/bin/$TOOL_TEST"
     fi
 
