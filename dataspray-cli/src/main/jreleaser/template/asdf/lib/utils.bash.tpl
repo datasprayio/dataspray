@@ -97,10 +97,9 @@ install_version() {
     cp -r "$ASDF_DOWNLOAD_PATH"/* "$install_path"
 
     local tool_cmd
-    eval "$TOOL_TEST" >/dev/null 2>&1
+    eval "$install_path/bin/$TOOL_TEST" >/dev/null 2>&1
     if [ $? -ne 0 ]; then
-        echo "Command failed with return code $RETURN_CODE."
-        fail "Failed to test execution of $install_path/bin/$tool_cmd"
+        fail "Failed to test run tool with $install_path/bin/$TOOL_TEST"
     fi
 
     echo "$TOOL_NAME $version installation was successful!"
