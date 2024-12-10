@@ -298,7 +298,8 @@
                                 </update>
                                 <tagName>cli-{{projectVersion}}</tagName>
                                 <files>true</files>
-                                <branch>main</branch>
+                                <!-- For datasprayio/dataspray repo-->
+                                <branch>master</branch>
                                 <issues>
                                     <enabled>true</enabled>
                                 </issues>
