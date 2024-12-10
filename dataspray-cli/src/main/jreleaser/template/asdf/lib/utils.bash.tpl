@@ -98,7 +98,7 @@ install_version() {
 
     local tool_cmd
     eval "$TOOL_TEST" >/dev/null 2>&1
-    if [ $RETURN_CODE -ne 0 ]; then
+    if [ $? -ne 0 ]; then
         echo "Command failed with return code $RETURN_CODE."
         fail "Failed to test execution of $install_path/bin/$tool_cmd"
     fi
