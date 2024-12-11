@@ -37,17 +37,6 @@
         <module name="dataspray-package" />
         <module name="dataspray-runner-typescript" />
       </profile>
-      <profile name="Annotation profile for dataspray-runner" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processor name="lombok.launch.AnnotationProcessorHider$AnnotationProcessor" />
-        <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar" />
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar" />
-        </processorPath>
-        <module name="dataspray-runner" />
-      </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="21">
       <module name="dataspray-api (1)" target="21" />
