@@ -36,12 +36,11 @@ public interface CliConfig {
      * Get API Key.
      * <p>
      * Organization is determined in the following order:
-     *     <ol>
-     *         <li>Organization name passed as parameter</li>
-     *         <li>Organization name from environment variable</li>
-     *         <li>Organization name defined as default</li>
-     *         </ol>
-     * </p>
+     * <ol>
+     *     <li>Organization name passed as parameter</li>
+     *     <li>Organization name from environment variable</li>
+     *     <li>Organization name defined as default</li>
+     * </ol>
      */
     Organization getOrganization(Optional<String> organizationOpt);
 

@@ -323,7 +323,7 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
 
     /**
      * Get the deterministic Usage Key API key for the given Usage Key type.
-     * <p/>
+     * <p>
      * This method is used by both CDK to pre-create api keys and also by the API Gateway to fetch the key,
      * Do not change the format of the key without considering the implications.
      */
