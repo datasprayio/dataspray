@@ -35,6 +35,7 @@
     <packaging>pom</packaging>
 
     <name>DataSpray API Parent</name>
+    <description>Parent for APIs and clients</description>
     <url>https://dataspray.io</url>
 
     <modules>

@@ -35,6 +35,7 @@
     <packaging>jar</packaging>
 
     <name>DataSpray API</name>
+    <description>API for programmatically accessing DataSpray services</description>
     <url>https://dataspray.io</url>
 
     <properties>

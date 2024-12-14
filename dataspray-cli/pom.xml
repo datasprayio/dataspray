@@ -238,7 +238,7 @@
                                 <maintainer>matusfaro</maintainer>
                             </maintainers>
                             <stereotype>CLI</stereotype>
-                            <license>Apache-2.0</license>
+                            <license>MIT</license>
                             <inceptionYear>2022</inceptionYear>
                             <vendor>Smotana</vendor>
                             <links>

@@ -35,6 +35,7 @@
     <packaging>jar</packaging>
 
     <name>DataSpray Client</name>
+    <description>Java client for DataSpray API</description>
     <url>https://dataspray.io</url>
 
     <properties>

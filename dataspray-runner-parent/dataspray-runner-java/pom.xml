@@ -36,6 +36,7 @@
     <packaging>jar</packaging>
 
     <name>DataSpray Runner Java</name>
+    <description>Java library for running tasks</description>
     <url>https://dataspray.io</url>
 
     <properties>

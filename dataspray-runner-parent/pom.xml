@@ -35,6 +35,7 @@
     <packaging>pom</packaging>
 
     <name>DataSpray Runner Parent</name>
+    <description>Parent for runner libraries for running tasks</description>
     <url>https://dataspray.io</url>
 
     <modules>

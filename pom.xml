@@ -31,7 +31,23 @@
     <packaging>pom</packaging>
 
     <name>DataSpray Parent</name>
+    <description>Stream processing developer toolkit</description>
     <url>https://dataspray.io</url>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Matus Faro</name>
+            <email>matus@dataspray.io</email>
+        </developer>
+    </developers>
 
     <properties>
         <java.version>21</java.version>
