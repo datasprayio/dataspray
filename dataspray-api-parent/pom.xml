@@ -55,10 +55,6 @@
         </profile>
     </profiles>
 
-    <properties>
-        <skipDeployApiParentJava/>
-    </properties>
-
     <build>
         <plugins>
 

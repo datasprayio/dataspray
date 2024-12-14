@@ -43,10 +43,6 @@
         <module>dataspray-runner-typescript</module>
     </modules>
 
-    <properties>
-        <skipDeployRunnerParentJava/>
-    </properties>
-
     <build>
         <plugins>
 

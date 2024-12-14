@@ -84,7 +84,6 @@
         <failsafe.native-image-path>${project.build.directory}/${project.build.finalName}-runner
         </failsafe.native-image-path>
 
-        <skipDeployParentJava/>
         <skipTests/>
         <skipITs/>
         <argLine/>
