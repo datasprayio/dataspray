@@ -56,7 +56,7 @@ public class Runner extends Entrypoint {
         ) {
             return processor.web{{{nameCamelUpper}}}(
                 {{>../../../web-request-to-params}}
-                HttpResponse.<{{#responseDataFormat}}{{{nameCamelUpper}}}{{/responseDataFormat}}{{^responseDataFormat}}Object{{/responseDataFormat}}>builder(),
+                HttpResponse.<{{#responseDataFormat}}{{{nameCamelUpper}}}{{/responseDataFormat}}{{^responseDataFormat}}Void{{/responseDataFormat}}>builder(),
                 coordinator);
         }
         {{/endpoints}}
