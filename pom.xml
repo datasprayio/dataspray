@@ -571,6 +571,7 @@
             <plugin>
                 <groupId>org.honton.chas</groupId>
                 <artifactId>exists-maven-plugin</artifactId>
+                <inherited>false</inherited>
                 <executions>
                     <execution>
                         <id>check-if-exists</id>
@@ -588,6 +589,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
+                <inherited>false</inherited>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -600,6 +602,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
+                <inherited>false</inherited>
                 <configuration>
                     <source>${maven.compiler.source}</source>
                 </configuration>
@@ -615,6 +618,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
+                <inherited>false</inherited>
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
@@ -636,6 +640,7 @@
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
+                <inherited>false</inherited>
                 <extensions>true</extensions>
                 <configuration>
                     <skipNexusStagingDeployMojo>${skipDeployParentJava}</skipNexusStagingDeployMojo>

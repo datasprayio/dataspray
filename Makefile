@@ -5,27 +5,17 @@ comma := ,
 
 # Fully build and test the entire project including native executables
 # Used by GitHub Action workflow test.yml
-action-test:
+action-test-native:
 	mvn --update-snapshots --no-transfer-progress install -Pnative
+action-test-jvm:
+	mvn --update-snapshots --no-transfer-progress install
 
 # Deploy to particular environment (production, staging) with JVM or native executables
 # Used by GitHub Action workflow deploy.yml
-action-deploy-cloud-native-%:
-	AWS_PROFILE=dataspray mvn --update-snapshots --no-transfer-progress clean deploy -Pnative,$*
-action-deploy-cloud-jvm-%:
-	AWS_PROFILE=dataspray mvn --update-snapshots --no-transfer-progress clean deploy -P$*
-
-# Deploy client libraries to package managers
-client-languages := java typescript
-action-deploy-client: $(addprefix action-deploy-client-,$(client-languages))
-action-deploy-client-%:
-	mvn clean deploy --update-snapshots --no-transfer-progress -am -pl dataspray-api,dataspray-client-parent/dataspray-client-$*
-
-# Deploy runner libraries to package managers
-runner-languages := java typescript
-action-deploy-runner: $(addprefix action-deploy-runner-,$(runner-languages))
-action-deploy-runner-%:
-	mvn clean deploy --update-snapshots --no-transfer-progress -am -pl dataspray-runner-parent/dataspray-runner-$*
+action-deploy-native-%:
+	AWS_PROFILE=dataspray mvn clean deploy --update-snapshots --no-transfer-progress -Pnative,$*
+action-deploy-jvm-%:
+	AWS_PROFILE=dataspray mvn clean deploy --update-snapshots --no-transfer-progress -P$*
 
 deploy-control:
 	make deploy-dataspray-stream-control

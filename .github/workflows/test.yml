@@ -5,6 +5,16 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  workflow_dispatch:
+    inputs:
+      lambdaRuntime:
+        type: choice
+        description: 'Lambda Runtime'
+        required: true
+        default: 'jvm'
+        options:
+          - jvm
+          - native
 
 jobs:
   build:
@@ -36,4 +46,4 @@ jobs:
       # Test entire project
       - name: Maven build
         timeout-minutes: 30
-        run: make action-test
+        run: make action-test-${{ github.event.inputs.lambdaRuntime || 'jvm' }}
