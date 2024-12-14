@@ -27,7 +27,7 @@
     <parent>
         <artifactId>dataspray-parent</artifactId>
         <groupId>io.dataspray</groupId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.0.1</version>
     </parent>
 
     <artifactId>dataspray-runner-parent</artifactId>
@@ -41,4 +41,91 @@
         <module>dataspray-runner-java</module>
         <module>dataspray-runner-typescript</module>
     </modules>
+
+    <properties>
+        <skipDeployRunnerParentJava/>
+    </properties>
+
+    <build>
+        <plugins>
+
+            <!-- Publishing -->
+            <plugin>
+                <groupId>org.honton.chas</groupId>
+                <artifactId>exists-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>check-if-exists</id>
+                        <goals>
+                            <goal>remote</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <repository>https://s01.oss.sonatype.org/service/local/repositories/releases/content/</repository>
+                    <property>skipDeployRunnerParentJava</property>
+                    <requireGoal>deploy</requireGoal>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <skip>${skipDeployRunnerParentJava}</skip>
+                    <gpgArguments>
+                        <arg>--pinentry-mode</arg>
+                        <arg>loopback</arg>
+                    </gpgArguments>
+                    <passphrase>${env.GPG_PASSPHRASE}</passphrase>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <skipNexusStagingDeployMojo>${skipDeployRunnerParentJava}</skipNexusStagingDeployMojo>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
