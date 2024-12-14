@@ -49,7 +49,7 @@ public interface FileTracker {
     /**
      * Track specific file. Not required to exist.
      *
-     * @param path Either absolute path or relative to project root
+     * @param relativeToProjectOrAbsolutePath Either absolute path or relative to project root
      * @return True if file is marked as tracked successfully and unlinked;
      * False if file may or may not be present but definitely cannot be touched
      */

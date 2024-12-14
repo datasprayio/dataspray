@@ -92,9 +92,7 @@ public class Project {
      * Get git working path.
      * <p>
      * Note that JGit internally resolves symlinks, so this method ensures the absolute path is constructed with same
-     * common path as project path {@link #getAbsolutePath} to make sure calls to {@link Path#relativize(Path)} are
-     * constructed
-     * properly.
+     * common path as project path to make sure calls to {@link Path#relativize(Path)} are constructed properly.
      */
     @SneakyThrows
     public Path getGitWorkTreePath() {
