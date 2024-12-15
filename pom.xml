@@ -886,7 +886,6 @@
                     <version>1.7.0</version>
                     <extensions>true</extensions>
                     <configuration>
-                        <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
                         <serverId>ossrh</serverId>
                         <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
                         <autoReleaseAfterClose>true</autoReleaseAfterClose>
