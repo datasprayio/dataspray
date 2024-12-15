@@ -112,6 +112,16 @@
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>nexus-stage</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>deploy</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <!-- Defferring which effectively disables -->
                     <skipNexusStagingDeployMojo>${skipDeployRunnerParentJava}</skipNexusStagingDeployMojo>

@@ -596,7 +596,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <property>skipDeployParentJava</property>
+                    <property>skipDeployParent</property>
                 </configuration>
             </plugin>
             <plugin>
@@ -642,15 +642,25 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <skip>${skipDeployParentJava}</skip>
+                    <skip>${skipDeployParent}</skip>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>nexus-stage</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>deploy</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <!-- Defferring which effectively disables -->
-                    <skipNexusStagingDeployMojo>${skipDeployParentJava}</skipNexusStagingDeployMojo>
+                    <skipNexusStagingDeployMojo>${skipDeployParent}</skipNexusStagingDeployMojo>
                 </configuration>
             </plugin>
         </plugins>
