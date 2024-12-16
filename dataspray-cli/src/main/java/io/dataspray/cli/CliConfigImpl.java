@@ -23,7 +23,7 @@
 package io.dataspray.cli;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import io.dataspray.core.StreamRuntime.Organization;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +43,8 @@ import java.util.Optional;
 public class CliConfigImpl implements CliConfig {
     public static final String ORGANIZATION_ENV_NAME = "DST_ORG";
     private static final String CONFIG_FILE = System.getProperty("user.home", "~") + File.separator + ".dst";
-    private static final String PROPERTY_DEFAULT_ORGANIZATION = "default";
+    private static final String PROPERTY_DEFAULT_PROFILE = "default";
+    private static final String PROPERTY_ORGANIZATION_NAME = "organization";
     private static final String PROPERTY_API_KEY = "api_key";
     private static final String PROPERTY_ENDPOINT = "endpoint";
 
@@ -52,46 +53,46 @@ public class CliConfigImpl implements CliConfig {
     public ConfigState getConfigState() {
         return new ConfigState(
                 CONFIG_FILE,
-                getDefaultOrganization(),
+                getDefaultProfileName(),
                 getRootConfig().getSections().stream()
-                        .map(this::getOrganization)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .collect(ImmutableList.toImmutableList()));
+                        .collect(ImmutableMap.toImmutableMap(
+                                profileName -> profileName,
+                                profileName -> getProfile(profileName).orElseThrow())));
     }
 
     @Override
-    public Organization getOrganization(Optional<String> organizationFromParameterOpt) {
+    public Organization getProfile(Optional<String> profileNameOpt) {
 
-        // Find api key from organization defined in parameter
-        if (organizationFromParameterOpt.isPresent()) {
-            return getOrganization(organizationFromParameterOpt.get())
-                    .orElseThrow(() -> new RuntimeException("No API key found for organization " + organizationFromParameterOpt.get()));
+        // Find api key from profile defined in parameter
+        if (profileNameOpt.isPresent()) {
+            return getProfile(profileNameOpt.get())
+                    .orElseThrow(() -> new RuntimeException("No API key found for organization " + profileNameOpt.get()));
         }
 
         // Find api key from organization defined in environment variable
         Optional<String> organizationFromEnvOpt = Optional.ofNullable(Strings.emptyToNull(System.getenv(ORGANIZATION_ENV_NAME)));
         if (organizationFromEnvOpt.isPresent()) {
-            return getOrganization(organizationFromEnvOpt.get())
-                    .orElseThrow(() -> new RuntimeException("No API key found for organization " + organizationFromParameterOpt.get() + " defined in environment variable " + ORGANIZATION_ENV_NAME));
+            return getProfile(organizationFromEnvOpt.get())
+                    .orElseThrow(() -> new RuntimeException("No API key found for organization " + profileNameOpt.get() + " defined in environment variable " + ORGANIZATION_ENV_NAME));
         }
 
         // Find api key from organization defined as default in config
-        Optional<String> organizationFromConfigDefault = Optional.ofNullable(Strings.emptyToNull(getRootConfig().getString(PROPERTY_DEFAULT_ORGANIZATION)));
+        Optional<String> organizationFromConfigDefault = Optional.ofNullable(Strings.emptyToNull(getRootConfig().getString(PROPERTY_DEFAULT_PROFILE)));
         if (organizationFromConfigDefault.isPresent()) {
-            return getOrganization(organizationFromConfigDefault.get())
-                    .orElseThrow(() -> new RuntimeException("No API key found for organization " + organizationFromParameterOpt.get() + " defined as default in config"));
+            return getProfile(organizationFromConfigDefault.get())
+                    .orElseThrow(() -> new RuntimeException("No API key found for organization " + profileNameOpt.get() + " defined as default in config"));
         }
 
         throw new RuntimeException("No API key found. Please login first.");
     }
 
-    /**
-     * This has a limitation at the moment. You cannot have two organizations with the same name across two different
-     * endpoints.
-     */
-    private Optional<Organization> getOrganization(String organizationName) {
-        SubnodeConfiguration config = getOrganizationConfig(organizationName);
+    private Optional<Organization> getProfile(String profileName) {
+        SubnodeConfiguration config = getProfileConfig(profileName);
+
+        Optional<String> organizationNameOpt = Optional.ofNullable(Strings.emptyToNull(config.getString(PROPERTY_ORGANIZATION_NAME)));
+        if (organizationNameOpt.isEmpty()) {
+            return Optional.empty();
+        }
 
         Optional<String> apiKeyOpt = Optional.ofNullable(Strings.emptyToNull(config.getString(PROPERTY_API_KEY)));
         if (apiKeyOpt.isEmpty()) {
@@ -101,28 +102,35 @@ public class CliConfigImpl implements CliConfig {
         Optional<String> endpointOpt = Optional.ofNullable(Strings.emptyToNull(config.getString(PROPERTY_ENDPOINT)));
 
         return Optional.of(new Organization(
-                organizationName,
+                organizationNameOpt.get(),
                 apiKeyOpt.get(),
                 endpointOpt));
     }
 
     @Override
-    public void setOrganization(String organizationName, String apiKey, Optional<String> endpointOpt) {
-        SubnodeConfiguration organizationConfig = getOrganizationConfig(organizationName);
-        organizationConfig.setProperty(PROPERTY_API_KEY, apiKey);
-        endpointOpt.ifPresent(endpoint -> organizationConfig.setProperty(PROPERTY_ENDPOINT, endpoint));
+    public void setProfile(String profileName, Organization organization) {
+        SubnodeConfiguration config = getProfileConfig(profileName);
+        config.setProperty(PROPERTY_ORGANIZATION_NAME, organization.getName());
+        config.setProperty(PROPERTY_API_KEY, organization.getApiKey());
+        organization.getEndpoint().ifPresentOrElse(
+                endpoint -> config.setProperty(PROPERTY_ENDPOINT, endpoint),
+                () -> config.clearProperty(PROPERTY_ENDPOINT));
         save();
-        log.info("Saved your API key to {}", CONFIG_FILE);
+        log.info("Saved your API key under {}", CONFIG_FILE);
     }
 
     @Override
-    public Optional<String> getDefaultOrganization() {
-        return Optional.ofNullable(Strings.emptyToNull(getRootConfig().getString(PROPERTY_DEFAULT_ORGANIZATION)));
+    public boolean hasDefaultProfileName() {
+        return getDefaultProfileName().isPresent();
+    }
+
+    private Optional<String> getDefaultProfileName() {
+        return Optional.ofNullable(Strings.emptyToNull(getRootConfig().getString(PROPERTY_DEFAULT_PROFILE)));
     }
 
     @Override
     public void setDefaultOrganization(String organizationName) {
-        getRootConfig().setProperty(PROPERTY_DEFAULT_ORGANIZATION, organizationName);
+        getRootConfig().setProperty(PROPERTY_DEFAULT_PROFILE, organizationName);
         save();
         log.info("Saved organization {} as default", organizationName);
     }
@@ -152,9 +160,8 @@ public class CliConfigImpl implements CliConfig {
         return iniCacheOpt.get();
     }
 
-    private SubnodeConfiguration getOrganizationConfig(String organizationName) {
-        // TODO Doesn't support two organizations with the same name across two different endpoints
-        return getRootConfig().getSection(organizationName);
+    private SubnodeConfiguration getProfileConfig(String profileName) {
+        return getRootConfig().getSection(profileName);
     }
 
     private void save() {

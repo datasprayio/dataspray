@@ -23,6 +23,7 @@
 package io.dataspray.client;
 
 import io.dataspray.stream.control.client.ControlApi;
+import io.dataspray.stream.control.client.HealthApi;
 import io.dataspray.stream.ingest.client.IngestApi;
 
 import java.io.File;
@@ -33,6 +34,8 @@ public interface DataSprayClient {
     static DataSprayClient get(Access access) {
         return new DataSprayClientImpl(access);
     }
+
+    HealthApi health();
 
     IngestApi ingest();
 

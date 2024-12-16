@@ -43,8 +43,8 @@ public class RunDeploy implements Runnable {
     private String taskId;
     @Option(names = "--skip-activate", description = "deploy without activating version; use activate command to start using the deployed version")
     boolean skipActivate;
-    @Option(names = {"-o", "--organization"}, description = "Organization name")
-    private String organizationName;
+    @Option(names = {"-p", "--profile"}, description = "Profile name")
+    private String profileName;
 
     @Inject
     CommandUtil commandUtil;
@@ -59,6 +59,6 @@ public class RunDeploy implements Runnable {
     public void run() {
         Project project = codegen.loadProject();
         commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                streamRuntime.deploy(cliConfig.getOrganization(Optional.ofNullable(Strings.emptyToNull(organizationName))), project, selectedTaskId, !skipActivate));
+                streamRuntime.deploy(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId, !skipActivate));
     }
 }

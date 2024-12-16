@@ -23,6 +23,7 @@
 package io.dataspray.core;
 
 import io.dataspray.client.Access;
+import io.dataspray.stream.control.client.ApiException;
 import io.dataspray.stream.control.client.model.TaskStatus;
 import io.dataspray.stream.control.client.model.TaskVersions;
 import lombok.Value;
@@ -31,6 +32,8 @@ import java.io.File;
 import java.util.Optional;
 
 public interface StreamRuntime {
+
+    void ping(Organization organization) throws ApiException;
 
     void statusAll(Organization organization, Project project);
 

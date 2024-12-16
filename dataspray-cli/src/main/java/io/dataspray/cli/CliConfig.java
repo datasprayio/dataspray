@@ -22,7 +22,7 @@
 
 package io.dataspray.cli;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import io.dataspray.core.StreamRuntime.Organization;
 import lombok.Value;
 
@@ -35,25 +35,25 @@ public interface CliConfig {
     /**
      * Get API Key.
      * <p>
-     * Organization is determined in the following order:
+     * Profile is determined in the following order:
      * <ol>
-     *     <li>Organization name passed as parameter</li>
-     *     <li>Organization name from environment variable</li>
-     *     <li>Organization name defined as default</li>
+     *     <li>Profile name passed as parameter</li>
+     *     <li>Profile name from environment variable</li>
+     *     <li>Profile name defined as default</li>
      * </ol>
      */
-    Organization getOrganization(Optional<String> organizationOpt);
+    Organization getProfile(Optional<String> profileNameOpt);
 
-    void setOrganization(String organizationName, String apiKey, Optional<String> endpointOpt);
+    void setProfile(String profileName, Organization organization);
 
-    Optional<String> getDefaultOrganization();
+    boolean hasDefaultProfileName();
 
     void setDefaultOrganization(String organizationName);
 
     @Value
     class ConfigState {
         String configFilePath;
-        Optional<String> defaultOrganization;
-        ImmutableList<Organization> organizations;
+        Optional<String> defaultProfileName;
+        ImmutableMap<String, Organization> organizationByProfileName;
     }
 }

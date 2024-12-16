@@ -44,8 +44,8 @@ public class RunActivate implements Runnable {
     private String taskId;
     @Parameters(arity = "1", paramLabel = "<version>", description = "version to activate; use list command to see available versions")
     private String version;
-    @Option(names = {"-o", "--organization"}, description = "Organization name")
-    private String organizationName;
+    @Option(names = {"-p", "--profile"}, description = "Profile name")
+    private String profileName;
 
     @Inject
     CommandUtil commandUtil;
@@ -60,6 +60,6 @@ public class RunActivate implements Runnable {
     public void run() {
         Project project = codegen.loadProject();
         commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                streamRuntime.activateVersion(cliConfig.getOrganization(Optional.ofNullable(Strings.emptyToNull(organizationName))), project, selectedTaskId, version));
+                streamRuntime.activateVersion(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId, version));
     }
 }

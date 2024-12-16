@@ -41,8 +41,8 @@ public class RunPause implements Runnable {
     LoggingMixin loggingMixin;
     @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id to deploy; otherwise all tasks are used if ran from root directory or specific task if ran from within a task directory")
     private String taskId;
-    @Option(names = {"-o", "--organization"}, description = "Organization name")
-    private String organizationName;
+    @Option(names = {"-p", "--profile"}, description = "Profile name")
+    private String profileName;
 
     @Inject
     CommandUtil commandUtil;
@@ -57,6 +57,6 @@ public class RunPause implements Runnable {
     public void run() {
         Project project = codegen.loadProject();
         commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                streamRuntime.pause(cliConfig.getOrganization(Optional.ofNullable(Strings.emptyToNull(organizationName))), project, selectedTaskId));
+                streamRuntime.pause(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId));
     }
 }

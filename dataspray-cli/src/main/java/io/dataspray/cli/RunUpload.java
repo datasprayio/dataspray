@@ -47,8 +47,8 @@ public class RunUpload implements Runnable {
     private String taskId;
     @Parameters(arity = "1", paramLabel = "<file>", description = "file to upload as runnable code")
     private String file;
-    @Option(names = {"-o", "--organization"}, description = "Organization name")
-    private String organizationName;
+    @Option(names = {"-p", "--profile"}, description = "Profile name")
+    private String profileName;
 
     @Inject
     CommandUtil commandUtil;
@@ -66,6 +66,6 @@ public class RunUpload implements Runnable {
         checkState(codeFile.exists(), "Path %s doesn't exist", file);
         checkState(codeFile.isFile(), "Path %s is not a file", file);
         commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                streamRuntime.upload(cliConfig.getOrganization(Optional.ofNullable(Strings.emptyToNull(organizationName))), project, selectedTaskId, codeFile));
+                streamRuntime.upload(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId, codeFile));
     }
 }

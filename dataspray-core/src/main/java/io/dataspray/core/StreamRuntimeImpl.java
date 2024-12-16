@@ -29,6 +29,7 @@ import io.dataspray.core.definition.model.JavaProcessor;
 import io.dataspray.core.definition.model.Processor;
 import io.dataspray.core.definition.model.StreamLink;
 import io.dataspray.core.definition.model.TypescriptProcessor;
+import io.dataspray.stream.control.client.ApiException;
 import io.dataspray.stream.control.client.model.DeployRequest;
 import io.dataspray.stream.control.client.model.DeployRequest.RuntimeEnum;
 import io.dataspray.stream.control.client.model.DeployRequestDynamoState;
@@ -60,6 +61,13 @@ public class StreamRuntimeImpl implements StreamRuntime {
     ContextBuilder contextBuilder;
     @Inject
     Builder builder;
+
+    @Override
+    public void ping(Organization organization) throws ApiException {
+        DataSprayClient.get(organization.toAccess())
+                .health()
+                .ping();
+    }
 
     @Override
     @SneakyThrows

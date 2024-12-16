@@ -40,8 +40,8 @@ public class RunStatus implements Runnable {
     LoggingMixin loggingMixin;
     @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id to deploy; otherwise all tasks are used if ran from root directory or specific task if ran from within a task directory")
     private String taskId;
-    @Option(names = {"-o", "--organization"}, description = "Organization name")
-    private String organizationName;
+    @Option(names = {"-p", "--profile"}, description = "Profile name")
+    private String profileName;
 
     @Inject
     Codegen codegen;
@@ -55,9 +55,9 @@ public class RunStatus implements Runnable {
         Project project = codegen.loadProject();
         Optional<String> activeProcessor = Optional.ofNullable(taskId).or(project::getActiveProcessor);
         if (activeProcessor.isEmpty()) {
-            streamRuntime.statusAll(cliConfig.getOrganization(Optional.ofNullable(Strings.emptyToNull(organizationName))), project);
+            streamRuntime.statusAll(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project);
         } else {
-            streamRuntime.status(cliConfig.getOrganization(Optional.ofNullable(Strings.emptyToNull(organizationName))), project, activeProcessor.get());
+            streamRuntime.status(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, activeProcessor.get());
         }
     }
 }

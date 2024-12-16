@@ -45,8 +45,8 @@ public class RunPublish implements Runnable {
     private String taskId;
     @Option(names = "--skip-activate", description = "publish without activating version; use activate command to start using the deployed version")
     boolean skipActivate;
-    @Option(names = {"-o", "--organization"}, description = "Organization name")
-    private String organizationName;
+    @Option(names = {"-p", "--profile"}, description = "Profile name")
+    private String profileName;
 
     @Inject
     CommandUtil commandUtil;
@@ -65,8 +65,8 @@ public class RunPublish implements Runnable {
         commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId -> {
             Artifact artifact = builder.getBuiltArtifact(project, selectedTaskId)
                     .orElseThrow(() -> new RuntimeException("No artifact for " + selectedTaskId + ", build project first"));
-            String codeUrl = streamRuntime.upload(cliConfig.getOrganization(Optional.ofNullable(Strings.emptyToNull(organizationName))), project, selectedTaskId, artifact.getCodeZipFile());
-            streamRuntime.publish(cliConfig.getOrganization(Optional.ofNullable(Strings.emptyToNull(organizationName))), project, selectedTaskId, codeUrl, !skipActivate);
+            String codeUrl = streamRuntime.upload(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId, artifact.getCodeZipFile());
+            streamRuntime.publish(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId, codeUrl, !skipActivate);
         });
     }
 }

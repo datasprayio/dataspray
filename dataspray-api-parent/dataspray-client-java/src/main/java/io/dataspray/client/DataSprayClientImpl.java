@@ -24,6 +24,7 @@ package io.dataspray.client;
 
 import com.google.common.base.Strings;
 import io.dataspray.stream.control.client.ControlApi;
+import io.dataspray.stream.control.client.HealthApi;
 import io.dataspray.stream.ingest.client.ApiCallback;
 import io.dataspray.stream.ingest.client.ApiException;
 import io.dataspray.stream.ingest.client.IngestApi;
@@ -48,6 +49,16 @@ class DataSprayClientImpl implements DataSprayClient {
 
     public DataSprayClientImpl(Access access) {
         this.access = access;
+    }
+
+    @Override
+    public HealthApi health() {
+        io.dataspray.stream.control.client.ApiClient apiClient = new io.dataspray.stream.control.client.ApiClient();
+        access.getEndpoint().ifPresent(apiClient::setBasePath);
+        apiClient.setHttpClient(getHttpClient(false, false));
+        apiClient.setApiKeyPrefix("apikey");
+        apiClient.setApiKey(access.getApiKey());
+        return new HealthApi(apiClient);
     }
 
     @Override

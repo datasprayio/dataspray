@@ -22,12 +22,15 @@
 
 package io.dataspray.cli;
 
-import io.dataspray.core.StreamRuntime.Organization;
 import io.dataspray.cli.CliConfig.ConfigState;
+import io.dataspray.core.StreamRuntime.Organization;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+
+import java.util.Map.Entry;
+import java.util.Optional;
 
 @Slf4j
 @Command(name = "env", description = "manage environments and credentials", subcommandsRepeatable = true, subcommands = {
@@ -45,29 +48,30 @@ public class Env implements Runnable {
 
         ConfigState configState = cliConfig.getConfigState();
 
-
-        if (configState.getOrganizations().isEmpty()) {
-            log.info("No saved environments found");
+        if (configState.getOrganizationByProfileName().isEmpty()) {
+            log.info("No saved profiles found");
         } else {
-            log.info("Reading environments from: {}", configState.getConfigFilePath());
-            boolean anyHaveEndpoint = configState.getOrganizations().stream().anyMatch(o -> o.getEndpoint().isPresent());
+            log.info("Found profiles in {}", configState.getConfigFilePath());
+            boolean anyHaveEndpoint = configState.getOrganizationByProfileName().values().stream()
+                    .anyMatch(o -> o.getEndpoint().isPresent());
 
             // Header
             if (anyHaveEndpoint) {
-                log.info("{}\t{}\t{}", "Default", "Organization", "Endpoint");
-                log.info("---\t---\t---");
+                log.info("{}\t{}\t{}\t{}", "Default", "Profile", "Organization", "Endpoint");
+                log.info("---\t---\t---\t---");
             } else {
-                log.info("{}\t{}", "Default", "Organization");
-                log.info("---\t---");
+                log.info("{}\t{}\t{}", "Default", "Profile", "Organization");
+                log.info("---\t---\t---");
             }
 
-            // Organizations
-            for (Organization organization : configState.getOrganizations()) {
-                boolean isDefault = organization.getName().equals(configState.getDefaultOrganization().orElse(null));
-                if (organization.getEndpoint().isPresent()) {
-                    log.info("\n{}\t{}\t{}", isDefault, organization.getName(), organization.getEndpoint().get());
+            // Profiles
+            Optional<String> defaultProfileName = configState.getDefaultProfileName();
+            for (Entry<String, Organization> profile : configState.getOrganizationByProfileName().entrySet()) {
+                boolean isDefault = profile.getValue().getName().equals(defaultProfileName.orElse(null));
+                if (profile.getValue().getEndpoint().isPresent()) {
+                    log.info("\n{}\t{}\t{}\t{}", isDefault, profile.getKey(), profile.getValue().getName(), profile.getValue().getEndpoint().get());
                 } else {
-                    log.info("\n{}\t{}", isDefault, organization.getName());
+                    log.info("\n{}\t{}\t{}", isDefault, profile.getKey(), profile.getValue().getName());
                 }
             }
         }

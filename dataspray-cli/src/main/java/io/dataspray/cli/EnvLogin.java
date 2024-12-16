@@ -23,6 +23,8 @@
 package io.dataspray.cli;
 
 import com.google.common.base.Strings;
+import io.dataspray.core.StreamRuntime;
+import io.dataspray.stream.control.client.ApiException;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
@@ -32,12 +34,16 @@ import picocli.CommandLine.Option;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import static io.dataspray.core.StreamRuntime.Organization;
+
 @Slf4j
 @Command(name = "login", description = "Set your environment and credentials")
 public class EnvLogin implements Runnable {
     @Mixin
     LoggingMixin loggingMixin;
 
+    @Option(names = {"-p", "--profile"}, description = "New profile name")
+    private String profileName;
     @Option(names = {"-o", "--organization"}, description = "Organization name")
     private String organizationName;
     @Option(names = {"-a", "--apiKey"}, description = "API Key")
@@ -46,12 +52,23 @@ public class EnvLogin implements Runnable {
     private String endpoint;
     @Option(names = {"-d", "--default"}, description = "Set as default")
     private boolean setAsDefault;
+    @Option(names = {"-s", "--skipCheck"}, description = "Skip checking validity of API Key")
+    private boolean skipCheck;
 
     @Inject
     CliConfig cliConfig;
+    @Inject
+    StreamRuntime streamRuntime;
 
     @Override
     public void run() {
+
+        // Retrieve profile name
+        String profileName = Optional.ofNullable(Strings.emptyToNull(this.profileName))
+                .or(() -> Optional.ofNullable(System.console().readLine("Enter value for profile name: "))
+                        .map(String::trim)
+                        .filter(Predicate.not(String::isBlank)))
+                .orElseThrow(() -> new RuntimeException("Need to supply profile name"));
 
         // Retrieve organization name
         String organizationName = Optional.ofNullable(Strings.emptyToNull(this.organizationName))
@@ -61,7 +78,7 @@ public class EnvLogin implements Runnable {
                 .orElseThrow(() -> new RuntimeException("Need to supply organization name"));
 
         // Decide whether org should be set as default
-        if (setAsDefault || cliConfig.getDefaultOrganization().isEmpty()) {
+        if (setAsDefault || !cliConfig.hasDefaultProfileName()) {
             cliConfig.setDefaultOrganization(organizationName);
         } else {
             boolean setAsDefaultResponse = Optional.ofNullable(System.console().readLine("Set as default organization? (y/n): "))
@@ -87,7 +104,24 @@ public class EnvLogin implements Runnable {
                         .map(String::trim)
                         .filter(Predicate.not(String::isBlank)));
 
+        Organization organization = new Organization(organizationName, apiKey, endpointOpt);
+
+        if (!skipCheck) {
+            try {
+                streamRuntime.ping(organization);
+            } catch (ApiException ex) {
+                log.error("Failed to verify API against server! ({} {})", ex.getCode(), ex.getMessage(), ex);
+                boolean saveAnyway = Optional.ofNullable(System.console().readLine("Save anyway? (y/n): "))
+                        .map(String::trim)
+                        .filter("y"::equalsIgnoreCase)
+                        .isPresent();
+                if (!saveAnyway) {
+                    return;
+                }
+            }
+        }
+
         // Write organization to disk
-        cliConfig.setOrganization(organizationName, apiKey, endpointOpt);
+        cliConfig.setProfile(profileName, organization);
     }
 }
