@@ -105,22 +105,8 @@ Commits to `master` branch are automatically deployed to staging environment usi
   <summary>Production</summary>
 
 ```shell
-mvn clean deploy -Pproduction,native
+mvn clean deploy -Pproduction
 ```
 
 </details>
 
-
-<details>
-  <summary>Libraries</summary>
-
-There are a few libraries that are deployed to various package repositories.
-
-- `dataspray-client-*` client libraries for controlling and using DataSpray
-- `dataspray-runner` supplementary packages for DataSpray streaming tasks
-
-```shell
-mvn clean deploy -Pdeploy-client -am -pl dataspray-api
-```
-
-</details>
