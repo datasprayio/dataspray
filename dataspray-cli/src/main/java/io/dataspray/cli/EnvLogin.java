@@ -107,8 +107,10 @@ public class EnvLogin implements Runnable {
         Organization organization = new Organization(organizationName, apiKey, endpointOpt);
 
         if (!skipCheck) {
+            log.info("Checking validity of API Key...");
             try {
                 streamRuntime.ping(organization);
+                log.info("Successfully verified API Key against server!");
             } catch (ApiException ex) {
                 log.error("Failed to verify API against server! ({} {})", ex.getCode(), ex.getMessage(), ex);
                 boolean saveAnyway = Optional.ofNullable(System.console().readLine("Save anyway? (y/n): "))
@@ -123,5 +125,6 @@ public class EnvLogin implements Runnable {
 
         // Write organization to disk
         cliConfig.setProfile(profileName, organization);
+        log.info("Wrote profile to disk");
     }
 }
