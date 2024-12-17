@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets;
 import io.dataspray.runner.dto.web.HttpRequest;
 import io.dataspray.runner.dto.web.HttpResponse;
 import io.dataspray.runner.dto.web.HttpResponse.HttpResponseBuilder;
-import jakarta.ws.rs.core.MediaType;
+import com.google.common.net.MediaType;
 import com.google.common.collect.ImmutableList;
 import java.util.Optional;
 {{/processor.web}}
@@ -30,7 +30,7 @@ public class Runner extends Entrypoint {
     {{#processor.web}}
     {{#endpoints}}
     {{^contentTypes.empty}}
-    private static final ImmutableList<MediaType> ENDPOINT_ALLOWED_CONTENT_TYPES_{{{nameSnakeUpper}}} = ImmutableList.of({{#contentTypes}}MediaType.valueOf("{{{.}}}"){{^-last}}, {{/-last}}{{/contentTypes}});
+    private static final ImmutableList<MediaType> ENDPOINT_ALLOWED_CONTENT_TYPES_{{{nameSnakeUpper}}} = ImmutableList.of({{#contentTypes}}MediaType.parse("{{{.}}}"){{^-last}}, {{/-last}}{{/contentTypes}});
     {{/contentTypes.empty}}
     {{/endpoints}}
     {{/processor.web}}
@@ -47,7 +47,7 @@ public class Runner extends Entrypoint {
         {{^endpoints.empty}}
 
         String[] pathDirs = request.getRawPath().split("/");
-        MediaType mediaType = MediaType.valueOf(request.getHeaders().getOrDefault("Content-Type", "text/plain"));
+        MediaType mediaType = MediaType.parse(request.getHeaders().getOrDefault("Content-Type", "text/plain"));
         {{/endpoints.empty}}
         {{#endpoints}}
 

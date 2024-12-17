@@ -84,7 +84,7 @@ public abstract class FunctionStack extends BaseStack {
         Function.Builder functionBuilder = Function.Builder.create(this, constructId)
                 .functionName(functionName)
                 .code(Code.fromAsset(codeZip))
-                .timeout(Duration.minutes(15));
+                .timeout(Duration.minutes(5));
 
         // Lambda differences between a native image and JVM
         if (detectIsNative(codeZip)) {

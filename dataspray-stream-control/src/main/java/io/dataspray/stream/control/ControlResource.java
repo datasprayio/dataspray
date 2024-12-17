@@ -137,8 +137,10 @@ public class ControlResource extends AbstractResource implements ControlApi {
                     deployedVersion.getDescription()));
         } catch (WebApplicationException ex) {
             jobStore.failure(sessionId, ex.getResponse().getStatus() + ": " + ex.getMessage());
+            log.warn("Failed to deploy; org {} task {} session {}", organizationName, taskId, sessionId, ex);
             throw ex;
         } catch (Exception ex) {
+            log.error("Unknown error deploying; org {} task {} session {}", organizationName, taskId, sessionId, ex);
             jobStore.failure(sessionId, "Unknown failure: " + ex.getMessage());
         }
     }

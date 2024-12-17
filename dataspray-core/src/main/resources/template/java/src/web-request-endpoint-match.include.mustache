@@ -14,7 +14,7 @@
             {{/isRequired}}
             {{/headers}}
             {{^contentTypes.empty}}
-            && ENDPOINT_ALLOWED_CONTENT_TYPES_{{{nameSnakeUpper}}}.stream().anyMatch(mediaType::isCompatible)
+            && ENDPOINT_ALLOWED_CONTENT_TYPES_{{{nameSnakeUpper}}}.stream().anyMatch(mediaType::is)
             {{/contentTypes.empty}}
             {{#cookies}}
             {{#isRequired}}
