@@ -38,8 +38,6 @@ import io.dataspray.stream.control.client.model.DeployRequestEndpointCors;
 import io.dataspray.stream.control.client.model.TaskStatus;
 import io.dataspray.stream.control.client.model.TaskVersion;
 import io.dataspray.stream.control.client.model.TaskVersions;
-import io.dataspray.stream.control.client.model.UploadCodeRequest;
-import io.dataspray.stream.control.client.model.UploadCodeResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.SneakyThrows;
@@ -48,14 +46,10 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.File;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import static com.google.common.base.Preconditions.checkState;
-import static io.dataspray.common.control.ControlConstants.CODE_MAX_SIZE_UNCOMPRESSED_IN_BYTES;
 
 @Slf4j
 @ApplicationScoped
@@ -99,7 +93,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
     }
 
     @Override
-    public void deploy(Organization organization, Project project, String processorName, boolean activateVersion) {
+    public TaskVersion deploy(Organization organization, Project project, String processorName, boolean activateVersion) {
         Processor processor = project.getProcessorByName(processorName);
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
@@ -112,50 +106,6 @@ public class StreamRuntimeImpl implements StreamRuntime {
                     return builder.build(project, processor.getName());
                 })
                 .getCodeZipFile();
-
-        // Deploy
-        String codeUrl = upload(organization, project, processorName, codeZipFile);
-        String publishedVersion = publish(organization, project, processorName, codeUrl, activateVersion);
-    }
-
-    @Override
-    @SneakyThrows
-    public String upload(Organization organization, Project project, String processorName, File codeZipFile) {
-        Processor processor = project.getProcessorByName(processorName);
-        checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
-                "Not yet implemented: %s", processor.getTarget());
-        checkState(codeZipFile.isFile(), "Missing code zip file, forgot to install? Expecting: %s", codeZipFile.getPath());
-
-        // Check size
-        long uncompressedSizeInBytes = sizeOfUncompressedZip(codeZipFile);
-        if (uncompressedSizeInBytes > CODE_MAX_SIZE_UNCOMPRESSED_IN_BYTES) {
-            throw new IllegalStateException("Maximum uncompressed code size is " + CODE_MAX_SIZE_UNCOMPRESSED_IN_BYTES / 1024 / 1024 + "MB, but found " + uncompressedSizeInBytes + "MB, please contact support");
-        }
-
-        // First get S3 upload presigned url
-        log.info("Requesting permission to upload {}", codeZipFile);
-        UploadCodeResponse uploadCodeResponse = DataSprayClient.get(organization.toAccess())
-                .control()
-                .uploadCode(organization.getName(), new UploadCodeRequest()
-                        .taskId(processor.getProcessorId())
-                        .contentLengthBytes(codeZipFile.length()));
-
-        // Upload to S3
-        log.info("Uploading to {}", uploadCodeResponse.getPresignedUrl());
-        DataSprayClient.get(organization.toAccess())
-                .uploadCode(uploadCodeResponse.getPresignedUrl(), codeZipFile);
-
-        log.info("File available at {}", uploadCodeResponse.getCodeUrl());
-
-        return uploadCodeResponse.getCodeUrl();
-    }
-
-    @Override
-    @SneakyThrows
-    public String publish(Organization organization, Project project, String processorName, String codeUrl, boolean activateVersion) {
-        Processor processor = project.getProcessorByName(processorName);
-        checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
-                "Not yet implemented: %s", processor.getTarget());
 
         String handler;
         // TODO Eventually this needs to be inferred from definition or project .nvmrc/.sdkman files
@@ -171,37 +121,40 @@ public class StreamRuntimeImpl implements StreamRuntime {
             throw new RuntimeException("Cannot publish processor " + processor.getName() + " of unknown type " + processor.getClass().getCanonicalName());
         }
 
-        // Publish version
         log.info("Publishing task {} with inputs {} outputs {} handler {}",
                 processor.getName(),
                 processor.getInputStreams().stream().map(StreamLink::getStreamName).collect(Collectors.toSet()),
                 processor.getOutputStreams().stream().map(StreamLink::getStreamName).collect(Collectors.toSet()),
                 handler);
+        DeployRequest deployRequest = new DeployRequest()
+                .runtime(runtime)
+                .handler(handler)
+                .inputQueueNames(processor.getInputStreams().stream()
+                        .map(StreamLink::getStreamName)
+                        .collect(Collectors.toList()))
+                .endpoint(processor.getWebOpt()
+                        .map(web -> new DeployRequestEndpoint()
+                                .isPublic(web.getIsPublic())
+                                .cors(web.getCorsOpt()
+                                        .map(cors -> new DeployRequestEndpointCors()
+                                                .allowOrigins(cors.getAllowOrigins().stream().toList())
+                                                .allowMethods(cors.getAllowMethods().stream().toList())
+                                                .allowHeaders(cors.getAllowHeaders().stream().toList())
+                                                .maxAge(cors.getMaxAge())
+                                                .allowCredentials(cors.getAllowCredentials()))
+                                        .orElse(null)))
+                        .orElse(null))
+                .dynamoState(!processor.isHasDynamoState() ? null : new DeployRequestDynamoState()
+                        .lsiCount(project.getDefinition().getDynamoStateOpt().map(DynamoState::getLsiCount).orElse(0L))
+                        .gsiCount(project.getDefinition().getDynamoStateOpt().map(DynamoState::getGsiCount).orElse(0L)))
+                .switchToNow(activateVersion);
+
         TaskVersion deployedVersion = DataSprayClient.get(organization.toAccess())
-                .control()
-                .deployVersion(organization.getName(), processor.getProcessorId(), new DeployRequest()
-                        .runtime(runtime)
-                        .handler(handler)
-                        .inputQueueNames(processor.getInputStreams().stream()
-                                .map(StreamLink::getStreamName)
-                                .collect(Collectors.toList()))
-                        .codeUrl(codeUrl)
-                        .endpoint(processor.getWebOpt()
-                                .map(web -> new DeployRequestEndpoint()
-                                        .isPublic(web.getIsPublic())
-                                        .cors(web.getCorsOpt()
-                                                .map(cors -> new DeployRequestEndpointCors()
-                                                        .allowOrigins(cors.getAllowOrigins().stream().toList())
-                                                        .allowMethods(cors.getAllowMethods().stream().toList())
-                                                        .allowHeaders(cors.getAllowHeaders().stream().toList())
-                                                        .maxAge(cors.getMaxAge())
-                                                        .allowCredentials(cors.getAllowCredentials()))
-                                                .orElse(null)))
-                                .orElse(null))
-                        .dynamoState(!processor.isHasDynamoState() ? null : new DeployRequestDynamoState()
-                                .lsiCount(project.getDefinition().getDynamoStateOpt().map(DynamoState::getLsiCount).orElse(0L))
-                                .gsiCount(project.getDefinition().getDynamoStateOpt().map(DynamoState::getGsiCount).orElse(0L)))
-                        .switchToNow(activateVersion));
+                .uploadAndPublish(
+                        organization.getName(),
+                        processor.getProcessorId(),
+                        codeZipFile,
+                        deployRequest::codeUrl);
 
         if (activateVersion) {
             log.info("Task {} published and activated as version {}: {}",
@@ -210,7 +163,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
             log.info("Task {} published as version {}: {}",
                     deployedVersion.getTaskId(), deployedVersion.getVersion(), deployedVersion.getDescription());
         }
-        return deployedVersion.getVersion();
+        return deployedVersion;
     }
 
     @Override
@@ -336,20 +289,5 @@ public class StreamRuntimeImpl implements StreamRuntime {
             default:
                 return "?";
         }
-    }
-
-    @SneakyThrows
-    private static long sizeOfUncompressedZip(File file) {
-        long totalUncompressedSize = 0;
-        try (ZipFile zipFile = new ZipFile(file)) {
-            Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
-            while (zipEntries.hasMoreElements()) {
-                long fileSize = zipEntries.nextElement().getSize();
-                if (fileSize != -1) {
-                    totalUncompressedSize += fileSize;
-                }
-            }
-        }
-        return totalUncompressedSize;
     }
 }

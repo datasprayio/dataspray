@@ -29,8 +29,6 @@ import picocli.CommandLine.Mixin;
 @Slf4j
 @Command(name = "run", description = "deploy and manage running task(s)", subcommandsRepeatable = true, subcommands = {
         RunDeploy.class,
-        RunUpload.class,
-        RunPublish.class,
         RunActivate.class,
         RunPause.class,
         RunResume.class,

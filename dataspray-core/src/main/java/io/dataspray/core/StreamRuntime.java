@@ -25,10 +25,10 @@ package io.dataspray.core;
 import io.dataspray.client.Access;
 import io.dataspray.stream.control.client.ApiException;
 import io.dataspray.stream.control.client.model.TaskStatus;
+import io.dataspray.stream.control.client.model.TaskVersion;
 import io.dataspray.stream.control.client.model.TaskVersions;
 import lombok.Value;
 
-import java.io.File;
 import java.util.Optional;
 
 public interface StreamRuntime {
@@ -39,11 +39,7 @@ public interface StreamRuntime {
 
     void status(Organization organization, Project project, String processorName);
 
-    void deploy(Organization organization, Project project, String processorName, boolean activateVersion);
-
-    String upload(Organization organization, Project project, String processorName, File codeZipFile);
-
-    String publish(Organization organization, Project project, String processorName, String codeUrl, boolean activateVersion);
+    TaskVersion deploy(Organization organization, Project project, String processorName, boolean activateVersion);
 
     TaskStatus activateVersion(Organization organization, Project project, String processorName, String version);
 

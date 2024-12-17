@@ -25,6 +25,7 @@ package io.dataspray.stream.control;
 import com.google.common.collect.ImmutableList;
 import io.dataspray.client.Access;
 import io.dataspray.client.DataSprayClient;
+import io.dataspray.client.DataSprayClientImpl;
 import io.dataspray.common.test.aws.AbstractLambdaTest;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.stream.control.client.model.DeployRequest;
@@ -82,15 +83,21 @@ public abstract class ControlBase extends AbstractLambdaTest {
                 .getBody();
         assertTrue(uploadCodeResponse.getCodeUrl().startsWith("s3://io-dataspray-code-upload/customer/" + getOrganizationName() + "/task1-"), uploadCodeResponse.getCodeUrl());
 
+        // Check status
+        request(Given.builder()
+                .method(HttpMethod.GET)
+                .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy/" + uploadCodeResponse.getSessionId()).build())
+                .assertStatusCode(102);
+
         // Upload to S3
-        DataSprayClient.get(new Access("", Optional.empty())).uploadCode(
+        ((DataSprayClientImpl) DataSprayClient.get(new Access("", Optional.empty()))).uploadToS3(
                 uploadCodeResponse.getPresignedUrl(),
                 Files.writeString(Files.createTempFile(null, null), "test\n").toFile());
 
         // Deploy version
-        TaskVersion taskVersion = request(TaskVersion.class, Given.builder()
+        request(Given.builder()
                 .method(HttpMethod.PATCH)
-                .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy")
+                .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy/" + uploadCodeResponse.getSessionId())
                 .body(new DeployRequest()
                         .codeUrl(uploadCodeResponse.getCodeUrl())
                         .handler("io.dataspray.Runner")
@@ -107,6 +114,14 @@ public abstract class ControlBase extends AbstractLambdaTest {
                                         .maxAge(3600L)))
                         .switchToNow(false))
                 .build())
+                // Although API Gateway will return 202 ACCEPTED for async processing,
+                // the lambda itself will return 204 NO CONTENT
+                .assertStatusCode(Response.Status.NO_CONTENT.getStatusCode());
+
+        // Check status
+        TaskVersion taskVersion = request(TaskVersion.class, Given.builder()
+                .method(HttpMethod.GET)
+                .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy/" + uploadCodeResponse.getSessionId()).build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
         assertEquals(taskId, taskVersion.getTaskId());
@@ -167,14 +182,14 @@ public abstract class ControlBase extends AbstractLambdaTest {
         assertNotEquals(uploadCodeResponse.getPresignedUrl(), uploadCodeResponse2.getPresignedUrl());
 
         // Upload to S3
-        DataSprayClient.get(new Access("", Optional.empty())).uploadCode(
+        ((DataSprayClientImpl) DataSprayClient.get(new Access("", Optional.empty()))).uploadToS3(
                 uploadCodeResponse2.getPresignedUrl(),
                 Files.writeString(Files.createTempFile(null, null), "TEST\n").toFile());
 
         // Deploy version
-        TaskVersion taskVersion2 = request(TaskVersion.class, Given.builder()
+        request(Given.builder()
                 .method(HttpMethod.PATCH)
-                .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy")
+                .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy/" + uploadCodeResponse2.getSessionId())
                 .body(new DeployRequest()
                         .codeUrl(uploadCodeResponse2.getCodeUrl())
                         .handler("io.dataspray.Runner")
@@ -182,6 +197,12 @@ public abstract class ControlBase extends AbstractLambdaTest {
                         .runtime(DeployRequest.RuntimeEnum.NODEJS20_X)
                         .switchToNow(true))
                 .build())
+                .assertStatusCode(Response.Status.NO_CONTENT.getStatusCode());
+
+        // Check status
+        TaskVersion taskVersion2 = request(TaskVersion.class, Given.builder()
+                .method(HttpMethod.GET)
+                .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy/" + uploadCodeResponse2.getSessionId()).build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
         assertEquals(taskId, taskVersion2.getTaskId());

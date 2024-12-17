@@ -121,12 +121,17 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.dataspray.common.DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME;
-import static io.dataspray.common.control.ControlConstants.CODE_MAX_SIZE_COMPRESSED_IN_BYTES;
 import static java.util.function.Predicate.not;
 
 @Slf4j
 @ApplicationScoped
 public class LambdaDeployerImpl implements LambdaDeployer {
+    /**
+     * There is no AWS limit on compressed package size, this is a server-side enforced sanity check.
+     * <p>
+     * Also see {@code DataSprayClientImpl.CODE_MAX_SIZE_UNCOMPRESSED_IN_BYTES} enforced on client-side.
+     */
+    public static final long CODE_MAX_SIZE_COMPRESSED_IN_BYTES = 200 * 1024 * 1024;
     /** Arm is cheaper and also supports Snap-start now */
     public static final Architecture LAMBDA_ARCHITECTURE = Architecture.ARM64;
     public static final int LAMBDA_DEFAULT_TIMEOUT = 128;
@@ -321,7 +326,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
         // Create or update function configuration and code
         final String publishedVersion;
-        final String publishedDescription = generateVersionDescription(taskId, inputQueueNames, outputQueueNames);
+        final String publishedDescription = generateVersionDescription(taskId, inputQueueNames, outputQueueNames, endpointOpt);
         ImmutableMap.Builder<String, String> envBuilder = ImmutableMap.<String, String>builder()
                 .put(DATASPRAY_API_KEY_ENV, apiKey)
                 .put(DATASPRAY_ORGANIZATION_NAME_ENV, organizationName);
@@ -878,10 +883,11 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 : Optional.empty();
     }
 
-    private String generateVersionDescription(String taskId, ImmutableSet<String> inputQueueNames, ImmutableSet<String> outputQueueNames) {
+    private String generateVersionDescription(String taskId, ImmutableSet<String> inputQueueNames, ImmutableSet<String> outputQueueNames, Optional<Endpoint> endpointOpt) {
         return "Task " + taskId
                + " inputs [" + String.join(", ", inputQueueNames) + "]"
                + " outputs [" + String.join(", ", outputQueueNames) + "]"
+               + " endpoint " + endpointOpt.isPresent()
                + " deployed on " + Instant.now();
     }
 

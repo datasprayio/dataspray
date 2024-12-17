@@ -22,12 +22,14 @@
 
 package io.dataspray.client;
 
+import com.google.common.base.Function;
 import io.dataspray.stream.control.client.ControlApi;
 import io.dataspray.stream.control.client.HealthApi;
+import io.dataspray.stream.control.client.model.DeployRequest;
+import io.dataspray.stream.control.client.model.TaskVersion;
 import io.dataspray.stream.ingest.client.IngestApi;
 
 import java.io.File;
-import java.io.IOException;
 
 public interface DataSprayClient {
 
@@ -41,5 +43,10 @@ public interface DataSprayClient {
 
     ControlApi control();
 
-    void uploadCode(String presignedUrl, File file) throws IOException;
+    TaskVersion uploadAndPublish(
+            String organizationName,
+            String taskId,
+            File codeZipFile,
+            Function<String, DeployRequest> codeUrlToDeployRequest
+    );
 }

@@ -41,7 +41,7 @@ import java.util.Optional;
 @Slf4j
 @ApplicationScoped
 public class CliConfigImpl implements CliConfig {
-    public static final String ORGANIZATION_ENV_NAME = "DST_ORG";
+    public static final String PROFILE_ENV_NAME = "DST_PROFILE";
     private static final String CONFIG_FILE = System.getProperty("user.home", "~") + File.separator + ".dst";
     private static final String PROPERTY_DEFAULT_PROFILE = "default";
     private static final String PROPERTY_ORGANIZATION_NAME = "organization";
@@ -63,20 +63,20 @@ public class CliConfigImpl implements CliConfig {
     @Override
     public Organization getProfile(Optional<String> profileNameOpt) {
 
-        // Find api key from profile defined in parameter
+        // Find from parameter
         if (profileNameOpt.isPresent()) {
             return getProfile(profileNameOpt.get())
-                    .orElseThrow(() -> new RuntimeException("No API key found for organization " + profileNameOpt.get()));
+                    .orElseThrow(() -> new RuntimeException("No profile found with name " + profileNameOpt.get()));
         }
 
-        // Find api key from organization defined in environment variable
-        Optional<String> organizationFromEnvOpt = Optional.ofNullable(Strings.emptyToNull(System.getenv(ORGANIZATION_ENV_NAME)));
+        // Find from environment variable
+        Optional<String> organizationFromEnvOpt = Optional.ofNullable(Strings.emptyToNull(System.getenv(PROFILE_ENV_NAME)));
         if (organizationFromEnvOpt.isPresent()) {
             return getProfile(organizationFromEnvOpt.get())
-                    .orElseThrow(() -> new RuntimeException("No API key found for organization " + profileNameOpt.get() + " defined in environment variable " + ORGANIZATION_ENV_NAME));
+                    .orElseThrow(() -> new RuntimeException("No profile found with name " + organizationFromEnvOpt.get() + " defined in environment variable " + PROFILE_ENV_NAME));
         }
 
-        // Find api key from organization defined as default in config
+        // Find from default config
         Optional<String> organizationFromConfigDefault = Optional.ofNullable(Strings.emptyToNull(getRootConfig().getString(PROPERTY_DEFAULT_PROFILE)));
         if (organizationFromConfigDefault.isPresent()) {
             return getProfile(organizationFromConfigDefault.get())

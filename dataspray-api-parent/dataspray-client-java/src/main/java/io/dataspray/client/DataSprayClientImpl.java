@@ -22,13 +22,24 @@
 
 package io.dataspray.client;
 
+import com.github.rholder.retry.RetryException;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.WaitStrategies;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
 import com.google.common.base.Strings;
 import io.dataspray.stream.control.client.ControlApi;
 import io.dataspray.stream.control.client.HealthApi;
+import io.dataspray.stream.control.client.model.DeployRequest;
+import io.dataspray.stream.control.client.model.TaskVersion;
+import io.dataspray.stream.control.client.model.UploadCodeRequest;
+import io.dataspray.stream.control.client.model.UploadCodeResponse;
 import io.dataspray.stream.ingest.client.ApiCallback;
 import io.dataspray.stream.ingest.client.ApiException;
 import io.dataspray.stream.ingest.client.IngestApi;
 import io.dataspray.stream.ingest.client.ProgressResponseBody;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -39,11 +50,26 @@ import okhttp3.Response;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
-class DataSprayClientImpl implements DataSprayClient {
+public class DataSprayClientImpl implements DataSprayClient {
+
+    /**
+     * AWS limit of uncompressed package size; enforced client-side.
+     * If you need to increase this limit, need to package as a container.
+     * <p>
+     * Also see {@code LambdaDeployerImpl.CODE_MAX_SIZE_COMPRESSED_IN_BYTES} enforced on server-side.
+     */
+    public static final long CODE_MAX_SIZE_UNCOMPRESSED_IN_BYTES = 250 * 1024 * 1024;
 
     private final Access access;
 
@@ -79,6 +105,66 @@ class DataSprayClientImpl implements DataSprayClient {
         apiClient.setApiKeyPrefix("apikey");
         apiClient.setApiKey(access.getApiKey());
         return new ControlApi(apiClient);
+    }
+
+    @Override
+    @SneakyThrows
+    public TaskVersion uploadAndPublish(
+            String organizationName,
+            String taskId,
+            File codeZipFile,
+            Function<String, DeployRequest> codeUrlToDeployRequest
+    ) {
+        checkState(codeZipFile.isFile(), "Expecting a zip file: %s", codeZipFile.getPath());
+
+        // Check size
+        long uncompressedSizeInBytes = sizeOfUncompressedZip(codeZipFile);
+        if (uncompressedSizeInBytes > CODE_MAX_SIZE_UNCOMPRESSED_IN_BYTES) {
+            throw new IllegalStateException("Maximum uncompressed code size is " + CODE_MAX_SIZE_UNCOMPRESSED_IN_BYTES / 1024 / 1024 + "MB, but found " + uncompressedSizeInBytes + "MB, please contact support");
+        }
+
+
+        // First get S3 upload presigned url
+        ControlApi controlApi = control();
+        log.info("Requesting permission to upload {}", codeZipFile.toPath().getFileName());
+        UploadCodeResponse uploadCodeResponse = controlApi
+                .uploadCode(organizationName, new UploadCodeRequest()
+                        .taskId(taskId)
+                        .contentLengthBytes(codeZipFile.length()));
+
+        // Upload to S3
+        log.info("Uploading file to S3");
+        uploadToS3(uploadCodeResponse.getPresignedUrl(), codeZipFile);
+
+        log.info("Requesting asynchronous publishing");
+        DeployRequest deployRequest = codeUrlToDeployRequest.apply(uploadCodeResponse.getCodeUrl());
+        controlApi.deployVersion(organizationName, taskId, uploadCodeResponse.getSessionId(), deployRequest);
+
+        log.info("Polling for asynchronous publishing status");
+        try {
+            return RetryerBuilder.<TaskVersion>newBuilder()
+                    .retryIfException(th -> th instanceof ApiException && ((ApiException) th).getCode() == 102)
+                    .withWaitStrategy(WaitStrategies.join(
+                            WaitStrategies.fixedWait(1, TimeUnit.SECONDS),
+                            WaitStrategies.fibonacciWait(1, TimeUnit.MINUTES)
+                    ))
+                    .withStopStrategy(StopStrategies.stopAfterDelay(16, TimeUnit.MINUTES))
+                    .build()
+                    .call(() -> controlApi.deployVersionCheck(organizationName, taskId, uploadCodeResponse.getSessionId()));
+        } catch (ExecutionException | RetryException ex) {
+            if (ex.getCause() instanceof io.dataspray.stream.control.client.ApiException) {
+                io.dataspray.stream.control.client.ApiException cause = (io.dataspray.stream.control.client.ApiException) ex.getCause();
+                switch (cause.getCode()) {
+                    case 102:
+                        throw new RuntimeException("Still publishing, but exhausted all retries", cause);
+                    case 500:
+                        throw new RuntimeException("Failed to publish: " + Strings.nullToEmpty(cause.getResponseBody()), ex);
+                    case 404:
+                        throw new RuntimeException("Failed to publish, background publishing job either never started or timed out running", ex);
+                }
+            }
+            throw new RuntimeException("Failed to check status of deployment", ex);
+        }
     }
 
     private OkHttpClient getHttpClient(boolean uploadProgressBar, boolean downloadProgressBar) {
@@ -156,8 +242,8 @@ class DataSprayClientImpl implements DataSprayClient {
      * href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html">AWS
      * example</a>
      */
-    @Override
-    public void uploadCode(String presignedUrlStr, File file) throws IOException {
+    @VisibleForTesting
+    public void uploadToS3(String presignedUrlStr, File file) throws IOException {
         log.trace("Uploading file {} to presigned url {}", file.getPath(), presignedUrlStr);
         try (Response response = getHttpClient(true, false)
                 .newCall(new Request.Builder()
@@ -169,5 +255,20 @@ class DataSprayClientImpl implements DataSprayClient {
                 throw new IOException("Failed with status " + response.code() + " to upload to S3: " + Strings.nullToEmpty(response.message()));
             }
         }
+    }
+
+    @SneakyThrows
+    private static long sizeOfUncompressedZip(File file) {
+        long totalUncompressedSize = 0;
+        try (ZipFile zipFile = new ZipFile(file)) {
+            Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
+            while (zipEntries.hasMoreElements()) {
+                long fileSize = zipEntries.nextElement().getSize();
+                if (fileSize != -1) {
+                    totalUncompressedSize += fileSize;
+                }
+            }
+        }
+        return totalUncompressedSize;
     }
 }

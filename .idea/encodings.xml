@@ -7,6 +7,8 @@
     <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-api/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-client-java/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-client-java/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-client-java/target/generated-sources/client-control/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-client-java/target/generated-sources/client-ingest/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-client-typescript/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-api-parent/dataspray-client-typescript/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/dataspray-authorizer/src/main/java" charset="UTF-8" />

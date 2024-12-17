@@ -396,6 +396,9 @@ public class ApiStack extends FunctionStack {
                                                         "method.response.header.Access-Control-Allow-Origin", "'" + endpointFunction.getCorsAllowOrigins(this) + "'"),
                                                 "responseTemplates", ImmutableMap.of(
                                                         "application/json", "{}"))))
+                                .put("requestParameters", ImmutableMap.of("integration.request.header.X-Amz-Invocation-Type",
+                                        Boolean.TRUE.equals(methodData.getOrDefault("x-async", false))
+                                                ? "'Event'" : "' RequestResponse'"))
                                 .put("passthroughBehavior", "when_no_match")
                                 .put("contentHandling", "CONVERT_TO_TEXT")
                                 .put("type", "aws_proxy")

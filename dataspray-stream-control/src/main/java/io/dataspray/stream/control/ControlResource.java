@@ -25,6 +25,8 @@ package io.dataspray.stream.control;
 import com.google.common.base.Enums;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import io.dataspray.store.JobStore;
+import io.dataspray.store.JobStore.Session;
 import io.dataspray.store.LambdaDeployer;
 import io.dataspray.store.LambdaDeployer.DeployedVersion;
 import io.dataspray.store.LambdaDeployer.Endpoint;
@@ -48,8 +50,11 @@ import io.dataspray.stream.control.model.UploadCodeResponse;
 import io.dataspray.web.resource.AbstractResource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.lambda.model.Cors;
@@ -74,6 +79,8 @@ public class ControlResource extends AbstractResource implements ControlApi {
     LambdaDeployer deployer;
     @Inject
     TopicStore topicStore;
+    @Inject
+    JobStore jobStore;
 
     @Override
     public TaskStatus activateVersion(String organizationName, String taskId, String version) {
@@ -88,43 +95,65 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     @Override
-    public TaskVersion deployVersion(String organizationName, String taskId, DeployRequest deployRequest) {
-        log.info("Deploying task {} org {}", taskId, organizationName);
-        DeployedVersion deployedVersion = deployer.deployVersion(
-                organizationName,
-                getUsername().orElseThrow(),
-                datasprayApiEndpoint,
-                taskId,
-                deployRequest.getCodeUrl(),
-                deployRequest.getHandler(),
-                deployRequest.getInputQueueNames().stream()
-                        .distinct()
-                        .collect(ImmutableSet.toImmutableSet()),
-                deployRequest.getOutputQueueNames().stream()
-                        .distinct()
-                        .collect(ImmutableSet.toImmutableSet()),
-                Enums.getIfPresent(Runtime.class, deployRequest.getRuntime().name()).toJavaUtil()
-                        .orElseThrow(() -> new BadRequestException("Unknown runtime: " + deployRequest.getRuntime())),
-                Optional.ofNullable(deployRequest.getEndpoint())
-                        .map(endpoint -> new Endpoint(
-                                endpoint.getIsPublic(),
-                                Optional.ofNullable(endpoint.getCors())
-                                        .map(cors -> Cors.builder()
-                                                .allowOrigins(cors.getAllowOrigins())
-                                                .allowMethods(cors.getAllowMethods())
-                                                .allowHeaders(cors.getAllowHeaders())
-                                                .exposeHeaders(cors.getExposeHeaders())
-                                                .allowCredentials(cors.getAllowCredentials())
-                                                .maxAge(cors.getMaxAge().intValue())
-                                                .build()))),
-                Optional.ofNullable(deployRequest.getDynamoState()).map(state -> new LambdaDeployer.DynamoState(state.getLsiCount(), state.getGsiCount())),
-                deployRequest.getSwitchToNow());
-        log.info("Deployed task {} org {} version {} description {}",
-                taskId, organizationName, deployedVersion.getVersion(), deployedVersion.getDescription());
-        return new TaskVersion(
-                taskId,
-                deployedVersion.getVersion(),
-                deployedVersion.getDescription());
+    public void deployVersion(String organizationName, String taskId, String sessionId, DeployRequest deployRequest) {
+        log.info("Deploying task {} org {} session {}", taskId, organizationName, sessionId);
+        Session session = jobStore.startSession(sessionId);
+        try {
+            DeployedVersion deployedVersion = deployer.deployVersion(
+                    organizationName,
+                    getUsername().orElseThrow(),
+                    datasprayApiEndpoint,
+                    taskId,
+                    deployRequest.getCodeUrl(),
+                    deployRequest.getHandler(),
+                    deployRequest.getInputQueueNames().stream()
+                            .distinct()
+                            .collect(ImmutableSet.toImmutableSet()),
+                    deployRequest.getOutputQueueNames().stream()
+                            .distinct()
+                            .collect(ImmutableSet.toImmutableSet()),
+                    Enums.getIfPresent(Runtime.class, deployRequest.getRuntime().name()).toJavaUtil()
+                            .orElseThrow(() -> new BadRequestException("Unknown runtime: " + deployRequest.getRuntime())),
+                    Optional.ofNullable(deployRequest.getEndpoint())
+                            .map(endpoint -> new Endpoint(
+                                    endpoint.getIsPublic(),
+                                    Optional.ofNullable(endpoint.getCors())
+                                            .map(cors -> Cors.builder()
+                                                    .allowOrigins(cors.getAllowOrigins())
+                                                    .allowMethods(cors.getAllowMethods())
+                                                    .allowHeaders(cors.getAllowHeaders())
+                                                    .exposeHeaders(cors.getExposeHeaders())
+                                                    .allowCredentials(cors.getAllowCredentials())
+                                                    .maxAge(cors.getMaxAge().intValue())
+                                                    .build()))),
+                    Optional.ofNullable(deployRequest.getDynamoState()).map(state -> new LambdaDeployer.DynamoState(state.getLsiCount(), state.getGsiCount())),
+                    deployRequest.getSwitchToNow());
+
+            log.info("Deployed task {} org {} version {} description {}",
+                    taskId, organizationName, deployedVersion.getVersion(), deployedVersion.getDescription());
+            jobStore.success(sessionId, new TaskVersion(
+                    taskId,
+                    deployedVersion.getVersion(),
+                    deployedVersion.getDescription()));
+        } catch (WebApplicationException ex) {
+            jobStore.failure(sessionId, ex.getResponse().getStatus() + ": " + ex.getMessage());
+            throw ex;
+        } catch (Exception ex) {
+            jobStore.failure(sessionId, "Unknown failure: " + ex.getMessage());
+        }
+    }
+
+    @Override
+    public TaskVersion deployVersionCheck(@NotNull String organizationName, @NotNull String taskId, @NotNull String sessionId) {
+        Optional<Session> sessionOpt = jobStore.check(sessionId);
+        if (sessionOpt.isEmpty()) {
+            throw new NotFoundException("Session not found or timed out");
+        }
+        return switch (sessionOpt.get().getState()) {
+            case PENDING, PROCESSING -> throw new WebApplicationException(102);
+            case SUCCESS -> sessionOpt.get().getResult(TaskVersion.class);
+            case FAILURE -> throw new InternalServerErrorException(sessionOpt.get().getError());
+        };
     }
 
     @Override
@@ -171,7 +200,10 @@ public class ControlResource extends AbstractResource implements ControlApi {
     @Override
     public UploadCodeResponse uploadCode(String organizationName, UploadCodeRequest uploadCodeRequest) {
         UploadCodeClaim uploadCodeClaim = deployer.uploadCode(organizationName, uploadCodeRequest.getTaskId(), uploadCodeRequest.getContentLengthBytes());
-        return new UploadCodeResponse(uploadCodeClaim.getPresignedUrl(), uploadCodeClaim.getCodeUrl());
+        return new UploadCodeResponse(
+                jobStore.createSession().getSessionId(),
+                uploadCodeClaim.getPresignedUrl(),
+                uploadCodeClaim.getCodeUrl());
     }
 
     @Override
