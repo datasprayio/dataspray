@@ -121,6 +121,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.dataspray.common.DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME;
+import static io.dataspray.common.control.ControlConstants.CODE_MAX_SIZE_COMPRESSED_IN_BYTES;
 import static java.util.function.Predicate.not;
 
 @Slf4j
@@ -136,7 +137,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     public static final String CUSTOMER_FUNCTION_POLICY_PATH_PREFIX = "Customer";
     public static final String CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LOGGING_PREFIX = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "LambdaLogging";
     public static final String CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "LambdaSqs";
-    private static final long CODE_MAX_SIZE_IN_BYTES = 50 * 1024 * 1024;
     public static final String CODE_BUCKET_NAME_PROP_NAME = "deployer.codeBucketName";
     private static final String CODE_KEY_PREFIX = "customer/";
     public static final Function<DeployEnvironment, String> CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER = deployEnv ->
@@ -826,8 +826,11 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
     @Override
     public UploadCodeClaim uploadCode(String customerId, String taskId, long contentLengthBytes) {
-        if (contentLengthBytes > CODE_MAX_SIZE_IN_BYTES) {
-            throw new BadRequestException("Maximum code size is " + CODE_MAX_SIZE_IN_BYTES / 1024 / 1024 + "MB, please contact support");
+        if (contentLengthBytes <= 0) {
+            throw new BadRequestException("Cannot upload empty file.");
+        }
+        if (contentLengthBytes > CODE_MAX_SIZE_COMPRESSED_IN_BYTES) {
+            throw new BadRequestException("Maximum compressed code size is " + CODE_MAX_SIZE_COMPRESSED_IN_BYTES / 1024 / 1024 + "MB, but found " + contentLengthBytes / 1024 / 1024 + "MB, please contact support");
         }
         String key = getCodeKeyPrefix(customerId)
                      + taskId

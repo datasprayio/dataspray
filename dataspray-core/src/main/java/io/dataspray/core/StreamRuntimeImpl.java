@@ -48,10 +48,14 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.File;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import static com.google.common.base.Preconditions.checkState;
+import static io.dataspray.common.control.ControlConstants.CODE_MAX_SIZE_UNCOMPRESSED_IN_BYTES;
 
 @Slf4j
 @ApplicationScoped
@@ -121,6 +125,12 @@ public class StreamRuntimeImpl implements StreamRuntime {
         checkState(Processor.Target.DATASPRAY.equals(processor.getTarget()),
                 "Not yet implemented: %s", processor.getTarget());
         checkState(codeZipFile.isFile(), "Missing code zip file, forgot to install? Expecting: %s", codeZipFile.getPath());
+
+        // Check size
+        long uncompressedSizeInBytes = sizeOfUncompressedZip(codeZipFile);
+        if (uncompressedSizeInBytes > CODE_MAX_SIZE_UNCOMPRESSED_IN_BYTES) {
+            throw new IllegalStateException("Maximum uncompressed code size is " + CODE_MAX_SIZE_UNCOMPRESSED_IN_BYTES / 1024 / 1024 + "MB, but found " + uncompressedSizeInBytes + "MB, please contact support");
+        }
 
         // First get S3 upload presigned url
         log.info("Requesting permission to upload {}", codeZipFile);
@@ -326,5 +336,20 @@ public class StreamRuntimeImpl implements StreamRuntime {
             default:
                 return "?";
         }
+    }
+
+    @SneakyThrows
+    private static long sizeOfUncompressedZip(File file) {
+        long totalUncompressedSize = 0;
+        try (ZipFile zipFile = new ZipFile(file)) {
+            Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
+            while (zipEntries.hasMoreElements()) {
+                long fileSize = zipEntries.nextElement().getSize();
+                if (fileSize != -1) {
+                    totalUncompressedSize += fileSize;
+                }
+            }
+        }
+        return totalUncompressedSize;
     }
 }
