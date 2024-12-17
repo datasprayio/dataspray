@@ -143,7 +143,7 @@ public class DataSprayClientImpl implements DataSprayClient {
         log.info("Polling for asynchronous publishing status");
         try {
             return RetryerBuilder.<TaskVersion>newBuilder()
-                    .retryIfException(th -> th instanceof ApiException && ((ApiException) th).getCode() == 102)
+                    .retryIfException(th -> th instanceof ApiException && ((ApiException) th).getCode() == 202)
                     .withWaitStrategy(WaitStrategies.join(
                             WaitStrategies.fixedWait(1, TimeUnit.SECONDS),
                             WaitStrategies.fibonacciWait(1, TimeUnit.MINUTES)

@@ -150,7 +150,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
             throw new NotFoundException("Session not found or timed out");
         }
         return switch (sessionOpt.get().getState()) {
-            case PENDING, PROCESSING -> throw new WebApplicationException(102);
+            case PENDING, PROCESSING -> throw new WebApplicationException(202);
             case SUCCESS -> sessionOpt.get().getResult(TaskVersion.class);
             case FAILURE -> throw new InternalServerErrorException(sessionOpt.get().getError());
         };

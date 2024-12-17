@@ -347,7 +347,7 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskVersion'
-      '102':
+      '202':
         description: Job is processing
       '500':
         description: Job has failed

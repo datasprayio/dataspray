@@ -87,7 +87,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
         request(Given.builder()
                 .method(HttpMethod.GET)
                 .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy/" + uploadCodeResponse.getSessionId()).build())
-                .assertStatusCode(102);
+                .assertStatusCode(202);
 
         // Upload to S3
         ((DataSprayClientImpl) DataSprayClient.get(new Access("", Optional.empty()))).uploadToS3(
