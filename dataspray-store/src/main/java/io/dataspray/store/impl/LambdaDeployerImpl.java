@@ -417,6 +417,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         try {
             functionUrlConfigOpt = Optional.of(lambdaClient.getFunctionUrlConfig(GetFunctionUrlConfigRequest.builder()
                     .functionName(functionName)
+                    .qualifier(publishedVersion)
                     .build()));
         } catch (ResourceNotFoundException ex) {
             // Does not have a Function URL
@@ -433,6 +434,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 // And it exists, we need to delete it
                 lambdaClient.deleteFunctionUrlConfig(DeleteFunctionUrlConfigRequest.builder()
                         .functionName(functionName)
+                        .qualifier(publishedVersion)
                         .build());
                 log.info("Deleted function url {}", functionUrlConfigOpt.get().functionUrl());
             }
@@ -443,6 +445,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 // And it doesn't exist, we need to create it
                 CreateFunctionUrlConfigResponse createFunctionUrlConfigResponse = lambdaClient.createFunctionUrlConfig(CreateFunctionUrlConfigRequest.builder()
                         .functionName(functionName)
+                        .qualifier(publishedVersion)
                         .authType(endpoint.isPublic()
                                 ? FunctionUrlAuthType.NONE
                                 : FunctionUrlAuthType.AWS_IAM)
@@ -461,6 +464,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     // Settings do not match, update it all
                     UpdateFunctionUrlConfigResponse updateFunctionUrlConfigResponse = lambdaClient.updateFunctionUrlConfig(UpdateFunctionUrlConfigRequest.builder()
                             .functionName(functionName)
+                            .qualifier(publishedVersion)
                             .authType(endpoint.isPublic()
                                     ? FunctionUrlAuthType.NONE
                                     : FunctionUrlAuthType.AWS_IAM)
