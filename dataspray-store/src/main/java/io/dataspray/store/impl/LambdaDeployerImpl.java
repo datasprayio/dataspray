@@ -411,10 +411,11 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             log.info("Updated function code {} published version {}", functionName, publishedVersion);
 
             // Wait until updated
-            // TODO If a SnapStart invocation of function fails, this never completes and instead times out after 300
-            //      retries, need to handle this and lower the timeout somehow. The version is in a failed state, but this
-            //      waiter doesn't recognize it.
-            waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionUpdatedV2(GetFunctionRequest.builder()
+            // - This is a common failure when a Java Lambda with SnapStart on is initialized and fails to start.
+            // - Careful, this cannot use waitUntilFunctionUpdatedV2: GetFunction with a qualifier means the
+            //   LastUdpateStatus is never present and this waits forever. Instead this wait until active is intended
+            //   for versions.
+            waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionActiveV2(GetFunctionRequest.builder()
                     .functionName(functionName)
                     .qualifier(publishedVersion)
                     .build()));
