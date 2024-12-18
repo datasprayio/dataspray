@@ -23,7 +23,7 @@ on:
           - native
 
 concurrency:
-  group: deploy-cloud-${{ github.event.inputs.environment || 'staging' }}
+  group: deploy-${{ github.event.inputs.environment || 'staging' }}
 
 jobs:
   build:
