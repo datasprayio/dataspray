@@ -153,6 +153,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         "lambda:DeleteFunction",
                         "lambda:UpdateFunctionCode",
                         "lambda:UpdateFunctionConfiguration",
+                        "lambda:PublishVersion",
                         // Function URL
                         "lambda:GetFunctionUrlConfig",
                         "lambda:DeleteFunctionUrlConfig",
