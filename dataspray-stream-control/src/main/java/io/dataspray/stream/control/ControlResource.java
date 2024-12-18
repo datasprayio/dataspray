@@ -36,6 +36,7 @@ import io.dataspray.store.LambdaDeployer.Versions;
 import io.dataspray.store.TopicStore;
 import io.dataspray.store.util.WithCursor;
 import io.dataspray.stream.control.model.DeployRequest;
+import io.dataspray.stream.control.model.DeployVersionCheckResponse;
 import io.dataspray.stream.control.model.TaskStatus;
 import io.dataspray.stream.control.model.TaskStatus.StatusEnum;
 import io.dataspray.stream.control.model.TaskStatuses;
@@ -50,10 +51,8 @@ import io.dataspray.stream.control.model.UploadCodeResponse;
 import io.dataspray.web.resource.AbstractResource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -146,15 +145,33 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     @Override
-    public TaskVersion deployVersionCheck(@NotNull String organizationName, @NotNull String taskId, @NotNull String sessionId) {
+    public DeployVersionCheckResponse deployVersionCheck(String organizationName, String taskId, String sessionId) {
+
         Optional<Session> sessionOpt = jobStore.check(sessionId);
+
         if (sessionOpt.isEmpty()) {
-            throw new NotFoundException("Session not found or timed out");
+            return new DeployVersionCheckResponse(
+                    DeployVersionCheckResponse.StatusEnum.NOTFOUND,
+                    "Session not found",
+                    null);
         }
         return switch (sessionOpt.get().getState()) {
-            case PENDING, PROCESSING -> throw new WebApplicationException(202);
-            case SUCCESS -> sessionOpt.get().getResult(TaskVersion.class);
-            case FAILURE -> throw new InternalServerErrorException(sessionOpt.get().getError());
+            case PENDING -> new DeployVersionCheckResponse(
+                    DeployVersionCheckResponse.StatusEnum.PROCESSING,
+                    "Has not started yet",
+                    null);
+            case PROCESSING -> new DeployVersionCheckResponse(
+                    DeployVersionCheckResponse.StatusEnum.PROCESSING,
+                    "Still processing",
+                    null);
+            case SUCCESS -> new DeployVersionCheckResponse(
+                    DeployVersionCheckResponse.StatusEnum.SUCCESS,
+                    null,
+                    sessionOpt.get().getResult(TaskVersion.class));
+            case FAILURE -> new DeployVersionCheckResponse(
+                    DeployVersionCheckResponse.StatusEnum.FAILED,
+                    sessionOpt.get().getError(),
+                    null);
         };
     }
 

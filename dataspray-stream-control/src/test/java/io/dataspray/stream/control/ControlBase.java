@@ -31,6 +31,8 @@ import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.stream.control.client.model.DeployRequest;
 import io.dataspray.stream.control.client.model.DeployRequestEndpoint;
 import io.dataspray.stream.control.client.model.DeployRequestEndpointCors;
+import io.dataspray.stream.control.client.model.DeployVersionCheckResponse;
+import io.dataspray.stream.control.client.model.DeployVersionCheckResponse.StatusEnum;
 import io.dataspray.stream.control.client.model.TaskStatus;
 import io.dataspray.stream.control.client.model.TaskStatuses;
 import io.dataspray.stream.control.client.model.TaskVersion;
@@ -84,10 +86,12 @@ public abstract class ControlBase extends AbstractLambdaTest {
         assertTrue(uploadCodeResponse.getCodeUrl().startsWith("s3://io-dataspray-code-upload/customer/" + getOrganizationName() + "/task1-"), uploadCodeResponse.getCodeUrl());
 
         // Check status
-        request(Given.builder()
+        DeployVersionCheckResponse status = request(DeployVersionCheckResponse.class, Given.builder()
                 .method(HttpMethod.GET)
                 .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy/" + uploadCodeResponse.getSessionId()).build())
-                .assertStatusCode(202);
+                .assertStatusCode(200)
+                .getBody();
+        assertEquals(StatusEnum.PROCESSING, status.getStatus());
 
         // Upload to S3
         ((DataSprayClientImpl) DataSprayClient.get(new Access("", Optional.empty()))).uploadToS3(
@@ -119,11 +123,14 @@ public abstract class ControlBase extends AbstractLambdaTest {
                 .assertStatusCode(Response.Status.NO_CONTENT.getStatusCode());
 
         // Check status
-        TaskVersion taskVersion = request(TaskVersion.class, Given.builder()
+        status = request(DeployVersionCheckResponse.class, Given.builder()
                 .method(HttpMethod.GET)
                 .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy/" + uploadCodeResponse.getSessionId()).build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
+        assertEquals(StatusEnum.SUCCESS, status.getStatus());
+        TaskVersion taskVersion = status.getResult();
+        assertNotNull(taskVersion);
         assertEquals(taskId, taskVersion.getTaskId());
         assertEquals("1", taskVersion.getVersion());
 
@@ -200,11 +207,14 @@ public abstract class ControlBase extends AbstractLambdaTest {
                 .assertStatusCode(Response.Status.NO_CONTENT.getStatusCode());
 
         // Check status
-        TaskVersion taskVersion2 = request(TaskVersion.class, Given.builder()
+        status = request(DeployVersionCheckResponse.class, Given.builder()
                 .method(HttpMethod.GET)
                 .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy/" + uploadCodeResponse2.getSessionId()).build())
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
+        assertEquals(StatusEnum.SUCCESS, status.getStatus());
+        TaskVersion taskVersion2 = status.getResult();
+        assertNotNull(taskVersion2);
         assertEquals(taskId, taskVersion2.getTaskId());
         assertEquals("2", taskVersion2.getVersion());
 

@@ -138,6 +138,22 @@ components:
           type: string
         description:
           type: string
+    DeployVersionCheckResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - PROCESSING
+            - SUCCESS
+            - NOTFOUND
+            - FAILED
+        errorStr:
+          type: string
+        result:
+          $ref: '#/components/schemas/TaskVersion'
     TaskStatuses:
       type: object
       required:
@@ -346,13 +362,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TaskVersion'
-      '202':
-        description: Job is processing
-      '500':
-        description: Job has failed
-      '404':
-        description: Job has timed out or not found
+              $ref: '#/components/schemas/DeployVersionCheckResponse'
 /v1/organization/{organizationName}/control/task/{taskId}/versions:
   get:
     operationId: getVersions

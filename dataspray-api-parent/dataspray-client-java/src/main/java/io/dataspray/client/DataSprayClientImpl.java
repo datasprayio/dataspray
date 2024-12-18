@@ -22,7 +22,6 @@
 
 package io.dataspray.client;
 
-import com.github.rholder.retry.RetryException;
 import com.github.rholder.retry.RetryerBuilder;
 import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.WaitStrategies;
@@ -32,6 +31,7 @@ import com.google.common.base.Strings;
 import io.dataspray.stream.control.client.ControlApi;
 import io.dataspray.stream.control.client.HealthApi;
 import io.dataspray.stream.control.client.model.DeployRequest;
+import io.dataspray.stream.control.client.model.DeployVersionCheckResponse;
 import io.dataspray.stream.control.client.model.TaskVersion;
 import io.dataspray.stream.control.client.model.UploadCodeRequest;
 import io.dataspray.stream.control.client.model.UploadCodeResponse;
@@ -53,11 +53,11 @@ import java.time.Duration;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
@@ -132,7 +132,6 @@ public class DataSprayClientImpl implements DataSprayClient {
                         .taskId(taskId)
                         .contentLengthBytes(codeZipFile.length()));
 
-        // Upload to S3
         log.info("Uploading file to S3");
         uploadToS3(uploadCodeResponse.getPresignedUrl(), codeZipFile);
 
@@ -141,30 +140,20 @@ public class DataSprayClientImpl implements DataSprayClient {
         controlApi.deployVersion(organizationName, taskId, uploadCodeResponse.getSessionId(), deployRequest);
 
         log.info("Polling for asynchronous publishing status");
-        try {
-            return RetryerBuilder.<TaskVersion>newBuilder()
-                    .retryIfException(th -> th instanceof ApiException && ((ApiException) th).getCode() == 202)
-                    .withWaitStrategy(WaitStrategies.join(
-                            WaitStrategies.fixedWait(1, TimeUnit.SECONDS),
-                            WaitStrategies.fibonacciWait(1, TimeUnit.MINUTES)
-                    ))
-                    .withStopStrategy(StopStrategies.stopAfterDelay(16, TimeUnit.MINUTES))
-                    .build()
-                    .call(() -> controlApi.deployVersionCheck(organizationName, taskId, uploadCodeResponse.getSessionId()));
-        } catch (ExecutionException | RetryException ex) {
-            if (ex.getCause() instanceof io.dataspray.stream.control.client.ApiException) {
-                io.dataspray.stream.control.client.ApiException cause = (io.dataspray.stream.control.client.ApiException) ex.getCause();
-                switch (cause.getCode()) {
-                    case 102:
-                        throw new RuntimeException("Still publishing, but exhausted all retries", cause);
-                    case 500:
-                        throw new RuntimeException("Failed to publish: " + Strings.nullToEmpty(cause.getResponseBody()), ex);
-                    case 404:
-                        throw new RuntimeException("Failed to publish, background publishing job either never started or timed out running", ex);
-                }
-            }
-            throw new RuntimeException("Failed to check status of deployment", ex);
-        }
+        DeployVersionCheckResponse response = RetryerBuilder.<DeployVersionCheckResponse>newBuilder()
+                .retryIfResult(r -> r.getStatus() == DeployVersionCheckResponse.StatusEnum.PROCESSING)
+                .withWaitStrategy(WaitStrategies.join(
+                        WaitStrategies.fixedWait(1, TimeUnit.SECONDS),
+                        WaitStrategies.fibonacciWait(1, TimeUnit.MINUTES)))
+                .withStopStrategy(StopStrategies.stopAfterDelay(16, TimeUnit.MINUTES))
+                .build()
+                .call(() -> controlApi.deployVersionCheck(organizationName, taskId, uploadCodeResponse.getSessionId()));
+        return switch (response.getStatus()) {
+            case SUCCESS -> checkNotNull(response.getResult());
+            case FAILED -> throw new RuntimeException(response.getErrorStr());
+            case NOTFOUND -> throw new RuntimeException("Async job missing, either failed to start or timed out");
+            case PROCESSING -> throw new RuntimeException("Still publishing, but exhausted all retries");
+        };
     }
 
     private OkHttpClient getHttpClient(boolean uploadProgressBar, boolean downloadProgressBar) {
