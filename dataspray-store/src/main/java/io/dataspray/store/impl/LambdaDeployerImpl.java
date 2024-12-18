@@ -68,6 +68,7 @@ import software.amazon.awssdk.services.lambda.model.Architecture;
 import software.amazon.awssdk.services.lambda.model.CreateAliasRequest;
 import software.amazon.awssdk.services.lambda.model.CreateEventSourceMappingRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
+import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionUrlConfigRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionUrlConfigResponse;
 import software.amazon.awssdk.services.lambda.model.DeleteFunctionRequest;
@@ -77,6 +78,7 @@ import software.amazon.awssdk.services.lambda.model.FunctionCode;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
 import software.amazon.awssdk.services.lambda.model.FunctionUrlAuthType;
 import software.amazon.awssdk.services.lambda.model.GetAliasRequest;
+import software.amazon.awssdk.services.lambda.model.GetFunctionConfigurationRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionUrlConfigRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionUrlConfigResponse;
@@ -89,6 +91,7 @@ import software.amazon.awssdk.services.lambda.model.ListEventSourceMappingsRespo
 import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.PackageType;
+import software.amazon.awssdk.services.lambda.model.PublishVersionRequest;
 import software.amazon.awssdk.services.lambda.model.ResourceConflictException;
 import software.amazon.awssdk.services.lambda.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.lambda.model.Runtime;
@@ -97,7 +100,9 @@ import software.amazon.awssdk.services.lambda.model.SnapStartApplyOn;
 import software.amazon.awssdk.services.lambda.model.UpdateAliasRequest;
 import software.amazon.awssdk.services.lambda.model.UpdateEventSourceMappingRequest;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
+import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationRequest;
+import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionUrlConfigRequest;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionUrlConfigResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -325,7 +330,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .build());
 
         // Create or update function configuration and code
-        final String publishedVersion;
         final String publishedDescription = generateVersionDescription(taskId, inputQueueNames, outputQueueNames, endpointOpt);
         ImmutableMap.Builder<String, String> envBuilder = ImmutableMap.<String, String>builder()
                 .put(DATASPRAY_API_KEY_ENV, apiKey)
@@ -336,8 +340,10 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .put(DATASPRAY_STATE_TABLE_NAME_ENV, customerSingleTable.getTableName()));
         Environment env = Environment.builder()
                 .variables(envBuilder.build()).build();
+        final String codeSha256;
+        String revisionId;
         if (existingFunctionOpt.isEmpty()) {
-            Retryer<String> retryer = RetryerBuilder.<String>newBuilder()
+            Retryer<CreateFunctionResponse> retryer = RetryerBuilder.<CreateFunctionResponse>newBuilder()
                     // Creating a role requires some time even when using a waiter https://stackoverflow.com/a/37438525
                     .retryIfException(ex -> ex instanceof InvalidParameterValueException
                                             && ex.getMessage().contains("The role defined for the function cannot be assumed by Lambda."))
@@ -345,37 +351,37 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .withWaitStrategy(WaitStrategies.exponentialWait(2, 15, TimeUnit.SECONDS))
                     .build();
             // Create a new function with configuration and code all in one go
-            publishedVersion = retryer.call(() -> lambdaClient.createFunction(CreateFunctionRequest.builder()
-                            .publish(true)
-                            .functionName(functionName)
-                            .description(publishedDescription)
-                            .role(functionRoleArn)
-                            .packageType(PackageType.ZIP)
-                            .architectures(LAMBDA_ARCHITECTURE)
-                            .code(FunctionCode.builder()
-                                    .s3Bucket(codeBucketName)
-                                    .s3Key(getCodeKeyFromUrl(organizationName, codeUrl))
-                                    .build())
-                            .runtime(runtime)
-                            .handler(handler)
-                            .environment(env)
-                            .memorySize(LAMBDA_DEFAULT_MEMORY_IN_MB)
-                            .timeout(LAMBDA_DEFAULT_TIMEOUT)
-                            .snapStart(SnapStart.builder()
-                                    .applyOn(snapStartApplyOn)
-                                    .build())
+            CreateFunctionResponse createFunctionResponse = retryer.call(() -> lambdaClient.createFunction(CreateFunctionRequest.builder()
+                    .publish(true) // Will publish later
+                    .functionName(functionName)
+                    .description(publishedDescription)
+                    .role(functionRoleArn)
+                    .packageType(PackageType.ZIP)
+                    .architectures(LAMBDA_ARCHITECTURE)
+                    .code(FunctionCode.builder()
+                            .s3Bucket(codeBucketName)
+                            .s3Key(getCodeKeyFromUrl(organizationName, codeUrl))
                             .build())
-                    .version());
-            log.info("Created function {} with published version {} description {}", functionName, publishedVersion, publishedDescription);
+                    .runtime(runtime)
+                    .handler(handler)
+                    .environment(env)
+                    .memorySize(LAMBDA_DEFAULT_MEMORY_IN_MB)
+                    .timeout(LAMBDA_DEFAULT_TIMEOUT)
+                    .snapStart(SnapStart.builder()
+                            .applyOn(snapStartApplyOn)
+                            .build())
+                    .build()));
+            codeSha256 = createFunctionResponse.codeSha256();
+            revisionId = createFunctionResponse.revisionId();
+            log.info("Created function {} with description {}", functionName, publishedDescription);
 
-            // Wait until function version publishes
+            // Wait until function is created
             waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionExists(GetFunctionRequest.builder()
                     .functionName(functionName)
-                    .qualifier(publishedVersion)
                     .build()));
         } else {
             // Update function configuration
-            lambdaClient.updateFunctionConfiguration(UpdateFunctionConfigurationRequest.builder()
+            UpdateFunctionConfigurationResponse updateFunctionConfigurationResponse = lambdaClient.updateFunctionConfiguration(UpdateFunctionConfigurationRequest.builder()
                     .functionName(functionName)
                     // Description always changes with the latest timestamp
                     .description(publishedDescription)
@@ -389,6 +395,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .build())
                     .revisionId(existingFunctionOpt.get().revisionId())
                     .build());
+            revisionId = updateFunctionConfigurationResponse.revisionId();
             log.info("Updated function configuration {} with description {}", functionName, publishedDescription);
 
             // Wait until updated
@@ -397,27 +404,24 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .build()));
 
             // Update function code
-            publishedVersion = lambdaClient.updateFunctionCode(UpdateFunctionCodeRequest.builder()
-                            .publish(true)
-                            .functionName(functionName)
-                            .architectures(LAMBDA_ARCHITECTURE)
-                            .s3Bucket(codeBucketName)
-                            .s3Key(getCodeKeyFromUrl(organizationName, codeUrl))
-                            // updateFunctionConfiguration returns invalid revisionId
-                            // https://github.com/aws/aws-sdk/issues/377
-                            // .revisionId(updateFunctionRevisionId)
-                            .build())
-                    .version();
-            log.info("Updated function code {} published version {}", functionName, publishedVersion);
-
-            // Wait until updated
-            // - This is a common failure when a Java Lambda with SnapStart on is initialized and fails to start.
-            // - Careful, this cannot use waitUntilFunctionUpdatedV2: GetFunction with a qualifier means the
-            //   LastUdpateStatus is never present and this waits forever. Instead this wait until active is intended
-            //   for versions.
-            waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionActiveV2(GetFunctionRequest.builder()
+            UpdateFunctionCodeResponse updateFunctionCodeResponse = lambdaClient.updateFunctionCode(UpdateFunctionCodeRequest.builder()
+                    .publish(false) // Will publish later
+                    .revisionId(revisionId)
                     .functionName(functionName)
-                    .qualifier(publishedVersion)
+                    .architectures(LAMBDA_ARCHITECTURE)
+                    .s3Bucket(codeBucketName)
+                    .s3Key(getCodeKeyFromUrl(organizationName, codeUrl))
+                    // updateFunctionConfiguration returns invalid revisionId
+                    // https://github.com/aws/aws-sdk/issues/377
+                    // .revisionId(updateFunctionRevisionId)
+                    .build());
+            codeSha256 = updateFunctionCodeResponse.codeSha256();
+            revisionId = updateFunctionCodeResponse.revisionId();
+            log.info("Updated function code {}", functionName);
+
+            // Wait until code is updated
+            waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionUpdatedV2(GetFunctionRequest.builder()
+                    .functionName(functionName)
                     .build()));
         }
 
@@ -426,7 +430,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         try {
             functionUrlConfigOpt = Optional.of(lambdaClient.getFunctionUrlConfig(GetFunctionUrlConfigRequest.builder()
                     .functionName(functionName)
-                    .qualifier(publishedVersion)
                     .build()));
         } catch (ResourceNotFoundException ex) {
             // Does not have a Function URL
@@ -443,7 +446,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 // And it exists, we need to delete it
                 lambdaClient.deleteFunctionUrlConfig(DeleteFunctionUrlConfigRequest.builder()
                         .functionName(functionName)
-                        .qualifier(publishedVersion)
                         .build());
                 log.info("Deleted function url {}", functionUrlConfigOpt.get().functionUrl());
             }
@@ -454,7 +456,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 // And it doesn't exist, we need to create it
                 CreateFunctionUrlConfigResponse createFunctionUrlConfigResponse = lambdaClient.createFunctionUrlConfig(CreateFunctionUrlConfigRequest.builder()
                         .functionName(functionName)
-                        .qualifier(publishedVersion)
                         .authType(endpoint.isPublic()
                                 ? FunctionUrlAuthType.NONE
                                 : FunctionUrlAuthType.AWS_IAM)
@@ -473,7 +474,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     // Settings do not match, update it all
                     UpdateFunctionUrlConfigResponse updateFunctionUrlConfigResponse = lambdaClient.updateFunctionUrlConfig(UpdateFunctionUrlConfigRequest.builder()
                             .functionName(functionName)
-                            .qualifier(publishedVersion)
                             .authType(endpoint.isPublic()
                                     ? FunctionUrlAuthType.NONE
                                     : FunctionUrlAuthType.AWS_IAM)
@@ -488,6 +488,26 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 }
             }
         }
+
+        // Publish a version of the function
+        // This solidifies the configuration, code and endpoint into a single published version
+        final String publishedVersion = lambdaClient.publishVersion(PublishVersionRequest.builder()
+                        .functionName(functionName)
+                        // Ensure function configuration hasn't changed since our creation/update of the function
+                        // Creating/Updating/Deleting Function URL does not bump revisionId, but this is not a problem:
+                        // If there is a concurrent run, function update will happen first, changing the revisionId before
+                        // the function URL is modified concurrently.
+                        .revisionId(revisionId)
+                        // Ensure code hasn't changed since our creation/update of the function
+                        // This is redundant to our revisionId check, but it's a good to ensure the code is the same
+                        .codeSha256(codeSha256)
+                        .build())
+                .version();
+        // Wait until function version publishes
+        waiterUtil.resolve(lambdaClient.waiter().waitUntilPublishedVersionActive(GetFunctionConfigurationRequest.builder()
+                .functionName(functionName)
+                .qualifier(publishedVersion)
+                .build()));
 
         // Record the Lambda function now that we have the endpoint
         lambdaStore.set(
