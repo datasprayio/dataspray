@@ -44,69 +44,69 @@ const Page: NextPageWithLayout = () => {
     const {signInConfirmTotp} = useAuth();
 
     return (
-        <>
-            <main>
-                <CloudscapeFormik
-                    initialValues={{
-                        code: '',
-                    }}
-                    validationSchema={(
-                        yup.object().shape({
-                            code: yup.number().required('Provide a code from your two-factor device.'),
-                        })
-                    )}
-                    onSubmit={(values) => signInConfirmTotp(username, session, values.code, to, setError, router.push)}
-                >
-                    {({
-                        isSubmitting,
-                        errors,
-                        values,
-                        handleChange,
-                        handleBlur,
-                        handleSubmit,
-                    }) => (
+            <>
+                <main>
+                    <CloudscapeFormik
+                            initialValues={{
+                                code: '',
+                            }}
+                            validationSchema={(
+                                    yup.object().shape({
+                                        code: yup.number().required('Provide a code from your two-factor device.'),
+                                    })
+                            )}
+                            onSubmit={(values) => signInConfirmTotp(username, session, values.code, to, setError, router.push)}
+                    >
+                        {({
+                              isSubmitting,
+                              errors,
+                              values,
+                              handleChange,
+                              handleBlur,
+                              handleSubmit,
+                          }) => (
 
-                        <form onSubmit={handleSubmit}>
-                            <Form
-                                variant="embedded"
-                                actions={
-                                    <SpaceBetween direction="horizontal" size="xs">
-                                        <Button disabled={isSubmitting} variant="primary"
-                                                onClick={e => handleSubmit()}>Submit</Button>
-                                    </SpaceBetween>
-                                }
-                                header={<Header variant="h1">Form header</Header>}
-                                errorText={error}
-                            >
-                                <SpaceBetween direction="vertical" size="l">
-                                    <FormField
-                                        label="Confirmation code"
-                                        errorText={errors?.code}
+                                <form onSubmit={handleSubmit}>
+                                    <Form
+                                            variant="embedded"
+                                            actions={
+                                                <SpaceBetween direction="horizontal" size="xs">
+                                                    <Button disabled={isSubmitting} variant="primary"
+                                                            onClick={e => handleSubmit()}>Submit</Button>
+                                                </SpaceBetween>
+                                            }
+                                            header={<Header variant="h1">Confirm TOTP</Header>}
+                                            errorText={error}
                                     >
-                                        <Input
-                                            type="text"
-                                            name="code"
-                                            placeholder="123456"
-                                            onChangeNative={handleChange}
-                                            onBlurNative={handleBlur}
-                                            value={values?.code}
-                                            autoFocus
-                                        />
-                                    </FormField>
-                                </SpaceBetween>
-                            </Form>
-                        </form>
-                    )}
-                </CloudscapeFormik>
-            </main>
-        </>
+                                        <SpaceBetween direction="vertical" size="l">
+                                            <FormField
+                                                    label="Confirmation code"
+                                                    errorText={errors?.code}
+                                            >
+                                                <Input
+                                                        type="text"
+                                                        name="code"
+                                                        placeholder="123456"
+                                                        onChangeNative={handleChange}
+                                                        onBlurNative={handleBlur}
+                                                        value={values?.code}
+                                                        autoFocus
+                                                />
+                                            </FormField>
+                                        </SpaceBetween>
+                                    </Form>
+                                </form>
+                        )}
+                    </CloudscapeFormik>
+                </main>
+            </>
     )
 }
 
 Page.getLayout = (page) => (
-    <AuthLayout
-        pageTitle="Two-factor authentication"
-    >{page}</AuthLayout>
+        <AuthLayout
+                pageTitle="Two-factor authentication"
+        >{page}</AuthLayout>
 )
 
 export default Page

@@ -341,7 +341,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         Environment env = Environment.builder()
                 .variables(envBuilder.build()).build();
         final String codeSha256;
-        String revisionId;
         if (existingFunctionOpt.isEmpty()) {
             Retryer<CreateFunctionResponse> retryer = RetryerBuilder.<CreateFunctionResponse>newBuilder()
                     // Creating a role requires some time even when using a waiter https://stackoverflow.com/a/37438525
@@ -372,7 +371,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .build())
                     .build()));
             codeSha256 = createFunctionResponse.codeSha256();
-            revisionId = createFunctionResponse.revisionId();
             log.info("Created function {} with description {}", functionName, publishedDescription);
 
             // Wait until function is created
@@ -395,7 +393,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .build())
                     .revisionId(existingFunctionOpt.get().revisionId())
                     .build());
-            revisionId = updateFunctionConfigurationResponse.revisionId();
             log.info("Updated function configuration {} with description {}", functionName, publishedDescription);
 
             // Wait until updated
@@ -406,17 +403,12 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             // Update function code
             UpdateFunctionCodeResponse updateFunctionCodeResponse = lambdaClient.updateFunctionCode(UpdateFunctionCodeRequest.builder()
                     .publish(false) // Will publish later
-                    .revisionId(revisionId)
                     .functionName(functionName)
                     .architectures(LAMBDA_ARCHITECTURE)
                     .s3Bucket(codeBucketName)
                     .s3Key(getCodeKeyFromUrl(organizationName, codeUrl))
-                    // updateFunctionConfiguration returns invalid revisionId
-                    // https://github.com/aws/aws-sdk/issues/377
-                    // .revisionId(updateFunctionRevisionId)
                     .build());
             codeSha256 = updateFunctionCodeResponse.codeSha256();
-            revisionId = updateFunctionCodeResponse.revisionId();
             log.info("Updated function code {}", functionName);
 
             // Wait until code is updated
@@ -493,14 +485,13 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         // This solidifies the configuration, code and endpoint into a single published version
         final String publishedVersion = lambdaClient.publishVersion(PublishVersionRequest.builder()
                         .functionName(functionName)
-                        // Ensure function configuration hasn't changed since our creation/update of the function
-                        // Creating/Updating/Deleting Function URL does not bump revisionId, but this is not a problem:
-                        // If there is a concurrent run, function update will happen first, changing the revisionId before
-                        // the function URL is modified concurrently.
-                        .revisionId(revisionId)
                         // Ensure code hasn't changed since our creation/update of the function
-                        // This is redundant to our revisionId check, but it's a good to ensure the code is the same
+                        // This is the least we can do since we cannot use revision ID but it doesn't guarantee
+                        // the configuration nor function url hasn't changed
                         .codeSha256(codeSha256)
+                        // updateFunctionConfiguration returns invalid revisionId
+                        // https://github.com/aws/aws-sdk/issues/377
+                        //.revisionId(revisionId)
                         .build())
                 .version();
         // Wait until function version publishes
