@@ -494,6 +494,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                         //.revisionId(revisionId)
                         .build())
                 .version();
+        log.info("Publishing function {}...", functionName);
         // Wait until function version publishes
         waiterUtil.resolve(lambdaClient.waiter().waitUntilPublishedVersionActive(GetFunctionConfigurationRequest.builder()
                 .functionName(functionName)
@@ -522,6 +523,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
         // Create Dynamo for lambda state if needed
         if (dynamoState.isPresent() && customerSingleTableOpt.isPresent()) {
+            log.info("Creating/updating Dynamo table for function {}", functionName);
             // This automatically scales GSIs up and down,
             // but throws IllegalArgumentException if LSI count changes
             customerSingleTableOpt.get().createTableIfNotExists(

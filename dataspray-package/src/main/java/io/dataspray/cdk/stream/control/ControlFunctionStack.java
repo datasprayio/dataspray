@@ -185,6 +185,8 @@ public class ControlFunctionStack extends ApiFunctionStack {
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "dynamodb:CreateTable",
+                        "dynamodb:DescribeTable",
+                        "dynamodb:UpdateTable",
                         "dynamodb:DescribeTimeToLive",
                         "dynamodb:UpdateTimeToLive"))
                 .resources(ImmutableList.of(
