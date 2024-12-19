@@ -325,7 +325,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
         // Prepare SingleTable ahead of time to generate table name
         Optional<SingleTable> customerSingleTableOpt = dynamoState.map(s -> SingleTable.builder()
-                .tableName(getFunctionOrDynamoOrRoleNamePrefix(organizationName))
+                .tableName(getCustomerDynamoTableName(organizationName))
                 .overrideGson(gson)
                 .build());
 
@@ -522,6 +522,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
         // Create Dynamo for lambda state if needed
         if (dynamoState.isPresent() && customerSingleTableOpt.isPresent()) {
+            // TODO this does not update table based on changes to LSI/GSI counts
             customerSingleTableOpt.get().createTableIfNotExists(
                     dynamoClient,
                     dynamoState.get().getLsiCount().intValue(),
@@ -885,6 +886,10 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
     private String getFunctionRoleName(String organizationName, String taskId) {
         return getFunctionName(organizationName, taskId) + "-role";
+    }
+
+    private String getCustomerDynamoTableName(String organizationName) {
+        return CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + organizationName;
     }
 
     private String getFunctionOrDynamoOrRoleNamePrefix(String organizationName) {

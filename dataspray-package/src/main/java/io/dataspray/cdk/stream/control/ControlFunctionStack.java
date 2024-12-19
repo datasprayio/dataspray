@@ -179,6 +179,18 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         // we use a wildcard here
                         "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":event-source-mapping:*"))
                 .build());
+        // Allow management of customer's DynamoDB tables
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+                .sid(getConstructIdCamelCase("CustomerManagementLDynamo"))
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "dynamodb:CreateTable",
+                        "dynamodb:DescribeTimeToLive",
+                        "dynamodb:UpdateTimeToLive"))
+                .resources(ImmutableList.of(
+                        "arn:aws:dynamodb:" + getRegion() + ":" + getAccount() + ":table/" + LambdaDeployerImpl.CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(getDeployEnv()) + "*"
+                ))
+                .build());
         // Unfortunately not all permissions allow for resource-specific restrictions.
         getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerManagementLambdaResourceWildcardActions"))

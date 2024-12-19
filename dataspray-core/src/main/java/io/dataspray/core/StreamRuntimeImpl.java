@@ -121,11 +121,11 @@ public class StreamRuntimeImpl implements StreamRuntime {
             throw new RuntimeException("Cannot publish processor " + processor.getName() + " of unknown type " + processor.getClass().getCanonicalName());
         }
 
-        log.info("Publishing task {} with inputs {} outputs {} handler {}",
+        log.info("Publishing task {} with inputs {} outputs {}{}",
                 processor.getName(),
                 processor.getInputStreams().stream().map(StreamLink::getStreamName).collect(Collectors.toSet()),
                 processor.getOutputStreams().stream().map(StreamLink::getStreamName).collect(Collectors.toSet()),
-                handler);
+                processor.getWebOpt().isPresent() ? " and web endpoint" : "");
         DeployRequest deployRequest = new DeployRequest()
                 .runtime(runtime)
                 .handler(handler)

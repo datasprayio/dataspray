@@ -26,8 +26,8 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ParseResult;
 import picocli.CommandLine.Spec;
 
+import java.util.Optional;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static org.slf4j.Logger.ROOT_LOGGER_NAME;
 import static picocli.CommandLine.Spec.Target.MIXEE;
@@ -105,9 +105,9 @@ public class LoggingMixin {
                 break;
         }
 
-        Logger root = LogManager.getLogManager().getLogger(ROOT_LOGGER_NAME);
-
-        // Change default level
-        root.setLevel(level);
+        Optional.ofNullable(LogManager.getLogManager().getLogger(ROOT_LOGGER_NAME)).ifPresent(l -> l.setLevel(level));
+        // TODO does this work?
+        Optional.ofNullable(LogManager.getLogManager().getLogger("io.dataspray")).ifPresent(l -> l.setLevel(level));
+        ;
     }
 }
