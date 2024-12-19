@@ -382,25 +382,33 @@ public class ApiStack extends FunctionStack {
 
                         // Let Api Gateway know to use this particular lambda function
                         // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-integration.html
+                        // Async invocation https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-integration-async.html
+                        boolean isAsync = Boolean.TRUE.equals(methodData.getOrDefault("x-async", false));
                         methodData.put("x-amazon-apigateway-integration", ImmutableMap.builder()
                                 .put("httpMethod", "POST")
                                 .put("uri", "arn:aws:apigateway:" + getRegion() + ":lambda:path/2015-03-31/functions/arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + endpointFunction.getApiFunction().getFunctionName() + ":" + getAuthorizerFunction().getAliasName() + "/invocations")
                                 .put("responses", ImmutableMap.of(
-                                        // Add cors support
-                                        // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/enable-cors-for-resource-using-swagger-importer-tool.html
-                                        "default", ImmutableMap.of(
-                                                "statusCode", "200",
+                                        // In async mode, we are using proxy integration with async invocation which is not officially supported by API Gateway that causes
+                                        // it to return a 502 as it doesn't know how to interpret the async invocation response of 202 ACCEPTED.
+                                        // Here we explicitly map any 502 to 202 even though there could be other reasons why it fails with 502.
+                                        isAsync ? "DEFAULT_5XX" : "default", ImmutableMap.of(
+                                                "statusCode", isAsync ? "202" : "200",
                                                 "responseParameters", ImmutableMap.of(
+                                                        // Add cors support
+                                                        // Docs https://docs.aws.amazon.com/apigateway/latest/developerguide/enable-cors-for-resource-using-swagger-importer-tool.html
                                                         "method.response.header.Access-Control-Allow-Headers", "'" + ApiFunctionStack.CORS_ALLOW_HEADERS + "'",
                                                         "method.response.header.Access-Control-Allow-Methods", "'" + ApiFunctionStack.CORS_ALLOW_METHODS + "'",
                                                         "method.response.header.Access-Control-Allow-Origin", "'" + endpointFunction.getCorsAllowOrigins(this) + "'"),
                                                 "responseTemplates", ImmutableMap.of(
                                                         "application/json", "{}"))))
                                 .put("requestParameters", ImmutableMap.of("integration.request.header.X-Amz-Invocation-Type",
-                                        Boolean.TRUE.equals(methodData.getOrDefault("x-async", false))
-                                                ? "'Event'" : "' RequestResponse'"))
+                                        isAsync ? "'Event'" : "' RequestResponse'"))
                                 .put("passthroughBehavior", "when_no_match")
                                 .put("contentHandling", "CONVERT_TO_TEXT")
+                                // For async, we should be using "aws" type here, but then we'd have to pass along all the proxied
+                                // information. Instead always proxy, but now the response from an async invocation will be
+                                // 204 ACCEPTED which API Gateway will choke and return a 502. We fix this above by forcing
+                                // a response of 204 above.
                                 .put("type", "aws_proxy")
                                 .build());
                     }
