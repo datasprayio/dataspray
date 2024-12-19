@@ -522,7 +522,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
         // Create Dynamo for lambda state if needed
         if (dynamoState.isPresent() && customerSingleTableOpt.isPresent()) {
-            // TODO this does not update table based on changes to LSI/GSI counts
+            // This automatically scales GSIs up and down,
+            // but throws IllegalArgumentException if LSI count changes
             customerSingleTableOpt.get().createTableIfNotExists(
                     dynamoClient,
                     dynamoState.get().getLsiCount().intValue(),
