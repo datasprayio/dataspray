@@ -391,6 +391,7 @@ public class ApiStack extends FunctionStack {
                                         // In async mode, we are using proxy integration with async invocation which is not officially supported by API Gateway that causes
                                         // it to return a 502 as it doesn't know how to interpret the async invocation response of 202 ACCEPTED.
                                         // Here we explicitly map any 502 to 202 even though there could be other reasons why it fails with 502.
+                                        // https://docs.aws.amazon.com/apigateway/latest/api/API_GatewayResponse.html
                                         isAsync ? "DEFAULT_5XX" : "default", ImmutableMap.of(
                                                 "statusCode", isAsync ? "202" : "200",
                                                 "responseParameters", ImmutableMap.of(
