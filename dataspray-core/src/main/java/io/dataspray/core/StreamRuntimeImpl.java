@@ -22,6 +22,7 @@
 
 package io.dataspray.core;
 
+import com.google.common.base.Strings;
 import io.dataspray.client.DataSprayClient;
 import io.dataspray.core.definition.model.DynamoState;
 import io.dataspray.core.definition.model.Item;
@@ -36,6 +37,7 @@ import io.dataspray.stream.control.client.model.DeployRequestDynamoState;
 import io.dataspray.stream.control.client.model.DeployRequestEndpoint;
 import io.dataspray.stream.control.client.model.DeployRequestEndpointCors;
 import io.dataspray.stream.control.client.model.TaskStatus;
+import io.dataspray.stream.control.client.model.TaskStatuses;
 import io.dataspray.stream.control.client.model.TaskVersion;
 import io.dataspray.stream.control.client.model.TaskVersions;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -47,6 +49,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.File;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -70,12 +73,18 @@ public class StreamRuntimeImpl implements StreamRuntime {
     @Override
     @SneakyThrows
     public void statusAll(Organization organization, Project project) {
-        DataSprayClient.get(organization.toAccess())
-                .control()
-                // TODO add pagination
-                .statusAll(organization.getName(), null)
-                .getTasks()
-                .forEach(this::printStatus);
+        boolean printHeader = true;
+        Optional<String> cursorOpt = Optional.empty();
+        do {
+            TaskStatuses taskStatuses = DataSprayClient.get(organization.toAccess())
+                    .control()
+                    .statusAll(organization.getName(), cursorOpt.orElse(null));
+            cursorOpt = Optional.ofNullable(Strings.emptyToNull(taskStatuses.getCursor()));
+            for (TaskStatus taskStatus : taskStatuses.getTasks()) {
+                printStatus(taskStatus, printHeader);
+                printHeader = false;
+            }
+        } while (cursorOpt.isPresent());
     }
 
     @Override
@@ -89,7 +98,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
         TaskStatus status = DataSprayClient.get(organization.toAccess())
                 .control()
                 .status(organization.getName(), processorName);
-        printStatus(status);
+        printStatus(status, true);
     }
 
     @Override
@@ -195,7 +204,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 .control()
                 .pause(organization.getName(), processor.getProcessorId());
         log.info("Task set to be paused");
-        printStatus(taskStatus);
+        printStatus(taskStatus, true);
 
         return taskStatus;
     }
@@ -212,7 +221,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 .control()
                 .resume(organization.getName(), processor.getProcessorId());
         log.info("Task set to be resumed");
-        printStatus(taskStatus);
+        printStatus(taskStatus, true);
 
         return taskStatus;
     }
@@ -243,7 +252,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 .control()
                 .delete(organization.getName(), processor.getProcessorId());
 
-        printStatus(status);
+        printStatus(status, true);
 
         return status;
     }
@@ -261,8 +270,24 @@ public class StreamRuntimeImpl implements StreamRuntime {
         }
     }
 
-    private void printStatus(TaskStatus taskStatus) {
-        log.info("{}\t{}", taskStatus.getTaskId(), taskStatus.getStatus());
+    private void printStatus(TaskStatus taskStatus, boolean printHeader) {
+        if (printHeader) {
+            log.info("{}\t{}\t{}{}{}",
+                    "Id",
+                    "Version",
+                    "Status",
+                    "EndpointUrl",
+                    "LastUpdateStatus");
+        }
+        log.info("{}\t{}\t{}{}{}",
+                taskStatus.getTaskId(),
+                taskStatus.getVersion(),
+                taskStatus.getStatus(),
+                Strings.isNullOrEmpty(taskStatus.getEndpointUrl()) ? ""
+                        : "\t" + taskStatus.getEndpointUrl(),
+                taskStatus.getLastUpdateStatus() != null && TaskStatus.LastUpdateStatusEnum.SUCCESSFUL.equals(taskStatus.getLastUpdateStatus()) ? ""
+                        : "\t" + taskStatus.getLastUpdateStatus() +
+                          (Strings.isNullOrEmpty(taskStatus.getLastUpdateStatusReason()) ? "" : "(" + taskStatus.getLastUpdateStatusReason() + ")"));
     }
 
     private void printVersions(TaskVersions versions) {
