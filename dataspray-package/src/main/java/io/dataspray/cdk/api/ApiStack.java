@@ -490,11 +490,11 @@ public class ApiStack extends FunctionStack {
     @Getter
     private enum XAsync {
         /** Always synchronous */
-        disabled("'Event'"),
+        disabled("'RequestResponse'"),
         /** Client can choose */
         optional("method.request.header.InvocationType"),
         /** Always asynchronous */
-        enabled("'RequestResponse'");
+        enabled("'Event'");
         private final String headerValue;
     }
 }
