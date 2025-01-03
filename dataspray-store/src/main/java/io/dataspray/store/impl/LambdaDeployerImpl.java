@@ -456,6 +456,11 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                         .build());
                 endpointUrlOpt = Optional.of(createFunctionUrlConfigResponse.functionUrl());
                 log.info("Created function url {}", endpointUrlOpt.get());
+
+                // Wait until function url is updated
+                waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionActive(GetFunctionConfigurationRequest.builder()
+                        .functionName(functionName)
+                        .build()));
             } else {
                 // And it already exists, we may have to update it
                 GetFunctionUrlConfigResponse config = functionUrlConfigOpt.get();
@@ -474,6 +479,11 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             .build());
                     endpointUrlOpt = Optional.of(updateFunctionUrlConfigResponse.functionUrl());
                     log.info("Updated function url {}", endpointUrlOpt.get());
+
+                    // Wait until function url is updated
+                    waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionUpdated(GetFunctionConfigurationRequest.builder()
+                            .functionName(functionName)
+                            .build()));
                 } else {
                     endpointUrlOpt = Optional.of(functionUrlConfigOpt.get().functionUrl());
                     log.debug("No update needed for function url {}", endpointUrlOpt.get());
