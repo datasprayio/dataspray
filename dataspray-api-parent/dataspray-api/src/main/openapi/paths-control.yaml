@@ -309,7 +309,7 @@ components:
               $ref: '#/components/schemas/TaskStatus'
 /v1/organization/{organizationName}/control/task/{taskId}/deploy/{sessionId}:
   patch:
-    x-async: true
+    x-async: optional
     operationId: deployVersion
     tags: [ Control ]
     parameters:
@@ -328,6 +328,12 @@ components:
         required: true
         schema:
           type: string
+      - name: InvocationType
+        in: header
+        required: true
+        schema:
+          description: RequestResponse for sync and Event for async; async always returns 502 due to ApiGateway limitation
+          type: string
     requestBody:
       required: true
       content:
@@ -335,6 +341,12 @@ components:
           schema:
             $ref: '#/components/schemas/DeployRequest'
     responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskVersion'
       '202':
         description: Async operation started
   get:

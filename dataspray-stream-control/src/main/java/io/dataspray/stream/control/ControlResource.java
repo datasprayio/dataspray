@@ -94,8 +94,8 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     @Override
-    public void deployVersion(String organizationName, String taskId, String sessionId, DeployRequest deployRequest) {
-        log.info("Deploying task {} org {} session {}", taskId, organizationName, sessionId);
+    public TaskVersion deployVersion(String organizationName, String taskId, String sessionId, String invocationType, DeployRequest deployRequest) {
+        log.info("Deploying task {} org {} session {} invocationType {}", taskId, organizationName, sessionId, invocationType);
         Session session = jobStore.startSession(sessionId);
         try {
             DeployedVersion deployedVersion = deployer.deployVersion(
@@ -130,10 +130,12 @@ public class ControlResource extends AbstractResource implements ControlApi {
 
             log.info("Deployed task {} org {} version {} description {}",
                     taskId, organizationName, deployedVersion.getVersion(), deployedVersion.getDescription());
-            jobStore.success(sessionId, new TaskVersion(
+            TaskVersion taskVersion = new TaskVersion(
                     taskId,
                     deployedVersion.getVersion(),
-                    deployedVersion.getDescription()));
+                    deployedVersion.getDescription());
+            jobStore.success(sessionId, taskVersion);
+            return taskVersion;
         } catch (WebApplicationException ex) {
             jobStore.failure(sessionId, ex.getResponse().getStatus() + ": " + ex.getMessage());
             log.warn("Failed to deploy; org {} task {} session {}", organizationName, taskId, sessionId, ex);
@@ -141,6 +143,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
         } catch (Exception ex) {
             log.error("Unknown error deploying; org {} task {} session {}", organizationName, taskId, sessionId, ex);
             jobStore.failure(sessionId, "Unknown failure: " + ex.getMessage());
+            throw ex;
         }
     }
 

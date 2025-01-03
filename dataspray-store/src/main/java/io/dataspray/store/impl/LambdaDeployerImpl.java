@@ -779,7 +779,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         ImmutableSet<String> queueNames = lambdaRecord.getInputQueueNames();
         final State state;
         if (queueNames.isEmpty()) {
-            state = State.PAUSED;
+            state = State.RUNNING;
             log.debug("Function {} version {} has no queues, considering {}", functionName, activeVersionOpt.get(), state);
         } else {
             ImmutableMap<String, QueueSource> queueSources = getTaskQueueSources(organizationName, taskId).stream()

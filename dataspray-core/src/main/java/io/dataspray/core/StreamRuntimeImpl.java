@@ -49,6 +49,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.File;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -272,22 +273,21 @@ public class StreamRuntimeImpl implements StreamRuntime {
 
     private void printStatus(TaskStatus taskStatus, boolean printHeader) {
         if (printHeader) {
-            log.info("{}\t{}\t{}{}{}",
+            log.info("{}\t{}\t{}\t{}\t{}",
                     "Id",
                     "Version",
                     "Status",
-                    "EndpointUrl",
-                    "LastUpdateStatus");
+                    "LastUpdateStatus",
+                    "EndpointUrl");
+            log.info("---\t---\t---\t---\t---");
         }
-        log.info("{}\t{}\t{}{}{}",
+        log.info("{}\t{}\t{}\t{}\t{}",
                 taskStatus.getTaskId(),
                 taskStatus.getVersion(),
                 taskStatus.getStatus(),
-                Strings.isNullOrEmpty(taskStatus.getEndpointUrl()) ? ""
-                        : "\t" + taskStatus.getEndpointUrl(),
-                taskStatus.getLastUpdateStatus() != null && TaskStatus.LastUpdateStatusEnum.SUCCESSFUL.equals(taskStatus.getLastUpdateStatus()) ? ""
-                        : "\t" + taskStatus.getLastUpdateStatus() +
-                          (Strings.isNullOrEmpty(taskStatus.getLastUpdateStatusReason()) ? "" : "(" + taskStatus.getLastUpdateStatusReason() + ")"));
+                Objects.toString(taskStatus.getLastUpdateStatus(), "N/A")
+                + (Strings.isNullOrEmpty(taskStatus.getLastUpdateStatusReason()) ? "" : "(" + taskStatus.getLastUpdateStatusReason() + ")"),
+                Objects.toString(taskStatus.getEndpointUrl(), "N/A"));
     }
 
     private void printVersions(TaskVersions versions) {

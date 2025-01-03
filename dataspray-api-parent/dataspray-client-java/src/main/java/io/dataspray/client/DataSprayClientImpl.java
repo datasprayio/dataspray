@@ -137,7 +137,14 @@ public class DataSprayClientImpl implements DataSprayClient {
 
         log.info("Requesting asynchronous publishing");
         DeployRequest deployRequest = codeUrlToDeployRequest.apply(uploadCodeResponse.getCodeUrl());
-        controlApi.deployVersion(organizationName, taskId, uploadCodeResponse.getSessionId(), deployRequest);
+        try {
+            controlApi.deployVersion(organizationName, taskId, uploadCodeResponse.getSessionId(), "Event", deployRequest);
+        } catch (io.dataspray.stream.control.client.ApiException ex) {
+            // Asynchronous invocation of a proxied lambda causes ApiGateway to choke and return 502
+            if (ex.getCode() != 502) {
+                throw ex;
+            }
+        }
 
         log.info("Polling for asynchronous publishing status");
         DeployVersionCheckResponse response = RetryerBuilder.<DeployVersionCheckResponse>newBuilder()

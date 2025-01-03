@@ -99,7 +99,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
                 Files.writeString(Files.createTempFile(null, null), "test\n").toFile());
 
         // Deploy version
-        request(Given.builder()
+        TaskVersion taskVersion = request(TaskVersion.class, Given.builder()
                 .method(HttpMethod.PATCH)
                 .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy/" + uploadCodeResponse.getSessionId())
                 .body(new DeployRequest()
@@ -118,9 +118,11 @@ public abstract class ControlBase extends AbstractLambdaTest {
                                         .maxAge(3600L)))
                         .switchToNow(false))
                 .build())
-                // Although API Gateway will return 202 ACCEPTED for async processing,
-                // the lambda itself will return 204 NO CONTENT
-                .assertStatusCode(Response.Status.NO_CONTENT.getStatusCode());
+                .assertStatusCode(Response.Status.OK.getStatusCode())
+                .getBody();
+        assertNotNull(taskVersion);
+        assertEquals(taskId, taskVersion.getTaskId());
+        assertEquals("1", taskVersion.getVersion());
 
         // Check status
         status = request(DeployVersionCheckResponse.class, Given.builder()
@@ -129,7 +131,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
         assertEquals(StatusEnum.SUCCESS, status.getStatus());
-        TaskVersion taskVersion = status.getResult();
+        taskVersion = status.getResult();
         assertNotNull(taskVersion);
         assertEquals(taskId, taskVersion.getTaskId());
         assertEquals("1", taskVersion.getVersion());
@@ -194,7 +196,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
                 Files.writeString(Files.createTempFile(null, null), "TEST\n").toFile());
 
         // Deploy version
-        request(Given.builder()
+        TaskVersion taskVersion2 = request(TaskVersion.class, Given.builder()
                 .method(HttpMethod.PATCH)
                 .path("/v1/organization/" + getOrganizationName() + "/control/task/" + taskId + "/deploy/" + uploadCodeResponse2.getSessionId())
                 .body(new DeployRequest()
@@ -204,7 +206,11 @@ public abstract class ControlBase extends AbstractLambdaTest {
                         .runtime(DeployRequest.RuntimeEnum.NODEJS20_X)
                         .switchToNow(true))
                 .build())
-                .assertStatusCode(Response.Status.NO_CONTENT.getStatusCode());
+                .assertStatusCode(Response.Status.OK.getStatusCode())
+                .getBody();
+        assertNotNull(taskVersion2);
+        assertEquals(taskId, taskVersion2.getTaskId());
+        assertEquals("2", taskVersion2.getVersion());
 
         // Check status
         status = request(DeployVersionCheckResponse.class, Given.builder()
@@ -213,7 +219,7 @@ public abstract class ControlBase extends AbstractLambdaTest {
                 .assertStatusCode(Response.Status.OK.getStatusCode())
                 .getBody();
         assertEquals(StatusEnum.SUCCESS, status.getStatus());
-        TaskVersion taskVersion2 = status.getResult();
+        taskVersion2 = status.getResult();
         assertNotNull(taskVersion2);
         assertEquals(taskId, taskVersion2.getTaskId());
         assertEquals("2", taskVersion2.getVersion());

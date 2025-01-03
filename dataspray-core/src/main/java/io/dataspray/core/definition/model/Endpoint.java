@@ -155,7 +155,7 @@ public class Endpoint extends Item {
         return getParent().getParent().getParent().getDataFormats().stream()
                 .filter(dataFormat -> dataFormat.getName().equals(getResponseDataFormatName()))
                 .findAny()
-                .orElseThrow(() -> new RuntimeException("Response data format not found with name " + getResponseDataFormatName() + " for endpoint " + getPath()));
+                .orElseThrow(() -> new RuntimeException("Missing data format with name '" + getResponseDataFormatName() + "' for endpoint " + getPath()));
     }
 
     public Optional<DataFormat> getResponseDataFormatOpt() {

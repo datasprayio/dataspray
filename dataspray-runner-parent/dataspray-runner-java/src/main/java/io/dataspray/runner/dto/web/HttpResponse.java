@@ -91,6 +91,13 @@ public class HttpResponse {
         }
 
         /**
+         * The server cannot or will not process the request due to something that is perceived to be a client error.
+         */
+        public HttpResponseBuilder<T> badRequest() {
+            return statusCode(400);
+        }
+
+        /**
          * The requested resource could not be found but may be available in the future.
          */
         public HttpResponseBuilder<T> notFound() {
