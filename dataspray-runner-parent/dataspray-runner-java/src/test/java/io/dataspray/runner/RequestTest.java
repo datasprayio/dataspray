@@ -36,45 +36,60 @@ public class RequestTest {
 
     @Test
     public void testDeserialization() throws Exception {
+        // From https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html#urls-payloads
         String json = """
                 {
-                  "records": [
-                    {
-                      "messageId": "12345",
-                      "body": "test message"
-                    }
+                  "version": "2.0",
+                  "routeKey": "$default",
+                  "rawPath": "/my/path",
+                  "rawQueryString": "parameter1=value1&parameter1=value2&parameter2=value",
+                  "cookies": [
+                    "cookie1",
+                    "cookie2"
                   ],
-                  "version": "1.0",
-                  "rawPath": "/example/path",
-                  "rawQueryString": "param1=value1&param2=value2",
-                  "cookies": ["sessionId=abc123", "user=JohnDoe"],
                   "headers": {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer token"
+                    "header1": "value1",
+                    "header2": "value1,value2"
                   },
                   "queryStringParameters": {
-                    "param1": "value1",
-                    "param2": "value2"
+                    "parameter1": "value1,value2",
+                    "parameter2": "value"
                   },
-                  "httpRequestContext": {
-                    "apiId": "12345",
-                    "domainName": "example.com",
-                    "domainPrefix": "api",
-                    "http": {
-                      "method": "GET",
-                      "path": "/example/path",
-                      "protocol": "HTTP/1.1",
-                      "sourceIp": "127.0.0.1",
-                      "userAgent": "curl/7.64.1",
-                      "someUnknown": "value"
+                  "requestContext": {
+                    "accountId": "123456789012",
+                    "apiId": "<urlid>",
+                    "authentication": null,
+                
+                    "authorizer": {
+                        "iam": {
+                                "accessKey": "AKIA...",
+                                "accountId": "111122223333",
+                                "callerId": "AIDA...",
+                                "cognitoIdentity": null,
+                                "principalOrgId": null,
+                                "userArn": "arn:aws:iam::111122223333:user/example-user",
+                                "userId": "AIDA..."
+                        }
                     },
-                    "requestId": "12345",
-                    "timeEpoch": 1583348638390,
-                    "someUnknown": "value"
+                    "domainName": "<url-id>.lambda-url.us-west-2.on.aws",
+                    "domainPrefix": "<url-id>",
+                    "http": {
+                      "method": "POST",
+                      "path": "/my/path",
+                      "protocol": "HTTP/1.1",
+                      "sourceIp": "123.123.123.123",
+                      "userAgent": "agent"
+                    },
+                    "requestId": "id",
+                    "routeKey": "$default",
+                    "stage": "$default",
+                    "time": "12/Mar/2020:19:03:58 +0000",
+                    "timeEpoch": 1583348638390
                   },
-                  "body": "{\\"key\\":\\"value\\"}",
+                  "body": "Hello from client!",
+                  "pathParameters": null,
                   "isBase64Encoded": false,
-                  "someUnknown": "value"
+                  "stageVariables": null
                 }
                 """;
 
@@ -83,27 +98,34 @@ public class RequestTest {
 
         // Assertions to verify deserialization
         assertNotNull(request);
-        assertEquals("1.0", request.getVersion());
-        assertEquals("/example/path", request.getRawPath());
-        assertEquals("param1=value1&param2=value2", request.getRawQueryString());
+        assertEquals("2.0", request.getVersion());
+        assertEquals("/my/path", request.getRawPath());
+        assertEquals("parameter1=value1&parameter1=value2&parameter2=value", request.getRawQueryString());
 
         // Verify cookies
         assertNotNull(request.getCookies());
         assertEquals(2, request.getCookies().size());
-        assertEquals("sessionId=abc123", request.getCookies().get(0));
+        assertEquals("cookie1", request.getCookies().get(0));
 
         // Verify headers
         Map<String, String> headers = request.getHeadersCaseInsensitive();
         assertNotNull(headers);
-        assertEquals("application/json", headers.get("Content-Type"));
+        assertEquals("value1", headers.get("HEADER1"));
 
         // Verify query string parameters
         Map<String, String> queryParams = request.getQueryStringParameters();
         assertNotNull(queryParams);
-        assertEquals("value1", queryParams.get("param1"));
+        assertEquals("value1,value2", queryParams.get("parameter1"));
+
+        // Verify request context
+        assertNotNull(request.getRequestContext());
+        assertEquals("id", request.getRequestContext().getRequestId());
+        assertNotNull(request.getRequestContext().getHttp());
+        assertEquals("POST", request.getRequestContext().getHttp().getMethod());
+        assertEquals("/my/path", request.getRequestContext().getHttp().getPath());
 
         // Verify body and other fields
-        assertEquals("{\"key\":\"value\"}", request.getBody());
+        assertEquals("Hello from client!", request.getBody());
         assertFalse(request.isBase64Encoded());
     }
 }

@@ -88,7 +88,7 @@ public interface HttpRequest {
      * An object that contains additional information about the request, such as the requestId, the time of the request,
      * and the identity of the caller if authorized via AWS Identity and Access Management (IAM).
      */
-    HttpRequestContext getHttpRequestContext();
+    HttpRequestContext getRequestContext();
 
     /**
      * The body of the request. If the content type of the request is binary, the body is base64-encoded.

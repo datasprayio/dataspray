@@ -1,4 +1,4 @@
-            "{{{method}}}".equalsIgnoreCase(request.getHttpRequestContext().getHttp().getMethod())
+            "{{{method}}}".equalsIgnoreCase(request.getRequestContext().getHttp().getMethod())
             && pathDirs.length == {{{pathDepth}}}
             {{#pathRequiredDirs}}
             && "{{{name}}}".equals(pathDirs[{{{index}}}])

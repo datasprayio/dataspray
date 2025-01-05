@@ -42,6 +42,10 @@ public class Request implements SqsRequest, HttpRequest {
 
     List<SqsMessage> records;
 
+    public boolean isSqsRequest() {
+        return records != null;
+    }
+
     // Http request fields
 
     String version;
@@ -85,15 +89,11 @@ public class Request implements SqsRequest, HttpRequest {
 
     Map<String, String> queryStringParameters;
 
-    HttpRequestContextImpl httpRequestContext;
+    HttpRequestContextImpl requestContext;
 
     String body;
 
     boolean isBase64Encoded;
-
-    public boolean isSqsRequest() {
-        return records != null;
-    }
 
     public boolean isHttpRequest() {
         return rawPath != null;

@@ -127,7 +127,7 @@ public class MockHttpRequest implements HttpRequest, HttpRequestContext, HttpDet
     }
 
     @Override
-    public HttpRequestContext getHttpRequestContext() {
+    public HttpRequestContext getRequestContext() {
         return this;
     }
 
