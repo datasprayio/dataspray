@@ -3,7 +3,7 @@
 package io.dataspray.runner;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.SQSBatchResponseBuilder;
 import com.google.common.base.Strings;
@@ -14,16 +14,30 @@ import io.dataspray.runner.dto.sqs.SqsRequest;
 import io.dataspray.runner.dto.web.HttpRequest;
 import io.dataspray.runner.dto.web.HttpResponse;
 import io.dataspray.runner.dto.web.HttpResponseException;
+import io.dataspray.runner.util.GsonUtil;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
-public abstract class Entrypoint implements RequestHandler<Request, Object> {
+public abstract class Entrypoint implements RequestStreamHandler {
 
     private final Pattern sqsArnPattern = Pattern.compile("customer-(?<customer>[^-]+)-(?<queue>.+)");
+
+    public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
+        Request event = GsonUtil.get().fromJson(new InputStreamReader(input), Request.class);
+        Object response = handleRequest(event, context);
+        try (var writer = new OutputStreamWriter(output)) {
+            GsonUtil.get().toJson(response, writer);
+        }
+    }
 
     /**
      * Entry point for the Lambda Function.

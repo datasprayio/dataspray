@@ -36,4 +36,5 @@ public class HttpDetailsImpl implements HttpDetails {
     String sourceIp;
 
     String userAgent;
+
 }

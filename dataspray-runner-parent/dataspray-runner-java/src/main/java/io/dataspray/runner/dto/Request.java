@@ -22,8 +22,6 @@
 
 package io.dataspray.runner.dto;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Maps;
 import io.dataspray.runner.dto.sqs.SqsMessage;
 import io.dataspray.runner.dto.sqs.SqsRequest;
@@ -99,30 +97,5 @@ public class Request implements SqsRequest, HttpRequest {
 
     public boolean isHttpRequest() {
         return rawPath != null;
-    }
-
-    @JsonCreator
-    public Request(
-            @JsonProperty("records") List<SqsMessage> records,
-            @JsonProperty("version") String version,
-            @JsonProperty("rawPath") String rawPath,
-            @JsonProperty("rawQueryString") String rawQueryString,
-            @JsonProperty("cookies") List<String> cookies,
-            @JsonProperty("headers") Map<String, String> headers,
-            @JsonProperty("queryStringParameters") Map<String, String> queryStringParameters,
-            @JsonProperty("httpRequestContext") HttpRequestContextImpl httpRequestContext,
-            @JsonProperty("body") String body,
-            @JsonProperty("isBase64Encoded") boolean isBase64Encoded
-    ) {
-        this.records = records;
-        this.version = version;
-        this.rawPath = rawPath;
-        this.rawQueryString = rawQueryString;
-        this.cookies = cookies;
-        this.headers = headers;
-        this.queryStringParameters = queryStringParameters;
-        this.httpRequestContext = httpRequestContext;
-        this.body = body;
-        this.isBase64Encoded = isBase64Encoded;
     }
 }

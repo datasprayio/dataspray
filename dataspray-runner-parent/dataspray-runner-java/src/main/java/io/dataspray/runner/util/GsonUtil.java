@@ -40,6 +40,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.Optional;
 
 public class GsonUtil {
@@ -75,7 +76,19 @@ public class GsonUtil {
 
         @Override
         public Instant deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
-            return Instant.parse(json.getAsString());
+            String jsonStr = json.getAsString();
+            try {
+                // Try to parse as ISO-8601 formatted string
+                return Instant.parse(jsonStr);
+            } catch (DateTimeParseException ex) {
+                // If parsing fails, assume it's a millisecond timestamp
+                try {
+                    long epochMilli = Long.parseLong(jsonStr);
+                    return Instant.ofEpochMilli(epochMilli);
+                } catch (NumberFormatException ex2) {
+                    throw new IllegalArgumentException("Input string '" + jsonStr + "' is neither a valid ISO-8601 date nor a millisecond timestamp.", ex);
+                }
+            }
         }
     }
 

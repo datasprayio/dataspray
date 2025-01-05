@@ -32,7 +32,12 @@
     </parent>
 
     <artifactId>dataspray-runner</artifactId>
-    <version>0.0.16</version>
+    <!--
+     If bumped, also bump:
+      - Generated pom.xml template: pom-parent.xml.template.mustache
+      - CLI pom.xml version: io.dataspray:dataspray-cli
+    -->
+    <version>0.0.18</version>
     <packaging>jar</packaging>
 
     <name>DataSpray Runner Java</name>

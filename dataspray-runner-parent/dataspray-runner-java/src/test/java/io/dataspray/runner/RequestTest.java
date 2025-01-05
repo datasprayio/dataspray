@@ -22,10 +22,8 @@
 
 package io.dataspray.runner;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dataspray.runner.dto.Request;
+import io.dataspray.runner.util.GsonUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
@@ -58,19 +56,30 @@ public class RequestTest {
                     "param1": "value1",
                     "param2": "value2"
                   },
-                  "httpRequestContext": null,
+                  "httpRequestContext": {
+                    "apiId": "12345",
+                    "domainName": "example.com",
+                    "domainPrefix": "api",
+                    "http": {
+                      "method": "GET",
+                      "path": "/example/path",
+                      "protocol": "HTTP/1.1",
+                      "sourceIp": "127.0.0.1",
+                      "userAgent": "curl/7.64.1",
+                      "someUnknown": "value"
+                    },
+                    "requestId": "12345",
+                    "timeEpoch": 1583348638390,
+                    "someUnknown": "value"
+                  },
                   "body": "{\\"key\\":\\"value\\"}",
-                  "isBase64Encoded": false
+                  "isBase64Encoded": false,
+                  "someUnknown": "value"
                 }
                 """;
 
-        // Configure ObjectMapper
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        objectMapper.configure(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION, true);
-
         // Deserialize JSON into Request object
-        Request request = objectMapper.readValue(json, Request.class);
+        Request request = GsonUtil.get().fromJson(json, Request.class);
 
         // Assertions to verify deserialization
         assertNotNull(request);
