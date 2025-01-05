@@ -23,6 +23,8 @@
 package io.dataspray.runner.dto.sqs;
 
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Value;
 
 import java.util.Map;
@@ -40,4 +42,17 @@ public class SqsMessage {
     String eventSourceArn;
 
     Map<String, String> attributes;
+
+    @JsonCreator
+    public SqsMessage(
+            @JsonProperty("messageId") String messageId,
+            @JsonProperty("body") String body,
+            @JsonProperty("eventSourceArn") String eventSourceArn,
+            @JsonProperty("attributes") Map<String, String> attributes
+    ) {
+        this.messageId = messageId;
+        this.body = body;
+        this.eventSourceArn = eventSourceArn;
+        this.attributes = attributes;
+    }
 }
