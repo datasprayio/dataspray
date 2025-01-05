@@ -94,9 +94,11 @@ export abstract class Entrypoint {
     }
 
     handleHttpRequest = async (request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> => {
-        return this.web(
+        const response = await this.web(
                 toHttpRequest(request),
                 RawCoordinatorImpl.get());
+        console.log(`${request.requestContext.http.method} ${request.rawPath} ${response.statusCode} ${response.body?.length || 0} ${request.requestContext.http.userAgent}`)
+        return response;
     }
 
     abstract stream(

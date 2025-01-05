@@ -1,6 +1,6 @@
 {
   "name": "dataspray-runner",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Common library for DataSpray tasks",
   "author": {
     "name": "Matus Faro",

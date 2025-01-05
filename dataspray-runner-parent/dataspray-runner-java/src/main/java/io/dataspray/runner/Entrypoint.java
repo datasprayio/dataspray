@@ -103,11 +103,19 @@ public abstract class Entrypoint implements RequestStreamHandler {
      * Handle an HTTP request from Function URL.
      */
     private HttpResponse handleHttpRequest(HttpRequest request) {
+        HttpResponse response;
         try {
-            return web(request, RawCoordinatorImpl.get());
+            response = web(request, RawCoordinatorImpl.get());
         } catch (HttpResponseException ex) {
-            return ex.getResponse();
+            response = ex.getResponse();
         }
+        log.info("{} {} {} {} {}",
+                request.getRequestContext().getHttp().getMethod(),
+                request.getRawPath(),
+                response.getStatusCode(),
+                response.getBody().length(),
+                request.getRequestContext().getHttp().getUserAgent());
+        return response;
     }
 
     protected void stream(MessageMetadata metadata, String data, RawCoordinator coordinator) {
