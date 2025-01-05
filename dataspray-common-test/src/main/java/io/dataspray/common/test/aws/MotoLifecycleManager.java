@@ -38,6 +38,7 @@ import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.InternetProtocol;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import software.amazon.awssdk.core.SdkSystemSetting;
 
 import java.time.Duration;
 import java.util.Map;
@@ -110,9 +111,17 @@ public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager
         // Start container
         motoContainer.start();
 
+        // Properties via Java
+        System.setProperty("aws.endpointUrl", endpoint);
+        System.setProperty(SdkSystemSetting.AWS_ACCOUNT_ID.property(), String.valueOf(awsAccountId));
+        System.setProperty(SdkSystemSetting.AWS_REGION.property(), region);
+        System.setProperty(SdkSystemSetting.AWS_ACCESS_KEY_ID.property(), awsAccessKey);
+        System.setProperty(SdkSystemSetting.AWS_SECRET_ACCESS_KEY.property(), awsSecretKey);
+
         // Common properties
         ImmutableMap.Builder<String, String> propsBuilder = ImmutableMap.builder();
         propsBuilder.put("startupWaitUntilDeps", "true");
+        propsBuilder.put("aws.endpointUrl", endpoint);
         propsBuilder.put("aws.accountId", String.valueOf(awsAccountId));
         propsBuilder.put("aws.region", region);
         propsBuilder.put("aws.credentials.accessKey", awsAccessKey);

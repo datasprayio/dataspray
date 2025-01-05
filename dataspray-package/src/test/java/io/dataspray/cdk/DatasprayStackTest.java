@@ -26,7 +26,10 @@ import com.amazonaws.services.dynamodbv2.local.google.Sets;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.common.test.AbstractTest;
+import io.dataspray.common.test.aws.MotoInstance;
+import io.dataspray.common.test.aws.MotoLifecycleManager;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -47,8 +50,10 @@ import java.util.zip.ZipOutputStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Slf4j
+@ExtendWith(MotoLifecycleManager.class)
 class DatasprayStackTest extends AbstractTest {
 
+    MotoInstance motoInstance;
     @TempDir
     public Path tempDir;
 
@@ -90,20 +95,17 @@ class DatasprayStackTest extends AbstractTest {
                         .map(CloudFormationStackArtifact::getStackName)
                         .collect(ImmutableSet.toImmutableSet()));
 
-        /* TODO Once aws-cdk-4j supports endpointOverride, we can test this against Moto:
-        1/ Add class annotation: @ExtendWith(MotoLifecycleManager.class)
-        2/ Add field: MotoInstance motoInstance;
-        3/ Override AwsCdk endpoint, credentials, region from motoInstance
-        4/ Uncomment these lines:
-
+        // Disabled for now, failing test
+        /*
         // Bootstrap
-        AwsCdk.bootstrap().execute(cloudAssembly, expectedStackNames, "moto");
+        AwsCdk.bootstrap().execute(cloudAssembly, AwsCdk.DEFAULT_TOOLKIT_STACK_NAME, expectedStackNames, null, null, Optional.of("moto"), Optional.of(motoInstance.getEndpoint()));
 
         // Deploy
-        AwsCdk.deploy().execute(cloudAssembly, expectedStackNames, "moto");
+        AwsCdk.deploy().execute(cloudAssembly, AwsCdk.DEFAULT_TOOLKIT_STACK_NAME, expectedStackNames, null, null, ImmutableSet.of(), Optional.of("moto"), Optional.of(motoInstance.getEndpoint()));
 
         // Destroy
-        AwsCdk.destroy().execute(cloudAssembly, expectedStackNames, "moto"); */
+        AwsCdk.destroy().execute(cloudAssembly, expectedStackNames, Optional.of("moto"), Optional.of(motoInstance.getEndpoint()));
+        */
     }
 
     private File mockFunctionZip(String name, boolean isNative) throws Exception {

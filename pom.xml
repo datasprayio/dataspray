@@ -72,6 +72,9 @@
             https://github.com/datasprayio/open-next-cdk/blob/main/.projenrc.js#L21
             https://github.com/datasprayio/nextjs-export-cdk/blob/main/.projenrc.ts#L6
         -->
+        <!-- TODO latest cloud schema is broken, cannot upgrade yet https://github.com/aws/aws-cdk/issues/32732 -->
+        <!--        <aws.cdk.version>2.173.4</aws.cdk.version>-->
+        <!--        <aws.cdk.4j.version>2.3.1-SNAPSHOT</aws.cdk.4j.version>-->
         <aws.cdk.version>2.134.0</aws.cdk.version>
         <aws.cdk.4j.version>2.2.6</aws.cdk.4j.version>
         <sqlite4java>1.0.392</sqlite4java>

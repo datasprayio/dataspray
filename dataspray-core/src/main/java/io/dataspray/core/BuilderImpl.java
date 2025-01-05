@@ -43,7 +43,7 @@ public class BuilderImpl implements Builder {
     public static final String BUILDER_OUT = "builder.out";
     public static final String BUILDER_ERR = "builder.err";
 
-    private static final String MVN_CLEAN_INSTALL_CMD = "mvn clean install -e -ntp";
+    private static final String MVN_CLEAN_INSTALL_CMD = "mvn clean install --errors --no-transfer-progress";
     private static final String NPM_INSTALL_BUILD_CMD = "npm run install-and-build";
 
     @ConfigProperty(name = BUILDER_IN)

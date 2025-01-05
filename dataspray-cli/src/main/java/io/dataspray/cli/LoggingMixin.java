@@ -19,7 +19,9 @@
 package io.dataspray.cli;
 
 import lombok.SneakyThrows;
+import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.LogManager;
+import org.jboss.logmanager.formatters.PatternFormatter;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
@@ -27,6 +29,7 @@ import picocli.CommandLine.ParseResult;
 import picocli.CommandLine.Spec;
 
 import java.util.Optional;
+import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 
 import static org.slf4j.Logger.ROOT_LOGGER_NAME;
@@ -60,6 +63,8 @@ import static picocli.CommandLine.Spec.Target.MIXEE;
  * </pre>
  */
 public class LoggingMixin {
+    private static final String FULL_FORMAT = "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %s%e%n";
+
     private @Spec(MIXEE)
     CommandSpec mixee; // spec of the command where the @Mixin is used
 
@@ -93,21 +98,33 @@ public class LoggingMixin {
     @SneakyThrows
     public void configureLoggers() {
         int verbosity = getTopLevelCommandLoggingMixin(mixee).getMixeeVerbosity().length;
-        Level level;
+        Optional<Level> levelOpt;
+        Optional<PatternFormatter> formatOpt;
         switch (verbosity) {
             case 0:
                 return;
             case 1:
-                level = Level.FINE;
+                levelOpt = Optional.of(Level.FINE);
+                formatOpt = Optional.of(new PatternFormatter(FULL_FORMAT));
                 break;
             default:
-                level = Level.ALL;
+                levelOpt = Optional.of(Level.ALL);
+                formatOpt = Optional.of(new PatternFormatter(FULL_FORMAT));
                 break;
         }
 
-        Optional.ofNullable(LogManager.getLogManager().getLogger(ROOT_LOGGER_NAME)).ifPresent(l -> l.setLevel(level));
-        // TODO does this work?
-        Optional.ofNullable(LogManager.getLogManager().getLogger("io.dataspray")).ifPresent(l -> l.setLevel(level));
-        ;
+        var logContext = LogContext.getLogContext();
+        var rootLogger = logContext.getLogger("");
+
+        for (var handler : rootLogger.getHandlers()) {
+            if (handler instanceof ConsoleHandler consoleHandler) {
+                levelOpt.ifPresent(consoleHandler::setLevel);
+                formatOpt.ifPresent(consoleHandler::setFormatter);
+            }
+        }
+        LogManager.getLogManager().getLoggerNames().asIterator().forEachRemaining(loggerName -> {
+            var logger = logContext.getLogger(loggerName);
+            levelOpt.ifPresent(logger::setLevel);
+        });
     }
 }

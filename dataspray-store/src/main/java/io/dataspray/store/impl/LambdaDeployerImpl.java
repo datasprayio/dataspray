@@ -92,6 +92,7 @@ import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionReques
 import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.PackageType;
 import software.amazon.awssdk.services.lambda.model.PublishVersionRequest;
+import software.amazon.awssdk.services.lambda.model.RemovePermissionRequest;
 import software.amazon.awssdk.services.lambda.model.ResourceConflictException;
 import software.amazon.awssdk.services.lambda.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.lambda.model.Runtime;
@@ -153,6 +154,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             DeployEnvironment.RESOURCE_PREFIX + deployEnv.getSuffix().substring(1 /* Remove duplicate dash */) + "-customer-";
     public static final Function<DeployEnvironment, String> FUN_NAME_WILDCARD_GETTER = deployEnv ->
             CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + "*";
+    private static final String INVOKE_STATEMENT_ID_PREFIX = "customer-invoke-statement-";
     private static final String QUEUE_STATEMENT_ID_PREFIX = "customer-queue-statement-for-name-";
     /** Matches io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_API_KEY_ENV */
     public static final String DATASPRAY_API_KEY_ENV = "dataspray_api_key";
@@ -341,6 +343,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         Environment env = Environment.builder()
                 .variables(envBuilder.build()).build();
         final String codeSha256;
+        UpdateFunctionConfigurationResponse updateFunctionConfigurationResponse = null;
         if (existingFunctionOpt.isEmpty()) {
             Retryer<CreateFunctionResponse> retryer = RetryerBuilder.<CreateFunctionResponse>newBuilder()
                     // Creating a role requires some time even when using a waiter https://stackoverflow.com/a/37438525
@@ -379,7 +382,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .build()));
         } else {
             // Update function configuration
-            UpdateFunctionConfigurationResponse updateFunctionConfigurationResponse = lambdaClient.updateFunctionConfiguration(UpdateFunctionConfigurationRequest.builder()
+            updateFunctionConfigurationResponse = lambdaClient.updateFunctionConfiguration(UpdateFunctionConfigurationRequest.builder()
                     .functionName(functionName)
                     // Description always changes with the latest timestamp
                     .description(publishedDescription)
@@ -488,6 +491,33 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     endpointUrlOpt = Optional.of(functionUrlConfigOpt.get().functionUrl());
                     log.debug("No update needed for function url {}", endpointUrlOpt.get());
                 }
+            }
+        }
+
+        if (endpointOpt.map(Endpoint::isPublic).orElse(false)) {
+            try {
+                lambdaClient.addPermission(AddPermissionRequest.builder()
+                        .functionName(functionName)
+                        .qualifier(LAMBDA_ACTIVE_QUALIFIER)
+                        .statementId(INVOKE_STATEMENT_ID_PREFIX)
+                        .action("lambda:InvokeFunction")
+                        .principal("*")
+                        .sourceArn("arn:aws:execute-api:" + awsRegion + ":" + awsAccountId + ":*")
+                        .build());
+                log.info("Added function {} invoke permission for public endpoint", functionName);
+            } catch (ResourceConflictException ex) {
+                log.debug("Function {} invoke permission for public endpoint already exists", functionName);
+            }
+        } else {
+            try {
+                lambdaClient.removePermission(RemovePermissionRequest.builder()
+                        .functionName(functionName)
+                        .qualifier(LAMBDA_ACTIVE_QUALIFIER)
+                        .statementId(INVOKE_STATEMENT_ID_PREFIX)
+                        .build());
+                log.info("Removed function {} invoke permission for public endpoint", functionName);
+            } catch (ResourceNotFoundException ex) {
+                log.debug("Function {} invoke permission for public endpoint already doesn't exist", functionName);
             }
         }
 
