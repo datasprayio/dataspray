@@ -35,8 +35,8 @@ import picocli.CommandLine.Option;
 import java.util.Optional;
 
 @Slf4j
-@Command(name = "resume", description = "Resume previously-paused active version for task(s)")
-public class RunResume implements Runnable {
+@Command(name = "delete", description = "Stop and delete task(s) and all its deployed versions")
+public class Delete implements Runnable {
     @Mixin
     LoggingMixin loggingMixin;
     @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id to deploy; otherwise all tasks are used if ran from root directory or specific task if ran from within a task directory")
@@ -57,6 +57,6 @@ public class RunResume implements Runnable {
     public void run() {
         Project project = codegen.loadProject();
         commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                streamRuntime.resume(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId));
+                streamRuntime.delete(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId));
     }
 }

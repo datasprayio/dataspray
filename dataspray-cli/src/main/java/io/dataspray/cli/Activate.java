@@ -31,16 +31,19 @@ import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 import java.util.Optional;
 
 @Slf4j
-@Command(name = "delete", description = "Stop and delete task(s) and all its deployed versions")
-public class RunDelete implements Runnable {
+@Command(name = "activate", description = "Activate a specific version of deployed code for task(s)")
+public class Activate implements Runnable {
     @Mixin
     LoggingMixin loggingMixin;
     @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id to deploy; otherwise all tasks are used if ran from root directory or specific task if ran from within a task directory")
     private String taskId;
+    @Parameters(arity = "1", paramLabel = "<version>", description = "version to activate; use list command to see available versions")
+    private String version;
     @Option(names = {"-p", "--profile"}, description = "Profile name")
     private String profileName;
 
@@ -57,6 +60,6 @@ public class RunDelete implements Runnable {
     public void run() {
         Project project = codegen.loadProject();
         commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                streamRuntime.delete(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId));
+                streamRuntime.activateVersion(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId, version));
     }
 }

@@ -35,14 +35,12 @@ import picocli.CommandLine.Option;
 import java.util.Optional;
 
 @Slf4j
-@Command(name = "deploy", description = "Single command to publish and activate")
-public class RunDeploy implements Runnable {
+@Command(name = "list", description = "list all deployed versions for task(s)")
+public class List implements Runnable {
     @Mixin
     LoggingMixin loggingMixin;
     @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id to deploy; otherwise all tasks are used if ran from root directory or specific task if ran from within a task directory")
     private String taskId;
-    @Option(names = "--skip-activate", description = "deploy without activating version; use activate command to start using the deployed version")
-    boolean skipActivate;
     @Option(names = {"-p", "--profile"}, description = "Profile name")
     private String profileName;
 
@@ -59,6 +57,6 @@ public class RunDeploy implements Runnable {
     public void run() {
         Project project = codegen.loadProject();
         commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                streamRuntime.deploy(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId, !skipActivate));
+                streamRuntime.listVersions(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId));
     }
 }

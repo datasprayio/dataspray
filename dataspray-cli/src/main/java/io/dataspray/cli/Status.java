@@ -27,16 +27,15 @@ import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
 import io.dataspray.core.StreamRuntime;
 import jakarta.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 
 import java.util.Optional;
 
-@Slf4j
-@Command(name = "pause", description = "Pause active version for task(s)")
-public class RunPause implements Runnable {
+@Command(name = "status",
+        description = "check status of all tasks")
+public class Status implements Runnable {
     @Mixin
     LoggingMixin loggingMixin;
     @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id to deploy; otherwise all tasks are used if ran from root directory or specific task if ran from within a task directory")
@@ -45,18 +44,20 @@ public class RunPause implements Runnable {
     private String profileName;
 
     @Inject
-    CommandUtil commandUtil;
+    Codegen codegen;
     @Inject
     StreamRuntime streamRuntime;
-    @Inject
-    Codegen codegen;
     @Inject
     CliConfig cliConfig;
 
     @Override
     public void run() {
         Project project = codegen.loadProject();
-        commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                streamRuntime.pause(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId));
+        Optional<String> activeProcessor = Optional.ofNullable(taskId).or(project::getActiveProcessor);
+        if (activeProcessor.isEmpty()) {
+            streamRuntime.statusAll(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project);
+        } else {
+            streamRuntime.status(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, activeProcessor.get());
+        }
     }
 }

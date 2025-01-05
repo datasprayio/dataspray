@@ -22,21 +22,41 @@
 
 package io.dataspray.cli;
 
+import com.google.common.base.Strings;
+import io.dataspray.core.Codegen;
+import io.dataspray.core.Project;
+import io.dataspray.core.StreamRuntime;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
+
+import java.util.Optional;
 
 @Slf4j
-@Command(name = "run", description = "deploy and manage running task(s)", subcommandsRepeatable = true, subcommands = {
-        RunDeploy.class,
-        RunActivate.class,
-        RunPause.class,
-        RunResume.class,
-        RunDelete.class,
-        RunList.class,
-        RunStatus.class
-})
-public class Run {
+@Command(name = "resume", description = "Resume previously-paused active version for task(s)")
+public class Resume implements Runnable {
     @Mixin
     LoggingMixin loggingMixin;
+    @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id to deploy; otherwise all tasks are used if ran from root directory or specific task if ran from within a task directory")
+    private String taskId;
+    @Option(names = {"-p", "--profile"}, description = "Profile name")
+    private String profileName;
+
+    @Inject
+    CommandUtil commandUtil;
+    @Inject
+    StreamRuntime streamRuntime;
+    @Inject
+    Codegen codegen;
+    @Inject
+    CliConfig cliConfig;
+
+    @Override
+    public void run() {
+        Project project = codegen.loadProject();
+        commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
+                streamRuntime.resume(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId));
+    }
 }

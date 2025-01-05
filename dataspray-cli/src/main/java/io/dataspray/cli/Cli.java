@@ -38,8 +38,14 @@ import picocli.CommandLine.Spec;
                 Clean.class,
                 Generate.class,
                 Install.class,
-                Run.class,
                 Env.class,
+                Deploy.class,
+                Activate.class,
+                Pause.class,
+                Resume.class,
+                Delete.class,
+                List.class,
+                Status.class
         }
 )
 public class Cli {
