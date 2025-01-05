@@ -420,107 +420,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .build()));
         }
 
-        // Check if function has a Function URL
-        Optional<GetFunctionUrlConfigResponse> functionUrlConfigOpt;
-        try {
-            functionUrlConfigOpt = Optional.of(lambdaClient.getFunctionUrlConfig(GetFunctionUrlConfigRequest.builder()
-                    .functionName(functionName)
-                    .build()));
-        } catch (ResourceNotFoundException ex) {
-            // Does not have a Function URL
-            functionUrlConfigOpt = Optional.empty();
-        }
-        final Optional<String> endpointUrlOpt;
-        if (endpointOpt.isEmpty()) {
-            endpointUrlOpt = Optional.empty();
-            // We don't want a Function URL
-            if (functionUrlConfigOpt.isEmpty()) {
-                // And it doesn't exist, nothing to do
-                log.debug("No function url needed");
-            } else {
-                // And it exists, we need to delete it
-                lambdaClient.deleteFunctionUrlConfig(DeleteFunctionUrlConfigRequest.builder()
-                        .functionName(functionName)
-                        .build());
-                log.info("Deleted function url {}", functionUrlConfigOpt.get().functionUrl());
-            }
-        } else {
-            // We want a Function URL
-            Endpoint endpoint = endpointOpt.get();
-            if (functionUrlConfigOpt.isEmpty()) {
-                // And it doesn't exist, we need to create it
-                CreateFunctionUrlConfigResponse createFunctionUrlConfigResponse = lambdaClient.createFunctionUrlConfig(CreateFunctionUrlConfigRequest.builder()
-                        .functionName(functionName)
-                        .authType(endpoint.isPublic()
-                                ? FunctionUrlAuthType.NONE
-                                : FunctionUrlAuthType.AWS_IAM)
-                        .cors(endpoint.getCors().orElse(null))
-                        .invokeMode(InvokeMode.BUFFERED)
-                        .build());
-                endpointUrlOpt = Optional.of(createFunctionUrlConfigResponse.functionUrl());
-                log.info("Created function url {}", endpointUrlOpt.get());
-
-                // Wait until function url is updated
-                waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionActive(GetFunctionConfigurationRequest.builder()
-                        .functionName(functionName)
-                        .build()));
-            } else {
-                // And it already exists, we may have to update it
-                GetFunctionUrlConfigResponse config = functionUrlConfigOpt.get();
-                if (config.authType().equals(FunctionUrlAuthType.NONE) == endpoint.isPublic()
-                    || config.invokeMode() != InvokeMode.BUFFERED
-                    || !Optional.ofNullable(config.cors()).equals(endpoint.getCors())) {
-
-                    // Settings do not match, update it all
-                    UpdateFunctionUrlConfigResponse updateFunctionUrlConfigResponse = lambdaClient.updateFunctionUrlConfig(UpdateFunctionUrlConfigRequest.builder()
-                            .functionName(functionName)
-                            .authType(endpoint.isPublic()
-                                    ? FunctionUrlAuthType.NONE
-                                    : FunctionUrlAuthType.AWS_IAM)
-                            .cors(endpoint.getCors().orElse(null))
-                            .invokeMode(InvokeMode.BUFFERED)
-                            .build());
-                    endpointUrlOpt = Optional.of(updateFunctionUrlConfigResponse.functionUrl());
-                    log.info("Updated function url {}", endpointUrlOpt.get());
-
-                    // Wait until function url is updated
-                    waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionUpdated(GetFunctionConfigurationRequest.builder()
-                            .functionName(functionName)
-                            .build()));
-                } else {
-                    endpointUrlOpt = Optional.of(functionUrlConfigOpt.get().functionUrl());
-                    log.debug("No update needed for function url {}", endpointUrlOpt.get());
-                }
-            }
-        }
-
-        if (endpointOpt.map(Endpoint::isPublic).orElse(false)) {
-            try {
-                lambdaClient.addPermission(AddPermissionRequest.builder()
-                        .functionName(functionName)
-                        .qualifier(LAMBDA_ACTIVE_QUALIFIER)
-                        .statementId(INVOKE_STATEMENT_ID_PREFIX)
-                        .action("lambda:InvokeFunction")
-                        .principal("*")
-                        .sourceArn("arn:aws:execute-api:" + awsRegion + ":" + awsAccountId + ":*")
-                        .build());
-                log.info("Added function {} invoke permission for public endpoint", functionName);
-            } catch (ResourceConflictException ex) {
-                log.debug("Function {} invoke permission for public endpoint already exists", functionName);
-            }
-        } else {
-            try {
-                lambdaClient.removePermission(RemovePermissionRequest.builder()
-                        .functionName(functionName)
-                        .qualifier(LAMBDA_ACTIVE_QUALIFIER)
-                        .statementId(INVOKE_STATEMENT_ID_PREFIX)
-                        .build());
-                log.info("Removed function {} invoke permission for public endpoint", functionName);
-            } catch (ResourceNotFoundException ex) {
-                log.debug("Function {} invoke permission for public endpoint already doesn't exist", functionName);
-            }
-        }
-
         // Publish a version of the function
         // This solidifies the configuration, code and endpoint into a single published version
         final String publishedVersion = lambdaClient.publishVersion(PublishVersionRequest.builder()
@@ -540,15 +439,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .functionName(functionName)
                 .qualifier(publishedVersion)
                 .build()));
-
-        // Record the Lambda function now that we have the endpoint
-        lambdaStore.set(
-                organizationName,
-                taskId,
-                username,
-                inputQueueNames,
-                outputQueueNames,
-                endpointUrlOpt);
 
         // Persist the Api Key now that we know the task's published version
         ApiAccess apiAccess = apiAccessStore.createApiAccessForTask(
@@ -611,6 +501,125 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 log.debug("Alias {} already exists for function {}", LAMBDA_ACTIVE_QUALIFIER, functionName);
             } else {
                 throw ex;
+            }
+        }
+
+        // Handle Function URL now that we have the active alias
+        Optional<GetFunctionUrlConfigResponse> functionUrlConfigOpt = Optional.empty();
+        if (aliasAlreadyExists) {
+            try {
+                functionUrlConfigOpt = Optional.of(lambdaClient.getFunctionUrlConfig(GetFunctionUrlConfigRequest.builder()
+                        .functionName(functionName)
+                        .qualifier(LAMBDA_ACTIVE_QUALIFIER)
+                        .build()));
+            } catch (ResourceNotFoundException ex) {
+                // Does not have a Function URL
+                functionUrlConfigOpt = Optional.empty();
+            }
+        }
+        final Optional<String> endpointUrlOpt;
+        if (endpointOpt.isEmpty()) {
+            endpointUrlOpt = Optional.empty();
+            // We don't want a Function URL
+            if (functionUrlConfigOpt.isEmpty()) {
+                // And it doesn't exist, nothing to do
+                log.debug("No function url needed");
+            } else {
+                // And it exists, we need to delete it
+                lambdaClient.deleteFunctionUrlConfig(DeleteFunctionUrlConfigRequest.builder()
+                        .functionName(functionName)
+                        .qualifier(LAMBDA_ACTIVE_QUALIFIER)
+                        .build());
+                log.info("Deleted function url {}", functionUrlConfigOpt.get().functionUrl());
+            }
+        } else {
+            // We want a Function URL
+            Endpoint endpoint = endpointOpt.get();
+            if (functionUrlConfigOpt.isEmpty()) {
+                // And it doesn't exist, we need to create it
+                CreateFunctionUrlConfigResponse createFunctionUrlConfigResponse = lambdaClient.createFunctionUrlConfig(CreateFunctionUrlConfigRequest.builder()
+                        .functionName(functionName)
+                        .qualifier(LAMBDA_ACTIVE_QUALIFIER)
+                        .authType(endpoint.isPublic()
+                                ? FunctionUrlAuthType.NONE
+                                : FunctionUrlAuthType.AWS_IAM)
+                        .cors(endpoint.getCors().orElse(null))
+                        .invokeMode(InvokeMode.BUFFERED)
+                        .build());
+                endpointUrlOpt = Optional.of(createFunctionUrlConfigResponse.functionUrl());
+                log.info("Created function url {}", endpointUrlOpt.get());
+
+                // Wait until function url is updated
+                waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionActive(GetFunctionConfigurationRequest.builder()
+                        .functionName(functionName)
+                        .qualifier(LAMBDA_ACTIVE_QUALIFIER)
+                        .build()));
+            } else {
+                // And it already exists, we may have to update it
+                GetFunctionUrlConfigResponse config = functionUrlConfigOpt.get();
+                if (config.authType().equals(FunctionUrlAuthType.NONE) == endpoint.isPublic()
+                    || config.invokeMode() != InvokeMode.BUFFERED
+                    || !Optional.ofNullable(config.cors()).equals(endpoint.getCors())) {
+
+                    // Settings do not match, update it all
+                    UpdateFunctionUrlConfigResponse updateFunctionUrlConfigResponse = lambdaClient.updateFunctionUrlConfig(UpdateFunctionUrlConfigRequest.builder()
+                            .functionName(functionName)
+                            .qualifier(LAMBDA_ACTIVE_QUALIFIER)
+                            .authType(endpoint.isPublic()
+                                    ? FunctionUrlAuthType.NONE
+                                    : FunctionUrlAuthType.AWS_IAM)
+                            .cors(endpoint.getCors().orElse(null))
+                            .invokeMode(InvokeMode.BUFFERED)
+                            .build());
+                    endpointUrlOpt = Optional.of(updateFunctionUrlConfigResponse.functionUrl());
+                    log.info("Updated function url {}", endpointUrlOpt.get());
+
+                    // Wait until function url is updated
+                    waiterUtil.resolve(lambdaClient.waiter().waitUntilFunctionUpdated(GetFunctionConfigurationRequest.builder()
+                            .functionName(functionName)
+                            .qualifier(LAMBDA_ACTIVE_QUALIFIER)
+                            .build()));
+                } else {
+                    endpointUrlOpt = Optional.of(functionUrlConfigOpt.get().functionUrl());
+                    log.debug("No update needed for function url {}", endpointUrlOpt.get());
+                }
+            }
+        }
+
+        // Record the Lambda function now that we have the endpoint
+        lambdaStore.set(
+                organizationName,
+                taskId,
+                username,
+                inputQueueNames,
+                outputQueueNames,
+                endpointUrlOpt);
+
+        // Add or remove permissions for public endpoint
+        if (endpointOpt.map(Endpoint::isPublic).orElse(false)) {
+            try {
+                lambdaClient.addPermission(AddPermissionRequest.builder()
+                        .functionName(functionName)
+                        .qualifier(LAMBDA_ACTIVE_QUALIFIER)
+                        .statementId(INVOKE_STATEMENT_ID_PREFIX)
+                        .action("lambda:InvokeFunction")
+                        .principal("*")
+                        .sourceArn("arn:aws:execute-api:" + awsRegion + ":" + awsAccountId + ":*")
+                        .build());
+                log.info("Added function {} invoke permission for public endpoint", functionName);
+            } catch (ResourceConflictException ex) {
+                log.debug("Function {} invoke permission for public endpoint already exists", functionName);
+            }
+        } else {
+            try {
+                lambdaClient.removePermission(RemovePermissionRequest.builder()
+                        .functionName(functionName)
+                        .qualifier(LAMBDA_ACTIVE_QUALIFIER)
+                        .statementId(INVOKE_STATEMENT_ID_PREFIX)
+                        .build());
+                log.info("Removed function {} invoke permission for public endpoint", functionName);
+            } catch (ResourceNotFoundException ex) {
+                log.debug("Function {} invoke permission for public endpoint already doesn't exist", functionName);
             }
         }
 
