@@ -37,7 +37,7 @@
       - Generated pom.xml template: pom-parent.xml.template.mustache
       - CLI pom.xml version: io.dataspray:dataspray-cli
     -->
-    <version>0.0.21</version>
+    <version>0.0.22</version>
     <packaging>jar</packaging>
 
     <name>DataSpray Runner Java</name>
