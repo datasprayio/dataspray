@@ -155,7 +155,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             DeployEnvironment.RESOURCE_PREFIX + deployEnv.getSuffix().substring(1 /* Remove duplicate dash */) + "-customer-";
     public static final Function<DeployEnvironment, String> FUN_NAME_WILDCARD_GETTER = deployEnv ->
             CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + "*";
-    private static final String INVOKE_STATEMENT_ID_PREFIX = "customer-invoke-statement-";
+    private static final String INVOKE_STATEMENT_ID_PREFIX = "customer-public-function-url-statement";
     private static final String QUEUE_STATEMENT_ID_PREFIX = "customer-queue-statement-for-name-";
     /** Matches io.dataspray.runner.RawCoordinatorImpl.DATASPRAY_API_KEY_ENV */
     public static final String DATASPRAY_API_KEY_ENV = "dataspray_api_key";
@@ -603,9 +603,9 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                         .functionName(functionName)
                         .qualifier(LAMBDA_ACTIVE_QUALIFIER)
                         .statementId(INVOKE_STATEMENT_ID_PREFIX)
-                        .action("lambda:InvokeFunction")
+                        .action("lambda:InvokeFunctionUrl")
                         .principal("*")
-                        .sourceArn("arn:aws:execute-api:" + awsRegion + ":" + awsAccountId + ":*")
+                        .functionUrlAuthType(FunctionUrlAuthType.NONE)
                         .build());
                 log.info("Added function {} invoke permission for public endpoint", functionName);
             } catch (ResourceConflictException ex) {
