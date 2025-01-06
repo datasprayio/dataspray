@@ -23,6 +23,7 @@
 package io.dataspray.runner;
 
 import com.google.common.annotations.VisibleForTesting;
+import software.amazon.awssdk.auth.credentials.ContainerCredentialsProvider;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 public class DynamoProvider {
@@ -33,7 +34,9 @@ public class DynamoProvider {
         if (instance == null) {
             synchronized (DynamoProvider.class) {
                 if (instance == null) {
-                    instance = DynamoDbClient.create();
+                    instance = DynamoDbClient.builder()
+                            .credentialsProvider(ContainerCredentialsProvider.create())
+                            .build();
                 }
             }
         }

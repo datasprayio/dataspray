@@ -49,7 +49,7 @@ public abstract class Entrypoint implements RequestStreamHandler {
             } else if (event.isHttpRequest()) {
                 return handleHttpRequest(event);
             } else {
-                throw new IllegalArgumentException("Unsupported event type: " + event.getClass());
+                throw new IllegalArgumentException("Unsupported event: " + event);
             }
         } finally {
             StateManagerFactoryImpl.get()
@@ -96,6 +96,9 @@ public abstract class Entrypoint implements RequestStreamHandler {
             }
         }
 
+        log.info("SQS {} processed {} failed",
+                event.getRecords().size(),
+                failures.size());
         return responseBuilder.withBatchItemFailures(failures).build();
     }
 
@@ -108,8 +111,11 @@ public abstract class Entrypoint implements RequestStreamHandler {
             response = web(request, RawCoordinatorImpl.get());
         } catch (HttpResponseException ex) {
             response = ex.getResponse();
+        } catch (Exception ex) {
+            log.error("Failed to process HTTP request", ex);
+            response = HttpResponse.builder().internalServerError().body("Fatal failure").build();
         }
-        log.info("{} {} {} {} {}",
+        log.info("HTTP {} {} {} {} {}",
                 request.getRequestContext().getHttp().getMethod(),
                 request.getRawPath(),
                 response.getStatusCode(),

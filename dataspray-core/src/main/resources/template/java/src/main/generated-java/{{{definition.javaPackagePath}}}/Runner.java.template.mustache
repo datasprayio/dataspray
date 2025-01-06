@@ -47,7 +47,7 @@ public class Runner extends Entrypoint {
         {{^endpoints.empty}}
 
         String[] pathDirs = request.getRawPath().split("/");
-        MediaType mediaType = MediaType.parse(request.getHeaders().getOrDefault("Content-Type", "text/plain"));
+        MediaType mediaType = MediaType.parse(request.getHeadersCaseInsensitive().getOrDefault("Content-Type", "text/plain"));
         {{/endpoints.empty}}
         {{#endpoints}}
 

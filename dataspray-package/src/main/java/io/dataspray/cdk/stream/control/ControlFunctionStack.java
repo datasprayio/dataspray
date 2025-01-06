@@ -72,7 +72,8 @@ public class ControlFunctionStack extends ApiFunctionStack {
         customerFunctionPermissionBoundaryManagedPolicy = ManagedPolicy.Builder.create(this, getConstructId("customer-function-permission-boundary"))
                 .managedPolicyName(customerFunctionPermissionBoundaryManagedPolicyName)
                 .description("Permission boundary for customer lambdas")
-                .statements(ImmutableList.of(PolicyStatement.Builder.create()
+                .statements(ImmutableList.of(
+                        PolicyStatement.Builder.create()
                                 .sid(getConstructIdCamelCase(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LOGGING_PREFIX + "PermissionBoundary"))
                                 .effect(Effect.ALLOW)
                                 .actions(ImmutableList.of(
@@ -82,6 +83,21 @@ public class ControlFunctionStack extends ApiFunctionStack {
                                 .resources(ImmutableList.of(
                                         "arn:aws:logs:" + getRegion() + ":" + getAccount() + ":log-group:/aws/lambda/" + LambdaDeployerImpl.FUN_NAME_WILDCARD_GETTER.apply(getDeployEnv()),
                                         "arn:aws:logs:" + getRegion() + ":" + getAccount() + ":log-group:/aws/lambda/" + LambdaDeployerImpl.FUN_NAME_WILDCARD_GETTER.apply(getDeployEnv()) + ":" + LambdaDeployerImpl.LAMBDA_ACTIVE_QUALIFIER))
+                                .build(),
+                        PolicyStatement.Builder.create()
+                                .sid(getConstructIdCamelCase(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_DYNAMO + "PermissionBoundary"))
+                                .effect(Effect.ALLOW)
+                                .actions(ImmutableList.of(
+                                        "dynamodb:GetItem",
+                                        "dynamodb:BatchGetItem",
+                                        "dynamodb:Query",
+                                        "dynamodb:PutItem",
+                                        "dynamodb:UpdateItem",
+                                        "dynamodb:BatchWriteItem",
+                                        "dynamodb:DeleteItem"))
+                                .resources(ImmutableList.of(
+                                        "arn:aws:logs:" + getRegion() + ":" + getAccount() + ":table/" + LambdaDeployerImpl.FUN_NAME_WILDCARD_GETTER.apply(getDeployEnv()),
+                                        "arn:aws:logs:" + getRegion() + ":" + getAccount() + ":table/" + LambdaDeployerImpl.FUN_NAME_WILDCARD_GETTER.apply(getDeployEnv()) + "/index/*"))
                                 .build(),
                         PolicyStatement.Builder.create()
                                 .sid(getConstructIdCamelCase(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS + "PermissionBoundary"))

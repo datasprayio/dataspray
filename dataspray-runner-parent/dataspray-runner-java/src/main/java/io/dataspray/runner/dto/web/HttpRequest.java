@@ -69,7 +69,10 @@ public interface HttpRequest {
 
     /**
      * The list of request headers.
+     *
+     * @deprecated Use {@link #getHeadersCaseInsensitive()} instead
      */
+    @Deprecated
     Map<String, String> getHeaders();
 
     /**

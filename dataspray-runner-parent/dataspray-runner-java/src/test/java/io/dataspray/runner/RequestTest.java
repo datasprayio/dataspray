@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class RequestTest {
 
     @Test
-    public void testDeserialization() throws Exception {
+    public void testHttpRequestDeserialization() throws Exception {
         // From https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html#urls-payloads
         String json = """
                 {
@@ -96,6 +96,13 @@ public class RequestTest {
         // Deserialize JSON into Request object
         Request request = GsonUtil.get().fromJson(json, Request.class);
 
+        // Verify the type
+        assertTrue(request.isHttpRequest());
+
+        // Verify not SQS request
+        assertFalse(request.isSqsRequest());
+        assertNull(request.getRecords());
+
         // Assertions to verify deserialization
         assertNotNull(request);
         assertEquals("2.0", request.getVersion());
@@ -127,5 +134,55 @@ public class RequestTest {
         // Verify body and other fields
         assertEquals("Hello from client!", request.getBody());
         assertFalse(request.isBase64Encoded());
+    }
+
+
+    @Test
+    public void testSqsRequestDeserialization() throws Exception {
+        // From https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html#urls-payloads
+        String json = """
+                {
+                  "records": [
+                    {
+                      "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
+                      "body": "Hello from SQS!",
+                      "eventSourceArn": "arn:aws:sqs:us-west-2:123456789012:my-queue",
+                      "attributes": {
+                        "ApproximateFirstReceiveTimestamp": "1523232000001",
+                        "SenderId": "123456789012",
+                        "SentTimestamp": "1523232000000"
+                      }
+                    },
+                    {
+                      "messageId": "4e74e8b9-2549-4b9d-bd10-520d3b64c7e8",
+                      "body": "Hi from SQS!",
+                      "eventSourceArn": "arn:aws:sqs:us-west-2:123456789012:my-queue",
+                      "attributes": {
+                        "ApproximateFirstReceiveTimestamp": "1523438000000",
+                        "SenderId": "143456789012",
+                        "SentTimestamp": "1523232000000"
+                      }
+                    }
+                  ]
+                }
+                """;
+
+        // Deserialize JSON into Request object
+        Request request = GsonUtil.get().fromJson(json, Request.class);
+
+        // Verify the type
+        assertTrue(request.isSqsRequest());
+
+        // Verify not Http request
+        assertFalse(request.isHttpRequest());
+        assertNull(request.getBody());
+
+        // Assertions to verify deserialization
+        assertNotNull(request.getRecords());
+        assertEquals(2, request.getRecords().size());
+        assertEquals("19dd0b57-b21e-4ac1-bd88-01bbb068cb78", request.getRecords().get(0).getMessageId());
+        assertEquals("Hello from SQS!", request.getRecords().get(0).getBody());
+        assertEquals("4e74e8b9-2549-4b9d-bd10-520d3b64c7e8", request.getRecords().get(1).getMessageId());
+        assertEquals("Hi from SQS!", request.getRecords().get(1).getBody());
     }
 }

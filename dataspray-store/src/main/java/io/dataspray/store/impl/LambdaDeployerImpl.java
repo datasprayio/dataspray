@@ -148,6 +148,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     public static final String CUSTOMER_FUNCTION_POLICY_PATH_PREFIX = "Customer";
     public static final String CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LOGGING_PREFIX = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "LambdaLogging";
     public static final String CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "LambdaSqs";
+    public static final String CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_DYNAMO = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "LambdaDynamo";
     public static final String CODE_BUCKET_NAME_PROP_NAME = "deployer.codeBucketName";
     private static final String CODE_KEY_PREFIX = "customer/";
     public static final Function<DeployEnvironment, String> CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER = deployEnv ->
@@ -463,7 +464,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
             // Give permission to Dynamo
             String tableName = customerSingleTableOpt.get().getTableName();
-            String lambdaDynamoPolicyName = CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS + StringUtil.camelCase(functionName, true) + "Dynamo" + tableName;
+            String lambdaDynamoPolicyName = CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_DYNAMO + StringUtil.camelCase(functionName, true) + "Dynamo" + tableName;
             ensurePolicyAttachedToRole(functionRoleName, lambdaDynamoPolicyName, gson.toJson(Map.of(
                     "Version", "2012-10-17",
                     "Statement", List.of(Map.of(
