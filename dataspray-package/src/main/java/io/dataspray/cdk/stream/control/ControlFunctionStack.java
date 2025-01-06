@@ -96,8 +96,8 @@ public class ControlFunctionStack extends ApiFunctionStack {
                                         "dynamodb:BatchWriteItem",
                                         "dynamodb:DeleteItem"))
                                 .resources(ImmutableList.of(
-                                        "arn:aws:logs:" + getRegion() + ":" + getAccount() + ":table/" + LambdaDeployerImpl.FUN_NAME_WILDCARD_GETTER.apply(getDeployEnv()),
-                                        "arn:aws:logs:" + getRegion() + ":" + getAccount() + ":table/" + LambdaDeployerImpl.FUN_NAME_WILDCARD_GETTER.apply(getDeployEnv()) + "/index/*"))
+                                        "arn:aws:dynamodb:" + getRegion() + ":" + getAccount() + ":table/" + LambdaDeployerImpl.FUN_NAME_WILDCARD_GETTER.apply(getDeployEnv()),
+                                        "arn:aws:dynamodb:" + getRegion() + ":" + getAccount() + ":table/" + LambdaDeployerImpl.FUN_NAME_WILDCARD_GETTER.apply(getDeployEnv()) + "/index/*"))
                                 .build(),
                         PolicyStatement.Builder.create()
                                 .sid(getConstructIdCamelCase(LambdaDeployerImpl.CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS + "PermissionBoundary"))
