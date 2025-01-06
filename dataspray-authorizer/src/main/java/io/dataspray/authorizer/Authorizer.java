@@ -82,9 +82,15 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
             // and will apply to subsequent calls to any method/resource in the RestApi made with the same token
 
             // Extract Authorization header
+            // Since headers can have different casing, we need to check all headers
             String authorizationValue = event.getHeaders()
-                    .getOrDefault(AUTHORIZATION_HEADER, "")
-                    .trim();
+                    .entrySet()
+                    .stream()
+                    .filter(entry -> AUTHORIZATION_HEADER.equalsIgnoreCase(entry.getKey()))
+                    .map(Map.Entry::getValue)
+                    .map(String::trim)
+                    .findAny()
+                    .orElse("");
             String authorizationValueLower = authorizationValue
                     .toLowerCase();
 
@@ -112,7 +118,7 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                 // Parse authorization as our API Key
                 String apiKeyStr = authorizationValue.substring(7);
                 ApiAccess apiAccess = apiAccessStore.getApiAccessByApiKey(apiKeyStr, true)
-                        .orElseThrow(() -> new ApiGatewayUnauthorized("invalid apikey found" + apiKeyStr));
+                        .orElseThrow(() -> new ApiGatewayUnauthorized("invalid apikey found: " + apiKeyStr));
 
                 // Extract access info
                 username = apiAccess.getOwnerUsername();
