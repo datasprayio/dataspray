@@ -175,10 +175,10 @@ public class DynamoApiGatewayApiAccessStore implements ApiAccessStore {
     }
 
     @Override
-    public Optional<ApiAccess> getApiAccessesById(String organizationName, String username, String id) {
-        return getApiAccessesByUser(organizationName, username).stream()
+    public Optional<ApiAccess> getApiAccessesById(String organizationName, String id) {
+        return getApiAccessesByOrganizationName(organizationName).stream()
                 .filter(apiAccess -> id.equals(apiAccess.getId()))
-                .findAny();
+                .findFirst();
     }
 
     @Override

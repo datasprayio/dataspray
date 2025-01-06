@@ -92,7 +92,7 @@ public interface ApiAccessStore {
 
     ImmutableSet<ApiAccess> getApiAccessesByUser(String organizationName, String username);
 
-    Optional<ApiAccess> getApiAccessesById(String organizationName, String username, String id);
+    Optional<ApiAccess> getApiAccessesById(String organizationName, String id);
 
     Optional<ApiAccess> getApiAccessByApiKey(String apiKey, boolean useCache);
 

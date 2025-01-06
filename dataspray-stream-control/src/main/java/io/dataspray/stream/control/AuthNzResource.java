@@ -116,14 +116,12 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
                         getUsername().orElseThrow(ForbiddenException::new)).stream()
                 .map(this::apiAccessToApiKey)
                 .collect(ImmutableList.toImmutableList()));
-
     }
 
     @Override
     public void revokeApiKey(String organizationName, String apiKeyId) {
         apiAccessStore.getApiAccessesById(
                         organizationName,
-                        getUsername().orElseThrow(ForbiddenException::new),
                         apiKeyId)
                 .map(ApiAccess::getApiKey)
                 .ifPresent(apiAccessStore::revokeApiKey);
