@@ -31,7 +31,7 @@
     </parent>
 
     <artifactId>dataspray-cli</artifactId>
-    <version>0.0.31</version>
+    <version>0.0.32</version>
     <packaging>jar</packaging>
 
     <name>DataSpray CLI</name>

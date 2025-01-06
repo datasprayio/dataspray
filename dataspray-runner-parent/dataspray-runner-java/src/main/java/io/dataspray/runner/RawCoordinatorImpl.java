@@ -45,7 +45,7 @@ public class RawCoordinatorImpl implements RawCoordinator {
     public static final String DATASPRAY_ENDPOINT_ENV = "dataspray_endpoint";
     private static volatile RawCoordinatorImpl INSTANCE;
 
-    private volatile Optional<IngestApi> ingestApiOpt;
+    private volatile Optional<IngestApi> ingestApiOpt = Optional.empty();
 
     private RawCoordinatorImpl() {
     }
