@@ -34,7 +34,6 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Command(name = "deploy", description = "Single command to publish and activate")
@@ -63,13 +62,12 @@ public class Deploy implements Runnable {
     public void run() {
         Project project = codegen.loadProject();
         ImmutableSet<String> selectedTaskIds = commandUtil.getSelectedTaskIds(project, taskId);
-        (noParallel ? selectedTaskIds.stream() : selectedTaskIds.parallelStream())
-                .forEach(selectedTaskId -> CompletableFuture.runAsync(() -> {
-                    try {
-                        streamRuntime.deploy(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId, !skipActivate);
-                    } catch (Exception ex) {
-                        log.error("Task {} failed", selectedTaskId, ex);
-                    }
-                }));
+        (noParallel ? selectedTaskIds.stream() : selectedTaskIds.parallelStream()).forEach(selectedTaskId -> {
+            try {
+                streamRuntime.deploy(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId, !skipActivate);
+            } catch (Exception ex) {
+                log.error("Task {} failed", selectedTaskId, ex);
+            }
+        });
     }
 }
