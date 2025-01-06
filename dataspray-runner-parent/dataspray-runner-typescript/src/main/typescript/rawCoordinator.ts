@@ -46,6 +46,7 @@ export class RawCoordinatorImpl implements RawCoordinator {
 
     private static instance: RawCoordinator | null = null;
     private ingestApi: IngestApiInterface | null = null;
+    private organizationName: string | null = null;
 
     static get(): RawCoordinator {
         if (RawCoordinatorImpl.instance === null) {
@@ -72,17 +73,17 @@ export class RawCoordinatorImpl implements RawCoordinator {
         return StateManagerFactoryImpl.getOrCreate().getDynamoClient();
     }
 
-    private sendToDataSpray(key: string, data: Blob, organizationName: string, topicName: string, id: string | undefined = undefined): void {
+    private sendToDataSpray(key: string, data: Blob, storeName: string, streamName: string, id: string | undefined = undefined): void {
         try {
             this.getIngestApi().message({
                 messageKey: key,
                 messageId: id,
-                organizationName,
-                topicName: topicName,
+                organizationName: this.getOrganizationName(),
+                topicName: streamName,
                 body: data,
             });
         } catch (ex) {
-            throw new Error(`Failed to send message to DataSpray for organization ${organizationName} topicName ${topicName}: ${ex}`);
+            throw new Error(`Failed to send message to DataSpray for customer ${this.getOrganizationName()} store ${storeName} stream ${streamName}: ${ex}`);
         }
     }
 
@@ -94,17 +95,23 @@ export class RawCoordinatorImpl implements RawCoordinator {
                 throw new Error(`DataSpray API key not found using env var ${DATASPRAY_API_KEY_ENV}`);
             }
 
-            // Fetch organization name
-            const organizationName = process.env[DATASPRAY_ORGANIZATION_NAME_ENV];
-            if (organizationName === undefined) {
-                throw new Error(`DataSpray organization name not found using env var ${DATASPRAY_ORGANIZATION_NAME_ENV}`);
-            }
-
             // Fetch endpoint
             const basePath = process.env[DATASPRAY_ENDPOINT_ENV] || undefined;
 
             this.ingestApi = DataSprayClient.get({apiKey, basePath}).ingest();
         }
         return this.ingestApi;
+    }
+
+    private getOrganizationName(): string {
+        if (this.organizationName === null) {
+            const organizationName = process.env[DATASPRAY_ORGANIZATION_NAME_ENV];
+            if (!organizationName) {
+                throw new Error(`DataSpray organization name not found using env var ${DATASPRAY_ORGANIZATION_NAME_ENV}`);
+            }
+
+            this.organizationName = organizationName;
+        }
+        return this.organizationName;
     }
 }

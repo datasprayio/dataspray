@@ -46,6 +46,7 @@ public class RawCoordinatorImpl implements RawCoordinator {
     private static volatile RawCoordinatorImpl INSTANCE;
 
     private volatile Optional<IngestApi> ingestApiOpt = Optional.empty();
+    private volatile Optional<String> organizationNameOpt = Optional.empty();
 
     private RawCoordinatorImpl() {
     }
@@ -86,10 +87,10 @@ public class RawCoordinatorImpl implements RawCoordinator {
 
     private void sendToDataSpray(String messageKey, byte[] data, String storeName, String streamName, @Nullable String messageId) {
         try {
-            getIngestApi().message(storeName, streamName, messageKey, data, messageId);
+            getIngestApi().message(getOrganizationName(), streamName, messageKey, data, messageId);
         } catch (ApiException ex) {
-            log.error("Failed to send message to DataSpray for customer {} stream {}", storeName, streamName);
-            throw new RuntimeException("Failed to send message to DataSpray for customer " + storeName + " stream " + streamName, ex);
+            log.error("Failed to send message to DataSpray for customer {} store {} stream {}", getOrganizationName(), storeName, streamName);
+            throw new RuntimeException("Failed to send message to DataSpray for customer " + getOrganizationName() + " store " + storeName + " stream " + streamName, ex);
         }
     }
 
@@ -102,13 +103,6 @@ public class RawCoordinatorImpl implements RawCoordinator {
                     if (Strings.isNullOrEmpty(apiKey)) {
                         log.error("DataSpray API key not found using env var {}", DATASPRAY_API_KEY_ENV);
                         throw new RuntimeException("DataSpray API key not found using env var: " + DATASPRAY_API_KEY_ENV);
-                    }
-
-                    // Fetch organization name
-                    String organizationName = System.getenv(DATASPRAY_ORGANIZATION_NAME_ENV);
-                    if (Strings.isNullOrEmpty(organizationName)) {
-                        log.error("DataSpray organization name not found using env var {}", DATASPRAY_ORGANIZATION_NAME_ENV);
-                        throw new RuntimeException("DataSpray organization name not found using env var: " + DATASPRAY_ORGANIZATION_NAME_ENV);
                     }
 
                     // Fetch endpoint
@@ -124,5 +118,22 @@ public class RawCoordinatorImpl implements RawCoordinator {
             }
         }
         return ingestApiOpt.get();
+    }
+
+    private String getOrganizationName() {
+        if (organizationNameOpt.isEmpty()) {
+            synchronized (this) {
+                if (organizationNameOpt.isEmpty()) {
+                    String organizationName = System.getenv(DATASPRAY_ORGANIZATION_NAME_ENV);
+                    if (Strings.isNullOrEmpty(organizationName)) {
+                        log.error("DataSpray organization name not found using env var {}", DATASPRAY_ORGANIZATION_NAME_ENV);
+                        throw new RuntimeException("DataSpray organization name not found using env var: " + DATASPRAY_ORGANIZATION_NAME_ENV);
+                    }
+
+                    organizationNameOpt = Optional.of(organizationName);
+                }
+            }
+        }
+        return organizationNameOpt.get();
     }
 }
