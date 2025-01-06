@@ -112,7 +112,9 @@ public class RawCoordinatorImpl implements RawCoordinator {
                     }
 
                     // Fetch endpoint
-                    Optional<String> endpointOpt = Optional.ofNullable(Strings.emptyToNull(System.getenv(DATASPRAY_ENDPOINT_ENV)));
+                    Optional<String> endpointOpt = Optional.ofNullable(Strings.emptyToNull(System.getenv(DATASPRAY_ENDPOINT_ENV)))
+                            .map(endpoint -> endpoint.matches("^https?://")
+                                    ? endpoint : "https://" + endpoint);
 
                     ingestApiOpt = Optional.of(DataSprayClient.get(new Access(
                                     apiKey,
