@@ -126,16 +126,16 @@ public class DataSprayClientImpl implements DataSprayClient {
 
         // First get S3 upload presigned url
         ControlApi controlApi = control();
-        log.info("Requesting permission to upload {}", codeZipFile.toPath().getFileName());
+        log.info("Task {} requesting permission to upload", taskId);
         UploadCodeResponse uploadCodeResponse = controlApi
                 .uploadCode(organizationName, new UploadCodeRequest()
                         .taskId(taskId)
                         .contentLengthBytes(codeZipFile.length()));
 
-        log.info("Uploading file to S3");
+        log.info("Task {} uploading to S3 file {}", taskId, codeZipFile.toPath());
         uploadToS3(uploadCodeResponse.getPresignedUrl(), codeZipFile);
 
-        log.info("Requesting asynchronous publishing");
+        log.info("Task {} trigger publish", taskId);
         DeployRequest deployRequest = codeUrlToDeployRequest.apply(uploadCodeResponse.getCodeUrl());
         try {
             controlApi.deployVersion(organizationName, taskId, uploadCodeResponse.getSessionId(), "Event", deployRequest);
@@ -146,7 +146,7 @@ public class DataSprayClientImpl implements DataSprayClient {
             }
         }
 
-        log.info("Polling for asynchronous publishing status");
+        log.info("Task {} polling until published", taskId);
         DeployVersionCheckResponse response = RetryerBuilder.<DeployVersionCheckResponse>newBuilder()
                 .retryIfResult(r -> r.getStatus() == DeployVersionCheckResponse.StatusEnum.PROCESSING)
                 .withWaitStrategy(WaitStrategies.join(

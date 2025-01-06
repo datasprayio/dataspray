@@ -23,6 +23,7 @@
 package io.dataspray.cli;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
 import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
 import io.dataspray.core.StreamRuntime;
@@ -33,6 +34,7 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Command(name = "deploy", description = "Single command to publish and activate")
@@ -43,6 +45,8 @@ public class Deploy implements Runnable {
     private String taskId;
     @Option(names = "--skip-activate", description = "deploy without activating version; use activate command to start using the deployed version")
     boolean skipActivate;
+    @Option(names = "--no-parallel", description = "deploy serially")
+    boolean noParallel;
     @Option(names = {"-p", "--profile"}, description = "Profile name")
     private String profileName;
 
@@ -58,7 +62,14 @@ public class Deploy implements Runnable {
     @Override
     public void run() {
         Project project = codegen.loadProject();
-        commandUtil.getSelectedTaskIds(project, taskId).forEach(selectedTaskId ->
-                streamRuntime.deploy(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId, !skipActivate));
+        ImmutableSet<String> selectedTaskIds = commandUtil.getSelectedTaskIds(project, taskId);
+        (noParallel ? selectedTaskIds.stream() : selectedTaskIds.parallelStream())
+                .forEach(selectedTaskId -> CompletableFuture.runAsync(() -> {
+                    try {
+                        streamRuntime.deploy(cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))), project, selectedTaskId, !skipActivate);
+                    } catch (Exception ex) {
+                        log.error("Task {} failed", selectedTaskId, ex);
+                    }
+                }));
     }
 }

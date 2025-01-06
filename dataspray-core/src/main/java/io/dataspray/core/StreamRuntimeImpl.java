@@ -128,10 +128,10 @@ public class StreamRuntimeImpl implements StreamRuntime {
             handler = "index.js";
             runtime = RuntimeEnum.NODEJS20_X;
         } else {
-            throw new RuntimeException("Cannot publish processor " + processor.getName() + " of unknown type " + processor.getClass().getCanonicalName());
+            throw new RuntimeException("Cannot publish task " + processor.getName() + " of unknown type " + processor.getClass().getCanonicalName());
         }
 
-        log.info("Publishing task {} with inputs {} outputs {}{}",
+        log.info("Task {} found with inputs {} outputs {}{}",
                 processor.getName(),
                 processor.getInputStreams().stream().map(StreamLink::getStreamName).collect(Collectors.toSet()),
                 processor.getOutputStreams().stream().map(StreamLink::getStreamName).collect(Collectors.toSet()),
