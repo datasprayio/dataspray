@@ -71,6 +71,23 @@ if "%JAVACMD%"=="" set JAVACMD=java
 
 set QUARKUS_RUN="%BASEDIR%/quarkus-run.jar"
 
+REM If verbose logging, use full logging format
+REM Check if -v is in the arguments
+set "verbose=false"
+for %%i in (%*) do (
+    if "%%i"=="-v" (
+        set "verbose=true"
+        goto :breakVerbose
+    )
+)
+:breakVerbose
+REM Set the QUARKUS_LOG_CONSOLE_FORMAT environment variable based on verbosity
+if "%verbose%"=="true" (
+    set "QUARKUS_LOG_CONSOLE_FORMAT=%%d{yyyy-MM-dd HH:mm:ss,SSS} %%-5p %%s%%e%%n"
+) else (
+    set "QUARKUS_LOG_CONSOLE_FORMAT=%%s%%n"
+)
+
 @REM Reaching here means variables are defined and arguments have been captured
 :endInit
 

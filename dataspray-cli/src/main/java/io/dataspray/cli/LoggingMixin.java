@@ -20,8 +20,6 @@ package io.dataspray.cli;
 
 import lombok.SneakyThrows;
 import org.jboss.logmanager.LogContext;
-import org.jboss.logmanager.LogManager;
-import org.jboss.logmanager.formatters.PatternFormatter;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
@@ -29,9 +27,10 @@ import picocli.CommandLine.ParseResult;
 import picocli.CommandLine.Spec;
 
 import java.util.Optional;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 
+import static org.jboss.logmanager.Level.ALL;
+import static org.jboss.logmanager.Level.DEBUG;
 import static org.slf4j.Logger.ROOT_LOGGER_NAME;
 import static picocli.CommandLine.Spec.Target.MIXEE;
 
@@ -63,6 +62,7 @@ import static picocli.CommandLine.Spec.Target.MIXEE;
  * </pre>
  */
 public class LoggingMixin {
+    private static final String SIMPLE_FORMAT = "%s%n";
     private static final String FULL_FORMAT = "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %s%e%n";
 
     private @Spec(MIXEE)
@@ -98,33 +98,22 @@ public class LoggingMixin {
     @SneakyThrows
     public void configureLoggers() {
         int verbosity = getTopLevelCommandLoggingMixin(mixee).getMixeeVerbosity().length;
-        Optional<Level> levelOpt;
-        Optional<PatternFormatter> formatOpt;
-        switch (verbosity) {
-            case 0:
-                return;
-            case 1:
-                levelOpt = Optional.of(Level.FINE);
-                formatOpt = Optional.of(new PatternFormatter(FULL_FORMAT));
-                break;
-            default:
-                levelOpt = Optional.of(Level.ALL);
-                formatOpt = Optional.of(new PatternFormatter(FULL_FORMAT));
-                break;
+        Optional<Level> levelOpt = switch (verbosity) {
+            // Initial level is set in application.properties with quarkus.log.*
+            case 0 -> Optional.empty();
+            case 1 -> Optional.of(DEBUG);
+            default -> Optional.of(ALL);
+        };
+
+        if (levelOpt.isEmpty()) {
+            return;
         }
 
-        var logContext = LogContext.getLogContext();
-        var rootLogger = logContext.getLogger("");
+        LogContext logContext = LogContext.getLogContext();
+        logContext.getLogger("").setLevel(levelOpt.get());
+        logContext.getLogger("io.dataspray").setLevel(levelOpt.get());
 
-        for (var handler : rootLogger.getHandlers()) {
-            if (handler instanceof ConsoleHandler consoleHandler) {
-                levelOpt.ifPresent(consoleHandler::setLevel);
-                formatOpt.ifPresent(consoleHandler::setFormatter);
-            }
-        }
-        LogManager.getLogManager().getLoggerNames().asIterator().forEachRemaining(loggerName -> {
-            var logger = logContext.getLogger(loggerName);
-            levelOpt.ifPresent(logger::setLevel);
-        });
+        // Note that setting the formatter is not possible in runtime,
+        // instead the dst/dst.bat startup scripts set env var QUARKUS_LOG_CONSOLE_FORMAT
     }
 }

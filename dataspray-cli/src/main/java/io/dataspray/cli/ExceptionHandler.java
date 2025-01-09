@@ -63,7 +63,7 @@ public class ExceptionHandler implements CommandLine.IExecutionExceptionHandler 
                     .orElseGet(() -> Optional.ofNullable(ex.getMessage())
                             .filter(Predicate.not(String::isBlank))
                             .orElse("Unknown error")));
-            log.info("Re-run using -v to see more detail");
+            log.warn("Re-run using -v to see more detail");
         }
         return 1;
     }

@@ -101,6 +101,13 @@ if $cygwin; then
   [ -n "$QUARKUS_RUN" ] && BASEDIR=`cygpath --path --windows "$QUARKUS_RUN"`
 fi
 
+# If verbose logging, use full logging format
+if [ "$*" != "${*#*-v}" ]; then
+  export QUARKUS_LOG_CONSOLE_FORMAT="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %s%e%n"
+else
+    export QUARKUS_LOG_CONSOLE_FORMAT="%s%n"
+fi
+
 exec "$JAVACMD" \
   -jar \
   $JAVA_OPTS \
