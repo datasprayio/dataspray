@@ -37,6 +37,7 @@ import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.kinesisfirehose.CfnDeliveryStream;
 import software.amazon.awscdk.services.kinesisfirehose.alpha.DeliveryStream;
 import software.amazon.awscdk.services.kinesisfirehose.destinations.alpha.Compression;
+import software.amazon.awscdk.services.kinesisfirehose.destinations.alpha.EnableLogging;
 import software.amazon.awscdk.services.kinesisfirehose.destinations.alpha.S3Bucket;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -125,14 +126,14 @@ public class IngestFunctionStack extends ApiFunctionStack {
         firehoseName = getConstructId("firehose");
         firehose = DeliveryStream.Builder.create(this, firehoseName)
                 .deliveryStreamName(firehoseName)
-                .destinations(ImmutableList.of(S3Bucket.Builder.create(bucketEtl)
+                .destination(S3Bucket.Builder.create(bucketEtl)
                         .bufferingInterval(Duration.seconds(900))
                         .bufferingSize(Size.mebibytes(128))
                         .compression(Compression.ZIP)
                         .dataOutputPrefix(ETL_BUCKET_PREFIX)
                         .errorOutputPrefix(ETL_BUCKET_ERROR_PREFIX)
-                        .logging(true)
-                        .build()))
+                        .loggingConfig(new EnableLogging())
+                        .build())
                 .build();
         // AWS CDK doesn't yet support some configuration properties; adding overrides here
         CfnDeliveryStream firehoseCfn = (CfnDeliveryStream) requireNonNull(firehose.getNode().getDefaultChild());

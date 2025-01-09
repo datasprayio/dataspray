@@ -72,11 +72,11 @@
             https://github.com/datasprayio/open-next-cdk/blob/main/.projenrc.js#L21
             https://github.com/datasprayio/nextjs-export-cdk/blob/main/.projenrc.ts#L6
         -->
-        <!-- TODO latest cloud schema is broken, cannot upgrade yet https://github.com/aws/aws-cdk/issues/32732 -->
-        <!--        <aws.cdk.version>2.173.4</aws.cdk.version>-->
-        <!--        <aws.cdk.4j.version>2.3.1-SNAPSHOT</aws.cdk.4j.version>-->
-        <aws.cdk.version>2.134.0</aws.cdk.version>
-        <aws.cdk.4j.version>2.2.6</aws.cdk.4j.version>
+        <aws.cdk.version>2.174.1</aws.cdk.version>
+        <aws.cdk.4j.version>2.3.3-SNAPSHOT</aws.cdk.4j.version>
+        <!-- Temporarily have to bump up the version to match aws-cdk-4j because aws-cdk-lib is pulling
+         in an old version-->
+        <aws.cdk.cloud.assembly.version>39.1.41</aws.cdk.cloud.assembly.version>
         <sqlite4java>1.0.392</sqlite4java>
         <okhttp.version>4.12.0</okhttp.version>
 
@@ -356,6 +356,18 @@
                 <groupId>software.amazon.awscdk</groupId>
                 <artifactId>aws-cdk-lib</artifactId>
                 <version>${aws.cdk.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <!-- Pulled in by aws-cdk-4j -->
+                        <groupId>software.amazon.awscdk</groupId>
+                        <artifactId>cdk-cloud-assembly-schema</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awscdk</groupId>
+                <artifactId>cdk-cloud-assembly-schema</artifactId>
+                <version>${aws.cdk.cloud.assembly.version}</version>
             </dependency>
             <dependency>
                 <groupId>software.amazon.awscdk</groupId>

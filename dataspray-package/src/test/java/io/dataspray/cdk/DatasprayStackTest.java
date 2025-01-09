@@ -22,12 +22,18 @@
 
 package io.dataspray.cdk;
 
-import com.amazonaws.services.dynamodbv2.local.google.Sets;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import io.dataspray.aws.cdk.AwsCdk;
+import io.dataspray.aws.cdk.CloudFormationClientProvider;
+import io.dataspray.aws.cdk.EnvironmentResolver;
+import io.dataspray.aws.cdk.ResolvedEnvironment;
+import io.dataspray.aws.cdk.Stacks;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.common.test.AbstractTest;
 import io.dataspray.common.test.aws.MotoInstance;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
+import io.dataspray.store.util.IdUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -36,6 +42,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 import software.amazon.awscdk.cxapi.CloudAssembly;
 import software.amazon.awscdk.cxapi.CloudFormationStackArtifact;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -43,7 +50,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -56,6 +66,7 @@ class DatasprayStackTest extends AbstractTest {
     MotoInstance motoInstance;
     @TempDir
     public Path tempDir;
+    IdUtil idUtil = new IdUtil();
 
     @ParameterizedTest(name = "{0}")
     @EnumSource(value = DeployEnvironment.class, mode = EnumSource.Mode.EXCLUDE, names = {"TEST"})
@@ -75,7 +86,7 @@ class DatasprayStackTest extends AbstractTest {
                 mockSsgSite("dashboard").toString());
 
         // Assert expected stack names
-        Set<String> expectedStackNames = Sets.newHashSet(
+        Set<String> expectedStackBaseNames = Sets.newHashSet(
                 "dataspray-authnz",
                 "dataspray-dns",
                 "dataspray-singletable",
@@ -85,27 +96,61 @@ class DatasprayStackTest extends AbstractTest {
                 "dataspray-web-control",
                 "dataspray-web-ingest");
         if (deployEnv != DeployEnvironment.SELFHOST) {
-            expectedStackNames.add("dataspray-site-landing");
+            expectedStackBaseNames.add("dataspray-site-landing");
         }
-        assertEquals(expectedStackNames.stream()
-                        .map(stackName -> stackName + deployEnv.getSuffix())
-                        .collect(ImmutableSet.toImmutableSet()),
-                cloudAssembly.getStacks()
-                        .stream()
-                        .map(CloudFormationStackArtifact::getStackName)
-                        .collect(ImmutableSet.toImmutableSet()));
+        Set<String> expectedStackNames = expectedStackBaseNames.stream()
+                .map(stackName -> stackName + deployEnv.getSuffix())
+                .collect(ImmutableSet.toImmutableSet());
+        assertEquals(expectedStackNames, cloudAssembly.getStacks()
+                .stream()
+                .map(CloudFormationStackArtifact::getStackName)
+                .collect(ImmutableSet.toImmutableSet()));
 
-        // Disabled for now, failing test
-        /*
+        // AWS CDK doesn't like resolving localhost
+        String endpoint = motoInstance.getEndpoint().replace("localhost", "127.0.0.1");
+        CloudFormationClient cloudFormationClient = getCloudFormationClient(endpoint, "aws://unknown-account/unknown-region");
+
         // Bootstrap
-        AwsCdk.bootstrap().execute(cloudAssembly, AwsCdk.DEFAULT_TOOLKIT_STACK_NAME, expectedStackNames, null, null, Optional.of("moto"), Optional.of(motoInstance.getEndpoint()));
+        AwsCdk.bootstrap().execute(cloudAssembly, AwsCdk.DEFAULT_TOOLKIT_STACK_NAME, expectedStackNames, null, null, Optional.of("moto"), Optional.of(endpoint));
+        log.info("Stack {}: {}", AwsCdk.DEFAULT_TOOLKIT_STACK_NAME, Stacks.findStack(cloudFormationClient, AwsCdk.DEFAULT_TOOLKIT_STACK_NAME));
 
         // Deploy
-        AwsCdk.deploy().execute(cloudAssembly, AwsCdk.DEFAULT_TOOLKIT_STACK_NAME, expectedStackNames, null, null, ImmutableSet.of(), Optional.of("moto"), Optional.of(motoInstance.getEndpoint()));
+        Set<String> deployStackBaseNames = expectedStackBaseNames.stream()
+                // TODO Missing Moto support
+                .filter(Predicate.not("dataspray-authnz"::equals))
+                // TODO Missing Moto support
+                .filter(Predicate.not("dataspray-api-gateway"::equals))
+                // TODO Dependency of dataspray-api-gateway above
+                .filter(Predicate.not("dataspray-site-dashboard"::equals))
+                .filter(Predicate.not("dataspray-site-docs"::equals))
+                .filter(Predicate.not("dataspray-site-landing"::equals))
+                .filter(Predicate.not("dataspray-web-control"::equals))
+                .filter(Predicate.not("dataspray-web-ingest"::equals))
+                .collect(ImmutableSet.toImmutableSet());
+        Set<String> deployStackNames = deployStackBaseNames.stream()
+                .map(stackName -> stackName + deployEnv.getSuffix())
+                .collect(Collectors.toSet());
+        AwsCdk.deploy().execute(cloudAssembly, AwsCdk.DEFAULT_TOOLKIT_STACK_NAME, deployStackNames, Map.of("dnsDomain", "example.dataspray.io"), null, ImmutableSet.of(), Optional.of("moto"), Optional.of(endpoint));
+        deployStackNames.forEach(stackName -> log.info("Stack {}: {}",
+                AwsCdk.DEFAULT_TOOLKIT_STACK_NAME, Stacks.findStack(cloudFormationClient, stackName)));
+
+        // Destroy toolkit
+        AwsCdk.destroy().execute(cloudAssembly, Set.of(AwsCdk.DEFAULT_TOOLKIT_STACK_NAME), Optional.of("moto"), Optional.of(endpoint));
 
         // Destroy
-        AwsCdk.destroy().execute(cloudAssembly, expectedStackNames, Optional.of("moto"), Optional.of(motoInstance.getEndpoint()));
-        */
+        Set<String> destroyStackNames = expectedStackBaseNames.stream()
+                // TODO Moto seems to have created these stacks in some failed state and cannot destroy them
+                .filter(Predicate.not("dataspray-singletable"::equals))
+                .filter(Predicate.not("dataspray-dns"::equals))
+                .map(stackName -> stackName + deployEnv.getSuffix())
+                .collect(Collectors.toSet());
+        AwsCdk.destroy().execute(cloudAssembly, destroyStackNames, Optional.of("moto"), Optional.of(endpoint));
+    }
+
+    private CloudFormationClient getCloudFormationClient(String endpoint, String environment) {
+        ResolvedEnvironment resolvedEnvironment = EnvironmentResolver.create(null, Optional.of(endpoint))
+                .resolve(environment);
+        return CloudFormationClientProvider.get(resolvedEnvironment);
     }
 
     private File mockFunctionZip(String name, boolean isNative) throws Exception {
