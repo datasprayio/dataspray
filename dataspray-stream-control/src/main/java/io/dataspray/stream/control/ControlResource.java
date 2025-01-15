@@ -25,6 +25,7 @@ package io.dataspray.stream.control;
 import com.google.common.base.Enums;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import io.dataspray.store.ApiAccessStore.UsageKeyType;
 import io.dataspray.store.JobStore;
 import io.dataspray.store.JobStore.Session;
 import io.dataspray.store.LambdaDeployer;
@@ -33,6 +34,7 @@ import io.dataspray.store.LambdaDeployer.Endpoint;
 import io.dataspray.store.LambdaDeployer.State;
 import io.dataspray.store.LambdaDeployer.Status;
 import io.dataspray.store.LambdaDeployer.Versions;
+import io.dataspray.store.OrganizationStore;
 import io.dataspray.store.TopicStore;
 import io.dataspray.store.util.WithCursor;
 import io.dataspray.stream.control.model.DeployRequest;
@@ -79,6 +81,8 @@ public class ControlResource extends AbstractResource implements ControlApi {
     @Inject
     TopicStore topicStore;
     @Inject
+    OrganizationStore organizationStore;
+    @Inject
     JobStore jobStore;
 
     @Override
@@ -98,9 +102,12 @@ public class ControlResource extends AbstractResource implements ControlApi {
         log.info("Deploying task {} org {} session {} invocationType {}", taskId, organizationName, sessionId, invocationType);
         Session session = jobStore.startSession(sessionId);
         try {
+            UsageKeyType apiAccessKeyType = organizationStore.getMetadata(organizationName)
+                    .getUsageKeyType();
             DeployedVersion deployedVersion = deployer.deployVersion(
                     organizationName,
                     getUsername().orElseThrow(),
+                    apiAccessKeyType,
                     datasprayApiEndpoint,
                     taskId,
                     deployRequest.getCodeUrl(),

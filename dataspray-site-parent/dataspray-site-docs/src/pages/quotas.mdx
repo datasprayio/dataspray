@@ -2,10 +2,31 @@ import {Callout} from 'nextra/components'
 
 # Quotas
 
-# Accounts in Trial period
+Each access is subject to quotas. Quotas are not precise, but act as a fallback mechanism for run-away usage. Most
+quotas are enforced at the Organization level. Once reached, you will start receiving HTTP 429 responses. The provided
+clients will automatically back-off and retry at a later time.
 
-All accounts in the trial period are subjected to a local and global rate limit to prevent misuse of service.
+## Access types
 
+There are three ways of accessing APIs:
 
+1. **User Token**: Access via website uses AWS Cognito tokens
+2. **User API Key**: Access via API Key for users and external services
+3. **Task API Key**: Access via API Key auto-created for running tasks
+
+Token access is always subject to the default quota level. API Key access can be raised on request
+
+## Levels of quotas
+
+There are three levels of quotas defined in a table with headers name, description, and limit.:
+
+| Type    | Requests Per Second | Daily limit | Est. Max Price/Month* |
+|---------|---------------------|-------------|-----------------------|
+| Default | 0.0115              | 1000        | $1.00                 |
+| One     | 1                   | 86,400      | $100.00               |
+| Ten     | 10                  | 864,000     | $1000.00              |
+| Hundred | 100                 | 8,640,000   | $10000.00             |
+
+* This is a fictional estimate, pricing may vary depending on plan, type of request and average compute/storage.
 
 <Callout type="warning">This section is under construction.</Callout>

@@ -23,9 +23,12 @@
 package io.dataspray.stream.control;
 
 import com.google.common.base.Strings;
+import io.dataspray.store.ApiAccessStore;
+import io.dataspray.store.ApiAccessStore.UsageKeyType;
 import io.dataspray.store.OrganizationStore;
 import io.dataspray.store.UserStore;
 import io.dataspray.web.resource.AbstractResource;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ClientErrorException;
@@ -42,6 +45,8 @@ public class OrganizationResource extends AbstractResource implements Organizati
     OrganizationStore organizationStore;
     @Inject
     UserStore userStore;
+    @Inject
+    ApiAccessStore apiAccessStore;
 
     @Override
     public void createOrganization(String organizationName) {
@@ -79,5 +84,22 @@ public class OrganizationResource extends AbstractResource implements Organizati
 
         // Finally add the user to the organization
         organizationStore.addUserToOrganization(organizationName, username);
+    }
+
+    @Override
+    public void rateLimitAdjust(String organizationName, String level) {
+        @Nullable UsageKeyType usageKeyType = switch (level) {
+            case "DEFAULT" -> UsageKeyType.ORGANIZATION;
+            case "ONE" -> UsageKeyType.ORGANIZATION_ONE_RPS;
+            case "TEN" -> UsageKeyType.ORGANIZATION_TEN_RPS;
+            case "HUNDRED" -> UsageKeyType.ORGANIZATION_HUNDRED_RPS;
+            default -> throw new ClientErrorException(400);
+        };
+        log.info("Organization {} switching to usage key type {}", organizationName, usageKeyType);
+        organizationStore.setMetadata(organizationName, organizationStore.getMetadata(organizationName)
+                .toBuilder()
+                .usageKeyType(usageKeyType)
+                .build());
+        apiAccessStore.switchUsageKeyType(organizationName, usageKeyType);
     }
 }

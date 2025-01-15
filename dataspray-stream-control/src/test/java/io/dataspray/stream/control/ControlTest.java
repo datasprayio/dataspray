@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2025 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@ package io.dataspray.stream.control;
 
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 @QuarkusTest
@@ -31,9 +32,16 @@ public class ControlTest extends ControlBase {
 
     @Inject
     S3Client s3Client;
+    @Inject
+    CognitoIdentityProviderClient cognitoClient;
 
     @Override
     protected S3Client getS3Client() {
         return s3Client;
+    }
+
+    @Override
+    protected CognitoIdentityProviderClient getCognitoClient() {
+        return cognitoClient;
     }
 }

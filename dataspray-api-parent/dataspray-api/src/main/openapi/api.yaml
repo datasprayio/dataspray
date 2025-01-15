@@ -43,6 +43,8 @@ paths:
     $ref: 'paths-organization.yaml#/~1v1~1organizations~1create'
   /v1/organization/{organizationName}/invite:
     $ref: 'paths-organization.yaml#/~1v1~1organization~1{organizationName}~1invite'
+  /v1/organization/{organizationName}/ratelimit:
+    $ref: 'paths-organization.yaml#/~1v1~1organization~1{organizationName}~1ratelimit'
   /v1/organization/{organizationName}/control/code/upload:
     $ref: 'paths-control.yaml#/~1v1~1organization~1{organizationName}~1control~1code~1upload'
   /v1/organization/{organizationName}/control/status:

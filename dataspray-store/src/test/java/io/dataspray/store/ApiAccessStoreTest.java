@@ -44,11 +44,13 @@ import software.amazon.awssdk.services.apigateway.ApiGatewayClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import static java.util.function.Predicate.not;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
@@ -101,7 +103,7 @@ public class ApiAccessStoreTest extends AbstractTest {
                 Optional.of(ImmutableSet.of("queue1", "queue2")),
                 Optional.of(Instant.now().plusSeconds(300)));
         assertFalse(usageKeyExists(apiAccess1));
-        apiAccessStore.getOrCreateUsageKeyApiKeyForOrganization(apiAccess1.getOrganizationName());
+        apiAccessStore.getOrCreateUsageKeyApiKeyForOrganization(apiAccess1.getOrganizationName(), UsageKeyType.ORGANIZATION);
         assertTrue(usageKeyExists(apiAccess1));
         assertEquals(Set.of("queue1", "queue2"), apiAccess1.getQueueWhitelist());
         assertTrue(apiAccess1.isTtlNotExpired());
@@ -206,9 +208,9 @@ public class ApiAccessStoreTest extends AbstractTest {
 
         apiAccessStore.revokeApiKey(apiAccess.getApiKey());
 
-        // Cache hit, should be still present in cache
-        assertEquals(Optional.of(apiAccess), apiAccessStore.getApiAccessByApiKey(apiAccess.getApiKey(), true));
-        // Cache not used, realizes key is revoked, invalidates cache
+        // Cache should already be invalidated
+        assertEquals(Optional.empty(), apiAccessStore.getApiAccessByApiKey(apiAccess.getApiKey(), true));
+        // Cache not used, should be gone
         assertEquals(Optional.empty(), apiAccessStore.getApiAccessByApiKey(apiAccess.getApiKey(), false));
         // Cache hit, should be revoked
         assertEquals(Optional.empty(), apiAccessStore.getApiAccessByApiKey(apiAccess.getApiKey(), true));
@@ -218,26 +220,26 @@ public class ApiAccessStoreTest extends AbstractTest {
 
     @Test
     public void testUsageKeyScan() throws Exception {
-        ApiAccess apiAccess1 = createApiAccessInDb(
-                UsageKeyType.ORGANIZATION,
-                Optional.empty(),
-                Optional.empty());
-        ApiAccess apiAccess2 = createApiAccessInDb(
-                UsageKeyType.ORGANIZATION,
-                Optional.empty(),
-                Optional.empty());
-        String usageKeyApiKey1 = apiAccessStore.getOrCreateUsageKeyApiKeyForOrganization(apiAccess1.getOrganizationName());
-        String usageKeyApiKey2 = apiAccessStore.getOrCreateUsageKeyApiKeyForOrganization(apiAccess2.getOrganizationName());
+        ImmutableSet<String> expectedUsageKeys = Arrays.stream(UsageKeyType.values())
+                .filter(not(UsageKeyType.UNLIMITED::equals))
+                .filter(not(UsageKeyType.GLOBAL::equals))
+                .map(usageKeyType -> createApiAccessInDb(
+                        usageKeyType,
+                        Optional.empty(),
+                        Optional.empty()))
+                .map(apiAccess -> apiAccessStore.getOrCreateUsageKeyApiKeyForOrganization(
+                        apiAccess.getOrganizationName(),
+                        apiAccess.getUsageKeyType()))
+                .collect(ImmutableSet.toImmutableSet());
 
-        Set<String> allUsageKeys = Sets.newHashSet();
+        Set<String> actualUsageKeys = Sets.newHashSet();
         apiAccessStore.getAllUsageKeys(keys -> keys.stream()
                 .map(UsageKey::getUsageKeyApiKey)
-                .forEach(allUsageKeys::add));
+                .forEach(actualUsageKeys::add));
 
-        log.info("All usage keys: {}", allUsageKeys);
-        log.info("Api keys: {} {}", usageKeyApiKey1, usageKeyApiKey2);
-        assertTrue(allUsageKeys.contains(usageKeyApiKey1));
-        assertTrue(allUsageKeys.contains(usageKeyApiKey2));
+        log.info("Expected keys: {}", expectedUsageKeys);
+        log.info("Actual keys: {}", actualUsageKeys);
+        assertTrue(actualUsageKeys.containsAll(expectedUsageKeys));
     }
 
     /**
@@ -277,8 +279,7 @@ public class ApiAccessStoreTest extends AbstractTest {
         String usageKeyApiKey = DynamoApiGatewayApiAccessStore.getUsageKeyApiKey(
                 getDeployEnv(),
                 apiAccess.getUsageKeyType(),
-                Optional.of(apiAccess.getOwnerUsername()),
-                ImmutableSet.of(apiAccess.getOrganizationName()));
+                Optional.of(apiAccess.getOrganizationName()));
         TableSchema<UsageKey> usageKeySchema = singleTable.parseTableSchema(UsageKey.class);
         Optional<UsageKey> usageKeyOpt = usageKeySchema.get()
                 .key(Map.of("usageKeyApiKey", usageKeyApiKey))

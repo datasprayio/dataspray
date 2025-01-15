@@ -30,6 +30,7 @@ import io.dataspray.singletable.TableSchema;
 import io.dataspray.singletable.builder.PutBuilder;
 import io.dataspray.store.TopicStore;
 import io.quarkus.runtime.Startup;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
@@ -37,6 +38,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
+@ApplicationScoped
 public class DynamoTopicStore implements TopicStore {
 
     public static final int INITIAL_VERSION = 0;

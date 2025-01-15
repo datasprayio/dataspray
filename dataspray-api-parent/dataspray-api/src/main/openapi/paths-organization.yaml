@@ -40,3 +40,26 @@
         description: User by email not found, specify username to create new
       '409':
         description: Username taken, specify new username
+/v1/organization/{organizationName}/ratelimit:
+  patch:
+    operationId: rateLimitAdjust
+    tags: [ Organization ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: level
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+            - DEFAULT
+            - ONE
+            - TEN
+            - HUNDRED
+    responses:
+      '200':
+        description: Ok

@@ -97,6 +97,9 @@ public class ApiStack extends FunctionStack {
     private final UsagePlan usagePlanUnlimited;
     private final UsagePlan usagePlanGlobal;
     private final UsagePlan usagePlanOrganization;
+    private final UsagePlan usagePlanOneRps;
+    private final UsagePlan usagePlanTenRps;
+    private final UsagePlan usagePlanHundredRps;
     private final ApiKey apiKeyUnlimited;
     private final ApiKey apiKeyGlobal;
     private final Options options;
@@ -196,15 +199,38 @@ public class ApiStack extends FunctionStack {
                         .burstLimit(10).build()));
         usagePlanOrganization = createUsagePlan(restApi, UsageKeyType.ORGANIZATION, 1,
                 Optional.of(QuotaSettings.builder()
-                        .limit(1000)
+                        .limit(1000) // 0.0115 rps
                         .offset(0)
                         .period(Period.DAY).build()),
                 Optional.of(ThrottleSettings.builder()
                         .rateLimit(10)
                         .burstLimit(10).build()));
+        usagePlanOneRps = createUsagePlan(restApi, UsageKeyType.ORGANIZATION_ONE_RPS, 1,
+                Optional.of(QuotaSettings.builder()
+                        .limit(24 * 60 * 60) // 1 rps (e.g. $30/mo)
+                        .offset(0)
+                        .period(Period.DAY).build()),
+                Optional.of(ThrottleSettings.builder()
+                        .rateLimit(30) // 30 rps
+                        .burstLimit(30).build()));
+        usagePlanTenRps = createUsagePlan(restApi, UsageKeyType.ORGANIZATION_TEN_RPS, 1,
+                Optional.of(QuotaSettings.builder()
+                        .limit(10 * 24 * 60 * 60) // 10 rps (e.g. $300/mo)
+                        .offset(0)
+                        .period(Period.DAY).build()),
+                Optional.of(ThrottleSettings.builder()
+                        .rateLimit(300) // 30 rps
+                        .burstLimit(300).build()));
+        usagePlanHundredRps = createUsagePlan(restApi, UsageKeyType.ORGANIZATION_HUNDRED_RPS, 1,
+                Optional.of(QuotaSettings.builder()
+                        .limit(100 * 24 * 60 * 60) // 100 rps (e.g. $3000/mo)
+                        .offset(0)
+                        .period(Period.DAY).build()),
+                Optional.of(ThrottleSettings.builder()
+                        .rateLimit(300) // 30 rps
+                        .burstLimit(300).build()));
 
-
-        String usageKeyApiKeyUnlimited = DynamoApiGatewayApiAccessStore.getUsageKeyApiKey(getDeployEnv(), UsageKeyType.UNLIMITED, Optional.empty(), ImmutableSet.of());
+        String usageKeyApiKeyUnlimited = DynamoApiGatewayApiAccessStore.getUsageKeyApiKey(getDeployEnv(), UsageKeyType.UNLIMITED, Optional.empty());
         apiKeyUnlimited = ApiKey.Builder.create(this, getConstructId(usageKeyApiKeyUnlimited))
                 .apiKeyName(usageKeyApiKeyUnlimited)
                 .value(usageKeyApiKeyUnlimited)
@@ -212,7 +238,7 @@ public class ApiStack extends FunctionStack {
                 .build();
         usagePlanUnlimited.addApiKey(apiKeyUnlimited);
 
-        String usageKeyApiKeyGlobal = DynamoApiGatewayApiAccessStore.getUsageKeyApiKey(getDeployEnv(), UsageKeyType.GLOBAL, Optional.empty(), ImmutableSet.of());
+        String usageKeyApiKeyGlobal = DynamoApiGatewayApiAccessStore.getUsageKeyApiKey(getDeployEnv(), UsageKeyType.GLOBAL, Optional.empty());
         apiKeyGlobal = ApiKey.Builder.create(this, getConstructId(usageKeyApiKeyGlobal))
                 .apiKeyName(usageKeyApiKeyGlobal)
                 .value(usageKeyApiKeyGlobal)

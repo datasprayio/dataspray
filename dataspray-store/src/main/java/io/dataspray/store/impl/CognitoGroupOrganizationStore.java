@@ -37,6 +37,7 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRemove
 import software.amazon.awssdk.services.cognitoidentityprovider.model.CreateGroupRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GetGroupRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GroupType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.UpdateGroupRequest;
 
 /**
  * Organization management backed by Cognito groups.
@@ -59,14 +60,15 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
     public GroupType createOrganization(String organizationName, String authorUsername) {
 
         // Create group
+        OrganizationMetadata organizationMetadata = new OrganizationMetadata(authorUsername, null);
         GroupType group = cognitoClient.createGroup(CreateGroupRequest.builder()
                 .userPoolId(userPoolId)
                 .groupName(organizationName)
-                .description(gson.toJson(new OrganizationMetadata(authorUsername)))
+                .description(gson.toJson(organizationMetadata))
                 .build()).group();
 
         // Create Api Gateway Usage Key for this organization
-        apiAccessStore.getOrCreateUsageKeyApiKeyForOrganization(organizationName);
+        apiAccessStore.getOrCreateUsageKeyApiKeyForOrganization(organizationName, organizationMetadata.getUsageKeyType());
 
         // Add author to group
         addUserToOrganization(group.groupName(), authorUsername);
@@ -94,6 +96,16 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
                 .group()
                 .description();
         return gson.fromJson(description, OrganizationMetadata.class);
+    }
+
+
+    @Override
+    public void setMetadata(String organizationName, OrganizationMetadata metadata) {
+        cognitoClient.updateGroup(UpdateGroupRequest.builder()
+                .userPoolId(userPoolId)
+                .groupName(organizationName)
+                .description(gson.toJson(metadata))
+                .build());
     }
 
     @Override

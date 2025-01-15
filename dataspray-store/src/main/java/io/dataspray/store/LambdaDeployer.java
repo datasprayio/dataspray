@@ -44,6 +44,7 @@ public interface LambdaDeployer {
     DeployedVersion deployVersion(
             String organizationName,
             String username,
+            ApiAccessStore.UsageKeyType organizationUsageKeyType,
             Optional<String> apiEndpointOpt,
             String taskId,
             String codeUrl,

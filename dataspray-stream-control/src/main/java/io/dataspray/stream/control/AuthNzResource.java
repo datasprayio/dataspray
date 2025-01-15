@@ -96,11 +96,13 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
 
     @Override
     public ApiKeyWithSecret createApiKey(String organizationName, ApiKeyCreate apiKeyCreate) {
+        UsageKeyType apiAccessKeyType = organizationStore.getMetadata(organizationName)
+                .getUsageKeyType();
         ApiAccess apiAccess = apiAccessStore.createApiAccessForUser(
                 organizationName,
                 apiKeyCreate.getDescription(),
                 getUsername().orElseThrow(ForbiddenException::new),
-                UsageKeyType.ORGANIZATION,
+                apiAccessKeyType,
                 Optional.ofNullable(apiKeyCreate.getQueueWhitelist())
                         .filter(Predicate.not(List::isEmpty))
                         .map(ImmutableSet::copyOf),

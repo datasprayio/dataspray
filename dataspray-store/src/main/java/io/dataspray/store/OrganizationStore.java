@@ -24,11 +24,15 @@ package io.dataspray.store;
 
 
 import com.google.common.collect.ImmutableSet;
+import io.dataspray.store.ApiAccessStore.UsageKeyType;
+import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GroupType;
+
+import java.util.Optional;
 
 public interface OrganizationStore {
 
@@ -37,6 +41,8 @@ public interface OrganizationStore {
     ImmutableSet<Organization> getOrganizationsForUser(String username);
 
     OrganizationMetadata getMetadata(String organizationName);
+
+    void setMetadata(String organizationName, OrganizationMetadata metadata);
 
     void addUserToOrganization(String organizationName, String username);
 
@@ -57,5 +63,20 @@ public interface OrganizationStore {
 
         @NonNull
         String authorUsername;
+
+        /**
+         * Type of usage key to use for API Access.
+         * <p>
+         * Defaults to {@link UsageKeyType#ORGANIZATION}
+         * <p>
+         * Note that Cognito access always defaults to {@link UsageKeyType#ORGANIZATION} regardless of this setting.
+         */
+        @Nullable
+        UsageKeyType usageKeyType;
+
+        public UsageKeyType getUsageKeyType() {
+            return Optional.ofNullable(usageKeyType)
+                    .orElse(ApiAccessStore.DEFAULT_ORGANIZATION_USAGE_KEY_TYPE);
+        }
     }
 }

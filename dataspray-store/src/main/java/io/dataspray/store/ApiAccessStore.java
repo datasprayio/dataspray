@@ -23,7 +23,6 @@
 package io.dataspray.store;
 
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.singletable.DynamoTable;
 import io.dataspray.store.CognitoJwtVerifier.VerifiedCognitoJwt;
@@ -61,6 +60,15 @@ import static io.dataspray.singletable.TableType.Primary;
  */
 public interface ApiAccessStore {
 
+    /**
+     * As part of an organization, this is the default rate limit. This applies when:
+     * <ul>
+     *     <li>When organization is created</li>
+     *     <li>When accessing API via AWS Cognito Token</li>
+     * </ul>
+     */
+    UsageKeyType DEFAULT_ORGANIZATION_USAGE_KEY_TYPE = UsageKeyType.ORGANIZATION;
+
     ApiAccess createApiAccessForUser(
             String organizationName,
             String description,
@@ -96,13 +104,15 @@ public interface ApiAccessStore {
 
     Optional<ApiAccess> getApiAccessByApiKey(String apiKey, boolean useCache);
 
+    void switchUsageKeyType(String organizationName, UsageKeyType type);
+
     void revokeApiKey(String apiKey);
 
     void revokeApiKeysForTaskId(String organizationName, String taskId);
 
     void revokeApiKeyForTaskVersion(String organizationName, String taskId, String taskVersion);
 
-    String getOrCreateUsageKeyApiKeyForOrganization(String organizationName);
+    String getOrCreateUsageKeyApiKeyForOrganization(String organizationName, UsageKeyType usageKeyType);
 
     /**
      * Retrieve the deterministic Usage Key Api Key from JWT.
@@ -120,7 +130,7 @@ public interface ApiAccessStore {
      */
     String getUsageKeyApiKey(ApiAccess apiAccess);
 
-    void getAllUsageKeys(Consumer<ImmutableList<UsageKey>> batchConsumer);
+    void getAllUsageKeys(Consumer<ImmutableSet<UsageKey>> batchConsumer);
 
     @Value
     @AllArgsConstructor
@@ -214,6 +224,14 @@ public interface ApiAccessStore {
          */
         @NonNull
         String usageKeyId;
+
+        /**
+         * Usage Plan ID.
+         * <p>
+         * If null, indicates the original organization-wide usage plan.
+         */
+        @Nullable
+        String usagePlanId;
     }
 
     @RegisterForReflection
@@ -230,8 +248,16 @@ public interface ApiAccessStore {
     enum UsageKeyType {
         /** No Usage Key */
         UNLIMITED,
-        /** Usage Key shared for entire organization */
+
+        /** Default Usage Key shared for entire organization 0.0115 RPS (1000/day) */
         ORGANIZATION,
+        /** Upgraded organization limit 1 RPS */
+        ORGANIZATION_ONE_RPS,
+        /** Upgraded organization limit 10 RPS */
+        ORGANIZATION_TEN_RPS,
+        /** Upgraded organization limit 100 RPS */
+        ORGANIZATION_HUNDRED_RPS,
+
         /** Usage Key shared globally */
         GLOBAL
     }

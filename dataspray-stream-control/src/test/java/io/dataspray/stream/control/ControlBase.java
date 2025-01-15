@@ -26,8 +26,11 @@ import com.google.common.collect.ImmutableList;
 import io.dataspray.client.Access;
 import io.dataspray.client.DataSprayClient;
 import io.dataspray.client.DataSprayClientImpl;
+import io.dataspray.common.json.GsonUtil;
 import io.dataspray.common.test.aws.AbstractLambdaTest;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
+import io.dataspray.store.ApiAccessStore.UsageKeyType;
+import io.dataspray.store.OrganizationStore.OrganizationMetadata;
 import io.dataspray.stream.control.client.model.DeployRequest;
 import io.dataspray.stream.control.client.model.DeployRequestEndpoint;
 import io.dataspray.stream.control.client.model.DeployRequestEndpointCors;
@@ -39,10 +42,15 @@ import io.dataspray.stream.control.client.model.TaskVersion;
 import io.dataspray.stream.control.client.model.UploadCodeRequest;
 import io.dataspray.stream.control.client.model.UploadCodeResponse;
 import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.ResourceArg;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.CreateGroupRequest;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.BucketAlreadyOwnedByYouException;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
@@ -52,13 +60,35 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static io.dataspray.common.test.aws.MotoLifecycleManager.CREATE_COGNITO_PARAM;
+import static io.dataspray.store.impl.CognitoUserStore.USER_POOL_APP_CLIENT_ID_PROP_NAME;
+import static io.dataspray.store.impl.CognitoUserStore.USER_POOL_ID_PROP_NAME;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
-@QuarkusTestResource(MotoLifecycleManager.class)
+@QuarkusTestResource(
+        value = MotoLifecycleManager.class,
+        initArgs = @ResourceArg(name = CREATE_COGNITO_PARAM, value = "true"))
 public abstract class ControlBase extends AbstractLambdaTest {
 
     protected abstract S3Client getS3Client();
+
+    protected abstract CognitoIdentityProviderClient getCognitoClient();
+
+    @ConfigProperty(name = USER_POOL_ID_PROP_NAME)
+    String userPoolId;
+    @ConfigProperty(name = USER_POOL_APP_CLIENT_ID_PROP_NAME)
+    String userPoolClientId;
+
+    @BeforeEach
+    public void beforeEach() {
+        getCognitoClient().createGroup(CreateGroupRequest.builder()
+                .userPoolId(userPoolId)
+                .groupName(getOrganizationName())
+                .description(GsonUtil.get().toJson(new OrganizationMetadata("authorUser", UsageKeyType.ORGANIZATION_TEN_RPS)))
+                .build());
+
+    }
 
     @Test
     public void test() throws Exception {

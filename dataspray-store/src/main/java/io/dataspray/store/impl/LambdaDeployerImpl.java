@@ -39,6 +39,7 @@ import io.dataspray.singletable.ShardPageResult;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.ApiAccessStore.ApiAccess;
+import io.dataspray.store.ApiAccessStore.UsageKeyType;
 import io.dataspray.store.LambdaDeployer;
 import io.dataspray.store.LambdaStore;
 import io.dataspray.store.LambdaStore.LambdaRecord;
@@ -201,6 +202,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     public DeployedVersion deployVersion(
             String organizationName,
             String username,
+            UsageKeyType organizationUsageKeyType,
             Optional<String> apiEndpointOpt,
             String taskId,
             String codeUrl,
@@ -216,6 +218,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             return deployVersionInternal(
                     organizationName,
                     username,
+                    organizationUsageKeyType,
                     apiEndpointOpt,
                     taskId,
                     codeUrl,
@@ -233,6 +236,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     private DeployedVersion deployVersionInternal(
             String organizationName,
             String username,
+            UsageKeyType organizationUsageKeyType,
             Optional<String> apiEndpointOpt,
             String taskId,
             String codeUrl,
@@ -449,7 +453,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 username,
                 taskId,
                 publishedVersion,
-                ApiAccessStore.UsageKeyType.ORGANIZATION,
+                organizationUsageKeyType,
                 Optional.of(outputQueueNames));
 
         // Create Dynamo for lambda state if needed

@@ -25,7 +25,6 @@ package io.dataspray.stream.control;
 import io.dataspray.common.test.aws.AbstractLambdaTest;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.store.UserStore.CognitoProperties;
-import io.dataspray.store.impl.CognitoUserStore;
 import io.dataspray.stream.control.model.ChallengeConfirmCode;
 import io.dataspray.stream.control.model.SignInRequest;
 import io.dataspray.stream.control.model.SignInResponse;
@@ -33,29 +32,20 @@ import io.dataspray.stream.control.model.SignUpConfirmCodeRequest;
 import io.dataspray.stream.control.model.SignUpRequest;
 import io.dataspray.stream.control.model.SignUpResponse;
 import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.ResourceArg;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import software.amazon.awssdk.services.apigateway.ApiGatewayClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.AliasAttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AssociateSoftwareTokenRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AssociateSoftwareTokenResponse;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeDataType;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.CreateUserPoolClientRequest;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.CreateUserPoolRequest;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.PasswordPolicyType;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.SchemaAttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SetUserMfaPreferenceRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SoftwareTokenMfaSettingsType;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.UserPoolClientType;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.UserPoolMfaType;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.UserPoolPolicyType;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.UserPoolType;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifiedAttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifySoftwareTokenRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifySoftwareTokenResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifySoftwareTokenResponseType;
@@ -64,11 +54,16 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import java.util.Optional;
 import java.util.UUID;
 
+import static io.dataspray.common.test.aws.MotoLifecycleManager.CREATE_COGNITO_PARAM;
+import static io.dataspray.store.impl.CognitoUserStore.USER_POOL_APP_CLIENT_ID_PROP_NAME;
+import static io.dataspray.store.impl.CognitoUserStore.USER_POOL_ID_PROP_NAME;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
-@QuarkusTestResource(MotoLifecycleManager.class)
+@QuarkusTestResource(
+        value = MotoLifecycleManager.class,
+        initArgs = @ResourceArg(name = CREATE_COGNITO_PARAM, value = "true"))
 public abstract class AuthNzBase extends AbstractLambdaTest {
 
     protected abstract CognitoIdentityProviderClient getCognitoClient();
@@ -77,55 +72,19 @@ public abstract class AuthNzBase extends AbstractLambdaTest {
 
     protected abstract ApiGatewayClient apiGatewayClient();
 
-    private UserPoolType userPool;
-    private UserPoolClientType userPoolClient;
+    @ConfigProperty(name = USER_POOL_ID_PROP_NAME)
+    String userPoolId;
+    @ConfigProperty(name = USER_POOL_APP_CLIENT_ID_PROP_NAME)
+    String userPoolClientId;
 
     @BeforeEach
     public void beforeEach() {
-        // Setup Cognito
-        // Should match the same configuration as in AuthNzStack
-        userPool = getCognitoClient().createUserPool(CreateUserPoolRequest.builder()
-                        .poolName("userpool-" + UUID.randomUUID())
-                        .mfaConfiguration(UserPoolMfaType.OPTIONAL)
-                        .autoVerifiedAttributes(VerifiedAttributeType.EMAIL)
-                        .aliasAttributes(AliasAttributeType.EMAIL, AliasAttributeType.PREFERRED_USERNAME)
-                        .schema(
-                                SchemaAttributeType.builder()
-                                        .attributeDataType(AttributeDataType.BOOLEAN)
-                                        .name(CognitoUserStore.USER_ATTRIBUTE_TOS_AGREED)
-                                        .mutable(true).build(),
-                                SchemaAttributeType.builder()
-                                        .attributeDataType(AttributeDataType.BOOLEAN)
-                                        .name(CognitoUserStore.USER_ATTRIBUTE_MARKETING_AGREED)
-                                        .mutable(true).build(),
-                                SchemaAttributeType.builder()
-                                        .name(CognitoUserStore.USER_ATTRIBUTE_EMAIL)
-                                        .required(true).build())
-                        .policies(UserPoolPolicyType.builder()
-                                .passwordPolicy(PasswordPolicyType.builder()
-                                        .minimumLength(8)
-                                        .requireLowercase(true)
-                                        .requireUppercase(true)
-                                        .requireNumbers(true)
-                                        .requireSymbols(true)
-                                        .temporaryPasswordValidityDays(1).build())
-                                .build())
-                        .build())
-                .userPool();
-        userPoolClient = getCognitoClient().createUserPoolClient(CreateUserPoolClientRequest.builder()
-                        .clientName("userpoolclient-" + UUID.randomUUID())
-                        .userPoolId(userPool.id())
-                        .generateSecret(false)
-                        .build())
-                .userPoolClient();
-        log.info("Created Cognito user pool {} ({}) and client {} ({})", userPool.name(), userPool.id(), userPoolClient.clientName(), userPoolClient.clientId());
-
         // Populate account store properties
         request(Given.builder()
                 .method(HttpMethod.POST)
                 .path("/test/set-account-store-cognito-properties")
                 .contentType(APPLICATION_JSON_TYPE)
-                .body(new CognitoProperties(userPool.id(), userPoolClient.clientId()))
+                .body(new CognitoProperties(userPoolId, userPoolClientId))
                 .build())
                 .assertStatusCode(Response.Status.NO_CONTENT.getStatusCode());
     }

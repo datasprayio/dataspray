@@ -39,6 +39,18 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.InternetProtocol;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import software.amazon.awssdk.core.SdkSystemSetting;
+import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AliasAttributeType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeDataType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.CreateUserPoolClientRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.CreateUserPoolRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.PasswordPolicyType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.SchemaAttributeType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.UserPoolClientType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.UserPoolMfaType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.UserPoolPolicyType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.UserPoolType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifiedAttributeType;
 
 import java.time.Duration;
 import java.util.Map;
@@ -55,9 +67,16 @@ import static com.google.common.base.Preconditions.checkState;
 @Slf4j
 public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager, Extension, BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
 
+    public static final String CREATE_COGNITO_PARAM = "create-cognito";
     private static final String MOTO_VERSION = "5.0.26";
 
     private Optional<MotoInstance> instanceOpt = Optional.empty();
+    private boolean createCognito = false;
+
+    @Override
+    public void init(Map<String, String> initArgs) {
+        createCognito = initArgs.getOrDefault(CREATE_COGNITO_PARAM, "false").equals("true");
+    }
 
     /** Jupiter wrapper when used with {@link ExtendWith} */
     @Override
@@ -169,6 +188,10 @@ public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager
         propsBuilder.put("aws.iam.serviceEndpoint", endpoint);
         propsBuilder.put("aws.iam.productionRegion", region);
 
+        if (createCognito) {
+            propsBuilder.putAll(setupCognito(instanceOpt.get().getCognitoClient()));
+        }
+
         return propsBuilder.build();
     }
 
@@ -188,5 +211,47 @@ public class MotoLifecycleManager implements QuarkusTestResourceLifecycleManager
     public void inject(Object testInstance) {
         checkState(instanceOpt.isPresent());
         TestResourceUtil.injectSelf(testInstance, instanceOpt.get());
+    }
+
+    private Map<String, String> setupCognito(CognitoIdentityProviderClient cognitoClient) {
+        // Should match the same configuration as in AuthNzStack
+        UserPoolType userPool = cognitoClient.createUserPool(CreateUserPoolRequest.builder()
+                        .poolName("userpool-" + UUID.randomUUID())
+                        .mfaConfiguration(UserPoolMfaType.OPTIONAL)
+                        .autoVerifiedAttributes(VerifiedAttributeType.EMAIL)
+                        .aliasAttributes(AliasAttributeType.EMAIL, AliasAttributeType.PREFERRED_USERNAME)
+                        .schema(
+                                SchemaAttributeType.builder()
+                                        .attributeDataType(AttributeDataType.BOOLEAN)
+                                        .name(/* CognitoUserStore.USER_ATTRIBUTE_TOS_AGREED */ "tos-agreed")
+                                        .mutable(true).build(),
+                                SchemaAttributeType.builder()
+                                        .attributeDataType(AttributeDataType.BOOLEAN)
+                                        .name(/* CognitoUserStore.USER_ATTRIBUTE_MARKETING_AGREED */ "marketing-agreed")
+                                        .mutable(true).build(),
+                                SchemaAttributeType.builder()
+                                        .name(/* CognitoUserStore.USER_ATTRIBUTE_EMAIL */ "email")
+                                        .required(true).build())
+                        .policies(UserPoolPolicyType.builder()
+                                .passwordPolicy(PasswordPolicyType.builder()
+                                        .minimumLength(8)
+                                        .requireLowercase(true)
+                                        .requireUppercase(true)
+                                        .requireNumbers(true)
+                                        .requireSymbols(true)
+                                        .temporaryPasswordValidityDays(1).build())
+                                .build())
+                        .build())
+                .userPool();
+        UserPoolClientType userPoolClient = cognitoClient.createUserPoolClient(CreateUserPoolClientRequest.builder()
+                        .clientName("userpoolclient-" + UUID.randomUUID())
+                        .userPoolId(userPool.id())
+                        .generateSecret(false)
+                        .build())
+                .userPoolClient();
+        log.info("Created Cognito user pool {} ({}) and client {} ({})", userPool.name(), userPool.id(), userPoolClient.clientName(), userPoolClient.clientId());
+        return Map.of(
+                /* CognitoUserStore.USER_POOL_ID_PROP_NAME */ "aws.cognito.user-pool.id", userPool.id(),
+                /* CognitoUserStore.USER_POOL_APP_CLIENT_ID_PROP_NAME */ "aws.cognito.user-pool.client.id", userPoolClient.clientId());
     }
 }
