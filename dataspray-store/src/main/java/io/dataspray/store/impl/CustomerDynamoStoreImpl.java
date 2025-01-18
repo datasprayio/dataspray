@@ -29,6 +29,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.jcabi.aspects.Cacheable;
+import io.dataspray.common.DeployEnvironment;
 import io.dataspray.singletable.DynamoConvertersProxy;
 import io.dataspray.singletable.DynamoConvertersProxy.MarshallerAttrVal;
 import io.dataspray.singletable.SingleTable;
@@ -36,15 +37,16 @@ import io.dataspray.singletable.StringSerdeUtil;
 import io.dataspray.singletable.TableType;
 import io.dataspray.store.CustomerDynamoStore;
 import io.dataspray.store.CustomerLogger;
-import io.dataspray.store.LambdaDeployer;
 import io.dataspray.store.TopicStore;
 import io.dataspray.store.TopicStore.Store;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.dynamodb.model.ReturnValue;
 
 import java.time.Instant;
@@ -55,19 +57,19 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static io.dataspray.singletable.TableType.Lsi;
-import static io.dataspray.singletable.TableType.Primary;
+import static io.dataspray.common.DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME;
+import static io.dataspray.singletable.TableType.*;
 
 @Slf4j
 @ApplicationScoped
 public class CustomerDynamoStoreImpl implements CustomerDynamoStore {
 
+    @ConfigProperty(name = DEPLOY_ENVIRONMENT_PROP_NAME)
+    DeployEnvironment deployEnv;
     @Inject
     DynamoDbClient dynamo;
     @Inject
     CustomerLogger customerLog;
-    @Inject
-    LambdaDeployer lambdaDeployer;
     @Inject
     Gson gson;
 
@@ -79,20 +81,56 @@ public class CustomerDynamoStoreImpl implements CustomerDynamoStore {
     private final MarshallerAttrVal gsonMarshallerAttrVal = o -> AttributeValue.fromS(gson.toJson(o));
 
     @Override
+    public String getTableName(String organizationName) {
+        return LambdaDeployerImpl.CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + organizationName;
+    }
+
+    @Override
+    public SingleTable getSingleTable(String organizationName) {
+        return SingleTable.builder()
+                .tableName(getTableName(organizationName))
+                .overrideGson(gson)
+                .build();
+    }
+
+    @Override
+    public void createTableIfNotExists(String organizationName, long gsiCount, long lsiCount) {
+        getSingleTable(organizationName)
+                .createTableIfNotExists(dynamo, (int) lsiCount, (int) gsiCount);
+    }
+
+    @Override
     public Void write(
             String organizationName,
             Store definition,
             Map<String, Object> messageJson) {
 
-        // TODO
-//         TODO on ResourceNotFound, create dynamo table
-//                Move table creation to this store from LambdaDeployer
-
-        dynamo.putItem(PutItemRequest.builder()
-                .tableName(lambdaDeployer.getCustomerDynamoTableName(organizationName))
+        PutItemRequest request = PutItemRequest.builder()
+                .tableName(getTableName(organizationName))
                 .item(getMapper(definition).apply(messageJson))
                 .returnValues(ReturnValue.NONE)
-                .build());
+                .build();
+
+        try {
+            dynamo.putItem(request);
+        } catch (ResourceNotFoundException ex) {
+            // Table doesn't exist
+            // Infer Gsi and Lsi count
+            long maxGsi = definition.getKeys().stream()
+                    .filter(k -> Gsi.equals(k.getType()))
+                    .mapToLong(TopicStore.Key::getIndexNumber)
+                    .max()
+                    .orElse(0L);
+            long maxLsi = definition.getKeys().stream()
+                    .filter(k -> Lsi.equals(k.getType()))
+                    .mapToLong(TopicStore.Key::getIndexNumber)
+                    .max()
+                    .orElse(0L);
+            // Create table
+            createTableIfNotExists(organizationName, maxLsi, maxGsi);
+            // Retry put request
+            dynamo.putItem(request);
+        }
         return null;
     }
 

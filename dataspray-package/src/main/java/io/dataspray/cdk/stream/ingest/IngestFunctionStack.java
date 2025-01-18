@@ -28,6 +28,7 @@ import io.dataspray.cdk.api.ApiFunctionStack;
 import io.dataspray.cdk.store.SingleTableStack;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.TopicStore;
+import io.dataspray.store.impl.LambdaDeployerImpl;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awscdk.Duration;
@@ -88,6 +89,21 @@ public class IngestFunctionStack extends ApiFunctionStack {
                 .resources(ImmutableList.of(
                         singleTableStack.getSingleTableTable().getTableArn(),
                         singleTableStack.getSingleTableTable().getTableArn() + "/index/*"))
+                .build());
+
+        // Allow management of customer's DynamoDB tables
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+                .sid(getConstructIdCamelCase("CustomerManagementDynamoIngest"))
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "dynamodb:CreateTable",
+                        "dynamodb:DescribeTable",
+                        "dynamodb:UpdateTable",
+                        "dynamodb:DescribeTimeToLive",
+                        "dynamodb:UpdateTimeToLive"))
+                .resources(ImmutableList.of(
+                        "arn:aws:dynamodb:" + getRegion() + ":" + getAccount() + ":table/" + LambdaDeployerImpl.CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(getDeployEnv()) + "*"
+                ))
                 .build());
 
         getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()

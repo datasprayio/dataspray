@@ -99,6 +99,7 @@ public interface TopicStore {
         @Nullable
         Topic undefinedTopic;
 
+        TODO make this Map<String, Topic> by name in order to be able to update individual topics
         @NonNull
         @Builder.Default
         Set<Topic> topics = ImmutableSet.of();

@@ -197,7 +197,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                 .build());
         // Allow management of customer's DynamoDB tables
         getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
-                .sid(getConstructIdCamelCase("CustomerManagementLDynamo"))
+                .sid(getConstructIdCamelCase("CustomerManagementDynamoControl"))
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "dynamodb:CreateTable",

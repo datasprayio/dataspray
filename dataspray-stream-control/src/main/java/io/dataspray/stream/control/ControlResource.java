@@ -147,10 +147,6 @@ public class ControlResource extends AbstractResource implements ControlApi {
                     deployedVersion.getVersion(),
                     deployedVersion.getDescription());
 
-//            TODO
-//            batchStore.setTableDefinition(
-//                    organizationName, taskId, deployedVersion.getVersion(), deployRequest.getBatchTableDefinition());
-
             jobStore.success(sessionId, taskVersion);
             return taskVersion;
         } catch (WebApplicationException ex) {

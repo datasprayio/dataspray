@@ -22,6 +22,8 @@
 
 package io.dataspray.store;
 
+import io.dataspray.singletable.SingleTable;
+
 import java.util.Map;
 
 /**
@@ -29,6 +31,12 @@ import java.util.Map;
  * with SingleTable.
  */
 public interface CustomerDynamoStore {
+
+    String getTableName(String organizationName);
+
+    SingleTable getSingleTable(String organizationName);
+
+    void createTableIfNotExists(String organizationName, long gsiCount, long lsiCount);
 
     Void write(
             String organizationName,

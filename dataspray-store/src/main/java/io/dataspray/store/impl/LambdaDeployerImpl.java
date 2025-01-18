@@ -36,10 +36,10 @@ import com.google.gson.Gson;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.common.StringUtil;
 import io.dataspray.singletable.ShardPageResult;
-import io.dataspray.singletable.SingleTable;
 import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.ApiAccessStore.ApiAccess;
 import io.dataspray.store.ApiAccessStore.UsageKeyType;
+import io.dataspray.store.CustomerDynamoStore;
 import io.dataspray.store.LambdaDeployer;
 import io.dataspray.store.LambdaStore;
 import io.dataspray.store.LambdaStore.LambdaRecord;
@@ -196,6 +196,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     Gson gson;
     @Inject
     ApiAccessStore apiAccessStore;
+    @Inject
+    CustomerDynamoStore customerDynamoStore;
 
     @SneakyThrows
     @Override
@@ -245,7 +247,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             ImmutableSet<String> outputQueueNames,
             Runtime runtime,
             Optional<Endpoint> endpointOpt,
-            Optional<DynamoState> dynamoState,
+            Optional<DynamoState> dynamoStateOpt,
             boolean switchToImmediately) {
 
         // Check for loops between deployed Tasks and current update/creation of this task.
@@ -330,12 +332,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         // This key does not yet have any access, that will be persisted later once we know the published task version.
         String apiKey = apiAccessStore.generateApiKey();
 
-        // Prepare SingleTable ahead of time to generate table name
-        Optional<SingleTable> customerSingleTableOpt = dynamoState.map(s -> SingleTable.builder()
-                .tableName(getCustomerDynamoTableName(organizationName))
-                .overrideGson(gson)
-                .build());
-
         // Create or update function configuration and code
         final String publishedDescription = generateVersionDescription(taskId, inputQueueNames, outputQueueNames, endpointOpt);
         ImmutableMap.Builder<String, String> envBuilder = ImmutableMap.<String, String>builder()
@@ -343,8 +339,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .put(DATASPRAY_ORGANIZATION_NAME_ENV, organizationName);
         apiEndpointOpt.ifPresent(endpoint -> envBuilder
                 .put(DATASPRAY_ENDPOINT_ENV, endpoint));
-        customerSingleTableOpt.ifPresent(customerSingleTable -> envBuilder
-                .put(DATASPRAY_STATE_TABLE_NAME_ENV, customerSingleTable.getTableName()));
+        dynamoStateOpt.ifPresent(s -> envBuilder
+                .put(DATASPRAY_STATE_TABLE_NAME_ENV, customerDynamoStore.getTableName(organizationName)));
         Environment env = Environment.builder()
                 .variables(envBuilder.build()).build();
         final String codeSha256;
@@ -457,17 +453,18 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 Optional.of(outputQueueNames));
 
         // Create Dynamo for lambda state if needed
-        if (dynamoState.isPresent() && customerSingleTableOpt.isPresent()) {
+        if (dynamoStateOpt.isPresent()) {
+            DynamoState dynamoState = dynamoStateOpt.get();
             log.info("Creating/updating Dynamo table for function {}", functionName);
             // This automatically scales GSIs up and down,
             // but throws IllegalArgumentException if LSI count changes
-            customerSingleTableOpt.get().createTableIfNotExists(
-                    dynamoClient,
-                    dynamoState.get().getLsiCount().intValue(),
-                    dynamoState.get().getGsiCount().intValue());
+            customerDynamoStore.createTableIfNotExists(
+                    organizationName,
+                    dynamoState.getGsiCount(),
+                    dynamoState.getLsiCount());
 
             // Give permission to Dynamo
-            String tableName = customerSingleTableOpt.get().getTableName();
+            String tableName = customerDynamoStore.getTableName(organizationName);
             String lambdaDynamoPolicyName = CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_DYNAMO + StringUtil.camelCase(functionName, true) + "Dynamo" + tableName;
             ensurePolicyAttachedToRole(functionRoleName, lambdaDynamoPolicyName, gson.toJson(Map.of(
                     "Version", "2012-10-17",
@@ -943,11 +940,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
     private String getFunctionRoleName(String organizationName, String taskId) {
         return getFunctionName(organizationName, taskId) + "-role";
-    }
-
-    @Override
-    public String getCustomerDynamoTableName(String organizationName) {
-        return CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + organizationName;
     }
 
     private String getFunctionOrDynamoOrRoleNamePrefix(String organizationName) {
