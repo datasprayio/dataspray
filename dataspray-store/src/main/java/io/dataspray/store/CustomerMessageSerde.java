@@ -22,32 +22,28 @@
 
 package io.dataspray.store;
 
-import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
+import io.dataspray.store.TopicStore.BatchRetention;
+import jakarta.ws.rs.core.MediaType;
 
 import java.util.Map;
 import java.util.Optional;
 
-public interface StreamStore {
+public interface CustomerMessageSerde {
 
-    /**
-     * @return SQS sent Message ID
-     */
-    String submit(String organizationName,
-                  String streamName,
-                  Optional<String> messageIdOpt,
-                  String messageKey,
-                  String messageStr);
+    String bytesToString(
+            byte[] messageBytes,
+            MediaType contentType);
 
-    /** Check whether queue exists */
-    boolean streamExists(String organizationName, String streamName);
+    Map<String, Object> stringToJson(
+            String messageStr);
 
-    /** Check queue attributes */
-    Optional<Map<QueueAttributeName, String>> queueAttributes(String organizationName, String queueName, QueueAttributeName... fetchAttributes);
+    Map<String, Object> enrichJson(
+            String organizationName,
+            String topicName,
+            Optional<BatchRetention> batchRetentionOpt,
+            Optional<String> messageIdOpt,
+            String messageKey,
+            Map<String, Object> messageJson);
 
-    void createStream(String organizationName, String streamName);
-
-    /** Converts user supplied queue name to AWS queue name */
-    String getAwsQueueName(String organizationName, String streamName);
-
-    Optional<String> extractStreamNameFromAwsQueueName(String organizationName, String awsQueueName);
+    byte[] jsonToBytes(Map<String, Object> messageJson);
 }

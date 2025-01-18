@@ -22,32 +22,16 @@
 
 package io.dataspray.store;
 
-import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
-
 import java.util.Map;
-import java.util.Optional;
 
-public interface StreamStore {
+/**
+ * Takes an arbitrary JSON and writes it to Dynamo in the same format to be compatible
+ * with SingleTable.
+ */
+public interface CustomerDynamoStore {
 
-    /**
-     * @return SQS sent Message ID
-     */
-    String submit(String organizationName,
-                  String streamName,
-                  Optional<String> messageIdOpt,
-                  String messageKey,
-                  String messageStr);
-
-    /** Check whether queue exists */
-    boolean streamExists(String organizationName, String streamName);
-
-    /** Check queue attributes */
-    Optional<Map<QueueAttributeName, String>> queueAttributes(String organizationName, String queueName, QueueAttributeName... fetchAttributes);
-
-    void createStream(String organizationName, String streamName);
-
-    /** Converts user supplied queue name to AWS queue name */
-    String getAwsQueueName(String organizationName, String streamName);
-
-    Optional<String> extractStreamNameFromAwsQueueName(String organizationName, String awsQueueName);
+    Void write(
+            String organizationName,
+            TopicStore.Store definition,
+            Map<String, Object> messageJson);
 }

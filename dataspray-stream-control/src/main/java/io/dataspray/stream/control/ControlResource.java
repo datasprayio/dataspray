@@ -26,6 +26,7 @@ import com.google.common.base.Enums;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.store.ApiAccessStore.UsageKeyType;
+import io.dataspray.store.BatchStore;
 import io.dataspray.store.JobStore;
 import io.dataspray.store.JobStore.Session;
 import io.dataspray.store.LambdaDeployer;
@@ -46,6 +47,8 @@ import io.dataspray.stream.control.model.TaskVersion;
 import io.dataspray.stream.control.model.TaskVersions;
 import io.dataspray.stream.control.model.Topic;
 import io.dataspray.stream.control.model.TopicBatch;
+import io.dataspray.stream.control.model.TopicStoreKey;
+import io.dataspray.stream.control.model.TopicStoreKey.TableTypeEnum;
 import io.dataspray.stream.control.model.TopicStream;
 import io.dataspray.stream.control.model.Topics;
 import io.dataspray.stream.control.model.UploadCodeRequest;
@@ -82,6 +85,8 @@ public class ControlResource extends AbstractResource implements ControlApi {
     TopicStore topicStore;
     @Inject
     OrganizationStore organizationStore;
+    @Inject
+    BatchStore batchStore;
     @Inject
     JobStore jobStore;
 
@@ -141,6 +146,11 @@ public class ControlResource extends AbstractResource implements ControlApi {
                     taskId,
                     deployedVersion.getVersion(),
                     deployedVersion.getDescription());
+
+//            TODO
+//            batchStore.setTableDefinition(
+//                    organizationName, taskId, deployedVersion.getVersion(), deployRequest.getBatchTableDefinition());
+
             jobStore.success(sessionId, taskVersion);
             return taskVersion;
         } catch (WebApplicationException ex) {
@@ -260,7 +270,25 @@ public class ControlResource extends AbstractResource implements ControlApi {
                         .orElse(null),
                 topic.getStreams().stream()
                         .map(stream -> new TopicStream(stream.getName()))
-                        .collect(ImmutableList.toImmutableList()));
+                        .collect(ImmutableList.toImmutableList()),
+                topic.getStore()
+                        .map(store -> new io.dataspray.stream.control.model.TopicStore(
+                                store.getKeys().stream()
+                                        .map(key -> new TopicStoreKey(
+                                                switch (key.getType()) {
+                                                    case Primary -> TableTypeEnum.PRIMARY;
+                                                    case Gsi -> TableTypeEnum.GSI;
+                                                    case Lsi -> TableTypeEnum.LSI;
+                                                },
+                                                key.getIndexNumber(),
+                                                key.getPkParts(),
+                                                key.getSkParts(),
+                                                key.getRangePrefix()))
+                                        .collect(ImmutableList.toImmutableList()),
+                                store.getTtlInSec(),
+                                store.getBlacklist().asList(),
+                                store.getWhitelist().asList()))
+                        .orElse(null));
     }
 
     private TaskStatus getStatus(String organizationName, String taskId) {

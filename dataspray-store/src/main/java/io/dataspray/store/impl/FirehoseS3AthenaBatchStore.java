@@ -22,9 +22,6 @@
 
 package io.dataspray.store.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dataspray.store.BatchStore;
 import io.dataspray.store.CustomerLogger;
 import io.dataspray.store.TopicStore.BatchRetention;
@@ -66,8 +63,6 @@ import software.amazon.awssdk.services.glue.model.Table;
 import software.amazon.awssdk.services.glue.model.TableInput;
 import software.amazon.awssdk.services.glue.model.UpdateTableRequest;
 
-import java.io.IOException;
-import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -121,42 +116,14 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     @Inject
     CustomerLogger customerLog;
 
-    private final ObjectMapper jsonSerde = new ObjectMapper();
 
     @Override
-    public void putRecord(String customerId, String topicName, Optional<String> messageIdOpt, String messageKey, byte[] jsonBytes, BatchRetention retention) {
-        // Parse customer message as JSON
-        // TODO Optimization: parse only beginning, look for '{', inject metadata, and copy the rest; fallback to this if parsing fails
-        final Map<String, Object> json;
-        try {
-            json = jsonSerde.readValue(jsonBytes, new TypeReference<Map<String, Object>>() {
-            });
-        } catch (IOException ex) {
-            customerLog.warn("Failed to parse message as JSON Object for topic " + topicName + ", skipping ETL", customerId);
-            return;
-        }
-
-        // Add extra attributes
-        json.put(ETL_MESSAGE_KEY, messageKey);
-        json.put(ETL_MESSAGE_ID, messageIdOpt.orElse(null));
-
-        // Add metadata for Firehose dynamic partitioning
-        json.put(ETL_PARTITION_KEY_RETENTION, retention.name());
-        json.put(ETL_PARTITION_KEY_ORGANIZATION, customerId);
-        json.put(ETL_PARTITION_KEY_TOPIC, topicName);
-        final byte[] jsonWithMetadataBytes;
-        try {
-            jsonWithMetadataBytes = jsonSerde.writeValueAsBytes(json);
-        } catch (JsonProcessingException ex) {
-            customerLog.warn("Failed to parse message as JSON for topic " + topicName + ", skipping ETL", customerId);
-            log.warn("Failed to write json with metadata", ex);
-            return;
-        }
-
-        firehoseClient.putRecord(PutRecordRequest.builder()
-                .deliveryStreamName(firehoseStreamName)
-                .record(Record.builder()
-                        .data(SdkBytes.fromByteArrayUnsafe(jsonWithMetadataBytes)).build()).build());
+    public String putRecord(String customerId, String topicName, Optional<String> messageIdOpt, String messageKey, byte[] messageBytes, BatchRetention retention) {
+        return firehoseClient.putRecord(PutRecordRequest.builder()
+                        .deliveryStreamName(firehoseStreamName)
+                        .record(Record.builder()
+                                .data(SdkBytes.fromByteArrayUnsafe(messageBytes)).build()).build())
+                .recordId();
     }
 
     @Override

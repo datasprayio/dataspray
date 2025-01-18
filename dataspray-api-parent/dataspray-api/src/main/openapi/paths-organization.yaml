@@ -1,3 +1,14 @@
+components:
+  schemas:
+    RateLimitLevel:
+      title: RateLimitLevel
+      type: string
+      enum:
+        - DEFAULT
+        - ONE
+        - TEN
+        - HUNDRED
+
 /v1/organizations/create:
   put:
     operationId: createOrganization
@@ -41,6 +52,22 @@
       '409':
         description: Username taken, specify new username
 /v1/organization/{organizationName}/ratelimit:
+  get:
+    operationId: rateLimitGet
+    tags: [ Organization ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              type: string
   patch:
     operationId: rateLimitAdjust
     tags: [ Organization ]
@@ -54,12 +81,7 @@
         in: query
         required: true
         schema:
-          type: string
-          enum:
-            - DEFAULT
-            - ONE
-            - TEN
-            - HUNDRED
+          $ref: '#/components/schemas/RateLimitLevel'
     responses:
       '200':
         description: Ok

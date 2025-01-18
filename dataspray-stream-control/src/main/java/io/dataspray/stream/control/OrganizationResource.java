@@ -27,6 +27,7 @@ import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.ApiAccessStore.UsageKeyType;
 import io.dataspray.store.OrganizationStore;
 import io.dataspray.store.UserStore;
+import io.dataspray.stream.control.model.RateLimitLevel;
 import io.dataspray.web.resource.AbstractResource;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -87,12 +88,28 @@ public class OrganizationResource extends AbstractResource implements Organizati
     }
 
     @Override
-    public void rateLimitAdjust(String organizationName, String level) {
+    public String rateLimitGet(String organizationName) {
+        UsageKeyType usageKeyType = organizationStore.getMetadata(organizationName)
+                .getUsageKeyType();
+
+        return switch (usageKeyType) {
+            case UsageKeyType.ORGANIZATION -> "DEFAULT";
+            case UsageKeyType.ORGANIZATION_ONE_RPS -> "ONE";
+            case UsageKeyType.ORGANIZATION_TEN_RPS -> "TEN";
+            case UsageKeyType.ORGANIZATION_HUNDRED_RPS -> "HUNDRED";
+            case UsageKeyType.GLOBAL -> "SHARED";
+            case UsageKeyType.UNLIMITED -> "UNLIMITED";
+            default -> usageKeyType.name();
+        };
+    }
+
+    @Override
+    public void rateLimitAdjust(String organizationName, RateLimitLevel level) {
         @Nullable UsageKeyType usageKeyType = switch (level) {
-            case "DEFAULT" -> UsageKeyType.ORGANIZATION;
-            case "ONE" -> UsageKeyType.ORGANIZATION_ONE_RPS;
-            case "TEN" -> UsageKeyType.ORGANIZATION_TEN_RPS;
-            case "HUNDRED" -> UsageKeyType.ORGANIZATION_HUNDRED_RPS;
+            case DEFAULT -> UsageKeyType.ORGANIZATION;
+            case ONE -> UsageKeyType.ORGANIZATION_ONE_RPS;
+            case TEN -> UsageKeyType.ORGANIZATION_TEN_RPS;
+            case HUNDRED -> UsageKeyType.ORGANIZATION_HUNDRED_RPS;
             default -> throw new ClientErrorException(400);
         };
         log.info("Organization {} switching to usage key type {}", organizationName, usageKeyType);

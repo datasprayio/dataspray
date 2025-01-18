@@ -25,12 +25,14 @@ package io.dataspray.stream.ingest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import io.dataspray.common.DeployEnvironment;
 import io.dataspray.common.json.GsonUtil;
 import io.dataspray.common.test.aws.AbstractLambdaTest;
 import io.dataspray.common.test.aws.MotoInstance;
 import io.dataspray.common.test.aws.MotoLifecycleManager;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.store.SingleTableProvider;
+import io.dataspray.store.TopicStore;
 import io.dataspray.store.TopicStore.Batch;
 import io.dataspray.store.TopicStore.BatchRetention;
 import io.dataspray.store.TopicStore.Stream;
@@ -38,6 +40,7 @@ import io.dataspray.store.TopicStore.Topic;
 import io.dataspray.store.TopicStore.Topics;
 import io.dataspray.store.impl.DynamoTopicStore;
 import io.dataspray.store.impl.FirehoseS3AthenaBatchStore;
+import io.dataspray.store.impl.LambdaDeployerImpl;
 import io.dataspray.store.impl.SqsStreamStore;
 import io.quarkus.test.common.QuarkusTestResource;
 import jakarta.ws.rs.HttpMethod;
@@ -69,6 +72,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static io.dataspray.singletable.TableType.Gsi;
+import static io.dataspray.singletable.TableType.Primary;
 import static io.dataspray.store.impl.FirehoseS3AthenaBatchStore.*;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -107,6 +112,14 @@ public abstract class IngestBase extends AbstractLambdaTest {
         dynamoTargetStore.singleTable = singleTable;
         dynamoTargetStore.init();
 
+        // Setup Customer Dynamo store
+        String customerTableName = LambdaDeployerImpl.CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(DeployEnvironment.TEST) + getOrganizationName();
+        SingleTable singleTableCustomer = SingleTable.builder()
+                .tableName(customerTableName)
+                .overrideGson(GsonUtil.get())
+                .build();
+        singleTableCustomer.createTableIfNotExists(getDynamoClient(), 0, 1);
+
         // Setup topic to perform batch and stream processing
         dynamoTargetStore.updateTopics(Topics.builder()
                 .organizationName(getOrganizationName())
@@ -120,6 +133,26 @@ public abstract class IngestBase extends AbstractLambdaTest {
                                         Stream.builder()
                                                 .name(topicName)
                                                 .build()))
+                                .store(Optional.of(TopicStore.Store.builder()
+                                        .keys(ImmutableSet.of(
+                                                TopicStore.Key.builder()
+                                                        .type(Primary)
+                                                        .indexNumber(0)
+                                                        .pkParts(ImmutableList.of("someString"))
+                                                        .skParts(ImmutableList.of("someInt"))
+                                                        .rangePrefix("data")
+                                                        .build(),
+                                                TopicStore.Key.builder()
+                                                        .type(Gsi)
+                                                        .indexNumber(1)
+                                                        .pkParts(ImmutableList.of("someString", "someInt"))
+                                                        .skParts(ImmutableList.of("someString"))
+                                                        .rangePrefix("dataGsi")
+                                                        .build()))
+                                        .ttlInSec(1_000)
+                                        .whitelist(ImmutableSet.of())
+                                        .blacklist(ImmutableSet.of())
+                                        .build()))
                                 .build()))
                 .build());
 

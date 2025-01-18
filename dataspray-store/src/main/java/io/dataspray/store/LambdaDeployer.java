@@ -72,6 +72,8 @@ public interface LambdaDeployer {
 
     UploadCodeClaim uploadCode(String customerId, String taskId, long contentLengthBytes);
 
+    String getCustomerDynamoTableName(String organizationName);
+
     @Value
     @RegisterForReflection
     class Status {

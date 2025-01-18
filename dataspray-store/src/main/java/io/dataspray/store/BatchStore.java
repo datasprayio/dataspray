@@ -29,12 +29,15 @@ import java.util.Optional;
 
 public interface BatchStore {
 
-    void putRecord(String customerId,
-                   String topicName,
-                   Optional<String> messageIdOpt,
-                   String messageKey,
-                   byte[] jsonBytes,
-                   BatchRetention retention);
+    /**
+     * @return Firehose sent Record ID
+     */
+    String putRecord(String customerId,
+                     String topicName,
+                     Optional<String> messageIdOpt,
+                     String messageKey,
+                     byte[] messageBytes,
+                     BatchRetention retention);
 
     void setTableDefinition(String customerId,
                             String topicName,

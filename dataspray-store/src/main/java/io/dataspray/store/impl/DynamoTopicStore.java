@@ -42,6 +42,7 @@ import java.util.Optional;
 public class DynamoTopicStore implements TopicStore {
 
     public static final int INITIAL_VERSION = 0;
+    public static final int CACHE_EXPIRY_IN_MINUTES = 1;
 
     @Inject
     @VisibleForTesting
@@ -57,7 +58,7 @@ public class DynamoTopicStore implements TopicStore {
     @VisibleForTesting
     public void init() {
         topicsByOrganizationNameCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(Duration.ofMinutes(1))
+                .expireAfterWrite(Duration.ofMinutes(CACHE_EXPIRY_IN_MINUTES))
                 .softValues()
                 .build();
 

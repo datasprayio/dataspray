@@ -945,7 +945,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         return getFunctionName(organizationName, taskId) + "-role";
     }
 
-    private String getCustomerDynamoTableName(String organizationName) {
+    @Override
+    public String getCustomerDynamoTableName(String organizationName) {
         return CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + organizationName;
     }
 

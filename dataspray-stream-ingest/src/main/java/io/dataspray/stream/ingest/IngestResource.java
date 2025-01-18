@@ -22,9 +22,14 @@
 
 package io.dataspray.stream.ingest;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Streams;
 import io.dataspray.store.BatchStore;
+import io.dataspray.store.CustomerDynamoStore;
 import io.dataspray.store.CustomerLogger;
+import io.dataspray.store.CustomerMessageSerde;
 import io.dataspray.store.StreamStore;
 import io.dataspray.store.TopicStore;
 import io.dataspray.store.TopicStore.Stream;
@@ -41,7 +46,11 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
@@ -59,7 +68,13 @@ public class IngestResource extends AbstractResource implements IngestApi {
     @Inject
     BatchStore batchStore;
     @Inject
+    CustomerDynamoStore customerDynamoStore;
+    @Inject
     CustomerLogger customerLog;
+    @Inject
+    CustomerMessageSerde customerMessageSerde;
+
+    private final ObjectMapper jsonSerde = new ObjectMapper();
 
     /**
      * <b>Ingest a message.</b>
@@ -86,6 +101,20 @@ public class IngestResource extends AbstractResource implements IngestApi {
                     return new ClientErrorException(Response.Status.NOT_FOUND);
                 });
 
+        // Detect media type, needed for both stream and batch processing
+        MediaType contentType = Optional.ofNullable(headers.getMediaType())
+                .orElseGet(() -> {
+                    customerLog.warn("Message for stream " + topicName + " missing media type", organizationName);
+                    return MediaType.APPLICATION_OCTET_STREAM_TYPE;
+                });
+
+        // Ensure media type is supported for batch and store
+        if ((topic.getBatch().isPresent() || topic.getStore().isPresent())
+            && !APPLICATION_JSON_TYPE.isCompatible(contentType)) {
+            customerLog.warn("Message for stream " + topicName + " requires " + APPLICATION_JSON + ", skipping ETL", organizationName);
+            throw new ClientErrorException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
+        }
+
         // Read message
         byte[] messageBytes = messageInputStream.readNBytes(MESSAGE_MAX_BYTES);
         if (messageInputStream.readNBytes(1).length > 0) {
@@ -93,27 +122,63 @@ public class IngestResource extends AbstractResource implements IngestApi {
             throw new ClientErrorException(Response.Status.REQUEST_ENTITY_TOO_LARGE);
         }
         messageInputStream.close();
+        String messageStr = customerMessageSerde.bytesToString(messageBytes, contentType);
 
-        // Detect media type, needed for both stream and batch processing
-        MediaType mediaType = Optional.ofNullable(headers.getMediaType())
-                .orElseGet(() -> {
-                    customerLog.warn("Message for stream " + topicName + " missing media type", organizationName);
-                    return MediaType.APPLICATION_OCTET_STREAM_TYPE;
-                });
+        // Start processing
+        List<CompletableFuture<String>> futureStreamMessageSend = Lists.newArrayList();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            if (!topic.getStreams().isEmpty()) {
 
-        // Submit message to all streams for stream processing
-        for (Stream stream : topic.getStreams()) {
-            streamStore.submit(organizationName, topicName, messageIdOpt, messageKey, messageBytes, mediaType);
-        }
-
-        // Submit message for batch processing
-        if (topic.getBatch().isPresent()) {
-            // Only JSON supported for now
-            if (APPLICATION_JSON_TYPE.equals(mediaType)) {
-                batchStore.putRecord(organizationName, topicName, messageIdOpt, messageKey, messageBytes, topic.getBatch().get().getRetention());
-            } else {
-                customerLog.warn("Message for stream " + topicName + " requires " + APPLICATION_JSON + ", skipping ETL", organizationName);
+                // Submit message to all streams
+                for (Stream stream : topic.getStreams()) {
+                    futureStreamMessageSend.add(CompletableFuture.supplyAsync(() ->
+                            streamStore.submit(organizationName, stream.getName(), messageIdOpt, messageKey, messageStr), executor));
+                }
             }
+
+            Optional<CompletableFuture<String>> taskBatchSendOpt = Optional.empty();
+            Optional<CompletableFuture<Void>> taskStoreSendOpt = Optional.empty();
+            if ((topic.getBatch().isPresent() || topic.getStore().isPresent())) {
+
+                // Parse message as JSON
+                CompletableFuture<Map<String, Object>> taskMessageAsJson = CompletableFuture.supplyAsync(() ->
+                        customerMessageSerde.stringToJson(messageStr));
+
+                // Enrich with metadata
+                CompletableFuture<Map<String, Object>> taskMessageAsEnrichedJson = taskMessageAsJson.thenApplyAsync(messageJson ->
+                        customerMessageSerde.enrichJson(
+                                organizationName,
+                                topicName,
+                                topic.getBatch().map(TopicStore.Batch::getRetention),
+                                messageIdOpt,
+                                messageKey,
+                                messageJson));
+
+                // Submit message for batch processing
+                if (topic.getBatch().isPresent()) {
+
+                    // Prepare as bytes
+                    CompletableFuture<byte[]> taskMessageAsEnrichedBytes = taskMessageAsEnrichedJson.thenApplyAsync(messageJson ->
+                            customerMessageSerde.jsonToBytes(messageJson));
+
+                    // Send to Firehose
+                    taskBatchSendOpt = Optional.of(taskMessageAsEnrichedBytes.thenApplyAsync(messageEnrichedBytes ->
+                            batchStore.putRecord(organizationName, topicName, messageIdOpt, messageKey, messageEnrichedBytes, topic.getBatch().get().getRetention())));
+                }
+
+                // Submit message to dynamo store
+                if (topic.getStore().isPresent()) {
+                    taskStoreSendOpt = Optional.of(taskMessageAsEnrichedJson.thenApplyAsync(messageEnrichedJson ->
+                            customerDynamoStore.write(organizationName, topic.getStore().get(), messageEnrichedJson)));
+                }
+            }
+
+            // Wait for all to complete
+            CompletableFuture.allOf(Streams.concat(
+                    futureStreamMessageSend.stream(),
+                    taskBatchSendOpt.stream(),
+                    taskStoreSendOpt.stream()
+            ).toArray(CompletableFuture[]::new)).join();
         }
     }
 }

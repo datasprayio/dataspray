@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.SerializedName;
 import io.dataspray.singletable.DynamoTable;
+import io.dataspray.singletable.TableType;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
@@ -167,6 +168,14 @@ public interface TopicStore {
         @SerializedName("s")
         @Builder.Default
         List<Stream> streams = ImmutableList.of();
+
+        /**
+         * Whether this topic should send data to a key-value store. (e.g. DynamoDB).
+         */
+        @NonNull
+        @SerializedName("t")
+        @Builder.Default
+        Optional<Store> store = Optional.empty();
     }
 
     /**
@@ -222,5 +231,69 @@ public interface TopicStore {
         YEAR(366),
         THREE_YEARS(3 * 366);
         final long retentionInDays;
+    }
+
+    /**
+     * <b>Store definition.</b>
+     * <p>A key-value store definition specifies how data should be mapped to an item in database.</p>
+     */
+    @Value
+    @AllArgsConstructor
+    @Builder(toBuilder = true)
+    @RegisterForReflection
+    class Store {
+
+        @NonNull
+        @SerializedName("ks")
+        ImmutableSet<Key> keys;
+
+        @NonNull
+        @SerializedName("ttl")
+        long ttlInSec;
+
+        /**
+         * Whitelist of keys to store.
+         */
+        @NonNull
+        @SerializedName("w")
+        ImmutableSet<String> whitelist;
+
+        /**
+         * Blacklist of keys to store.
+         */
+        @NonNull
+        @SerializedName("b")
+        ImmutableSet<String> blacklist;
+    }
+
+    /**
+     * <b>Store definition.</b>
+     * <p>A key-value store definition specifies how data should be mapped to an item in database.</p>
+     */
+    @Value
+    @AllArgsConstructor
+    @Builder(toBuilder = true)
+    @RegisterForReflection
+    class Key {
+
+        @NonNull
+        @SerializedName("t")
+        TableType type;
+
+        @NonNull
+        @SerializedName("i")
+        long indexNumber;
+
+        @NonNull
+        @SerializedName("pk")
+        ImmutableList<String> pkParts;
+
+        @NonNull
+        @SerializedName("sk")
+        ImmutableList<String> skParts;
+
+        @NonNull
+        @SerializedName("pf")
+        String rangePrefix;
     }
 }

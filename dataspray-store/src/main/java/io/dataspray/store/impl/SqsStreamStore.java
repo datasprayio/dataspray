@@ -22,12 +22,10 @@
 
 package io.dataspray.store.impl;
 
-import com.google.common.base.Charsets;
 import io.dataspray.store.CustomerLogger;
 import io.dataspray.store.StreamStore;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -40,7 +38,6 @@ import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SqsException;
 
-import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 
@@ -65,49 +62,33 @@ public class SqsStreamStore implements StreamStore {
     @Inject
     CustomerLogger customerLog;
 
+
     @Override
-    public void submit(String organizationName, String streamName, Optional<String> messageIdOpt, String messageKey, byte[] messageBytes, MediaType contentType) {
-        // Since SQS accepts messages as String, convert each message appropriately
-        final String messageStr;
-        switch (contentType.toString()) {
-            // Text based messages send as string
-            case MediaType.APPLICATION_JSON:
-            case MediaType.TEXT_PLAIN:
-                messageStr = new String(messageBytes, Charsets.UTF_8);
-                break;
-            // Binary messages send as base64
-            default:
-                log.warn("Unknown content type {} received from accountId {} queue {}, sending as base64",
-                        contentType, organizationName, streamName);
-            case "application/octet-stream":
-            case "application/avro":
-            case "application/protobuf":
-                messageStr = Base64.getEncoder().encodeToString(messageBytes);
-                break;
-        }
+    public String submit(String organizationName, String streamName, Optional<String> messageIdOpt, String messageKey, String messageStr) {
 
         try {
-            sendMessage(organizationName, streamName, messageKey, messageIdOpt, messageStr);
+            return sendMessage(organizationName, streamName, messageKey, messageIdOpt, messageStr);
         } catch (SqsException ex) {
             if (isQueueDoesNotExist(ex)) {
                 // If the queue does not exist, create it
                 createStream(organizationName, streamName);
 
                 // and retry
-                sendMessage(organizationName, streamName, messageKey, messageIdOpt, messageStr);
+                return sendMessage(organizationName, streamName, messageKey, messageIdOpt, messageStr);
             } else {
                 throw ex;
             }
         }
     }
 
-    private void sendMessage(String organizationName, String streamName, String groupId, Optional<String> deduplicationId, String messageStr) {
-        sqsClient.sendMessage(SendMessageRequest.builder()
-                .messageGroupId(groupId)
-                .messageDeduplicationId(deduplicationId.orElse(null))
-                .queueUrl(getAwsQueueUrl(organizationName, streamName))
-                .messageBody(messageStr)
-                .build());
+    private String sendMessage(String organizationName, String streamName, String groupId, Optional<String> deduplicationId, String messageStr) {
+        return sqsClient.sendMessage(SendMessageRequest.builder()
+                        .messageGroupId(groupId)
+                        .messageDeduplicationId(deduplicationId.orElse(null))
+                        .queueUrl(getAwsQueueUrl(organizationName, streamName))
+                        .messageBody(messageStr)
+                        .build())
+                .messageId();
     }
 
     @Override

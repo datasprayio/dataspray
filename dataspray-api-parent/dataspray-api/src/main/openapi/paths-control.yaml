@@ -226,6 +226,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TopicStream'
+        store:
+          $ref: '#/components/schemas/TopicStore'
     TopicBatch:
       type: object
       properties:
@@ -238,6 +240,53 @@ components:
         - name
       properties:
         name:
+          type: string
+    TopicStore:
+      type: object
+      required:
+        - keys
+        - ttlInSec
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopicStoreKey'
+        ttlInSec:
+          type: integer
+          format: int64
+        blacklist:
+          type: array
+          items:
+            type: string
+        whitelist:
+          type: array
+          items:
+            type: string
+    TopicStoreKey:
+      type: object
+      required:
+        - tableType
+        - pkParts
+        - rangePrefix
+      properties:
+        tableType:
+          type: string
+          enum:
+            - PRIMARY
+            - GSI
+            - LSI
+        indexNumber:
+          type: integer
+          format: int64
+        pkParts:
+          type: array
+          items:
+            type: string
+        skParts:
+          type: array
+          items:
+            type: string
+        rangePrefix:
           type: string
 
 /v1/organization/{organizationName}/control/code/upload:
