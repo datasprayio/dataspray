@@ -65,5 +65,9 @@ paths:
     $ref: 'paths-control-task.yaml#/~1v1~1organization~1{organizationName}~1control~1task~1{taskId}~1delete'
   /v1/organization/{organizationName}/topics:
     $ref: 'paths-control-topic.yaml#/~1v1~1organization~1{organizationName}~1topics'
+  /v1/organization/{organizationName}/topic/default:
+    $ref: 'paths-control-topic.yaml#/~1v1~1organization~1{organizationName}~1topic~1default'
+  /v1/organization/{organizationName}/topic/{topicName}:
+    $ref: 'paths-control-topic.yaml#/~1v1~1organization~1{organizationName}~1topic~1{topicName}'
   /v1/organization/{organizationName}/topic/{topicName}/message:
     $ref: 'paths-ingest.yaml#/~1v1~1organization~1{organizationName}~1topic~1{topicName}~1message'

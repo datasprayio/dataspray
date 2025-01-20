@@ -114,11 +114,7 @@ public class CustomerDynamoStoreTest extends AbstractTest {
     @Test
     public void test() throws Exception {
         String orgName = idUtil.randomId();
-        String tableName = lambdaDeployer.getCustomerDynamoTableName(orgName);
-        SingleTable singleTable = SingleTable.builder()
-                .tableName(tableName)
-                .overrideGson(gson)
-                .build();
+        SingleTable singleTable = store.createTableIfNotExists(orgName, 0, 1);
         singleTable.createTableIfNotExists(dynamo, 0, 1);
         TableSchema<Data> primary = singleTable.parseTableSchema(Data.class);
         IndexSchema<Data> gsi = singleTable.parseGlobalSecondaryIndexSchema(1, Data.class);

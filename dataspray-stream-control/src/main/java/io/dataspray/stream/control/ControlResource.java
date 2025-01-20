@@ -25,6 +25,8 @@ package io.dataspray.stream.control;
 import com.google.common.base.Enums;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+import io.dataspray.singletable.TableType;
 import io.dataspray.store.ApiAccessStore.UsageKeyType;
 import io.dataspray.store.BatchStore;
 import io.dataspray.store.JobStore;
@@ -233,6 +235,22 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     @Override
+    public Topics getTopics(String organizationName) {
+        TopicStore.Topics topics = topicStore.getTopics(organizationName, true);
+        return modelToTargets(organizationName, topics);
+    }
+
+    @Override
+    public Topics updateDefaultTopic(String organizationName, Topic topic, Long expectVersion) {
+        return modelToTopics(topicStore.updateDefaultTopic(organizationName, topicToModel(topic), Optional.ofNullable(expectVersion)));
+    }
+
+    @Override
+    public Topics updateTopic(String organizationName, String topicName, Topic topic, Long expectVersion) {
+        return modelToTopics(topicStore.updateTopic(organizationName, topicName, topicToModel(topic), Optional.ofNullable(expectVersion)));
+    }
+
+    @Override
     public UploadCodeResponse uploadCode(String organizationName, UploadCodeRequest uploadCodeRequest) {
         UploadCodeClaim uploadCodeClaim = deployer.uploadCode(organizationName, uploadCodeRequest.getTaskId(), uploadCodeRequest.getContentLengthBytes());
         return new UploadCodeResponse(
@@ -241,26 +259,60 @@ public class ControlResource extends AbstractResource implements ControlApi {
                 uploadCodeClaim.getCodeUrl());
     }
 
-    @Override
-    public Topics getTopics(String organizationName) {
-        TopicStore.Topics topics = topicStore.getTopics(organizationName, true);
-        return modelToTargets(organizationName, topics);
+    private TopicStore.Topic topicToModel(Topic topic) {
+        return new TopicStore.Topic(
+                Optional.ofNullable(topic.getBatch())
+                        .map(batch -> new TopicStore.Batch(
+                                Optional.ofNullable(batch.getRetentionInDays())
+                                        .map(TopicStore.BatchRetention::fromDays)
+                                        .orElse(null))),
+                topic.getStreams().stream()
+                        .map(stream -> new TopicStore.Stream(stream.getName()))
+                        .collect(ImmutableList.toImmutableList()),
+                Optional.ofNullable(topic.getStore()).map(store -> new TopicStore.Store(
+                        store.getKeys().stream()
+                                .map(key -> new TopicStore.Key(
+                                        switch (key.getTableType()) {
+                                            case PRIMARY -> TableType.Primary;
+                                            case GSI -> TableType.Gsi;
+                                            case LSI -> TableType.Lsi;
+                                            default ->
+                                                    throw new IllegalArgumentException("Unknown table type: " + key.getTableType());
+                                        },
+                                        key.getIndexNumber() == null ? 0 : key.getIndexNumber(),
+                                        ImmutableList.copyOf(key.getPkParts()),
+                                        key.getSkParts() == null ? ImmutableList.of() : ImmutableList.copyOf(key.getSkParts()),
+                                        key.getRangePrefix()))
+                                .collect(ImmutableSet.toImmutableSet()),
+                        store.getTtlInSec(),
+                        store.getBlacklist() == null ? ImmutableSet.of() : ImmutableSet.copyOf(store.getBlacklist()),
+                        store.getWhitelist() == null ? ImmutableSet.of() : ImmutableSet.copyOf(store.getWhitelist()))));
     }
 
     private Topics modelToTargets(String organizationName, TopicStore.Topics topics) {
         return new Topics(
                 organizationName,
                 Boolean.TRUE.equals(topics.getAllowUndefinedTopics()),
-                Optional.ofNullable(topics.getUndefinedTopic()).map(this::modelToTopic).orElse(null),
-                topics.getTopics().stream()
+                Optional.ofNullable(topics.getUndefinedTopic())
                         .map(this::modelToTopic)
-                        .collect(ImmutableList.toImmutableList()));
+                        .orElse(null),
+                Maps.transformValues(topics.getTopics(), this::modelToTopic),
+                topics.getVersion());
     }
 
+    private Topics modelToTopics(TopicStore.Topics topics) {
+        return new Topics(
+                topics.getOrganizationName(),
+                topics.getAllowUndefinedTopics(),
+                Optional.ofNullable(topics.getUndefinedTopic())
+                        .map(this::modelToTopic)
+                        .orElse(null),
+                Maps.transformValues(topics.getTopics(), this::modelToTopic),
+                topics.getVersion());
+    }
 
     private Topic modelToTopic(TopicStore.Topic topic) {
         return new Topic(
-                topic.getName(),
                 topic.getBatch()
                         .map(batch -> new TopicBatch(batch.getRetention().getRetentionInDays()))
                         .orElse(null),

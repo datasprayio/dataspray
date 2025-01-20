@@ -6,6 +6,7 @@ components:
         - organizationName
         - allowUndefinedTopics
         - topics
+        - version
       properties:
         organizationName:
           type: string
@@ -14,16 +15,15 @@ components:
         undefinedTopic:
           $ref: '#/components/schemas/Topic'
         topics:
-          type: array
-          items:
+          type: object
+          additionalProperties:
             $ref: '#/components/schemas/Topic'
+        version:
+          type: integer
+          format: int64
     Topic:
       type: object
-      required:
-        - name
       properties:
-        name:
-          type: string
         batch:
           $ref: '#/components/schemas/TopicBatch'
         streams:
@@ -103,6 +103,70 @@ components:
         required: true
         schema:
           type: string
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Topics'
+
+/v1/organization/{organizationName}/topic/default:
+  patch:
+    operationId: updateDefaultTopic
+    tags: [ Control ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: expectedVersion
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Topic'
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Topics'
+/v1/organization/{organizationName}/topic/{topicName}:
+  patch:
+    operationId: updateTopic
+    tags: [ Control ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: topicName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: expectedVersion
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Topic'
     responses:
       '200':
         description: Ok

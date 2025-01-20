@@ -94,9 +94,10 @@ public class CustomerDynamoStoreImpl implements CustomerDynamoStore {
     }
 
     @Override
-    public void createTableIfNotExists(String organizationName, long gsiCount, long lsiCount) {
-        getSingleTable(organizationName)
-                .createTableIfNotExists(dynamo, (int) lsiCount, (int) gsiCount);
+    public SingleTable createTableIfNotExists(String organizationName, long gsiCount, long lsiCount) {
+        SingleTable singleTable = getSingleTable(organizationName);
+        singleTable.createTableIfNotExists(dynamo, (int) lsiCount, (int) gsiCount);
+        return singleTable;
     }
 
     @Override

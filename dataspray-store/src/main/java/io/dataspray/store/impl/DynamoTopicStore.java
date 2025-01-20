@@ -25,23 +25,27 @@ package io.dataspray.store.impl;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
-import io.dataspray.singletable.builder.PutBuilder;
+import io.dataspray.singletable.builder.UpdateBuilder;
 import io.dataspray.store.TopicStore;
 import io.quarkus.runtime.Startup;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @ApplicationScoped
 public class DynamoTopicStore implements TopicStore {
 
-    public static final int INITIAL_VERSION = 0;
+    public static final long INITIAL_VERSION = 0;
     public static final int CACHE_EXPIRY_IN_MINUTES = 1;
 
     @Inject
@@ -99,28 +103,35 @@ public class DynamoTopicStore implements TopicStore {
     }
 
     @Override
-    public Topics updateTopics(Topics topics) {
+    public Topics updateDefaultTopic(String organizationName, Topic topic, Optional<Long> expectVersionOpt) {
+        return updateTopic(organizationName, Optional.empty(), topic, expectVersionOpt);
+    }
 
-        // Bump the version
-        Topics topicsVersionBumped = topics.toBuilder()
-                .version(topics.getVersion() + 1)
-                .build();
+    @Override
+    public Topics updateTopic(String organizationName, String topicName, Topic topic, Optional<Long> expectVersionOpt) {
+        return updateTopic(organizationName, Optional.of(topicName), topic, expectVersionOpt);
+    }
 
-        // Make the update
+    private Topics updateTopic(String organizationName, Optional<String> topicNameOrDefault, Topic topic, Optional<Long> expectVersionOpt) {
+        log.info("Updating topic {} for org {}: {}", topicNameOrDefault.orElse("default"), organizationName, topic);
+        UpdateBuilder<Topics> updateBuilder = topicsSchema.update()
+                .key(ImmutableMap.of("organizationName", organizationName))
+                .conditionExists();
+
         // Prevent concurrent modifications by ensuring expected version
-        PutBuilder<Topics> putBuilder = topicsSchema.put();
-        if (topics.getVersion() == INITIAL_VERSION) {
-            putBuilder.conditionNotExists();
-        } else {
-            putBuilder.conditionFieldEquals("version", topics.getVersion());
-        }
-        putBuilder.item(topicsVersionBumped)
-                .execute(dynamo);
+        expectVersionOpt.ifPresent(expectVersion -> updateBuilder.conditionFieldEquals("version", expectVersion));
+        updateBuilder.setIncrement("version", 1L);
+
+        // Update topic
+        topicNameOrDefault.ifPresentOrElse(
+                topicName -> updateBuilder.set(ImmutableList.of("topics", topicName), topic),
+                () -> updateBuilder.set("undefinedTopic", topic));
+        Topics topicsUpdated = updateBuilder
+                .executeGetUpdated(dynamo);
 
         // Update cache
-        topicsByOrganizationNameCache.put(topics.getOrganizationName(), topicsVersionBumped);
+        topicsByOrganizationNameCache.put(topicsUpdated.getOrganizationName(), topicsUpdated);
 
-        // Return topics with version bumped
-        return topicsVersionBumped;
+        return topicsUpdated;
     }
 }

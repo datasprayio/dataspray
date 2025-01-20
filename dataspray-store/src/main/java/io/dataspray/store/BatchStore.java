@@ -39,7 +39,6 @@ public interface BatchStore {
                      byte[] messageBytes,
                      BatchRetention retention);
 
-    TODO add endpoint to use this
     void setTableDefinition(String customerId,
                             String topicName,
                             DataFormat dataFormat,

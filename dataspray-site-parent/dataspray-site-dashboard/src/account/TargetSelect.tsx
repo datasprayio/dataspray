@@ -57,9 +57,9 @@ export const TargetSelect = (props: {
             const result = await getClient().control().getTopics({
                 organizationName: props.currentOrganizationName,
             })
-            setOptions(result.topics.map(target => ({
-                label: target.name,
-                value: target.name,
+            setOptions(Object.keys(result.topics).map(targetName => ({
+                label: targetName,
+                value: targetName,
             })))
         } catch (e: any) {
             loadInitiated.current = false; // Allow retry

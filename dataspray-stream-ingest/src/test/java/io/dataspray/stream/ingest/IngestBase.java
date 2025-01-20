@@ -37,7 +37,6 @@ import io.dataspray.store.TopicStore.Batch;
 import io.dataspray.store.TopicStore.BatchRetention;
 import io.dataspray.store.TopicStore.Stream;
 import io.dataspray.store.TopicStore.Topic;
-import io.dataspray.store.TopicStore.Topics;
 import io.dataspray.store.impl.DynamoTopicStore;
 import io.dataspray.store.impl.FirehoseS3AthenaBatchStore;
 import io.dataspray.store.impl.LambdaDeployerImpl;
@@ -121,40 +120,35 @@ public abstract class IngestBase extends AbstractLambdaTest {
         singleTableCustomer.createTableIfNotExists(getDynamoClient(), 0, 1);
 
         // Setup topic to perform batch and stream processing
-        dynamoTargetStore.updateTopics(Topics.builder()
-                .organizationName(getOrganizationName())
-                .version(DynamoTopicStore.INITIAL_VERSION)
-                .topics(ImmutableSet.of(
-                        Topic.builder()
-                                .name(topicName)
-                                .batch(Optional.of(Batch.builder()
-                                        .retention(BatchRetention.YEAR).build()))
-                                .streams(ImmutableList.of(
-                                        Stream.builder()
-                                                .name(topicName)
-                                                .build()))
-                                .store(Optional.of(TopicStore.Store.builder()
-                                        .keys(ImmutableSet.of(
-                                                TopicStore.Key.builder()
-                                                        .type(Primary)
-                                                        .indexNumber(0)
-                                                        .pkParts(ImmutableList.of("someString"))
-                                                        .skParts(ImmutableList.of("someInt"))
-                                                        .rangePrefix("data")
-                                                        .build(),
-                                                TopicStore.Key.builder()
-                                                        .type(Gsi)
-                                                        .indexNumber(1)
-                                                        .pkParts(ImmutableList.of("someString", "someInt"))
-                                                        .skParts(ImmutableList.of("someString"))
-                                                        .rangePrefix("dataGsi")
-                                                        .build()))
-                                        .ttlInSec(1_000)
-                                        .whitelist(ImmutableSet.of())
-                                        .blacklist(ImmutableSet.of())
+        dynamoTargetStore.updateTopic(getOrganizationName(), topicName, Topic.builder()
+                        .batch(Optional.of(Batch.builder()
+                                .retention(BatchRetention.YEAR).build()))
+                        .streams(ImmutableList.of(
+                                Stream.builder()
+                                        .name(topicName)
                                         .build()))
+                        .store(Optional.of(TopicStore.Store.builder()
+                                .keys(ImmutableSet.of(
+                                        TopicStore.Key.builder()
+                                                .type(Primary)
+                                                .indexNumber(0)
+                                                .pkParts(ImmutableList.of("someString"))
+                                                .skParts(ImmutableList.of("someInt"))
+                                                .rangePrefix("data")
+                                                .build(),
+                                        TopicStore.Key.builder()
+                                                .type(Gsi)
+                                                .indexNumber(1)
+                                                .pkParts(ImmutableList.of("someString", "someInt"))
+                                                .skParts(ImmutableList.of("someString"))
+                                                .rangePrefix("dataGsi")
+                                                .build()))
+                                .ttlInSec(1_000)
+                                .whitelist(ImmutableSet.of())
+                                .blacklist(ImmutableSet.of())
                                 .build()))
-                .build());
+                        .build(),
+                Optional.empty());
 
         // Setup code bucket
         try {

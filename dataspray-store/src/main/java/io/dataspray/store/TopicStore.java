@@ -24,6 +24,7 @@ package io.dataspray.store;
 
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.SerializedName;
 import io.dataspray.singletable.DynamoTable;
@@ -36,9 +37,10 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import static io.dataspray.singletable.TableType.Primary;
 import static io.dataspray.store.TopicStore.BatchRetention.THREE_MONTHS;
@@ -64,7 +66,9 @@ public interface TopicStore {
 
     Optional<Topic> getTopic(String organizationName, String topicName, boolean useCache);
 
-    Topics updateTopics(Topics topics);
+    Topics updateDefaultTopic(String organizationName, Topic topic, Optional<Long> expectVersionOpt);
+
+    Topics updateTopic(String organizationName, String topicName, Topic topic, Optional<Long> expectVersionOpt);
 
     /**
      * <b>Organization topic definitions.</b>
@@ -88,7 +92,7 @@ public interface TopicStore {
          * Version of this configuration. Used for preventing concurrent modification.
          */
         @NonNull
-        Integer version;
+        Long version;
 
         @Nullable
         Boolean allowUndefinedTopics;
@@ -99,10 +103,9 @@ public interface TopicStore {
         @Nullable
         Topic undefinedTopic;
 
-        TODO make this Map<String, Topic> by name in order to be able to update individual topics
         @NonNull
         @Builder.Default
-        Set<Topic> topics = ImmutableSet.of();
+        Map<String, Topic> topics = ImmutableMap.of();
 
         /**
          * For a topic with no definition, whether to ingest it with default configuration.
@@ -119,17 +122,14 @@ public interface TopicStore {
          * Helper method to return defaults if not specified.
          */
         @NonNull
-        public Optional<Topic> getTopic(String topic) {
-            return topics.stream()
-                    .filter(t -> t.getName().equals(topic))
-                    .findFirst()
+        public Optional<Topic> getTopic(String topicName) {
+            return Optional.ofNullable(topics.get(topicName))
                     // If undefined, see if we allow undefined topics
                     .or(() -> getAllowUndefinedTopics()
                             // We do, let's see if we have an organization-wide default configuration for undefined topics
                             ? Optional.ofNullable(undefinedTopic)
                             // We don't, return DataSpray-wide default configuration for undefined topics
                             .or(() -> Optional.of(Topic.builder()
-                                    .name(topic)
                                     // By default, we enable batching for undefined topics
                                     // otherwise there is no point in having a default definition for them
                                     .batch(Optional.of(Batch.builder().build()))
@@ -149,10 +149,6 @@ public interface TopicStore {
     @Builder(toBuilder = true)
     @RegisterForReflection
     class Topic {
-
-        @NonNull
-        @SerializedName("n")
-        String name;
 
         /**
          * Whether this topic should send data for batch processing (e.g. Firehose -> S3).
@@ -232,6 +228,13 @@ public interface TopicStore {
         YEAR(366),
         THREE_YEARS(3 * 366);
         final long retentionInDays;
+
+        public static BatchRetention fromDays(long retentionInDays) {
+            return Arrays.stream(BatchRetention.values())
+                    .filter(retention -> retention.retentionInDays == retentionInDays)
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Unknown retention in days " + retentionInDays));
+        }
     }
 
     /**
