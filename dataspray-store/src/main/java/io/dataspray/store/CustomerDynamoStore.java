@@ -36,7 +36,7 @@ public interface CustomerDynamoStore {
 
     SingleTable getSingleTable(String organizationName);
 
-    SingleTable createTableIfNotExists(String organizationName, long gsiCount, long lsiCount);
+    SingleTable createTableIfNotExists(String organizationName, long lsiCount, long gsiCount);
 
     Void write(
             String organizationName,

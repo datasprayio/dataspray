@@ -460,8 +460,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             // but throws IllegalArgumentException if LSI count changes
             customerDynamoStore.createTableIfNotExists(
                     organizationName,
-                    dynamoState.getGsiCount(),
-                    dynamoState.getLsiCount());
+                    dynamoState.getLsiCount(),
+                    dynamoState.getGsiCount());
 
             // Give permission to Dynamo
             String tableName = customerDynamoStore.getTableName(organizationName);
