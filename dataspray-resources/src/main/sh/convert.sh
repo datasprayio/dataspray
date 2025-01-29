@@ -82,7 +82,7 @@ for SIZE in 16 32 48; do
   else
       SOURCE="$LOGO_MASTER"
   fi;
-  $CONVERT "${CONVERT_OPTS[@]}" -resize "$SIZE"x"$SIZE" "$SOURCE" "$DEST_SIZE_FILENAME"
+  $CONVERT "${CONVERT_OPTS[@]}" "$SOURCE" -resize "$SIZE"x"$SIZE" "$DEST_SIZE_FILENAME"
   SIZES_FILENAMES+=("$DEST_SIZE_FILENAME")
 done
 $CONVERT "${CONVERT_OPTS[@]}" -compress zip "${SIZES_FILENAMES[@]}" favicon.ico
