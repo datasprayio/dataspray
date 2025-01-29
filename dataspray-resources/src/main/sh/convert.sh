@@ -45,7 +45,7 @@ SCOUR_OPTS=(
   --strip-xml-space \
   --error-on-flowtext)
 
-CONVERT=convert
+CONVERT=magick
 CONVERT_OPTS=(
   -verbose \
   -background none)

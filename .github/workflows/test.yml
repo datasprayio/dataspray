@@ -45,7 +45,7 @@ jobs:
           install-libfuse2: true
       - name: Test dependencies
         run: |
-          convert -version
+          magick -version
           scour --version
 
       # Test entire project

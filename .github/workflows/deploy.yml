@@ -56,7 +56,7 @@ jobs:
           install-libfuse2: true
       - name: Test dependencies
         run: |
-          convert -version
+          magick -version
           scour --version
 
       - name: Import GPG private key
