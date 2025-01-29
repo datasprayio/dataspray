@@ -54,9 +54,11 @@ import static io.dataspray.store.TopicStore.BatchRetention.THREE_MONTHS;
 public interface TopicStore {
 
     /**
-     * For undefined topics, whether to ingest it with default configuration.
+     * Default configuration for undefined topics.
      */
-    boolean DEFAULT_ALLOW_UNDEFINED_TOPICS = true;
+    Optional<Topic> DEFAULT_ALLOW_UNDEFINED_TOPIC = Optional.of(Topic.builder()
+            .batch(Batch.builder().build())
+            .build());
     /**
      * For undefined topics, default batch retention.
      */
@@ -65,6 +67,8 @@ public interface TopicStore {
     Topics getTopics(String organizationName, boolean useCache);
 
     Optional<Topic> getTopic(String organizationName, String topicName, boolean useCache);
+
+    Topics setAllowUndefined(String organizationName, boolean allowUndefined);
 
     Topics updateDefaultTopic(String organizationName, Topic topic, Optional<Long> expectVersionOpt);
 
@@ -111,9 +115,9 @@ public interface TopicStore {
          * For a topic with no definition, whether to ingest it with default configuration.
          */
         public boolean getAllowUndefinedTopics() {
-            return allowUndefinedTopics == null
-                    ? DEFAULT_ALLOW_UNDEFINED_TOPICS
-                    : allowUndefinedTopics;
+            return allowUndefinedTopics != null
+                    ? allowUndefinedTopics
+                    : DEFAULT_ALLOW_UNDEFINED_TOPIC.isPresent();
         }
 
         /**
@@ -129,11 +133,7 @@ public interface TopicStore {
                             // We do, let's see if we have an organization-wide default configuration for undefined topics
                             ? Optional.ofNullable(undefinedTopic)
                             // We don't, return DataSpray-wide default configuration for undefined topics
-                            .or(() -> Optional.of(Topic.builder()
-                                    // By default, we enable batching for undefined topics
-                                    // otherwise there is no point in having a default definition for them
-                                    .batch(Optional.of(Batch.builder().build()))
-                                    .build()))
+                            .or(() -> DEFAULT_ALLOW_UNDEFINED_TOPIC)
                             // We don't accept topics without definition
                             : Optional.empty());
         }
@@ -153,10 +153,13 @@ public interface TopicStore {
         /**
          * Whether this topic should send data for batch processing (e.g. Firehose -> S3).
          */
-        @NonNull
+        @Nullable
         @SerializedName("b")
-        @Builder.Default
-        Optional<Batch> batch = Optional.empty();
+        Batch batch;
+
+        public Optional<Batch> getBatch() {
+            return Optional.ofNullable(batch);
+        }
 
         /**
          * Whether this topic should send data for stream processing (e.g. SQS queues).
@@ -169,10 +172,13 @@ public interface TopicStore {
         /**
          * Whether this topic should send data to a key-value store. (e.g. DynamoDB).
          */
-        @NonNull
+        @Nullable
         @SerializedName("t")
-        @Builder.Default
-        Optional<Store> store = Optional.empty();
+        Store store;
+
+        public Optional<Store> getStore() {
+            return Optional.ofNullable(store);
+        }
     }
 
     /**

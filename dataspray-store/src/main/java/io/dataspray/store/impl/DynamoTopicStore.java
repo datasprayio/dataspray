@@ -85,11 +85,14 @@ public class DynamoTopicStore implements TopicStore {
                 .key(Map.of("organizationName", organizationName))
                 .builder(b -> b.consistentRead(!useCache))
                 .executeGet(dynamo)
-                // Construct default if not found
-                .orElseGet(() -> Topics.builder()
-                        .organizationName(organizationName)
-                        .version(INITIAL_VERSION)
-                        .build());
+                // Create if not found
+                .orElseGet(() -> topicsSchema.put()
+                        .conditionNotExists()
+                        .item(Topics.builder()
+                                .organizationName(organizationName)
+                                .version(INITIAL_VERSION)
+                                .build())
+                        .executeGetNew(dynamo));
 
         // Update cache
         topicsByOrganizationNameCache.put(organizationName, topics);
@@ -100,6 +103,20 @@ public class DynamoTopicStore implements TopicStore {
     @Override
     public Optional<Topic> getTopic(String organizationName, String topicName, boolean useCache) {
         return getTopics(organizationName, useCache).getTopic(topicName);
+    }
+
+    @Override
+    public Topics setAllowUndefined(String organizationName, boolean allowUndefined) {
+        Topics topics = topicsSchema.update()
+                .conditionExists()
+                .key(ImmutableMap.of("organizationName", organizationName))
+                .set("allowUndefinedTopics", allowUndefined)
+                .executeGetUpdated(dynamo);
+
+        // Update cache
+        topicsByOrganizationNameCache.put(topics.getOrganizationName(), topics);
+
+        return topics;
     }
 
     @Override
@@ -122,7 +139,7 @@ public class DynamoTopicStore implements TopicStore {
         expectVersionOpt.ifPresent(expectVersion -> updateBuilder.conditionFieldEquals("version", expectVersion));
         updateBuilder.setIncrement("version", 1L);
 
-        // Update topic
+        // Update topic by name or default topic if not present
         topicNameOrDefault.ifPresentOrElse(
                 topicName -> updateBuilder.set(ImmutableList.of("topics", topicName), topic),
                 () -> updateBuilder.set("undefinedTopic", topic));
