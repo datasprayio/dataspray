@@ -49,8 +49,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y wget scour ghostscript fuse
-          wget -nv -O /usr/local/bin/convert https://github.com/ImageMagick/ImageMagick/releases/download/7.1.1-26/ImageMagick--clang-x86_64.AppImage
-          chmod a+x /usr/local/bin/convert
+      - name: Install image magick
+        uses: mfinelli/setup-imagemagick@v6
+        with:
+          cache: true
+          install-libfuse2: true
+      - name: Test dependencies
+        run: |
           convert -version
           scour --version
 
