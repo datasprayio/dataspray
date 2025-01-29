@@ -82,7 +82,7 @@ public abstract class ApiFunctionStack extends FunctionStack {
                 allowedOrigins.add(options.getCorsForSite()
                         .flatMap(NextSiteStack::getSubdomainOpt)
                         .map(subdomain -> "https://" + subdomain + "." + DnsStack.createFqdn(stack, getDeployEnv()))
-                        .orElseGet(() -> "https://" + DnsStack.createFqdn(stack, getDeployEnv()));
+                        .orElseGet(() -> "https://" + DnsStack.createFqdn(stack, getDeployEnv())));
         }
         return String.join(",", allowedOrigins);
     }
