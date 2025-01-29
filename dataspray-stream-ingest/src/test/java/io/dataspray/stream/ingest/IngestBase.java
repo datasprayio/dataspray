@@ -143,7 +143,7 @@ public abstract class IngestBase extends AbstractLambdaTest {
                                                 .pkParts(ImmutableList.of("someString", "someInt"))
                                                 .skParts(ImmutableList.of("someString"))
                                                 .rangePrefix("dataGsi")
-                                                .build()))ui
+                                                .build()))
 
                                 .ttlInSec(1_000)
                                 .whitelist(ImmutableSet.of())
