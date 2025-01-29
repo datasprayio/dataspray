@@ -23,7 +23,6 @@
 package io.dataspray.cdk.api;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import io.dataspray.cdk.DatasprayStack;
 import io.dataspray.cdk.dns.DnsStack;
 import io.dataspray.cdk.site.NextSiteStack;
@@ -37,7 +36,6 @@ import lombok.Value;
 import software.constructs.Construct;
 
 import java.util.Optional;
-import java.util.Set;
 
 @Getter
 public abstract class ApiFunctionStack extends FunctionStack {
@@ -71,20 +69,13 @@ public abstract class ApiFunctionStack extends FunctionStack {
     }
 
     public String getCorsAllowOrigins(final BaseStack stack) {
-        Set<String> allowedOrigins = Sets.newHashSet();
-        switch (getDeployEnv()) {
-            case TEST:
-                allowedOrigins.add("*");
-                break;
-            case STAGING:
-                allowedOrigins.add("localhost:3000");
-            default:
-                allowedOrigins.add(options.getCorsForSite()
-                        .flatMap(NextSiteStack::getSubdomainOpt)
-                        .map(subdomain -> "https://" + subdomain + "." + DnsStack.createFqdn(stack, getDeployEnv()))
-                        .orElseGet(() -> "https://" + DnsStack.createFqdn(stack, getDeployEnv())));
-        }
-        return String.join(",", allowedOrigins);
+        return switch (getDeployEnv()) {
+            case TEST, STAGING -> "*";
+            default -> options.getCorsForSite()
+                    .flatMap(NextSiteStack::getSubdomainOpt)
+                    .map(subdomain -> "https://" + subdomain + "." + DnsStack.createFqdn(stack, getDeployEnv()))
+                    .orElseGet(() -> "https://" + DnsStack.createFqdn(stack, getDeployEnv()));
+        };
     }
 
     @Value
