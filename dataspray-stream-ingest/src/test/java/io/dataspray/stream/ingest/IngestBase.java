@@ -121,13 +121,13 @@ public abstract class IngestBase extends AbstractLambdaTest {
 
         // Setup topic to perform batch and stream processing
         dynamoTargetStore.updateTopic(getOrganizationName(), topicName, Topic.builder()
-                        .batch(Optional.of(Batch.builder()
-                                .retention(BatchRetention.YEAR).build()))
+                        .batch(Batch.builder()
+                                .retention(BatchRetention.YEAR).build())
                         .streams(ImmutableList.of(
                                 Stream.builder()
                                         .name(topicName)
                                         .build()))
-                        .store(Optional.of(TopicStore.Store.builder()
+                        .store(TopicStore.Store.builder()
                                 .keys(ImmutableSet.of(
                                         TopicStore.Key.builder()
                                                 .type(Primary)
@@ -146,7 +146,7 @@ public abstract class IngestBase extends AbstractLambdaTest {
                                 .ttlInSec(1_000)
                                 .whitelist(ImmutableSet.of())
                                 .blacklist(ImmutableSet.of())
-                                .build()))
+                                .build())
                         .build(),
                 Optional.empty());
 
