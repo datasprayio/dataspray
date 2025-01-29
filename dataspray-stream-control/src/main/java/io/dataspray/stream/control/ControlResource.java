@@ -265,28 +265,30 @@ public class ControlResource extends AbstractResource implements ControlApi {
                         .map(batch -> new TopicStore.Batch(
                                 Optional.ofNullable(batch.getRetentionInDays())
                                         .map(TopicStore.BatchRetention::fromDays)
-                                        .orElse(null))),
+                                        .orElse(null)))
+                        .orElse(null),
                 topic.getStreams().stream()
                         .map(stream -> new TopicStore.Stream(stream.getName()))
                         .collect(ImmutableList.toImmutableList()),
                 Optional.ofNullable(topic.getStore()).map(store -> new TopicStore.Store(
-                        store.getKeys().stream()
-                                .map(key -> new TopicStore.Key(
-                                        switch (key.getTableType()) {
-                                            case PRIMARY -> TableType.Primary;
-                                            case GSI -> TableType.Gsi;
-                                            case LSI -> TableType.Lsi;
-                                            default ->
-                                                    throw new IllegalArgumentException("Unknown table type: " + key.getTableType());
-                                        },
-                                        key.getIndexNumber() == null ? 0 : key.getIndexNumber(),
-                                        ImmutableList.copyOf(key.getPkParts()),
-                                        key.getSkParts() == null ? ImmutableList.of() : ImmutableList.copyOf(key.getSkParts()),
-                                        key.getRangePrefix()))
-                                .collect(ImmutableSet.toImmutableSet()),
-                        store.getTtlInSec(),
-                        store.getBlacklist() == null ? ImmutableSet.of() : ImmutableSet.copyOf(store.getBlacklist()),
-                        store.getWhitelist() == null ? ImmutableSet.of() : ImmutableSet.copyOf(store.getWhitelist()))));
+                                store.getKeys().stream()
+                                        .map(key -> new TopicStore.Key(
+                                                switch (key.getTableType()) {
+                                                    case PRIMARY -> TableType.Primary;
+                                                    case GSI -> TableType.Gsi;
+                                                    case LSI -> TableType.Lsi;
+                                                    default ->
+                                                            throw new IllegalArgumentException("Unknown table type: " + key.getTableType());
+                                                },
+                                                key.getIndexNumber() == null ? 0 : key.getIndexNumber(),
+                                                ImmutableList.copyOf(key.getPkParts()),
+                                                key.getSkParts() == null ? ImmutableList.of() : ImmutableList.copyOf(key.getSkParts()),
+                                                key.getRangePrefix()))
+                                        .collect(ImmutableSet.toImmutableSet()),
+                                store.getTtlInSec(),
+                                store.getBlacklist() == null ? ImmutableSet.of() : ImmutableSet.copyOf(store.getBlacklist()),
+                                store.getWhitelist() == null ? ImmutableSet.of() : ImmutableSet.copyOf(store.getWhitelist())))
+                        .orElse(null));
     }
 
     private Topics modelToTargets(String organizationName, TopicStore.Topics topics) {
