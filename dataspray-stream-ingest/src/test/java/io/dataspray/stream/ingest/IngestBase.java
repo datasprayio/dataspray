@@ -120,6 +120,7 @@ public abstract class IngestBase extends AbstractLambdaTest {
         singleTableCustomer.createTableIfNotExists(getDynamoClient(), 0, 1);
 
         // Setup topic to perform batch and stream processing
+        TopicStore.Topics topics = dynamoTargetStore.getTopics(getOrganizationName(), true);
         dynamoTargetStore.updateTopic(getOrganizationName(), topicName, Topic.builder()
                         .batch(Batch.builder()
                                 .retention(BatchRetention.YEAR).build())
@@ -142,13 +143,14 @@ public abstract class IngestBase extends AbstractLambdaTest {
                                                 .pkParts(ImmutableList.of("someString", "someInt"))
                                                 .skParts(ImmutableList.of("someString"))
                                                 .rangePrefix("dataGsi")
-                                                .build()))
+                                                .build()))ui
+
                                 .ttlInSec(1_000)
                                 .whitelist(ImmutableSet.of())
                                 .blacklist(ImmutableSet.of())
                                 .build())
                         .build(),
-                Optional.empty());
+                Optional.of(topics.getVersion()));
 
         // Setup code bucket
         try {
