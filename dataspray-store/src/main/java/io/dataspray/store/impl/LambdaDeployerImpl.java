@@ -45,6 +45,7 @@ import io.dataspray.store.LambdaStore;
 import io.dataspray.store.LambdaStore.LambdaRecord;
 import io.dataspray.store.StreamStore;
 import io.dataspray.store.util.CycleUtil;
+import io.dataspray.store.util.IamUtil;
 import io.dataspray.store.util.WaiterUtil;
 import io.dataspray.store.util.WithCursor;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -58,11 +59,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.iam.IamClient;
-import software.amazon.awssdk.services.iam.model.CreateRoleRequest;
-import software.amazon.awssdk.services.iam.model.GetRolePolicyRequest;
-import software.amazon.awssdk.services.iam.model.GetRoleRequest;
-import software.amazon.awssdk.services.iam.model.NoSuchEntityException;
-import software.amazon.awssdk.services.iam.model.PutRolePolicyRequest;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.model.AddPermissionRequest;
 import software.amazon.awssdk.services.lambda.model.Architecture;
@@ -181,6 +177,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     @Inject
     IamClient iamClient;
     @Inject
+    IamUtil iamUtil;
+    @Inject
     LambdaClient lambdaClient;
     @Inject
     DynamoDbClient dynamoClient;
@@ -280,33 +278,14 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
         // Setup function IAM role
         String functionRoleName = getFunctionRoleName(organizationName, taskId);
-        String functionRoleArn = "arn:aws:iam::" + awsAccountId + ":role/" + functionRoleName;
-        try {
-            iamClient.getRole(GetRoleRequest.builder()
-                    .roleName(functionRoleName)
-                    .build());
-            log.debug("Found role {}", functionRoleName);
-        } catch (NoSuchEntityException ex2) {
-            iamClient.createRole(CreateRoleRequest.builder()
-                    .roleName(functionRoleName)
-                    .description("Auto-created for Lambda " + functionName)
-                    .permissionsBoundary("arn:aws:iam::" + awsAccountId + ":policy/" + customerFunctionPermissionBoundaryName)
-                    .assumeRolePolicyDocument(gson.toJson(Map.of(
-                            "Version", "2012-10-17",
-                            "Statement", List.of(Map.of(
-                                    "Effect", "Allow",
-                                    "Action", List.of("sts:AssumeRole"),
-                                    "Principal", Map.of(
-                                            "Service", List.of("lambda.amazonaws.com")))))))
-                    .build());
-            log.info("Created role {}", functionRoleName);
-            waiterUtil.resolve(iamClient.waiter().waitUntilRoleExists(GetRoleRequest.builder()
-                    .roleName(functionRoleName)
-                    .build()));
-        }
+        String functionRoleArn = iamUtil.getOrCreateRole(
+                        functionRoleName,
+                        customerFunctionPermissionBoundaryName,
+                        "Auto-created for Lambda " + functionName)
+                .arn();
 
         // Lambda logging policy: get or create policy, then attach to role if needed
-        ensurePolicyAttachedToRole(functionRoleName,
+        iamUtil.ensurePolicyAttachedToRole(functionRoleName,
                 CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LOGGING_PREFIX + StringUtil.camelCase(functionName, true),
                 gson.toJson(Map.of(
                         "Version", "2012-10-17",
@@ -466,11 +445,13 @@ public class LambdaDeployerImpl implements LambdaDeployer {
             // Give permission to Dynamo
             String tableName = customerDynamoStore.getTableName(organizationName);
             String lambdaDynamoPolicyName = CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_DYNAMO + StringUtil.camelCase(functionName, true) + "Dynamo" + tableName;
-            ensurePolicyAttachedToRole(functionRoleName, lambdaDynamoPolicyName, gson.toJson(Map.of(
+            iamUtil.ensurePolicyAttachedToRole(functionRoleName, lambdaDynamoPolicyName, gson.toJson(Map.of(
                     "Version", "2012-10-17",
                     "Statement", List.of(Map.of(
                             "Effect", "Allow",
                             "Action", List.of(
+                                    // Note this is what a customer lambda can do, what a user bound by Cognito can do,
+                                    // take a look at CognitoGroupOrganizationStore.addDynamoToOrganization
                                     "dynamodb:GetItem",
                                     "dynamodb:BatchGetItem",
                                     "dynamodb:Query",
@@ -653,7 +634,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
             // Lambda logging policy: get or create policy, then attach to role if needed
             String lambdaSqsPolicyName = CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_SQS + StringUtil.camelCase(functionName, true) + "Queue" + StringUtil.camelCase(queueNameToAdd, true);
-            ensurePolicyAttachedToRole(functionRoleName, lambdaSqsPolicyName, gson.toJson(Map.of(
+            iamUtil.ensurePolicyAttachedToRole(functionRoleName, lambdaSqsPolicyName, gson.toJson(Map.of(
                     "Version", "2012-10-17",
                     "Statement", List.of(Map.of(
                             "Effect", "Allow",
@@ -1008,25 +989,6 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .uuid(source.getUuid())
                 .enabled(false)
                 .build());
-    }
-
-    private void ensurePolicyAttachedToRole(String roleName, String policyName, String policyDocument) {
-        try {
-            // First see if policy is attached to the role already
-            iamClient.getRolePolicy(GetRolePolicyRequest.builder()
-                    .roleName(roleName)
-                    .policyName(policyName)
-                    .build());
-            log.debug("Found role {} policy {}", roleName, policyName);
-        } catch (NoSuchEntityException ex) {
-            iamClient.putRolePolicy(PutRolePolicyRequest.builder()
-                    .roleName(roleName)
-                    .policyName(policyName)
-                    .policyDocument(policyDocument)
-                    .build());
-            log.info("Created role {} policy {}", roleName, policyName);
-            waiterUtil.resolve(waiterUtil.waitUntilPolicyAttachedToRole(roleName, policyName));
-        }
     }
 
     private Optional<String> fetchActiveVersion(String organizationName, String taskId) {

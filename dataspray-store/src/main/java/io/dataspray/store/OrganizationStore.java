@@ -48,6 +48,8 @@ public interface OrganizationStore {
 
     void removeUserFromOrganization(String organizationName, String username);
 
+    void addDynamoToOrganization(String organizationName, String dynamoTableName);
+
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor

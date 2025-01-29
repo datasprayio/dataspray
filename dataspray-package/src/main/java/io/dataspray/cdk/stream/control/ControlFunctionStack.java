@@ -91,6 +91,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
                                         "dynamodb:GetItem",
                                         "dynamodb:BatchGetItem",
                                         "dynamodb:Query",
+                                        "dynamodb:Scan",
                                         "dynamodb:PutItem",
                                         "dynamodb:UpdateItem",
                                         "dynamodb:BatchWriteItem",

@@ -37,6 +37,7 @@ import io.dataspray.singletable.StringSerdeUtil;
 import io.dataspray.singletable.TableType;
 import io.dataspray.store.CustomerDynamoStore;
 import io.dataspray.store.CustomerLogger;
+import io.dataspray.store.OrganizationStore;
 import io.dataspray.store.TopicStore;
 import io.dataspray.store.TopicStore.Store;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -72,6 +73,8 @@ public class CustomerDynamoStoreImpl implements CustomerDynamoStore {
     CustomerLogger customerLog;
     @Inject
     Gson gson;
+    @Inject
+    OrganizationStore organizationStore;
 
 
     /** From DynamoMapperImpl */
@@ -97,6 +100,7 @@ public class CustomerDynamoStoreImpl implements CustomerDynamoStore {
     public SingleTable createTableIfNotExists(String organizationName, long lsiCount, long gsiCount) {
         SingleTable singleTable = getSingleTable(organizationName);
         singleTable.createTableIfNotExists(dynamo, (int) lsiCount, (int) gsiCount);
+        organizationStore.addDynamoToOrganization(organizationName, singleTable.getTableName());
         return singleTable;
     }
 

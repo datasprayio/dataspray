@@ -22,10 +22,15 @@
 
 package io.dataspray.store.impl;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
+import io.dataspray.common.DeployEnvironment;
+import io.dataspray.common.StringUtil;
 import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.OrganizationStore;
+import io.dataspray.store.util.IamUtil;
+import io.dataspray.store.util.WaiterUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +43,14 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.CreateGroup
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GetGroupRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GroupType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.UpdateGroupRequest;
+import software.amazon.awssdk.services.iam.IamClient;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static io.dataspray.common.DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME;
+import static io.dataspray.store.impl.LambdaDeployerImpl.*;
 
 /**
  * Organization management backed by Cognito groups.
@@ -49,12 +62,26 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
     @ConfigProperty(name = CognitoUserStore.USER_POOL_ID_PROP_NAME)
     String userPoolId;
 
+    @ConfigProperty(name = "aws.accountId")
+    String awsAccountId;
+    @ConfigProperty(name = "aws.region")
+    String awsRegion;
+    @ConfigProperty(name = CUSTOMER_FUNCTION_PERMISSION_BOUNDARY_NAME_PROP_NAME, defaultValue = "customer-permission-boundary")
+    String customerFunctionPermissionBoundaryName;
+    @ConfigProperty(name = DEPLOY_ENVIRONMENT_PROP_NAME)
+    DeployEnvironment deployEnv;
     @Inject
     Gson gson;
     @Inject
     CognitoIdentityProviderClient cognitoClient;
     @Inject
     ApiAccessStore apiAccessStore;
+    @Inject
+    IamClient iamClient;
+    @Inject
+    WaiterUtil waiterUtil;
+    @Inject
+    IamUtil iamUtil;
 
     @Override
     public GroupType createOrganization(String organizationName, String authorUsername) {
@@ -89,15 +116,18 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
 
     @Override
     public OrganizationMetadata getMetadata(String organizationName) {
-        String description = cognitoClient.getGroup(GetGroupRequest.builder()
-                        .userPoolId(userPoolId)
-                        .groupName(organizationName)
-                        .build())
-                .group()
+        String description = getGroup(organizationName)
                 .description();
         return gson.fromJson(description, OrganizationMetadata.class);
     }
 
+    private GroupType getGroup(String organizationName) {
+        return cognitoClient.getGroup(GetGroupRequest.builder()
+                        .userPoolId(userPoolId)
+                        .groupName(organizationName)
+                        .build())
+                .group();
+    }
 
     @Override
     public void setMetadata(String organizationName, OrganizationMetadata metadata) {
@@ -124,5 +154,54 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
                 .groupName(organizationName)
                 .username(username)
                 .build());
+    }
+
+    @Override
+    public void addDynamoToOrganization(String organizationName, String tableName) {
+        String groupRoleArn = getOrCreateGroupRoleArn(organizationName);
+        String policyName = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "GroupDynamo" + StringUtil.camelCase(tableName, true);
+        iamUtil.ensurePolicyAttachedToRole(groupRoleArn, policyName, gson.toJson(Map.of(
+                "Version", "2012-10-17",
+                "Statement", List.of(Map.of(
+                        "Effect", "Allow",
+                        "Action", List.of(
+                                // NOTE: this is what a customer user can do, what a customer lambda can do,
+                                // take a look at LambdaDeployerImpl under CUSTOMER_FUNCTION_PERMISSION_CUSTOMER_LAMBDA_DYNAMO
+                                // NOTE: Changing this does not change the permissions of existing roles,
+                                // you must bump the name and create a new role
+                                "dynamodb:GetItem",
+                                "dynamodb:BatchGetItem",
+                                "dynamodb:Query",
+                                "dynamodb:Scan", // User has scan ability, lambda doesn't
+                                "dynamodb:PutItem",
+                                "dynamodb:UpdateItem",
+                                "dynamodb:BatchWriteItem",
+                                "dynamodb:DeleteItem"),
+                        "Resource", Map.of(
+                                "arn:aws:dynamodb:" + awsRegion + ":" + awsAccountId + ":table/" + tableName,
+                                "arn:aws:dynamodb:" + awsRegion + ":" + awsAccountId + ":table/" + tableName + "/index/*"
+                        ))))));
+    }
+
+    private String getOrCreateGroupRoleArn(String organizationName) {
+        Optional<String> roleArnOpt = Optional.ofNullable(Strings.emptyToNull(getGroup(organizationName)
+                .roleArn()));
+
+        if (roleArnOpt.isPresent()) {
+            return roleArnOpt.get();
+        }
+
+        String groupRoleName = CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + organizationName + "-" + "-group-role";
+        String groupRoleArn = iamUtil.getOrCreateRole(groupRoleName, customerFunctionPermissionBoundaryName, "Auto-created for group role for org " + organizationName)
+                .arn();
+
+        // Attach role to Cognito group
+        cognitoClient.updateGroup(UpdateGroupRequest.builder()
+                .userPoolId(userPoolId)
+                .groupName(organizationName)
+                .roleArn(groupRoleArn)
+                .build());
+
+        return groupRoleArn;
     }
 }
