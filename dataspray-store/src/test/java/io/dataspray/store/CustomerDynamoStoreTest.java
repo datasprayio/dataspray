@@ -114,7 +114,9 @@ public class CustomerDynamoStoreTest extends AbstractTest {
     @Test
     public void test() throws Exception {
         String orgName = idUtil.randomId();
-        SingleTable singleTable = store.createTableIfNotExists(orgName, 0, 1);
+
+        SingleTable singleTable = store.getSingleTable(orgName);
+        singleTable.createTableIfNotExists(dynamo, 0, 1);
         TableSchema<Data> primary = singleTable.parseTableSchema(Data.class);
         IndexSchema<Data> gsi = singleTable.parseGlobalSecondaryIndexSchema(1, Data.class);
 
