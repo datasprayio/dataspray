@@ -56,7 +56,12 @@ export default function DashboardLayout(props: {
             return
         }
         setCurrentOrganizationName(changeToOrganizationName)
-    }, [changeToOrganizationName]);
+    }, [
+        changeToOrganizationName,
+        currentOrganizationName,
+        organizationNames,
+        setCurrentOrganizationName,
+    ]);
 
     return (
             <BaseLayout pageTitle={props.pageTitle}>

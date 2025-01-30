@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Matus Faro
+ * Copyright 2025 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,21 +20,17 @@
  * SOFTWARE.
  */
 
-import Navigation from "./Navigation";
-import {TopNavId} from "./DashboardLayout";
-import BaseAppLayout from "./BaseAppLayout";
+import {PersistStorage} from "zustand/middleware/persist";
 
-const DashboardAppLayout = (props: {} & React.ComponentProps<typeof BaseAppLayout>) => {
-    const {...appLayoutProps} = props;
-    return (
-            <BaseAppLayout
-                    headerSelector={`#${TopNavId}`}
-                    navigation={(<Navigation/>)}
-                    toolsHide
-                    navigationHide={false}
-                    {...appLayoutProps}
-            />
-    );
+export const memoryStorage = (): PersistStorage<any> => {
+    let store: {[key:string]: any} = {}
+    return {
+        getItem: (name) => store[name] ?? null,
+        setItem: (name, value) => {
+            store[name] = value
+        },
+        removeItem: (name) => {
+            delete store[name]
+        }
+    }
 }
-
-export default DashboardAppLayout;

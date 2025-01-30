@@ -20,13 +20,15 @@
  * SOFTWARE.
  */
 
-import {AppLayout} from "@cloudscape-design/components";
+import {AppLayout, Flashbar} from "@cloudscape-design/components";
 import {TopNavId} from "./DashboardLayout";
+import {useAlertsStore} from "../util/useAlerts";
 
-const DashboardAppLayout = (props: {} & React.ComponentProps<typeof AppLayout>) => {
-    const {...appLayoutProps} = props;
+const DashboardAppLayout = (appLayoutProps: React.ComponentProps<typeof AppLayout>) => {
+    const {items} = useAlertsStore();
     return (
             <AppLayout
+                    notifications={<Flashbar items={items} stackItems={true} />}
                     headerSelector={`#${TopNavId}`}
                     toolsHide
                     navigationHide
