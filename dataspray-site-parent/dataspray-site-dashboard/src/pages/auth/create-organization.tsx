@@ -48,7 +48,9 @@ const Page: NextPageWithLayout = () => {
                     <title>Create Organization</title>
                 </Head>
                 <main>
-                    <CloudscapeFormik
+                    <CloudscapeFormik<{
+                        organizationName: string;
+                    }>
                             initialValues={{
                                 organizationName: "",
                             }}

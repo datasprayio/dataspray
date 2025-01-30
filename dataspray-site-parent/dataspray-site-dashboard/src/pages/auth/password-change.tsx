@@ -48,7 +48,9 @@ const Page: NextPageWithLayout = () => {
     return (
         <>
             <main>
-                <CloudscapeFormik
+                <CloudscapeFormik<{
+                    password: string;
+                }>
                     initialValues={{
                         password: '',
                     }}

@@ -51,7 +51,13 @@ const Page: NextPageWithLayout = () => {
                 <title>Sign up</title>
             </Head>
             <main>
-                <CloudscapeFormik
+                <CloudscapeFormik<{
+                    username: string;
+                    email: string;
+                    password: string;
+                    tosAgree: boolean;
+                    marketingAgree: boolean;
+                }>
                     initialValues={{
                         username: "",
                         email: "",

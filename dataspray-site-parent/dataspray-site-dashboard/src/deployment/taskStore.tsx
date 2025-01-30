@@ -34,13 +34,13 @@ export default function useTaskStore(organizationName?: string | null): SWRInfin
     pageTasks: TaskStatus[],
 } {
 
-    const getKey = (pageIndex: number, previousPageData: any): null | ['taskStatuses', string | undefined] => {
+    const getKey = (pageIndex: number, previousPageData: any): null | ['taskStatuses', string | null | undefined, string | undefined] => {
         // reached the end
         if (!!previousPageData && !previousPageData.cursor) return null
         // add the cursor to the API endpoint
-        return [`taskStatuses`, previousPageData?.cursor]
+        return ['taskStatuses', organizationName, previousPageData?.cursor]
     }
-    const fetcher = !organizationName ? null : async ([key, cursor]: [string, string, string | undefined]): Promise<TaskStatuses> => {
+    const fetcher = !organizationName ? null : async ([taskStatuses, key, cursor]: [string, string, string | undefined]): Promise<TaskStatuses> => {
         const page = await getClient().control().statusAll({
             organizationName,
             cursor,

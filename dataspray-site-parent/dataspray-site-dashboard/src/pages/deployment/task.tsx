@@ -26,10 +26,13 @@ import {Pagination, StatusIndicator, Table} from "@cloudscape-design/components"
 import DashboardAppLayout from "../../layout/DashboardAppLayout";
 import {useAuth} from "../../auth/auth";
 import useTaskStore from "../../deployment/taskStore";
-import {FullPageHeader} from "../../table/FullPageHeader";
+import {TaskActionHeader} from "../../deployment/TaskActionHeader";
 import {getHeaderCounterTextSingle} from "../../table/tableUtil";
 import Link from "@cloudscape-design/components/link";
-import {useState} from "react";
+import {useCallback, useState} from "react";
+import {getClient} from "../../util/dataSprayClientWrapper";
+import {DeleteTaskModal} from "../../deployment/DeleteTaskModal";
+import {useAlerts} from "../../util/useAlerts";
 
 const Page: NextPageWithLayout = () => {
     const {currentOrganizationName} = useAuth();
@@ -44,89 +47,153 @@ const Page: NextPageWithLayout = () => {
     } = useTaskStore(currentOrganizationName);
     const [selectedTaskId, setSelectedTaskId] = useState<string>();
     const selectedTask = selectedTaskId ? tasks.find(task => task.taskId === selectedTaskId) : undefined;
+    const {beginProcessing} = useAlerts();
+
+    const onPauseClick = useCallback(async () => {
+        if (!currentOrganizationName || !selectedTaskId) {
+            return;
+        }
+        const {onSuccess, onError} = beginProcessing({content: `Pausing task ${selectedTaskId}`});
+        try {
+            await getClient().control().pause({
+                taskId: selectedTaskId,
+                organizationName: currentOrganizationName,
+            });
+            onSuccess({content: `Task ${selectedTaskId} paused successfully`});
+        } catch (e: any) {
+            onError({content: `Failed to pause task ${selectedTaskId}: ${e?.message || 'Unknown error'}`});
+        }
+    }, [beginProcessing, currentOrganizationName, selectedTaskId]);
+    const onResumeClick = useCallback(async () => {
+        if (!currentOrganizationName || !selectedTaskId) {
+            return;
+        }
+        const {onSuccess, onError} = beginProcessing({content: `Resuming task ${selectedTaskId}`});
+        try {
+            await getClient().control().resume({
+                taskId: selectedTaskId,
+                organizationName: currentOrganizationName,
+            });
+            onSuccess({content: `Task ${selectedTaskId} resumed successfully`});
+        } catch (e: any) {
+            onError({content: `Failed to resume task ${selectedTaskId}: ${e?.message || 'Unknown error'}`});
+        }
+    }, [beginProcessing, currentOrganizationName, selectedTaskId]);
+    const [showConfirmDeleteTaskId, setShowConfirmDeleteTaskId] = useState<string>();
+    const onDeleteClick = useCallback(() => {
+        selectedTaskId && setShowConfirmDeleteTaskId(selectedTaskId);
+    }, [selectedTaskId]);
+    const onDeleteCancel = useCallback(() => {
+        setShowConfirmDeleteTaskId(undefined);
+    }, []);
+    const onDeleteConfirmedClick = useCallback(async () => {
+        if (!currentOrganizationName || !selectedTaskId) {
+            return;
+        }
+        const {onSuccess, onError} = beginProcessing({content: `Deleting task ${selectedTaskId}`});
+        try {
+            await getClient().control()._delete({
+                taskId: selectedTaskId,
+                organizationName: currentOrganizationName,
+            });
+            onSuccess({content: `Task ${selectedTaskId} deleted successfully`});
+            setShowConfirmDeleteTaskId(undefined);
+        } catch (e: any) {
+            onError({content: `Failed to delete task ${selectedTaskId}: ${e?.message || 'Unknown error'}`});
+        }
+    }, [beginProcessing, currentOrganizationName, selectedTaskId]);
 
     return (
-            <DashboardAppLayout
-                    content={(
-                            <Table
-                                    header={
-                                        <FullPageHeader
-                                                title="Instances"
-                                                createButtonText="Create instance"
-                                                selectedItemsCount={selectedTaskId ? 1 : 0}
-                                                counter={getHeaderCounterTextSingle(tasks.length, hasMore)}
-                                        />
-                                    }
-                                    variant='full-page'
-                                    stickyHeader
-                                    columnDefinitions={[
-                                        {
-                                            id: 'status',
-                                            header: 'Task Status',
-                                            cell: task => (
-                                                <>
-                                                    <StatusIndicator
-                                                        type={task.status === 'RUNNING' ? 'success' : 'error'}> {task.status} </StatusIndicator>
-                                                </>
-                                            ),
-                                        },
-                                        {
-                                            id: 'id',
-                                            header: 'Task ID',
-                                            cell: task => task.taskId,
-                                            isRowHeader: true,
-                                        },
-                                        {
-                                            id: 'endpoint',
-                                            header: 'Endpoint',
-                                            cell: task => !!task.endpointUrl ? (
-                                                <Link external href={task.endpointUrl}>{(new URL(task.endpointUrl)).hostname.split('.')?.[0] || task.endpointUrl}</Link>
-                                            ) : 'None',
-                                            isRowHeader: true,
-                                        },
-                                        {
-                                            id: 'version',
-                                            header: 'Version',
-                                            cell: task => task.version,
-                                        },
-                                        {
-                                            id: 'lastUpdate',
-                                            header: 'LastUpdate',
-                                            cell: task => (
-                                                <>
-                                                    <StatusIndicator
-                                                        type={task.lastUpdateStatus === 'SUCCESSFUL' ? 'info' : 'warning'}> {task.lastUpdateStatus} {task.lastUpdateStatusReason}</StatusIndicator>
-                                                </>
-                                            ),
-                                        },
-                                    ]}
-                                    items={pageTasks}
-                                    selectionType="single"
-                                    trackBy={task => task.taskId}
-                                    selectedItems={selectedTask ? [selectedTask] : []}
-                                    onSelectionChange={event => setSelectedTaskId(event.detail.selectedItems?.[0]?.taskId)}
-                                    loading={isLoading}
-                                    pagination={(
-                                            <Pagination
-                                                    currentPageIndex={pageIndex + 1}
-                                                    pagesCount={pageCount}
-                                                    openEnd={hasMore}
-                                                    onPreviousPageClick={() => setPageIndex(pageIndex - 1)}
-                                                    onNextPageClick={() => setPageIndex(pageIndex + 1)}
-                                                    onChange={e => setPageIndex(e.detail.currentPageIndex - 1)}
-                                                    disabled={isLoading}
-                                            />
-                                    )}
-                            />
-                    )}
+        <>
+            <DeleteTaskModal
+                taskId={showConfirmDeleteTaskId}
+                show={!!showConfirmDeleteTaskId}
+                onDelete={onDeleteConfirmedClick}
+                onHide={onDeleteCancel}
             />
+            <DashboardAppLayout
+                content={(
+                    <Table
+                        header={(
+                            <TaskActionHeader
+                                counter={getHeaderCounterTextSingle(tasks.length, hasMore)}
+                                onPauseClick={selectedTask?.status === 'RUNNING' ? onPauseClick : undefined}
+                                onResumeClick={selectedTask?.status === 'PAUSED' ? onResumeClick : undefined}
+                                onDeleteClick={!!selectedTask && selectedTask?.status !== 'NOTFOUND' ? onDeleteClick : undefined}
+                            />
+                        )}
+                        variant='full-page'
+                        stickyHeader
+                        columnDefinitions={[
+                            {
+                                id: 'status',
+                                header: 'Task Status',
+                                cell: task => (
+                                    <>
+                                        <StatusIndicator
+                                            type={task.status === 'RUNNING' ? 'success' : 'error'}> {task.status} </StatusIndicator>
+                                    </>
+                                ),
+                            },
+                            {
+                                id: 'id',
+                                header: 'Task ID',
+                                cell: task => task.taskId,
+                                isRowHeader: true,
+                            },
+                            {
+                                id: 'endpoint',
+                                header: 'Endpoint',
+                                cell: task => !!task.endpointUrl ? (
+                                    <Link external
+                                          href={task.endpointUrl}>{(new URL(task.endpointUrl)).hostname.split('.')?.[0] || task.endpointUrl}</Link>
+                                ) : 'None',
+                                isRowHeader: true,
+                            },
+                            {
+                                id: 'version',
+                                header: 'Version',
+                                cell: task => task.version,
+                            },
+                            {
+                                id: 'lastUpdate',
+                                header: 'LastUpdate',
+                                cell: task => (
+                                    <>
+                                        <StatusIndicator
+                                            type={task.lastUpdateStatus === 'SUCCESSFUL' ? 'info' : 'warning'}> {task.lastUpdateStatus} {task.lastUpdateStatusReason}</StatusIndicator>
+                                    </>
+                                ),
+                            },
+                        ]}
+                        items={pageTasks}
+                        selectionType="single"
+                        trackBy={task => task.taskId}
+                        selectedItems={selectedTask ? [selectedTask] : []}
+                        onSelectionChange={event => setSelectedTaskId(event.detail.selectedItems?.[0]?.taskId)}
+                        loading={isLoading}
+                        pagination={(
+                            <Pagination
+                                currentPageIndex={pageIndex + 1}
+                                pagesCount={pageCount}
+                                openEnd={hasMore}
+                                onPreviousPageClick={() => setPageIndex(pageIndex - 1)}
+                                onNextPageClick={() => setPageIndex(pageIndex + 1)}
+                                onChange={e => setPageIndex(e.detail.currentPageIndex - 1)}
+                                disabled={isLoading}
+                            />
+                        )}
+                    />
+                )}
+            />
+        </>
     )
 }
 
 Page.getLayout = (page) => (
-        <DashboardLayout
-                pageTitle='Tasks'
-        >{page}</DashboardLayout>
+    <DashboardLayout
+        pageTitle='Tasks'
+    >{page}</DashboardLayout>
 )
 
 export default Page

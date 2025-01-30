@@ -50,7 +50,9 @@ const Page: NextPageWithLayout = () => {
                             description="This is a generic description used in the header."
                         >Header</Header>
                     )}>
-                        <CloudscapeFormik
+                        <CloudscapeFormik<{
+                            name: string
+                        }>
                             initialValues={{
                                 name: '',
                             }}
