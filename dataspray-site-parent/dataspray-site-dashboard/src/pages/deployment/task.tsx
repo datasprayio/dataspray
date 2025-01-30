@@ -22,7 +22,7 @@
 
 import {NextPageWithLayout} from "../_app";
 import DashboardLayout from "../../layout/DashboardLayout";
-import {Pagination, SplitPanel, StatusIndicator, Table} from "@cloudscape-design/components";
+import {Pagination, StatusIndicator, Table} from "@cloudscape-design/components";
 import DashboardAppLayout from "../../layout/DashboardAppLayout";
 import {useAuth} from "../../auth/auth";
 import useTaskStore from "../../deployment/taskStore";
@@ -42,25 +42,8 @@ const Page: NextPageWithLayout = () => {
         pageTasks,
         isLoading,
     } = useTaskStore(currentOrganizationName);
-    const [selectedTaskId, setSelectedTaskIds] = useState<string>();
+    const [selectedTaskId, setSelectedTaskId] = useState<string>();
     const selectedTask = selectedTaskId ? tasks.find(task => task.taskId === selectedTaskId) : undefined;
-
-    var splitPanel: React.ReactNode;
-    if (!selectedTask) {
-        splitPanel = (
-                <SplitPanel header='No task selected'>
-                    Select a task to see its details.
-                </SplitPanel>
-        );
-    } else {
-        splitPanel = (
-                <SplitPanel header={selectedTask.taskId}>
-                    taskId: {selectedTask.taskId}
-                    Status: {selectedTask.status}
-                    TODO
-                </SplitPanel>
-        );
-    }
 
     return (
             <DashboardAppLayout
@@ -78,24 +61,50 @@ const Page: NextPageWithLayout = () => {
                                     stickyHeader
                                     columnDefinitions={[
                                         {
-                                            id: 'id',
-                                            header: 'Task ID',
-                                            cell: task => <Link href="#">{task.taskId}</Link>,
-                                            isRowHeader: true,
-                                        },
-                                        {
                                             id: 'status',
                                             header: 'Task Status',
                                             cell: task => (
-                                                    <>
-                                                        <StatusIndicator
-                                                                type={task.status === 'RUNNING' ? 'success' : 'error'}> {task.status} </StatusIndicator>
-                                                    </>
+                                                <>
+                                                    <StatusIndicator
+                                                        type={task.status === 'RUNNING' ? 'success' : 'error'}> {task.status} </StatusIndicator>
+                                                </>
+                                            ),
+                                        },
+                                        {
+                                            id: 'id',
+                                            header: 'Task ID',
+                                            cell: task => task.taskId,
+                                            isRowHeader: true,
+                                        },
+                                        {
+                                            id: 'endpoint',
+                                            header: 'Endpoint',
+                                            cell: task => !!task.endpointUrl ? (
+                                                <Link external href={task.endpointUrl}>{(new URL(task.endpointUrl)).hostname.split('.')?.[0] || task.endpointUrl}</Link>
+                                            ) : 'None',
+                                            isRowHeader: true,
+                                        },
+                                        {
+                                            id: 'version',
+                                            header: 'Version',
+                                            cell: task => task.version,
+                                        },
+                                        {
+                                            id: 'lastUpdate',
+                                            header: 'LastUpdate',
+                                            cell: task => (
+                                                <>
+                                                    <StatusIndicator
+                                                        type={task.lastUpdateStatus === 'SUCCESSFUL' ? 'info' : 'warning'}> {task.lastUpdateStatus} {task.lastUpdateStatusReason}</StatusIndicator>
+                                                </>
                                             ),
                                         },
                                     ]}
                                     items={pageTasks}
                                     selectionType="single"
+                                    trackBy={task => task.taskId}
+                                    selectedItems={selectedTask ? [selectedTask] : []}
+                                    onSelectionChange={event => setSelectedTaskId(event.detail.selectedItems?.[0]?.taskId)}
                                     loading={isLoading}
                                     pagination={(
                                             <Pagination
@@ -110,7 +119,6 @@ const Page: NextPageWithLayout = () => {
                                     )}
                             />
                     )}
-                    splitPanel={splitPanel}
             />
     )
 }
