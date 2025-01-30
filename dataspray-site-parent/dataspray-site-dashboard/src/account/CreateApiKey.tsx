@@ -46,7 +46,13 @@ export const CreateApiKey = (props: {
     const [selectedTopics, setSelectedTopics] = useState<Option[]>([])
 
     return (
-            <CloudscapeFormik
+            <CloudscapeFormik<{
+                type: string;
+                description: string;
+                hasExpiry: boolean;
+                expiresAt: Date;
+                queueWhitelist: string[];
+            }>
                     initialValues={{
                         type: 'system',
                         description: '',
