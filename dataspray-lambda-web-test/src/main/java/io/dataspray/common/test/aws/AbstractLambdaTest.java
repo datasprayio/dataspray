@@ -72,7 +72,7 @@ public abstract class AbstractLambdaTest {
             headers.put(HttpHeaders.CONTENT_TYPE, List.of(given.getContentType().toString()));
             request.setMultiValueHeaders(headers);
         }
-        request.setBody(GsonUtil.get().toJson(given.getBody()));
+        request.setBody(GsonUtil.getPrettyPrint().toJson(given.getBody()));
         request.setRequestContext(new AwsProxyRequestContext());
         request.getRequestContext().setPath(given.getPath());
         request.getRequestContext().setResourcePath(given.getPath());

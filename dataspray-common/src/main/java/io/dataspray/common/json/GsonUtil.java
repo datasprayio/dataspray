@@ -36,6 +36,7 @@ import com.google.gson.JsonSerializer;
 import io.quarkus.arc.DefaultBean;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
+import jakarta.ws.rs.Produces;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.ParameterizedType;
@@ -53,13 +54,13 @@ public class GsonUtil {
     private static volatile Gson gson;
     private static volatile Gson gsonPrettyPrint;
 
-    @ApplicationScoped
+    @Produces
     @DefaultBean
     Gson getInstance() {
         return get();
     }
 
-    @ApplicationScoped
+    @Produces
     @Named(PRETTY_PRINT)
     Gson getInstancePrettyPrint() {
         return getPrettyPrint();

@@ -75,8 +75,7 @@ import static io.dataspray.singletable.TableType.Gsi;
 import static io.dataspray.singletable.TableType.Primary;
 import static io.dataspray.store.impl.FirehoseS3AthenaBatchStore.*;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 @QuarkusTestResource(MotoLifecycleManager.class)
@@ -176,8 +175,9 @@ public abstract class IngestBase extends AbstractLambdaTest {
                 .build());
 
         // Setup data
-        Map<String, String> body = Map.of("key", "value");
+        Map<String, String> body = Map.of("key", "val\nue");
         String bodyStr = GsonUtil.get().toJson(body);
+        String bodyStrPretty = GsonUtil.getPrettyPrint().toJson(body);
 
         // Submit data to Ingest Resource
         request(Given.builder()
@@ -201,7 +201,8 @@ public abstract class IngestBase extends AbstractLambdaTest {
                 .queueUrl(queueUrl)
                 .maxNumberOfMessages(10).build()).messages();
         assertEquals(1, messages.size());
-        assertEquals(bodyStr, messages.getFirst().body());
+        // SQS message should be untouched (prettified)
+        assertEquals(bodyStrPretty, messages.getFirst().body());
 
         // Assert message is in S3
         ListObjectsV2Response objects = getS3Client().listObjectsV2(ListObjectsV2Request.builder()
@@ -216,6 +217,7 @@ public abstract class IngestBase extends AbstractLambdaTest {
                 .build());
         String objectString = new String(objectStream.readAllBytes());
         log.info("Object string {}", objectString);
+        assertFalse(objectString.contains("\n"), "Cannot contain newlines");
         Map<String, Object> objectJson = GsonUtil.get().fromJson(objectString, Map.class);
 
         Object messageTsObject = objectJson.get(ETL_MESSAGE_TS);

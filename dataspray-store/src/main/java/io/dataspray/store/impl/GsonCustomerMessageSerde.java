@@ -25,6 +25,7 @@ package io.dataspray.store.impl;
 import com.google.common.base.Charsets;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import io.dataspray.common.json.GsonUtil;
 import io.dataspray.store.CustomerMessageSerde;
 import io.dataspray.store.TopicStore;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -95,7 +96,8 @@ public class GsonCustomerMessageSerde implements CustomerMessageSerde {
         // using gson.toJson(messageJson).getBytes(Charsets.UTF_8);
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
              Writer writer = new OutputStreamWriter(byteArrayOutputStream, Charsets.UTF_8)) {
-            gson.toJson(messageJson, writer);
+            // DO NOT USE pretty printed gson, in S3, each json is delimited by newline
+            GsonUtil.get().toJson(messageJson, writer);
             writer.flush();
             return byteArrayOutputStream.toByteArray();
         }
