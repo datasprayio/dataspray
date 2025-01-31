@@ -38,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
@@ -73,6 +74,7 @@ public class GsonCustomerMessageSerde implements CustomerMessageSerde {
     public Map<String, Object> enrichJson(String organizationName, String topicName, Optional<TopicStore.BatchRetention> batchRetentionOpt, Optional<String> messageIdOpt, String messageKey, Map<String, Object> messageJson) {
 
         // Add extra attributes
+        messageJson.put(ETL_MESSAGE_TS, Instant.now().toEpochMilli());
         messageJson.put(ETL_MESSAGE_KEY, messageKey);
         messageIdOpt.ifPresent(messageId ->
                 messageJson.put(ETL_MESSAGE_ID, messageId));

@@ -72,6 +72,7 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     public static final String FIREHOSE_STREAM_NAME_PROP_NAME = "etl.firehose.name";
     public static final String GLUE_CUSTOMER_PREFIX = "customer-";
     public static final String GLUE_SCHEMA_FOR_QUEUE_PREFIX = "queue-";
+    public static final String ETL_MESSAGE_TS = "_ds_message_ts";
     public static final String ETL_MESSAGE_ID = "_ds_message_id";
     public static final String ETL_MESSAGE_KEY = "_ds_message_key";
     public static final String ETL_PARTITION_KEY_RETENTION = "_ds_retention";

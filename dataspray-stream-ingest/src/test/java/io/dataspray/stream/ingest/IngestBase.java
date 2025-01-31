@@ -66,7 +66,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
-import java.io.InputStreamReader;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,6 +76,7 @@ import static io.dataspray.singletable.TableType.Primary;
 import static io.dataspray.store.impl.FirehoseS3AthenaBatchStore.*;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 @QuarkusTestResource(MotoLifecycleManager.class)
@@ -213,13 +214,20 @@ public abstract class IngestBase extends AbstractLambdaTest {
                 .bucket(bucketName)
                 .key(objectKey)
                 .build());
-        Map<String, String> objectJson;
-        try (InputStreamReader inputStreamReader = new InputStreamReader(objectStream)) {
-            objectJson = GsonUtil.get().fromJson(inputStreamReader, Map.class);
-        }
+        String objectString = new String(objectStream.readAllBytes());
+        log.info("Object string {}", objectString);
+        Map<String, Object> objectJson = GsonUtil.get().fromJson(objectString, Map.class);
+
+        Object messageTsObject = objectJson.get(ETL_MESSAGE_TS);
+        log.info("Object ts {}", messageTsObject);
+        Instant messageTsInstant = Instant.ofEpochMilli(((Double) messageTsObject).longValue());
+        assertTrue(messageTsInstant.isAfter(Instant.now().minusSeconds(100)));
+        assertTrue(messageTsInstant.isBefore(Instant.now().plusSeconds(100)));
+
         log.info("Object content {}", objectJson);
         assertEquals(ImmutableMap.builder()
                 .putAll(body)
+                .put(ETL_MESSAGE_TS, messageTsObject)
                 .put(ETL_MESSAGE_KEY, messageKey)
                 .put(ETL_MESSAGE_ID, messageId)
                 .put(ETL_PARTITION_KEY_RETENTION, BatchRetention.YEAR.name())
