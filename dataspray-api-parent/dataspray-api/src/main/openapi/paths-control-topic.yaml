@@ -174,3 +174,30 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/Topics'
+  delete:
+    operationId: deleteTopic
+    tags: [ Control ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: topicName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: expectedVersion
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Topics'

@@ -251,6 +251,11 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     @Override
+    public Topics deleteTopic(String organizationName, String topicName, Long expectVersion) {
+        return modelToTopics(topicStore.deleteTopic(organizationName, topicName, Optional.ofNullable(expectVersion)));
+    }
+
+    @Override
     public UploadCodeResponse uploadCode(String organizationName, UploadCodeRequest uploadCodeRequest) {
         UploadCodeClaim uploadCodeClaim = deployer.uploadCode(organizationName, uploadCodeRequest.getTaskId(), uploadCodeRequest.getContentLengthBytes());
         return new UploadCodeResponse(

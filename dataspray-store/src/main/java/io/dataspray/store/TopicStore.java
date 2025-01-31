@@ -61,6 +61,8 @@ public interface TopicStore {
             .build());
     /**
      * For undefined topics, default batch retention.
+     * <p>
+     * Matches DEFAULT_BATCH_RETENTION in EditTopic.tsx
      */
     BatchRetention DEFAULT_BATCH_RETENTION = THREE_MONTHS;
 
@@ -73,6 +75,8 @@ public interface TopicStore {
     Topics updateDefaultTopic(String organizationName, Topic topic, Optional<Long> expectVersionOpt);
 
     Topics updateTopic(String organizationName, String topicName, Topic topic, Optional<Long> expectVersionOpt);
+
+    Topics deleteTopic(String organizationName, String topicName, Optional<Long> expectVersionOpt);
 
     /**
      * <b>Organization topic definitions.</b>
@@ -224,6 +228,7 @@ public interface TopicStore {
         }
     }
 
+    /** Matches BATCH_RETENTION in EditTopic.tsx */
     @Getter
     @AllArgsConstructor
     @RegisterForReflection

@@ -47,17 +47,17 @@ export default function useTaskStore(organizationName?: string | null): SWRInfin
         });
         return page;
     }
-    const swrInifinite = useSWRInfinite(getKey, fetcher);
+    const swrInfinite = useSWRInfinite(getKey, fetcher);
 
-    const hasMore = !!(swrInifinite.data?.[swrInifinite.data.length - 1] as any)?.cursor;
-    const tasks = swrInifinite.data?.map(d => d?.tasks).flat() || [];
+    const hasMore = !!(swrInfinite.data?.[swrInfinite.data.length - 1] as any)?.cursor;
+    const tasks = swrInfinite.data?.map(d => d?.tasks).flat() || [];
 
     const [pageIndex, setPageIndex] = useState<number>(0);
-    const pageTasks = swrInifinite.data?.[pageIndex]?.tasks || [];
-    const pageCount = swrInifinite.data?.length || 0;
+    const pageTasks = swrInfinite.data?.[pageIndex]?.tasks || [];
+    const pageCount = swrInfinite.data?.length || 0;
 
     return {
-        ...swrInifinite,
+        ...swrInfinite,
         hasMore,
         tasks,
         pageIndex,

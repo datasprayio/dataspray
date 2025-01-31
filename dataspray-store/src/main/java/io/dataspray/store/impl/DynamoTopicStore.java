@@ -121,16 +121,21 @@ public class DynamoTopicStore implements TopicStore {
 
     @Override
     public Topics updateDefaultTopic(String organizationName, Topic topic, Optional<Long> expectVersionOpt) {
-        return updateTopic(organizationName, Optional.empty(), topic, expectVersionOpt);
+        return updateTopic(organizationName, Optional.empty(), Optional.of(topic), expectVersionOpt);
     }
 
     @Override
     public Topics updateTopic(String organizationName, String topicName, Topic topic, Optional<Long> expectVersionOpt) {
-        return updateTopic(organizationName, Optional.of(topicName), topic, expectVersionOpt);
+        return updateTopic(organizationName, Optional.of(topicName), Optional.of(topic), expectVersionOpt);
     }
 
-    private Topics updateTopic(String organizationName, Optional<String> topicNameOrDefault, Topic topic, Optional<Long> expectVersionOpt) {
-        log.info("Updating topic {} for org {}: {}", topicNameOrDefault.orElse("default"), organizationName, topic);
+    @Override
+    public Topics deleteTopic(String organizationName, String topicName, Optional<Long> expectVersionOpt) {
+        return updateTopic(organizationName, Optional.of(topicName), Optional.empty(), expectVersionOpt);
+    }
+
+    private Topics updateTopic(String organizationName, Optional<String> topicNameOrDefault, Optional<Topic> topicOpt, Optional<Long> expectVersionOpt) {
+        log.info("Updating topic {} for org {}: {}", topicNameOrDefault.orElse("default"), organizationName, topicOpt.map(Topic::toString).orElse("delete"));
         UpdateBuilder<Topics> updateBuilder = topicsSchema.update()
                 .key(ImmutableMap.of("organizationName", organizationName))
                 .conditionExists();
@@ -141,8 +146,16 @@ public class DynamoTopicStore implements TopicStore {
 
         // Update topic by name or default topic if not present
         topicNameOrDefault.ifPresentOrElse(
-                topicName -> updateBuilder.set(ImmutableList.of("topics", topicName), topic),
-                () -> updateBuilder.set("undefinedTopic", topic));
+                topicName -> topicOpt.ifPresentOrElse(
+                        // Update topic
+                        topic -> updateBuilder.set(ImmutableList.of("topics", topicName), topic),
+                        // Delete topic
+                        () -> updateBuilder.remove(ImmutableList.of("topics", topicName))),
+                () -> topicOpt.ifPresentOrElse(
+                        // Update default topic
+                        topic -> updateBuilder.set("undefinedTopic", topic),
+                        // Delete default topic
+                        () -> updateBuilder.remove("undefinedTopic")));
         Topics topicsUpdated = updateBuilder
                 .executeGetUpdated(dynamo);
 

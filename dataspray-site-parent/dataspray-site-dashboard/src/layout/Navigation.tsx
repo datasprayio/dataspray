@@ -25,11 +25,10 @@ import {useRouterOnFollow} from "../util/useRouterOnFollow";
 import {useRouter} from "next/router";
 import {getDocsUrl} from "../util/detectEnv";
 
-const HeaderItems: ReadonlyArray<SideNavigationProps.Item> = [
-];
+const HeaderItems: ReadonlyArray<SideNavigationProps.Item> = [];
 const FooterItems: ReadonlyArray<SideNavigationProps.Item> = [
     {type: 'divider'},
-    {type: 'link', external: true, text: 'Documentation', href: getDocsUrl()},
+    {type: 'link', external: true, text: 'Docs', href: getDocsUrl()},
 ];
 
 export default function Navigation() {
@@ -42,7 +41,19 @@ export default function Navigation() {
             header={{href: '/', text: 'Home'}}
             items={[
                 ...HeaderItems,
-                {type: 'link', text: 'Tasks', href: '/deployment/task'},
+                {
+                    type: 'section-group', title: 'Compute', items: [
+                        {type: 'link', text: 'Tasks', href: '/deployment/task'},
+                        {type: 'link', text: 'Topics', href: '/deployment/topic'},
+                    ]
+                },
+                {type: 'divider'},
+                {
+                    type: 'section-group', title: 'Storage', items: [
+                        {type: 'link', text: 'State', href: '/storage/state'},
+                        {type: 'link', text: 'Lake', href: '/storage/lake'},
+                    ]
+                },
                 ...FooterItems,
             ]}
             onFollow={routerOnFollow}
