@@ -64,14 +64,13 @@ export enum EditType {
     CREATE_TOPIC,
 }
 
-export function EditTopic(props: {
-    organizationName?: string;
+export const EditTopic = (props: {
     topicName?: string; // name to edit (Only supply for EditType.EDIT_TOPIC)
     editType: EditType;
     topic?: Topic;
     onUpdated?: (topics: Topics) => void;
     allowUndefinedTopics?: boolean;
-}) {
+}) => {
     const {currentOrganizationName} = useAuth();
     const {beginProcessing} = useAlerts();
     return (
@@ -90,12 +89,12 @@ export function EditTopic(props: {
             initialValues={{
                 allowUndefinedTopics: !!props.allowUndefinedTopics,
                 topicName: props.topicName || '',
-                batchEnabled: true,
-                batchRetention: DEFAULT_BATCH_RETENTION,
-                storeEnabled: false,
-                storeTtlInSec: 24 * 60 * 60,
-                storeKeys: [],
-                streams: [],
+                batchEnabled: props.topic ? !!props.topic.batch : true,
+                batchRetention: BATCH_RETENTION_VALUES.find(r => r.inDays === props.topic?.batch?.retentionInDays)?.value || DEFAULT_BATCH_RETENTION,
+                storeEnabled: !!props.topic?.store,
+                storeTtlInSec: props.topic?.store?.ttlInSec || 24 * 60 * 60,
+                storeKeys: props.topic?.store?.keys || [],
+                streams: props.topic?.streams || [],
             }}
             validationSchema={(
                 yup.object().shape({
@@ -157,8 +156,9 @@ export function EditTopic(props: {
                 }
                 const {onSuccess, onError} = beginProcessing({content: messageProcessing});
                 try {
+                    var updatedTopics: Topics;
                     if (props.editType === EditType.EDIT_DEFAULT_TOPIC) {
-                        await getClient().control().updateDefaultTopic({
+                        updatedTopics = await getClient().control().updateDefaultTopic({
                             organizationName: currentOrganizationName,
                             updateDefaultTopicRequest: {
                                 allowUndefined: values.allowUndefinedTopics,
@@ -166,13 +166,14 @@ export function EditTopic(props: {
                             }
                         })
                     } else {
-                        await getClient().control().updateTopic({
+                        updatedTopics = await getClient().control().updateTopic({
                             organizationName: currentOrganizationName,
                             topicName: props.editType === EditType.EDIT_TOPIC
                                 ? props.topicName! : values.topicName,
                             topic,
                         })
                     }
+                    props.onUpdated?.(updatedTopics);
                     onSuccess({content: messageSuccess});
                 } catch (e: any) {
                     onError({content: `${messageFailure}: ${e?.message || 'Unknown error'}`});
@@ -333,7 +334,6 @@ export function EditTopic(props: {
                                                 errorText={errors?.storeWhitelist}
                                             >
                                                 <Input
-                                                    type="number"
                                                     placeholder='key1,key2,...'
                                                     disabled={editingDisabled || !values.storeEnabled}
                                                     value={(values.storeWhitelist || []).join(',')}
@@ -345,7 +345,6 @@ export function EditTopic(props: {
                                                 errorText={errors?.storeBlacklist}
                                             >
                                                 <Input
-                                                    type="number"
                                                     placeholder='key1,key2,...'
                                                     disabled={editingDisabled || !values.storeEnabled}
                                                     value={(values.storeBlacklist || []).join(',')}

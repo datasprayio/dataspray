@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.SerializedName;
+import io.dataspray.store.LambdaStore.LambdaRecord;
 import io.dataspray.store.util.WithCursor;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.Nonnull;
@@ -76,6 +77,7 @@ public interface LambdaDeployer {
     @RegisterForReflection
     class Status {
         String taskId;
+        LambdaRecord record;
         FunctionConfiguration function;
         State state;
         Optional<String> endpointUrlOpt;

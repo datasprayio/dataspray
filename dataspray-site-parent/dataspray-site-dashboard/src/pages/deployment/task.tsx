@@ -22,17 +22,17 @@
 
 import {NextPageWithLayout} from "../_app";
 import DashboardLayout from "../../layout/DashboardLayout";
-import {Pagination, StatusIndicator, Table} from "@cloudscape-design/components";
+import {Pagination, SplitPanel, StatusIndicator, Table} from "@cloudscape-design/components";
 import DashboardAppLayout from "../../layout/DashboardAppLayout";
 import {useAuth} from "../../auth/auth";
 import useTaskStore from "../../deployment/taskStore";
 import {TaskActionHeader} from "../../deployment/TaskActionHeader";
 import {getHeaderCounterTextSingle} from "../../table/tableUtil";
-import Link from "@cloudscape-design/components/link";
 import {useCallback, useState} from "react";
 import {getClient} from "../../util/dataSprayClientWrapper";
 import {DeleteTaskModal} from "../../deployment/DeleteTaskModal";
 import {useAlerts} from "../../util/useAlerts";
+import {ViewTask} from "../../deployment/ViewTask";
 
 const Page: NextPageWithLayout = () => {
     const {currentOrganizationName} = useAuth();
@@ -103,6 +103,16 @@ const Page: NextPageWithLayout = () => {
         }
     }, [beginProcessing, currentOrganizationName, selectedTaskId]);
 
+    const splitPanel = selectedTask ? (
+        <SplitPanel header={`Task ${selectedTask.taskId}`}>
+            <ViewTask task={selectedTask}/>
+        </SplitPanel>
+    ) : (
+        <SplitPanel header='Task'>
+            No task selected.
+        </SplitPanel>
+    );
+
     return (
         <>
             <DeleteTaskModal
@@ -142,20 +152,6 @@ const Page: NextPageWithLayout = () => {
                                 isRowHeader: true,
                             },
                             {
-                                id: 'endpoint',
-                                header: 'Endpoint',
-                                cell: task => !!task.endpointUrl ? (
-                                    <Link external
-                                          href={task.endpointUrl}>{(new URL(task.endpointUrl)).hostname.split('.')?.[0] || task.endpointUrl}</Link>
-                                ) : 'None',
-                                isRowHeader: true,
-                            },
-                            {
-                                id: 'version',
-                                header: 'Version',
-                                cell: task => task.version,
-                            },
-                            {
                                 id: 'lastUpdate',
                                 header: 'LastUpdate',
                                 cell: task => (
@@ -185,6 +181,7 @@ const Page: NextPageWithLayout = () => {
                         )}
                     />
                 )}
+                splitPanel={splitPanel}
             />
         </>
     )

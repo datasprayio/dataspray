@@ -833,6 +833,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
 
         return Optional.of(new Status(
                 taskId,
+                lambdaRecord,
                 function,
                 state,
                 lambdaRecord.getEndpointUrlOpt()));

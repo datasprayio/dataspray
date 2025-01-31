@@ -35,7 +35,7 @@ import {EditTopic, EditType} from "../../deployment/EditTopic";
 import {useAlerts} from "../../util/useAlerts";
 
 const Yes = <StatusIndicator type='success'>Yes</StatusIndicator>;
-const No = <StatusIndicator type='loading'>No</StatusIndicator>;
+const No = <StatusIndicator type='stopped'>No</StatusIndicator>;
 
 const Page: NextPageWithLayout = () => {
     const {currentOrganizationName} = useAuth();
@@ -61,10 +61,11 @@ const Page: NextPageWithLayout = () => {
         }
         const {onSuccess, onError} = beginProcessing({content: `Deleting topic ${selectedTopicName}`});
         try {
-            await getClient().control().deleteTopic({
+            const updatedTopics = await getClient().control().deleteTopic({
                 topicName: selectedTopicName,
                 organizationName: currentOrganizationName,
             });
+            update(updatedTopics);
             onSuccess({content: `Topic ${selectedTopicName} deleted successfully`});
             setShowConfirmDeleteTopicName(undefined);
         } catch (e: any) {

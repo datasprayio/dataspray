@@ -37,6 +37,7 @@ import io.dataspray.store.LambdaDeployer.Endpoint;
 import io.dataspray.store.LambdaDeployer.State;
 import io.dataspray.store.LambdaDeployer.Status;
 import io.dataspray.store.LambdaDeployer.Versions;
+import io.dataspray.store.LambdaStore;
 import io.dataspray.store.OrganizationStore;
 import io.dataspray.store.TopicStore;
 import io.dataspray.store.util.WithCursor;
@@ -369,6 +370,16 @@ public class ControlResource extends AbstractResource implements ControlApi {
                         .flatMap(lastUpdateStatus -> Enums.getIfPresent(TaskStatus.LastUpdateStatusEnum.class, lastUpdateStatus).toJavaUtil())
                         .orElse(null))
                 .endpointUrl(statusOpt.flatMap(Status::getEndpointUrlOpt).orElse(null))
+                .inputQueueNames(statusOpt
+                        .map(Status::getRecord)
+                        .map(LambdaStore.LambdaRecord::getInputQueueNames)
+                        .map(ImmutableSet::asList)
+                        .orElse(null))
+                .outputQueueNames(statusOpt
+                        .map(Status::getRecord)
+                        .map(LambdaStore.LambdaRecord::getOutputQueueNames)
+                        .map(ImmutableSet::asList)
+                        .orElse(null))
                 .build();
     }
 

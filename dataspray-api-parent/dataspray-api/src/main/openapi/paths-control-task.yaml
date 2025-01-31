@@ -196,6 +196,14 @@ components:
           type: string
         endpointUrl:
           type: string
+        inputQueueNames:
+          type: array
+          items:
+            type: string
+        outputQueueNames:
+          type: array
+          items:
+            type: string
 
 /v1/organization/{organizationName}/control/code/upload:
   put:
