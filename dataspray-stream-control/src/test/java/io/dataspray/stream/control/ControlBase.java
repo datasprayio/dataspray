@@ -267,7 +267,9 @@ public abstract class ControlBase extends AbstractLambdaTest {
                                         .taskId(taskId)
                                         .version("2")
                                         .status(TaskStatus.StatusEnum.RUNNING)
-                                        .lastUpdateStatus(TaskStatus.LastUpdateStatusEnum.SUCCESSFUL))),
+                                        .lastUpdateStatus(TaskStatus.LastUpdateStatusEnum.SUCCESSFUL)
+                                        .inputQueueNames(List.of("queue2"))
+                                        .outputQueueNames(List.of()))),
                 filterStatusAll(taskStatuses, taskId));
 
         // Delete
