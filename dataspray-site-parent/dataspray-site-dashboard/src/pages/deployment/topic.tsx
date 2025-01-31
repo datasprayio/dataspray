@@ -28,11 +28,11 @@ import {useAuth} from "../../auth/auth";
 import {getHeaderCounterTextSingle} from "../../table/tableUtil";
 import {useCallback, useState} from "react";
 import {getClient} from "../../util/dataSprayClientWrapper";
-import {useAlerts} from "../../util/useAlerts";
 import useTopicStore from "../../deployment/topicStore";
 import {DeleteTopicModal} from "../../deployment/DeleteTopicModal";
 import {TopicActionHeader} from "../../deployment/TopicActionHeader";
-import {EditTopic} from "../../deployment/EditTopic";
+import {EditTopic, EditType} from "../../deployment/EditTopic";
+import {useAlerts} from "../../util/useAlerts";
 
 const Yes = <StatusIndicator type='success'>Yes</StatusIndicator>;
 const No = <StatusIndicator type='loading'>No</StatusIndicator>;
@@ -42,26 +42,11 @@ const Page: NextPageWithLayout = () => {
     const {
         data,
         isLoading,
+        update,
     } = useTopicStore(currentOrganizationName);
     const [selectedTopicName, setSelectedTopicName] = useState<string>();
     const selectedTopic = selectedTopicName ? data?.topics[selectedTopicName] : undefined;
-    const {beginProcessing} = useAlerts();
 
-    // const onUpdateClick = useCallback(async () => {
-    //     if (!currentOrganizationName || !selectedTaskId) {
-    //         return;
-    //     }
-    //     const {onSuccess, onError} = beginProcessing({content: `Resuming task ${selectedTaskId}`});
-    //     try {
-    //         await getClient().control().resume({
-    //             taskId: selectedTaskId,
-    //             organizationName: currentOrganizationName,
-    //         });
-    //         onSuccess({content: `Task ${selectedTaskId} resumed successfully`});
-    //     } catch (e: any) {
-    //         onError({content: `Failed to resume task ${selectedTaskId}: ${e?.message || 'Unknown error'}`});
-    //     }
-    // }, [beginProcessing, currentOrganizationName, selectedTaskId]);
     const [showConfirmDeleteTopicName, setShowConfirmDeleteTopicName] = useState<string>();
     const onDeleteClick = useCallback(() => {
         selectedTopicName && setShowConfirmDeleteTopicName(selectedTopicName);
@@ -69,6 +54,7 @@ const Page: NextPageWithLayout = () => {
     const onDeleteCancel = useCallback(() => {
         setShowConfirmDeleteTopicName(undefined);
     }, []);
+    const {beginProcessing} = useAlerts();
     const onDeleteConfirmedClick = useCallback(async () => {
         if (!currentOrganizationName || !selectedTopicName) {
             return;
@@ -86,20 +72,53 @@ const Page: NextPageWithLayout = () => {
         }
     }, [beginProcessing, currentOrganizationName, selectedTopicName]);
 
-    var splitPanel: React.ReactNode;
-    if (!!selectedTopicName && !!selectedTopic) {
-        splitPanel = (
-            <SplitPanel header={`Edit topic ${selectedTopicName}`}>
-                <EditTopic key={`edit-${selectedTopicName}`} topicName={selectedTopicName} topic={selectedTopic}/>
-            </SplitPanel>
-        );
-    } else {
-        splitPanel = (
-            <SplitPanel header='Create a topic'>
-                <EditTopic key='create' />
-            </SplitPanel>
-        );
+    const [splitPanelOpen, setSplitPanelOpen] = useState<boolean>(false);
+    const [editType, setEditType] = useState<EditType>(EditType.EDIT_TOPIC);
+    const onCreateClick = useCallback(() => {
+        setEditType(EditType.CREATE_TOPIC);
+        setSelectedTopicName(undefined);
+        setSplitPanelOpen(true);
+    }, []);
+    const onEditDefaultClick = useCallback(() => {
+        setEditType(EditType.EDIT_DEFAULT_TOPIC);
+        setSelectedTopicName(undefined);
+        setSplitPanelOpen(true);
+    }, []);
+    var splitPanelDisabled = false;
+    var splitPanelHeader: string = '';
+    switch(editType) {
+        case EditType.EDIT_TOPIC:
+            if(selectedTopicName) {
+            splitPanelHeader = `Edit topic ${selectedTopicName}`;
+            } else {
+                splitPanelHeader = `Select a topic`;
+                splitPanelDisabled = true
+            }
+            break;
+        case EditType.EDIT_DEFAULT_TOPIC:
+            splitPanelHeader = 'Edit default topic';
+            break;
+        case EditType.CREATE_TOPIC:
+            splitPanelHeader = 'Create new topic';
+            break;
     }
+    const splitPanel = (
+        <SplitPanel header={splitPanelHeader}>
+            {!!splitPanelDisabled && 'No topic selected.'}
+            {!splitPanelDisabled && (
+                <EditTopic
+                    key={splitPanelHeader}
+                    editType={editType}
+                    topicName={selectedTopicName}
+                    topic={editType === EditType.EDIT_DEFAULT_TOPIC
+                        ? data?.undefinedTopic
+                        : selectedTopic}
+                    allowUndefinedTopics={data?.allowUndefinedTopics}
+                    onUpdated={update}
+                />
+            )}
+        </SplitPanel>
+    );
 
     return (
         <>
@@ -115,6 +134,8 @@ const Page: NextPageWithLayout = () => {
                         header={(
                             <TopicActionHeader
                                 counter={getHeaderCounterTextSingle(Object.keys(data?.topics || {}).length, false)}
+                                onCreateClick={editType !== EditType.CREATE_TOPIC ? onCreateClick : undefined}
+                                onEditDefaultClick={editType !== EditType.EDIT_DEFAULT_TOPIC ? onEditDefaultClick : undefined}
                                 onDeleteClick={selectedTopic ? onDeleteClick : undefined}
                             />
                         )}
@@ -149,11 +170,16 @@ const Page: NextPageWithLayout = () => {
                         selectionType="single"
                         trackBy={topic => topic?.name}
                         selectedItems={(selectedTopic && selectedTopicName) ? [{name: selectedTopicName, ...selectedTopic}] : []}
-                        onSelectionChange={event => setSelectedTopicName(event.detail.selectedItems?.[0]?.name)}
+                        onSelectionChange={event => {
+                            setSelectedTopicName(event.detail.selectedItems?.[0]?.name);
+                            setEditType(EditType.EDIT_TOPIC);
+                        }}
                         loading={isLoading}
                     />
                 )}
                 splitPanel={splitPanel}
+                splitPanelOpen={splitPanelOpen}
+                onSplitPanelToggle={e => setSplitPanelOpen(e.detail.open)}
             />
         </>
     )

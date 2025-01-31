@@ -70,9 +70,7 @@ public interface TopicStore {
 
     Optional<Topic> getTopic(String organizationName, String topicName, boolean useCache);
 
-    Topics setAllowUndefined(String organizationName, boolean allowUndefined);
-
-    Topics updateDefaultTopic(String organizationName, Topic topic, Optional<Long> expectVersionOpt);
+    Topics updateDefaultTopic(String organizationName, Optional<Topic> topicOpt, boolean allowUndefined, Optional<Long> expectVersionOpt);
 
     Topics updateTopic(String organizationName, String topicName, Topic topic, Optional<Long> expectVersionOpt);
 

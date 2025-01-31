@@ -55,7 +55,7 @@ public class TopicStoreTest extends AbstractTest {
     public void test() throws Exception {
         assertEquals(DEFAULT_ALLOW_UNDEFINED_TOPIC, topicStore.getTopic("org1", "topic1", true));
 
-        topicStore.setAllowUndefined("org1", false);
+        topicStore.updateDefaultTopic("org1", Optional.empty(), false, Optional.empty());
         assertEquals(Optional.empty(), topicStore.getTopic("org1", "topic1", true));
 
         Topic topicDefault = Topic.builder()
@@ -63,9 +63,7 @@ public class TopicStoreTest extends AbstractTest {
                         .retention(TopicStore.BatchRetention.WEEK).build())
                 .streams(List.of())
                 .build();
-        topicStore.updateDefaultTopic("org1", topicDefault, Optional.empty());
-        assertEquals(Optional.empty(), topicStore.getTopic("org1", "topic1", true));
-        topicStore.setAllowUndefined("org1", true);
+        topicStore.updateDefaultTopic("org1", Optional.of(topicDefault), true, Optional.empty());
         assertEquals(Optional.of(topicDefault), topicStore.getTopic("org1", "topic1", true));
         assertEquals(DEFAULT_ALLOW_UNDEFINED_TOPIC, topicStore.getTopic("org2", "topic1", true));
 

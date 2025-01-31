@@ -106,36 +106,22 @@ public class DynamoTopicStore implements TopicStore {
     }
 
     @Override
-    public Topics setAllowUndefined(String organizationName, boolean allowUndefined) {
-        Topics topics = topicsSchema.update()
-                .conditionExists()
-                .key(ImmutableMap.of("organizationName", organizationName))
-                .set("allowUndefinedTopics", allowUndefined)
-                .executeGetUpdated(dynamo);
-
-        // Update cache
-        topicsByOrganizationNameCache.put(topics.getOrganizationName(), topics);
-
-        return topics;
-    }
-
-    @Override
-    public Topics updateDefaultTopic(String organizationName, Topic topic, Optional<Long> expectVersionOpt) {
-        return updateTopic(organizationName, Optional.empty(), Optional.of(topic), expectVersionOpt);
+    public Topics updateDefaultTopic(String organizationName, Optional<Topic> topicOpt, boolean allowUndefined, Optional<Long> expectVersionOpt) {
+        return updateTopic(organizationName, Optional.empty(), topicOpt, Optional.of(allowUndefined), expectVersionOpt);
     }
 
     @Override
     public Topics updateTopic(String organizationName, String topicName, Topic topic, Optional<Long> expectVersionOpt) {
-        return updateTopic(organizationName, Optional.of(topicName), Optional.of(topic), expectVersionOpt);
+        return updateTopic(organizationName, Optional.of(topicName), Optional.of(topic), Optional.empty(), expectVersionOpt);
     }
 
     @Override
     public Topics deleteTopic(String organizationName, String topicName, Optional<Long> expectVersionOpt) {
-        return updateTopic(organizationName, Optional.of(topicName), Optional.empty(), expectVersionOpt);
+        return updateTopic(organizationName, Optional.of(topicName), Optional.empty(), Optional.empty(), expectVersionOpt);
     }
 
-    private Topics updateTopic(String organizationName, Optional<String> topicNameOrDefault, Optional<Topic> topicOpt, Optional<Long> expectVersionOpt) {
-        log.info("Updating topic {} for org {}: {}", topicNameOrDefault.orElse("default"), organizationName, topicOpt.map(Topic::toString).orElse("delete"));
+    private Topics updateTopic(String organizationName, Optional<String> topicNameOrDefault, Optional<Topic> topicOpt, Optional<Boolean> allowUndefinedOpt, Optional<Long> expectVersionOpt) {
+        log.info("Updating topic {} for org {}: {} {}", topicNameOrDefault.orElse("default"), organizationName, topicOpt.map(Topic::toString).orElse("delete"), allowUndefinedOpt);
         UpdateBuilder<Topics> updateBuilder = topicsSchema.update()
                 .key(ImmutableMap.of("organizationName", organizationName))
                 .conditionExists();
@@ -143,6 +129,9 @@ public class DynamoTopicStore implements TopicStore {
         // Prevent concurrent modifications by ensuring expected version
         expectVersionOpt.ifPresent(expectVersion -> updateBuilder.conditionFieldEquals("version", expectVersion));
         updateBuilder.setIncrement("version", 1L);
+
+        // Update allow undefined if present
+        allowUndefinedOpt.ifPresent(allowUndefined -> updateBuilder.set("allowUndefinedTopics", allowUndefined));
 
         // Update topic by name or default topic if not present
         topicNameOrDefault.ifPresentOrElse(
@@ -156,6 +145,8 @@ public class DynamoTopicStore implements TopicStore {
                         topic -> updateBuilder.set("undefinedTopic", topic),
                         // Delete default topic
                         () -> updateBuilder.remove("undefinedTopic")));
+
+        // Execute
         Topics topicsUpdated = updateBuilder
                 .executeGetUpdated(dynamo);
 

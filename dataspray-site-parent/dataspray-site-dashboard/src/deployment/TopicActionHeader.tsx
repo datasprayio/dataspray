@@ -24,11 +24,14 @@ import React from 'react';
 import {Button, Header, HeaderProps, SpaceBetween} from '@cloudscape-design/components';
 
 interface Props extends HeaderProps {
-    onEditClick?: () => void;
+    onCreateClick?: () => void;
+    onEditDefaultClick?: () => void;
     onDeleteClick?: () => void;
 }
 
 export function TopicActionHeader({
+    onCreateClick,
+    onEditDefaultClick,
     onDeleteClick,
     ...headerProps
 }: Props) {
@@ -37,6 +40,12 @@ export function TopicActionHeader({
             variant="awsui-h1-sticky"
             actions={
                 <SpaceBetween size="xs" direction="horizontal">
+                    <Button variant='primary' disabled={!onCreateClick} onClick={() => onCreateClick?.()}>
+                        Create
+                    </Button>
+                    <Button variant='primary' disabled={!onEditDefaultClick} onClick={() => onEditDefaultClick?.()}>
+                        Edit default
+                    </Button>
                     <Button disabled={!onDeleteClick} onClick={() => onDeleteClick?.()}>
                         Delete
                     </Button>

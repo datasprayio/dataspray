@@ -23,8 +23,11 @@
 import {getClient} from '../util/dataSprayClientWrapper';
 import {Topics} from 'dataspray-client';
 import useSWR, {SWRResponse} from "swr";
+import {useCallback} from "react";
 
-export default function useTopicStore(organizationName?: string | null): SWRResponse<Topics, any> {
+export default function useTopicStore(organizationName?: string | null): SWRResponse<Topics, any> & {
+    update: (newTopics: Topics) => void;
+} {
     const fetcher = !organizationName ? null : ([taskStatuses, orgName]: [string, string, string | undefined]): Promise<Topics> => getClient()
         .control().getTopics({
             organizationName: orgName,
@@ -32,5 +35,11 @@ export default function useTopicStore(organizationName?: string | null): SWRResp
     const swr = useSWR(
         ['topics', organizationName],
         fetcher);
-    return swr;
+    const update = useCallback((newTopics: Topics) => {
+        swr.mutate(newTopics, { revalidate: false })
+    }, [swr])
+    return {
+        ...swr,
+        update,
+    };
 }

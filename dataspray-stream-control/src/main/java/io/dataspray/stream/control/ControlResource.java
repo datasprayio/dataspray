@@ -53,6 +53,7 @@ import io.dataspray.stream.control.model.TopicStoreKey;
 import io.dataspray.stream.control.model.TopicStoreKey.TableTypeEnum;
 import io.dataspray.stream.control.model.TopicStream;
 import io.dataspray.stream.control.model.Topics;
+import io.dataspray.stream.control.model.UpdateDefaultTopicRequest;
 import io.dataspray.stream.control.model.UploadCodeRequest;
 import io.dataspray.stream.control.model.UploadCodeResponse;
 import io.dataspray.web.resource.AbstractResource;
@@ -241,8 +242,8 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     @Override
-    public Topics updateDefaultTopic(String organizationName, Topic topic, Long expectVersion) {
-        return modelToTopics(topicStore.updateDefaultTopic(organizationName, topicToModel(topic), Optional.ofNullable(expectVersion)));
+    public Topics updateDefaultTopic(String organizationName, UpdateDefaultTopicRequest updateDefaultTopicRequest, Long expectVersion) {
+        return modelToTopics(topicStore.updateDefaultTopic(organizationName, Optional.ofNullable(updateDefaultTopicRequest.getTopic()).map(this::topicToModel), updateDefaultTopicRequest.getAllowUndefined(), Optional.ofNullable(expectVersion)));
     }
 
     @Override
@@ -272,7 +273,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
                                         .map(TopicStore.BatchRetention::fromDays)
                                         .orElse(null)))
                         .orElse(null),
-                topic.getStreams().stream()
+                topic.getStreams() == null ? ImmutableList.of() : topic.getStreams().stream()
                         .map(stream -> new TopicStore.Stream(stream.getName()))
                         .collect(ImmutableList.toImmutableList()),
                 Optional.ofNullable(topic.getStore()).map(store -> new TopicStore.Store(

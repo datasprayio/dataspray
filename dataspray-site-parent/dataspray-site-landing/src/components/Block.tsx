@@ -21,6 +21,7 @@
  */
 
 import {Grid, Typography} from "@mui/material";
+import React from "react";
 
 const Block = (props: {
     title: React.ReactNode;

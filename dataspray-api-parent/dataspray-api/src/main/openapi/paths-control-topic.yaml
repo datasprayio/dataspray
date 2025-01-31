@@ -132,7 +132,15 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Topic'
+            title: UpdateDefaultTopicRequest
+            type: object
+            required:
+              - allowUndefined
+            properties:
+              allowUndefined:
+                type: boolean
+              topic:
+                $ref: '#/components/schemas/Topic'
     responses:
       '200':
         description: Ok
