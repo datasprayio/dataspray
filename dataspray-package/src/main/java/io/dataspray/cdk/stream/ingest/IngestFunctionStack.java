@@ -145,7 +145,8 @@ public class IngestFunctionStack extends ApiFunctionStack {
                 .destination(S3Bucket.Builder.create(bucketEtl)
                         .bufferingInterval(Duration.seconds(900))
                         .bufferingSize(Size.mebibytes(128))
-                        .compression(Compression.ZIP)
+                        // Athena only supports gzip and bzip2
+                        .compression(Compression.GZIP)
                         .dataOutputPrefix(ETL_BUCKET_PREFIX)
                         .errorOutputPrefix(ETL_BUCKET_ERROR_PREFIX)
                         .loggingConfig(new EnableLogging())
