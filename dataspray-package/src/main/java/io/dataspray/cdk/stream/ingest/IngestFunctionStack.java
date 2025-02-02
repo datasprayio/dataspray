@@ -125,7 +125,7 @@ public class IngestFunctionStack extends ApiFunctionStack {
                 .lifecycleRules(Arrays.stream(TopicStore.BatchRetention.values()).map(batchRetention -> LifecycleRule.builder()
                         .id(batchRetention.name())
                         .expiration(Duration.days(batchRetention.getRetentionInDays()))
-                        .prefix(ETL_BUCKET_RETENTION_PREFIX + batchRetention.name())
+                        .prefix(ETL_BUCKET_RETENTION_PREFIX_PREFIX + batchRetention.name())
                         .build()).collect(Collectors.toList()))
                 // Move objects to archive after inactivity to save costs
                 .intelligentTieringConfigurations(Arrays.stream(TopicStore.BatchRetention.values())
