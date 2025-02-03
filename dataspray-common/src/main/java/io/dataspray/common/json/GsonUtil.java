@@ -33,6 +33,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import com.google.gson.ToNumberPolicy;
 import io.quarkus.arc.DefaultBean;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
@@ -73,6 +74,7 @@ public class GsonUtil {
                     gson = new GsonBuilder()
                             .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
                             .disableHtmlEscaping()
+                            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
                             .registerTypeAdapterFactory(ImmutableAdapterFactory.forGuava())
                             .registerTypeAdapterFactory(new NonnullAdapterFactory())
                             .registerTypeAdapter(Instant.class, new InstantTypeConverter())
