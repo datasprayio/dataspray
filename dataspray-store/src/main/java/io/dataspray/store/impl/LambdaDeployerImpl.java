@@ -886,14 +886,14 @@ public class LambdaDeployerImpl implements LambdaDeployer {
     }
 
     @Override
-    public UploadCodeClaim uploadCode(String customerId, String taskId, long contentLengthBytes) {
+    public UploadCodeClaim uploadCode(String organizationName, String taskId, long contentLengthBytes) {
         if (contentLengthBytes <= 0) {
             throw new BadRequestException("Cannot upload empty file.");
         }
         if (contentLengthBytes > CODE_MAX_SIZE_COMPRESSED_IN_BYTES) {
             throw new BadRequestException("Maximum compressed code size is " + CODE_MAX_SIZE_COMPRESSED_IN_BYTES / 1024 / 1024 + "MB, but found " + contentLengthBytes / 1024 / 1024 + "MB, please contact support");
         }
-        String key = getCodeKeyPrefix(customerId)
+        String key = getCodeKeyPrefix(organizationName)
                      + taskId
                      + "-"
                      + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS").withZone(ZoneOffset.UTC).format(Instant.now()) + ".zip";
@@ -928,8 +928,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         return CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + organizationName + "-";
     }
 
-    private Optional<String> getTaskIdFromFunctionName(String customerId, String functionName) {
-        String functionPrefix = getFunctionOrDynamoOrRoleNamePrefix(customerId);
+    private Optional<String> getTaskIdFromFunctionName(String organizationName, String functionName) {
+        String functionPrefix = getFunctionOrDynamoOrRoleNamePrefix(organizationName);
         return functionName.startsWith(functionPrefix)
                 ? Optional.of(functionName.substring(functionPrefix.length()))
                 : Optional.empty();
@@ -943,13 +943,13 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                + " deployed on " + Instant.now();
     }
 
-    private String getCodeKeyPrefix(String customerId) {
-        return CODE_KEY_PREFIX + customerId + "/";
+    private String getCodeKeyPrefix(String organizationName) {
+        return CODE_KEY_PREFIX + organizationName + "/";
     }
 
-    private String getCodeKeyFromUrl(String customerId, String url) {
+    private String getCodeKeyFromUrl(String organizationName, String url) {
         String s3UrlAndBucketPrefix = "s3://" + codeBucketName + "/";
-        String s3UrlAndBucketAndKeyPrefix = s3UrlAndBucketPrefix + getCodeKeyPrefix(customerId);
+        String s3UrlAndBucketAndKeyPrefix = s3UrlAndBucketPrefix + getCodeKeyPrefix(organizationName);
         if (!url.startsWith(s3UrlAndBucketAndKeyPrefix)) {
             throw new BadRequestException("Incorrect bucket location");
         }
@@ -1005,8 +1005,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         }
     }
 
-    private void addQueuePermissionToFunction(String customerId, String taskId, String qualifier, String queueName) {
-        String functionName = getFunctionName(customerId, taskId);
+    private void addQueuePermissionToFunction(String organizationName, String taskId, String qualifier, String queueName) {
+        String functionName = getFunctionName(organizationName, taskId);
         try {
             lambdaClient.addPermission(AddPermissionRequest.builder()
                     .functionName(functionName)
@@ -1014,7 +1014,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                     .statementId(getQueueStatementId(queueName))
                     .principal("sqs.amazonaws.com")
                     .action("lambda:InvokeFunction")
-                    .sourceArn("arn:aws:sqs:" + awsRegion + ":" + awsAccountId + ":" + streamStore.getAwsQueueName(customerId, queueName))
+                    .sourceArn("arn:aws:sqs:" + awsRegion + ":" + awsAccountId + ":" + streamStore.getAwsQueueName(organizationName, queueName))
                     .build());
             log.debug("Created function {} permission for qualifier {} and queue {}", functionName, qualifier, queueName);
         } catch (ResourceConflictException ex) {
@@ -1026,8 +1026,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
      * Read queue names from permissions, given version. For a list of names for active version, use
      * {@link LambdaStore#get} instead.
      */
-    private ImmutableSet<String> readQueueNamesFromFunctionPermissions(String customerId, String taskId, String version) {
-        String functionName = getFunctionName(customerId, taskId);
+    private ImmutableSet<String> readQueueNamesFromFunctionPermissions(String organizationName, String taskId, String version) {
+        String functionName = getFunctionName(organizationName, taskId);
         String policyStr = lambdaClient.getPolicy(GetPolicyRequest.builder()
                         .functionName(getFunctionArn(functionName, version))
                         .build())
@@ -1036,7 +1036,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
         ResourcePolicyDocument resourcePolicyDocument = gson.fromJson(policyStr, ResourcePolicyDocument.class);
         if (!"2012-10-17".equals(resourcePolicyDocument.getVersion())) {
             log.error("Cannot parse resource policy document with unknown version {} for customer {} taskId {} version {}",
-                    resourcePolicyDocument.getVersion(), customerId, taskId, version);
+                    resourcePolicyDocument.getVersion(), organizationName, taskId, version);
             throw new InternalServerErrorException("Cannot parse resource, please contact support");
         }
         ImmutableSet<String> queueNames = resourcePolicyDocument
@@ -1049,14 +1049,14 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(ImmutableSet.toImmutableSet());
-        log.trace("Fetched customer {} task {} version {} queue names from policy {}", customerId, taskId, version, queueNames);
+        log.trace("Fetched customer {} task {} version {} queue names from policy {}", organizationName, taskId, version, queueNames);
         return queueNames;
     }
 
-    private ImmutableSet<QueueSource> getTaskQueueSources(String customerId, String taskId) {
+    private ImmutableSet<QueueSource> getTaskQueueSources(String organizationName, String taskId) {
         ImmutableSet<QueueSource> queueSources = lambdaClient.listEventSourceMappingsPaginator(ListEventSourceMappingsRequest.builder()
                         // ARN is needed if we want to supply qualifier
-                        .functionName(getFunctionArn(getFunctionName(customerId, taskId), LAMBDA_ACTIVE_QUALIFIER))
+                        .functionName(getFunctionArn(getFunctionName(organizationName, taskId), LAMBDA_ACTIVE_QUALIFIER))
                         .build())
                 .stream()
                 .map(ListEventSourceMappingsResponse::eventSourceMappings)
@@ -1067,7 +1067,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                         return Stream.of();
                     }
                     String awsQueueName = source.eventSourceArn().substring(arnPrefix.length());
-                    Optional<String> queueNameOpt = streamStore.extractStreamNameFromAwsQueueName(customerId, awsQueueName);
+                    Optional<String> queueNameOpt = streamStore.extractStreamNameFromAwsQueueName(organizationName, awsQueueName);
                     if (queueNameOpt.isEmpty()) {
                         return Stream.of();
                     }
@@ -1094,8 +1094,8 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                         case "Deleting":
                             return Stream.of();
                         default:
-                            log.error("Retrieving event source mapping resulted in invalid state, customerId {} taskId {} source {} state original {} state now {}",
-                                    customerId, taskId, source.uuid(), source.state(), source.state());
+                            log.error("Retrieving event source mapping resulted in invalid state, organizationName {} taskId {} source {} state original {} state now {}",
+                                    organizationName, taskId, source.uuid(), source.state(), source.state());
                             throw new InternalServerErrorException("Failed to determine current state, please try again later");
                     }
                     return Stream.of(new QueueSource(
@@ -1104,7 +1104,7 @@ public class LambdaDeployerImpl implements LambdaDeployer {
                             state));
                 })
                 .collect(ImmutableSet.toImmutableSet());
-        log.trace("Fetched customer {} task {} sources {}", customerId, taskId, queueSources);
+        log.trace("Fetched organization {} task {} sources {}", organizationName, taskId, queueSources);
         return queueSources;
     }
 

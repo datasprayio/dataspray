@@ -222,7 +222,7 @@ public abstract class IngestBase extends AbstractLambdaTest {
 
         Object messageTsObject = objectJson.get(ETL_MESSAGE_TS);
         log.info("Object ts {}", messageTsObject);
-        Instant messageTsInstant = Instant.ofEpochMilli(((Double) messageTsObject).longValue());
+        Instant messageTsInstant = Instant.ofEpochMilli(((long) messageTsObject));
         assertTrue(messageTsInstant.isAfter(Instant.now().minusSeconds(100)));
         assertTrue(messageTsInstant.isBefore(Instant.now().plusSeconds(100)));
 

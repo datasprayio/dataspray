@@ -23,12 +23,14 @@
 package io.dataspray.store.impl;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.common.StringUtil;
 import io.dataspray.store.ApiAccessStore;
 import io.dataspray.store.OrganizationStore;
+import io.dataspray.store.TopicStore;
 import io.dataspray.store.util.IamUtil;
 import io.dataspray.store.util.WaiterUtil;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -45,11 +47,14 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.GroupType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.UpdateGroupRequest;
 import software.amazon.awssdk.services.iam.IamClient;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static io.dataspray.common.DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME;
+import static io.dataspray.store.impl.FirehoseS3AthenaBatchStore.*;
 import static io.dataspray.store.impl.LambdaDeployerImpl.*;
 
 /**
@@ -70,6 +75,8 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
     String customerFunctionPermissionBoundaryName;
     @ConfigProperty(name = DEPLOY_ENVIRONMENT_PROP_NAME)
     DeployEnvironment deployEnv;
+    @ConfigProperty(name = ETL_BUCKET_PROP_NAME)
+    String etlBucketName;
     @Inject
     Gson gson;
     @Inject
@@ -154,6 +161,68 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
                 .groupName(organizationName)
                 .username(username)
                 .build());
+    }
+
+    @Override
+    public void addGlueDatabaseToOrganization(String organizationName, String databaseName) {
+        String groupRoleArn = getOrCreateGroupRoleArn(organizationName);
+        String policyName = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "GroupGlue" + StringUtil.camelCase(databaseName, true);
+        iamUtil.ensurePolicyAttachedToRole(groupRoleArn, policyName, gson.toJson(Map.of(
+                "Version", "2012-10-17",
+                "Statement", List.of(Map.of(
+                                "Effect", "Allow",
+                                "Action", List.of(
+                                        "glue:GetDatabase",
+                                        "glue:GetTable",
+                                        "glue:GetTables",
+                                        "glue:GetPartition",
+                                        "glue:GetPartitions"
+                                ),
+                                "Resource", List.of(
+                                        "arn:aws:glue:" + awsRegion + ":" + awsAccountId + ":database/" + databaseName,
+                                        "arn:aws:glue:" + awsRegion + ":" + awsAccountId + ":table/" + databaseName + "/*"
+                                )
+                        ), Map.of(
+                                "Effect", "Allow",
+                                "Action", List.of(
+                                        "s3:GetObject",
+                                        "s3:ListBucket"
+                                ),
+                                "Resource", ImmutableList.<String>builder()
+                                        .add("arn:aws:s3:::" + etlBucketName)
+                                        .addAll(
+                                                Arrays.stream(TopicStore.BatchRetention.values())
+                                                        .map(retention ->
+                                                                "arn:aws:s3:::" + etlBucketName + "/" +
+                                                                ETL_BUCKET_ORGANIZATION_PREFIX
+                                                                        .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}", retention.name())
+                                                                        .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}", organizationName)
+                                                                + "/*")
+                                                        .collect(Collectors.toSet()))
+                                        .build()
+                        ), Map.of(
+                                "Effect", "Allow",
+                                "Action", List.of(
+                                        "athena:StartQueryExecution",
+                                        "athena:GetQueryExecution",
+                                        "athena:GetQueryResults"
+                                ),
+                                "Resource", "*"
+                        ), Map.of(
+                                "Effect", "Allow",
+                                "Action", List.of(
+                                        "s3:GetObject",
+                                        "s3:PutObject"
+                                ),
+                                "Resource",
+                                "arn:aws:s3:::"
+                                + ETL_BUCKET_ATHENA_RESULTS_PREFIX
+                                        .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}", organizationName)
+                                + "/*"
+
+                        )
+                )
+        )));
     }
 
     @Override

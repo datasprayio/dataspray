@@ -249,6 +249,20 @@ public class CodegenImpl implements Codegen {
         codegen(project, processorPath, template, contextBuilder.createForProcessor(project, processor), Optional.empty(), overwriteWriteableTemplate);
     }
 
+    @Override
+    public Path getDataFormatSchema(Project project, DataFormat dataFormat) {
+        String dataFormatExtension = switch (dataFormat.getSerde()) {
+            case JSON -> "schema.json";
+            case PROTOBUF -> "proto";
+            case AVRO -> "avsc";
+            default -> throw new IllegalStateException("Schema not supported for serde " + dataFormat.getSerde());
+        };
+        return getDataFormatDir(project, dataFormat).resolve(
+                dataFormat.getNameCamelLower()
+                + "."
+                + dataFormatExtension);
+    }
+
     private Path getDataFormatDir(Project project, DataFormat dataFormat) {
         return project.getAbsolutePath().resolve(SCHEMAS_FOLDER).resolve(dataFormat.getNameDir());
     }

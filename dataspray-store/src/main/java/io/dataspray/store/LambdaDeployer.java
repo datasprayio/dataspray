@@ -71,7 +71,7 @@ public interface LambdaDeployer {
 
     void delete(String organizationName, String taskId);
 
-    UploadCodeClaim uploadCode(String customerId, String taskId, long contentLengthBytes);
+    UploadCodeClaim uploadCode(String organizationName, String taskId, long contentLengthBytes);
 
     @Value
     @RegisterForReflection

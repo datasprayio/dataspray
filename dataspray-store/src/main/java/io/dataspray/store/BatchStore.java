@@ -23,6 +23,7 @@
 package io.dataspray.store;
 
 import io.dataspray.store.TopicStore.BatchRetention;
+import lombok.Value;
 import software.amazon.awssdk.services.glue.model.DataFormat;
 
 import java.util.Optional;
@@ -32,16 +33,20 @@ public interface BatchStore {
     /**
      * @return Firehose sent Record ID
      */
-    String putRecord(String customerId,
-                     String topicName,
-                     Optional<String> messageIdOpt,
-                     String messageKey,
-                     byte[] messageBytes,
-                     BatchRetention retention);
+    String putRecord(byte[] messageBytes);
 
-    void setTableDefinition(String customerId,
+    Optional<TableDefinition> getTableDefinition(String organizationName,
+                                                 String topicName);
+
+    void setTableDefinition(String organizationName,
                             String topicName,
                             DataFormat dataFormat,
                             String schemaDefinition,
                             BatchRetention retention);
+
+    @Value
+    class TableDefinition {
+        String schema;
+        DataFormat dataFormat;
+    }
 }

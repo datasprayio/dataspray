@@ -92,6 +92,30 @@ components:
             type: string
         rangePrefix:
           type: string
+    TopicSchema:
+      type: object
+      required:
+        - schema
+        - format
+      properties:
+        schema:
+          type: string
+        format:
+          $ref: '#/components/schemas/SchemaFormat'
+    UpdateTopicSchemaRequest:
+      type: object
+      required:
+        - schema
+        - format
+      properties:
+        schema:
+          type: string
+        format:
+          $ref: '#/components/schemas/SchemaFormat'
+    SchemaFormat:
+      type: string
+      enum:
+        - JSON
 
 /v1/organization/{organizationName}/topics:
   get:
@@ -209,3 +233,54 @@ components:
           application/json:
             schema:
               $ref: '#/components/schemas/Topics'
+/v1/organization/{organizationName}/topic/{topicName}/schema:
+  get:
+    operationId: getTopicSchema
+    tags: [ Control ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: topicName
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicSchema'
+      '404':
+        description: Schema not found
+  put:
+    operationId: updateTopicSchema
+    tags: [ Control ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: topicName
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateTopicSchemaRequest'
+    responses:
+      '201':
+        description: Schema created
+      '200':
+        description: Schema unchanged or not needed
+      '400':
+        description: Schema validation failed

@@ -22,7 +22,10 @@
 
 package io.dataspray.core;
 
+import io.dataspray.core.definition.model.DataFormat;
 import io.dataspray.core.sample.SampleProject;
+
+import java.nio.file.Path;
 
 public interface Codegen {
     Project initProject(String basePath, String projectName, SampleProject sample);
@@ -38,4 +41,6 @@ public interface Codegen {
     void generateAll(Project project, boolean overwriteWriteableTemplate);
 
     void generateProcessor(Project project, String processorName, boolean overwriteWriteableTemplate);
+
+    Path getDataFormatSchema(Project project, DataFormat dataFormat);
 }

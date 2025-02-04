@@ -40,9 +40,11 @@ import io.dataspray.store.LambdaDeployer.Versions;
 import io.dataspray.store.LambdaStore;
 import io.dataspray.store.OrganizationStore;
 import io.dataspray.store.TopicStore;
+import io.dataspray.store.TopicStore.Batch;
 import io.dataspray.store.util.WithCursor;
 import io.dataspray.stream.control.model.DeployRequest;
 import io.dataspray.stream.control.model.DeployVersionCheckResponse;
+import io.dataspray.stream.control.model.SchemaFormat;
 import io.dataspray.stream.control.model.TaskStatus;
 import io.dataspray.stream.control.model.TaskStatus.StatusEnum;
 import io.dataspray.stream.control.model.TaskStatuses;
@@ -50,11 +52,13 @@ import io.dataspray.stream.control.model.TaskVersion;
 import io.dataspray.stream.control.model.TaskVersions;
 import io.dataspray.stream.control.model.Topic;
 import io.dataspray.stream.control.model.TopicBatch;
+import io.dataspray.stream.control.model.TopicSchema;
 import io.dataspray.stream.control.model.TopicStoreKey;
 import io.dataspray.stream.control.model.TopicStoreKey.TableTypeEnum;
 import io.dataspray.stream.control.model.TopicStream;
 import io.dataspray.stream.control.model.Topics;
 import io.dataspray.stream.control.model.UpdateDefaultTopicRequest;
+import io.dataspray.stream.control.model.UpdateTopicSchemaRequest;
 import io.dataspray.stream.control.model.UploadCodeRequest;
 import io.dataspray.stream.control.model.UploadCodeResponse;
 import io.dataspray.web.resource.AbstractResource;
@@ -62,9 +66,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import software.amazon.awssdk.services.glue.model.DataFormat;
 import software.amazon.awssdk.services.lambda.model.Cors;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
 import software.amazon.awssdk.services.lambda.model.Runtime;
@@ -258,6 +265,33 @@ public class ControlResource extends AbstractResource implements ControlApi {
     }
 
     @Override
+    public TopicSchema getTopicSchema(String organizationName, String topicName) {
+        return batchStore.getTableDefinition(organizationName, topicName).map(tableDefinition ->
+                        new TopicSchema(
+                                tableDefinition.getSchema(),
+                                SchemaFormat.valueOf(tableDefinition.getDataFormat().name())
+                        ))
+                .orElseThrow(() -> new NotFoundException("Topic schema not found for " + topicName));
+    }
+
+    @Override
+    public void updateTopicSchema(String organizationName, String topicName, UpdateTopicSchemaRequest updateTopicSchemaRequest) {
+        Batch batch = topicStore.getTopic(organizationName, topicName, false)
+                .orElseThrow(() -> new NotFoundException("Topic not found: " + topicName))
+                .getBatch()
+                .orElseThrow(() -> new WebApplicationException(
+                        "Topic " + topicName + " does not have batch enabled",
+                        Response.Status.NO_CONTENT));
+        batchStore.setTableDefinition(
+                organizationName,
+                topicName,
+                DataFormat.fromValue(updateTopicSchemaRequest.getDataFormat().name()),
+                updateTopicSchemaRequest.getSchema(),
+                batch.getRetention());
+        throw new WebApplicationException(Response.Status.CREATED);
+    }
+
+    @Override
     public UploadCodeResponse uploadCode(String organizationName, UploadCodeRequest uploadCodeRequest) {
         UploadCodeClaim uploadCodeClaim = deployer.uploadCode(organizationName, uploadCodeRequest.getTaskId(), uploadCodeRequest.getContentLengthBytes());
         return new UploadCodeResponse(
@@ -269,7 +303,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
     private TopicStore.Topic topicToModel(Topic topic) {
         return new TopicStore.Topic(
                 Optional.ofNullable(topic.getBatch())
-                        .map(batch -> new TopicStore.Batch(
+                        .map(batch -> new Batch(
                                 Optional.ofNullable(batch.getRetentionInDays())
                                         .map(TopicStore.BatchRetention::fromDays)
                                         .orElse(null)))

@@ -163,7 +163,7 @@ public class IngestResource extends AbstractResource implements IngestApi {
 
                     // Send to Firehose
                     taskBatchSendOpt = Optional.of(taskMessageAsEnrichedBytes.thenApplyAsync(messageEnrichedBytes ->
-                            batchStore.putRecord(organizationName, topicName, messageIdOpt, messageKey, messageEnrichedBytes, topic.getBatch().get().getRetention())));
+                            batchStore.putRecord(messageEnrichedBytes)));
                 }
 
                 // Submit message to dynamo store

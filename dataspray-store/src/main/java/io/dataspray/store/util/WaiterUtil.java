@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matus Faro
+ * Copyright 2025 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,10 @@ import software.amazon.awssdk.core.waiters.WaiterAcceptor;
 import software.amazon.awssdk.core.waiters.WaiterOverrideConfiguration;
 import software.amazon.awssdk.core.waiters.WaiterResponse;
 import software.amazon.awssdk.core.waiters.WaiterState;
+import software.amazon.awssdk.services.glue.GlueClient;
+import software.amazon.awssdk.services.glue.model.GetSchemaVersionRequest;
+import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
+import software.amazon.awssdk.services.glue.model.SchemaVersionStatus;
 import software.amazon.awssdk.services.iam.IamClient;
 import software.amazon.awssdk.services.iam.model.GetRolePolicyRequest;
 import software.amazon.awssdk.services.iam.model.GetRolePolicyResponse;
@@ -65,6 +69,8 @@ public class WaiterUtil {
     LambdaClient lambdaClient;
     @Inject
     IamClient iamClient;
+    @Inject
+    GlueClient glueClient;
 
     /** Note this operation may take longer than API Gateway 30sec timeout */
     public WaiterResponse<GetEventSourceMappingResponse> waitUntilEventSourceMappingEnabled(String uuid) {
@@ -126,6 +132,21 @@ public class WaiterUtil {
                 .roleName(roleName)
                 .policyName(policyName)
                 .build()));
+    }
+
+    public WaiterResponse<GetSchemaVersionResponse> waitUntilGlueSchemaCompletedState(String schemaVersionId) {
+        return DefaultWaiter.<GetSchemaVersionResponse>builder()
+                .addAcceptor(WaiterAcceptor.successOnResponseAcceptor(response ->
+                        SchemaVersionStatus.AVAILABLE.equals(response.status())))
+                .addAcceptor(WaiterAcceptor.successOnResponseAcceptor(response ->
+                        SchemaVersionStatus.FAILURE.equals(response.status())))
+                .addAcceptor(WaiterAcceptor.retryOnResponseAcceptor(response ->
+                        SchemaVersionStatus.PENDING.equals(response.status())))
+                .addAcceptor(WaiterAcceptor.errorOnResponseAcceptor(response ->
+                        SchemaVersionStatus.DELETING.equals(response.status())))
+                .build()
+                .run(() -> glueClient.getSchemaVersion(GetSchemaVersionRequest.builder()
+                        .schemaVersionId(schemaVersionId).build()));
     }
 
     public <R> R resolve(WaiterResponse<R> waiterResponse) {

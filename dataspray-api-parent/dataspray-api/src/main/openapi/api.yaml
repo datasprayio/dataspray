@@ -69,5 +69,7 @@ paths:
     $ref: 'paths-control-topic.yaml#/~1v1~1organization~1{organizationName}~1topic~1default'
   /v1/organization/{organizationName}/topic/{topicName}:
     $ref: 'paths-control-topic.yaml#/~1v1~1organization~1{organizationName}~1topic~1{topicName}'
+  /v1/organization/{organizationName}/topic/{topicName}/schema:
+    $ref: 'paths-control-topic.yaml#/~1v1~1organization~1{organizationName}~1topic~1{topicName}~1schema'
   /v1/organization/{organizationName}/topic/{topicName}/message:
     $ref: 'paths-ingest.yaml#/~1v1~1organization~1{organizationName}~1topic~1{topicName}~1message'

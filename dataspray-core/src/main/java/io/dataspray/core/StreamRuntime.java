@@ -23,6 +23,7 @@
 package io.dataspray.core;
 
 import io.dataspray.client.Access;
+import io.dataspray.core.definition.model.StreamLink;
 import io.dataspray.stream.control.client.ApiException;
 import io.dataspray.stream.control.client.model.TaskStatus;
 import io.dataspray.stream.control.client.model.TaskVersion;
@@ -40,6 +41,8 @@ public interface StreamRuntime {
     void status(Organization organization, Project project, String processorName);
 
     TaskVersion deploy(Organization organization, Project project, String processorName, boolean activateVersion);
+
+    void uploadSchema(Organization organization, Project project, StreamLink streamLink);
 
     TaskStatus activateVersion(Organization organization, Project project, String processorName, String version);
 

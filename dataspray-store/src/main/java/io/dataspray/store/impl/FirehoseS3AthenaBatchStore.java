@@ -24,7 +24,9 @@ package io.dataspray.store.impl;
 
 import io.dataspray.store.BatchStore;
 import io.dataspray.store.CustomerLogger;
+import io.dataspray.store.OrganizationStore;
 import io.dataspray.store.TopicStore.BatchRetention;
+import io.dataspray.store.util.WaiterUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
@@ -44,7 +46,6 @@ import software.amazon.awssdk.services.glue.model.CreateRegistryRequest;
 import software.amazon.awssdk.services.glue.model.CreateSchemaRequest;
 import software.amazon.awssdk.services.glue.model.CreateTableRequest;
 import software.amazon.awssdk.services.glue.model.DataFormat;
-import software.amazon.awssdk.services.glue.model.Database;
 import software.amazon.awssdk.services.glue.model.DatabaseInput;
 import software.amazon.awssdk.services.glue.model.EntityNotFoundException;
 import software.amazon.awssdk.services.glue.model.GetDatabaseRequest;
@@ -52,17 +53,23 @@ import software.amazon.awssdk.services.glue.model.GetRegistryRequest;
 import software.amazon.awssdk.services.glue.model.GetRegistryResponse;
 import software.amazon.awssdk.services.glue.model.GetSchemaRequest;
 import software.amazon.awssdk.services.glue.model.GetSchemaResponse;
+import software.amazon.awssdk.services.glue.model.GetSchemaVersionRequest;
+import software.amazon.awssdk.services.glue.model.GetSchemaVersionResponse;
 import software.amazon.awssdk.services.glue.model.GetTableRequest;
 import software.amazon.awssdk.services.glue.model.RegisterSchemaVersionRequest;
 import software.amazon.awssdk.services.glue.model.RegistryId;
 import software.amazon.awssdk.services.glue.model.RegistryStatus;
 import software.amazon.awssdk.services.glue.model.SchemaId;
 import software.amazon.awssdk.services.glue.model.SchemaReference;
+import software.amazon.awssdk.services.glue.model.SchemaVersionNumber;
+import software.amazon.awssdk.services.glue.model.SchemaVersionStatus;
+import software.amazon.awssdk.services.glue.model.SerDeInfo;
 import software.amazon.awssdk.services.glue.model.StorageDescriptor;
 import software.amazon.awssdk.services.glue.model.Table;
 import software.amazon.awssdk.services.glue.model.TableInput;
 import software.amazon.awssdk.services.glue.model.UpdateTableRequest;
 
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -88,17 +95,23 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
                                                          "/day=!{timestamp:dd}" +
                                                          "/hour=!{timestamp:HH}" +
                                                          "/";
-    public static final String ETL_BUCKET_PREFIX = ETL_BUCKET_RETENTION_PREFIX +
-                                                   "/organization=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}" +
+    public static final String ETL_BUCKET_ORGANIZATION_PREFIX = ETL_BUCKET_RETENTION_PREFIX +
+                                                                "/organization=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}";
+    public static final BatchRetention ATHENA_RESULTS_DEFAULT_RETENTION = BatchRetention.WEEK;
+    public static final String ETL_BUCKET_ATHENA_RESULTS_PREFIX = (ETL_BUCKET_ORGANIZATION_PREFIX +
+                                                                   "/organization=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}"
+                                                                   + "/athena-results")
+            .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}", ATHENA_RESULTS_DEFAULT_RETENTION.name());
+    public static final String ETL_BUCKET_PREFIX = ETL_BUCKET_ORGANIZATION_PREFIX +
                                                    "/topic=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TOPIC + "}" +
                                                    "/year=!{timestamp:yyyy}" +
                                                    "/month=!{timestamp:MM}" +
                                                    "/day=!{timestamp:dd}" +
                                                    "/hour=!{timestamp:HH}" +
                                                    "/";
-    public static final TriFunction<BatchRetention, String, String, String> ETL_BUCKET_TARGET_PREFIX = (etlBatchRetention, customerId, topicName) -> ETL_BUCKET_PREFIX
+    public static final TriFunction<BatchRetention, String, String, String> ETL_BUCKET_TARGET_PREFIX = (etlBatchRetention, organizationName, topicName) -> ETL_BUCKET_PREFIX
             .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}", etlBatchRetention.name())
-            .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}", customerId)
+            .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}", organizationName)
             .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TOPIC + "}", topicName);
 
     @ConfigProperty(name = "aws.accountId")
@@ -115,11 +128,14 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     @Inject
     AthenaClient athenaClient;
     @Inject
+    OrganizationStore organizationStore;
+    @Inject
     CustomerLogger customerLog;
-
+    @Inject
+    WaiterUtil waiterUtil;
 
     @Override
-    public String putRecord(String customerId, String topicName, Optional<String> messageIdOpt, String messageKey, byte[] messageBytes, BatchRetention retention) {
+    public String putRecord(byte[] messageBytes) {
         return firehoseClient.putRecord(PutRecordRequest.builder()
                         .deliveryStreamName(firehoseStreamName)
                         .record(Record.builder()
@@ -128,24 +144,52 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     }
 
     @Override
+    public Optional<TableDefinition> getTableDefinition(String organizationName, String topicName) {
+        return getRegistry(organizationName)
+                .flatMap(registry -> getLatestSchemaVersion(topicName, registry))
+                .map(schemaVersion -> new TableDefinition(
+                        schemaVersion.schemaDefinition(),
+                        schemaVersion.dataFormat()));
+    }
+
+    @Override
     public void setTableDefinition(
-            String customerId,
+            String organizationName,
             String topicName,
             DataFormat dataFormat,
             String schemaDefinition,
             BatchRetention retention) {
-        GetRegistryResponse registry = getOrCreateRegistry(customerId);
 
+        GetRegistryResponse registry = getOrCreateRegistry(organizationName);
+
+        String schemaVersionId = createOrUpdateSchema(topicName, dataFormat, schemaDefinition, registry);
+
+        String databaseName = getOrCreateDatabase(organizationName);
+
+        upsertTableAndSchema(organizationName, topicName, registry.registryName(), databaseName, schemaVersionId, retention);
+
+        organizationStore.addGlueDatabaseToOrganization(organizationName, databaseName);
+    }
+
+    private String getSchemaNameForQueue(String topicName) {
+        return GLUE_SCHEMA_FOR_QUEUE_PREFIX + topicName;
+    }
+
+    private Optional<GetSchemaResponse> getSchema(String topicName, GetRegistryResponse registry) {
         String schemaName = getSchemaNameForQueue(topicName);
-        Optional<GetSchemaResponse> schemaPreviousOpt;
         try {
-            schemaPreviousOpt = Optional.of(glueClient.getSchema(GetSchemaRequest.builder()
+            return Optional.of(glueClient.getSchema(GetSchemaRequest.builder()
                     .schemaId(SchemaId.builder()
                             .registryName(registry.registryName())
                             .schemaName(schemaName).build()).build()));
         } catch (EntityNotFoundException ex) {
-            schemaPreviousOpt = Optional.empty();
+            return Optional.empty();
         }
+    }
+
+    private String createOrUpdateSchema(String topicName, DataFormat dataFormat, String schemaDefinition, GetRegistryResponse registry) {
+        String schemaName = getSchemaNameForQueue(topicName);
+        Optional<GetSchemaResponse> schemaPreviousOpt = getSchema(topicName, registry);
 
         final String schemaVersionId;
         if (schemaPreviousOpt.isEmpty()) {
@@ -171,30 +215,43 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
                     .schemaVersionId();
         }
 
-        Database database = getOrCreateDatabase(customerId);
+        GetSchemaVersionResponse response = waiterUtil.resolve(waiterUtil.waitUntilGlueSchemaCompletedState(schemaVersionId));
+        if (!SchemaVersionStatus.AVAILABLE.equals(response.status())) {
+            throw new BadRequestException("AWS Glue Schema registration resulted in " + response.statusAsString() + " status, likely the schema is not valid for AWS Glue.");
+        }
 
-        upsertTableAndSchema(customerId, topicName, registry.registryName(), schemaName, schemaVersionId, retention);
+        return schemaVersionId;
     }
 
-    private String getSchemaNameForQueue(String topicName) {
-        return GLUE_SCHEMA_FOR_QUEUE_PREFIX + topicName;
+    private Optional<GetSchemaVersionResponse> getLatestSchemaVersion(String topicName, GetRegistryResponse registry) {
+        String schemaName = getSchemaNameForQueue(topicName);
+        try {
+            return Optional.of(glueClient.getSchemaVersion(GetSchemaVersionRequest.builder()
+                    .schemaId(SchemaId.builder()
+                            .registryName(registry.registryName())
+                            .schemaName(schemaName).build())
+                    .schemaVersionNumber(SchemaVersionNumber.builder()
+                            .latestVersion(true).build())
+                    .build()));
+        } catch (EntityNotFoundException ex) {
+            return Optional.empty();
+        }
     }
 
-    private Database getOrCreateDatabase(String customerId) {
+    private String getOrCreateDatabase(String customerId) {
+        String databaseName = getDatabaseName(customerId);
         try {
             return glueClient.getDatabase(GetDatabaseRequest.builder()
                             .catalogId(awsAccountId)
-                            .name(getDatabaseName(customerId)).build())
-                    .database();
+                            .name(databaseName).build())
+                    .database()
+                    .name();
         } catch (EntityNotFoundException ex) {
             glueClient.createDatabase(CreateDatabaseRequest.builder()
                     .catalogId(awsAccountId)
                     .databaseInput(DatabaseInput.builder()
-                            .name(getDatabaseName(customerId)).build()).build());
-            return glueClient.getDatabase(GetDatabaseRequest.builder()
-                            .catalogId(awsAccountId)
-                            .name(getDatabaseName(customerId)).build())
-                    .database();
+                            .name(databaseName).build()).build());
+            return databaseName;
         }
     }
 
@@ -206,15 +263,17 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
             String customerId,
             String topicName,
             String registryName,
-            String schemaName,
+            String databaseName,
             String schemaVersionId,
             BatchRetention retention) {
+
+        String schemaName = getSchemaNameForQueue(topicName);
         String tableName = getTableName(customerId, topicName);
         Optional<Table> tablePreviousOpt;
         try {
             tablePreviousOpt = Optional.of(glueClient.getTable(GetTableRequest.builder()
                             .catalogId(awsAccountId)
-                            .databaseName(getDatabaseName(customerId))
+                            .databaseName(databaseName)
                             .name(tableName).build())
                     .table());
         } catch (EntityNotFoundException ex) {
@@ -224,19 +283,31 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
         if (tablePreviousOpt.isEmpty()) {
             glueClient.createTable(CreateTableRequest.builder()
                     .catalogId(awsAccountId)
-                    .databaseName(getDatabaseName(customerId))
+                    .databaseName(databaseName)
                     .tableInput(TableInput.builder()
                             .name(tableName)
+                            .description("Auto-created for customer " + customerId + " topic " + topicName)
+                            .tableType("EXTERNAL_TABLE")
+                            .parameters(Map.of(
+                                    "classification", "json",
+                                    "compressionType", "gzip"))
                             .storageDescriptor(StorageDescriptor.builder()
                                     .location("s3://" + etlBucketName + "/" + ETL_BUCKET_TARGET_PREFIX.apply(
                                             retention,
                                             customerId,
                                             topicName))
+                                    .compressed(true)
+                                    .inputFormat("org.apache.hadoop.mapred.TextInputFormat")
+                                    .outputFormat("org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat")
+                                    .serdeInfo(SerDeInfo.builder()
+                                            .serializationLibrary("org.openx.data.jsonserde.JsonSerDe")
+                                            .parameters(Map.of("ignore.malformed.json", "true"))
+                                            .build())
                                     .schemaReference(SchemaReference.builder()
-                                            .schemaId(SchemaId.builder()
-                                                    .registryName(registryName)
-                                                    .schemaName(schemaName).build())
-                                            .schemaVersionId(schemaVersionId).build()).build()).build())
+                                            .schemaVersionId(schemaVersionId)
+                                            .build())
+                                    .build())
+                            .build())
                     .build());
         } else if (schemaVersionId.equals(tablePreviousOpt.get()
                 .storageDescriptor()
@@ -260,19 +331,24 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
         return GLUE_CUSTOMER_PREFIX + customerId + "-queue-" + topicName;
     }
 
-    private GetRegistryResponse getOrCreateRegistry(String customerId) {
-        GetRegistryResponse response;
+    private Optional<GetRegistryResponse> getRegistry(String customerId) {
         try {
-            response = glueClient.getRegistry(GetRegistryRequest.builder()
+            return Optional.of(glueClient.getRegistry(GetRegistryRequest.builder()
                     .registryId(RegistryId.builder()
-                            .registryName(getRegistryName(customerId)).build()).build());
+                            .registryName(getRegistryName(customerId)).build()).build()));
         } catch (EntityNotFoundException ex) {
-            glueClient.createRegistry(CreateRegistryRequest.builder()
-                    .registryName(getRegistryName(customerId)).build());
-            response = glueClient.getRegistry(GetRegistryRequest.builder()
-                    .registryId(RegistryId.builder()
-                            .registryName(getRegistryName(customerId)).build()).build());
+            return Optional.empty();
         }
+    }
+
+    private GetRegistryResponse getOrCreateRegistry(String customerId) {
+        GetRegistryResponse response = getRegistry(customerId)
+                .or(() -> {
+                    glueClient.createRegistry(CreateRegistryRequest.builder()
+                            .registryName(getRegistryName(customerId)).build());
+                    return getRegistry(customerId);
+                })
+                .orElseThrow();
         if (RegistryStatus.DELETING.equals(response.status())) {
             throw new ConflictException("Another operation is in progress: "
                                         + "registry is in state " + response.statusAsString());

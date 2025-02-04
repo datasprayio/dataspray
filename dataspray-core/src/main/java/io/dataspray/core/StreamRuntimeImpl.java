@@ -24,6 +24,8 @@ package io.dataspray.core;
 
 import com.google.common.base.Strings;
 import io.dataspray.client.DataSprayClient;
+import io.dataspray.core.definition.model.DataFormat.Serde;
+import io.dataspray.core.definition.model.DatasprayStore;
 import io.dataspray.core.definition.model.DynamoState;
 import io.dataspray.core.definition.model.Item;
 import io.dataspray.core.definition.model.JavaProcessor;
@@ -31,15 +33,18 @@ import io.dataspray.core.definition.model.Processor;
 import io.dataspray.core.definition.model.StreamLink;
 import io.dataspray.core.definition.model.TypescriptProcessor;
 import io.dataspray.stream.control.client.ApiException;
+import io.dataspray.stream.control.client.ApiResponse;
 import io.dataspray.stream.control.client.model.DeployRequest;
 import io.dataspray.stream.control.client.model.DeployRequest.RuntimeEnum;
 import io.dataspray.stream.control.client.model.DeployRequestDynamoState;
 import io.dataspray.stream.control.client.model.DeployRequestEndpoint;
 import io.dataspray.stream.control.client.model.DeployRequestEndpointCors;
+import io.dataspray.stream.control.client.model.SchemaFormat;
 import io.dataspray.stream.control.client.model.TaskStatus;
 import io.dataspray.stream.control.client.model.TaskStatuses;
 import io.dataspray.stream.control.client.model.TaskVersion;
 import io.dataspray.stream.control.client.model.TaskVersions;
+import io.dataspray.stream.control.client.model.UpdateTopicSchemaRequest;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.SneakyThrows;
@@ -48,6 +53,9 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
@@ -63,6 +71,8 @@ public class StreamRuntimeImpl implements StreamRuntime {
     ContextBuilder contextBuilder;
     @Inject
     Builder builder;
+    @Inject
+    Codegen codegen;
 
     @Override
     public void ping(Organization organization) throws ApiException {
@@ -118,7 +128,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 .getCodeZipFile();
 
         String handler;
-        // TODO Eventually this needs to be inferred from definition or project .nvmrc/.sdkman files
+        // TODO Eventually this needs to be inferred from project definition, maven pom.xml or project .nvmrc/.sdkman files
         RuntimeEnum runtime;
         if (processor instanceof JavaProcessor) {
             handler = project.getDefinition().getJavaPackage() + ".Runner";
@@ -174,6 +184,68 @@ public class StreamRuntimeImpl implements StreamRuntime {
                     deployedVersion.getTaskId(), deployedVersion.getVersion(), deployedVersion.getDescription());
         }
         return deployedVersion;
+    }
+
+    @Override
+    @SneakyThrows
+    public void uploadSchema(Organization organization, Project project, StreamLink streamLink) {
+        if (!Serde.JSON.equals(streamLink.getDataFormat().getSerde())) {
+            log.debug("Not updating schema for store {} stream {} format {} format type {} not supported",
+                    streamLink.getStoreName(),
+                    streamLink.getStreamName(),
+                    streamLink.getDataFormat().getName(),
+                    streamLink.getDataFormat().getSerde().name());
+            return;
+        }
+        if (!(streamLink.getStore() instanceof DatasprayStore)) {
+            log.debug("Not updating schema for store {} stream {} format {} store type not supported",
+                    streamLink.getStoreName(),
+                    streamLink.getStreamName(),
+                    streamLink.getDataFormat().getName());
+            return;
+        }
+        Path schemaPath = codegen.getDataFormatSchema(project, streamLink.getDataFormat());
+        String schema;
+        try {
+            schema = Files.readString(schemaPath);
+        } catch (IOException ex) {
+            log.warn("Cannot read schema file for store {} stream {} format {}",
+                    streamLink.getStoreName(),
+                    streamLink.getStreamName(),
+                    streamLink.getDataFormat().getName(),
+                    ex);
+            return;
+        }
+
+        log.info("Starting schema upload for store {} stream {} schema {}",
+                streamLink.getStoreName(),
+                streamLink.getStreamName(),
+                streamLink.getDataFormat().getName());
+        ApiResponse<Void> response = DataSprayClient.get(organization.toAccess())
+                .control()
+                .updateTopicSchemaWithHttpInfo(
+                        organization.getName(),
+                        streamLink.getStreamName(),
+                        new UpdateTopicSchemaRequest()
+                                .schema(schema)
+                                .dataFormat(SchemaFormat.JSON));
+        if (response.getStatusCode() == 201) {
+            log.info("Schema updated for store {} stream {} schema {}",
+                    streamLink.getStoreName(),
+                    streamLink.getStreamName(),
+                    streamLink.getDataFormat().getName());
+        } else if (response.getStatusCode() == 200 || response.getStatusCode() == 204) {
+            log.info("Schema uploaded but unchanged or unneeded for store {} stream {} schema {}",
+                    streamLink.getStoreName(),
+                    streamLink.getStreamName(),
+                    streamLink.getDataFormat().getName());
+        } else {
+            log.info("Unexpected return status {} when uploading schema for store {} stream {} schema {}",
+                    response.getStatusCode(),
+                    streamLink.getStoreName(),
+                    streamLink.getStreamName(),
+                    streamLink.getDataFormat().getName());
+        }
     }
 
     @Override
