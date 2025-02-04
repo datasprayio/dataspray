@@ -285,7 +285,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
         batchStore.setTableDefinition(
                 organizationName,
                 topicName,
-                DataFormat.fromValue(updateTopicSchemaRequest.getDataFormat().name()),
+                DataFormat.fromValue(updateTopicSchemaRequest.getFormat().name()),
                 updateTopicSchemaRequest.getSchema(),
                 batch.getRetention());
         throw new WebApplicationException(Response.Status.CREATED);
