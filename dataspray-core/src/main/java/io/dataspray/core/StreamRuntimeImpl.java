@@ -228,7 +228,7 @@ public class StreamRuntimeImpl implements StreamRuntime {
                         streamLink.getStreamName(),
                         new UpdateTopicSchemaRequest()
                                 .schema(schema)
-                                .dataFormat(SchemaFormat.JSON));
+                                .format(SchemaFormat.JSON));
         if (response.getStatusCode() == 201) {
             log.info("Schema updated for store {} stream {} schema {}",
                     streamLink.getStoreName(),

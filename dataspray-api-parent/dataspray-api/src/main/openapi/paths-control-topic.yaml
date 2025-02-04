@@ -113,6 +113,7 @@ components:
         format:
           $ref: '#/components/schemas/SchemaFormat'
     SchemaFormat:
+      title: SchemaFormat
       type: string
       enum:
         - JSON
