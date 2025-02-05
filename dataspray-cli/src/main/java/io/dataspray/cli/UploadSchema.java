@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Matus Faro
+ * Copyright 2025 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -44,18 +44,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 
 @Slf4j
-@Command(name = "deploy", description = "Single command to publish and activate")
-public class Deploy implements Runnable {
+@Command(name = "upload-schema", description = "Upload schema")
+public class UploadSchema implements Runnable {
     @Mixin
     LoggingMixin loggingMixin;
-    @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id to deploy; otherwise all tasks are used if ran from root directory or specific task if ran from within a task directory")
+    @Option(names = {"-t", "--task"}, paramLabel = "<task_id>", description = "specify task id to deploy schema for; otherwise all used schemas are deployed if ran from root directory or specific task schema if ran from within a task directory")
     private String taskId;
-    @Option(names = "--skip-activate", description = "deploy without activating version; use activate command to start using the deployed version")
-    boolean skipActivate;
     @Option(names = "--no-parallel", description = "deploy serially")
     boolean noParallel;
-    @Option(names = "--update-schema", description = "also upload schema for input and output streams; allows batch processing to contain latest schema")
-    boolean updateSchema;
     @Option(names = {"-p", "--profile"}, description = "Profile name")
     private String profileName;
 
@@ -71,49 +67,33 @@ public class Deploy implements Runnable {
     @Override
     public void run() {
         Project project = codegen.loadProject();
-        List<CompletableFuture<Void>> deployTasks = Lists.newArrayList();
         List<CompletableFuture<Void>> uploadSchemaTasks = Lists.newArrayList();
         ImmutableSet<String> selectedTaskIds = commandUtil.getSelectedTaskIds(project, taskId);
         Organization organization = cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName)));
         try (var executor = (noParallel ? MoreExecutors.newDirectExecutorService() : Executors.newVirtualThreadPerTaskExecutor())) {
-
-            // Task deployments
-            selectedTaskIds.forEach(selectedTaskId -> deployTasks.add(CompletableFuture.supplyAsync(() -> {
-                try {
-                    streamRuntime.deploy(organization, project, selectedTaskId, !skipActivate);
-                } catch (Exception ex) {
-                    log.error("Task {} failed to deploy", selectedTaskId, ex);
-                }
-                return null;
-            })));
-
-            // Schema uploads (Applies to all distinct inputs and outputs of all deployed tasks)
-            if (updateSchema) {
-                selectedTaskIds.stream()
-                        .map(project::getProcessorByName)
-                        .map(Processor::getStreams)
-                        .flatMap(List::stream)
-                        .distinct()
-                        .forEach(streamLink ->
-                                uploadSchemaTasks.add(CompletableFuture.supplyAsync(() -> {
-                                    try {
-                                        streamRuntime.uploadSchema(organization, project, streamLink);
-                                    } catch (Exception ex) {
-                                        log.error("Failed to upload schema for task {} store {} stream {} format {}",
-                                                streamLink.getParent().getName(),
-                                                streamLink.getStoreName(),
-                                                streamLink.getStreamName(),
-                                                streamLink.getDataFormat().getName(),
-                                                ex);
-                                    }
-                                    return null;
-                                })));
-            }
+            selectedTaskIds.stream()
+                    .map(project::getProcessorByName)
+                    .map(Processor::getStreams)
+                    .flatMap(List::stream)
+                    .distinct()
+                    .forEach(streamLink ->
+                            uploadSchemaTasks.add(CompletableFuture.supplyAsync(() -> {
+                                try {
+                                    streamRuntime.uploadSchema(organization, project, streamLink);
+                                } catch (Exception ex) {
+                                    log.error("Failed to upload schema for task {} store {} stream {} format {}",
+                                            streamLink.getParent().getName(),
+                                            streamLink.getStoreName(),
+                                            streamLink.getStreamName(),
+                                            streamLink.getDataFormat().getName(),
+                                            ex);
+                                }
+                                return null;
+                            })));
         }
 
         // Wait for all to complete
         CompletableFuture.allOf(Streams.concat(
-                deployTasks.stream(),
                 uploadSchemaTasks.stream()
         ).toArray(CompletableFuture[]::new)).join();
     }

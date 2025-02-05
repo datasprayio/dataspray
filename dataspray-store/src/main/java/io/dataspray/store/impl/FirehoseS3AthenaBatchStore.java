@@ -22,6 +22,7 @@
 
 package io.dataspray.store.impl;
 
+import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.BatchStore;
 import io.dataspray.store.CustomerLogger;
 import io.dataspray.store.OrganizationStore;
@@ -71,6 +72,9 @@ import software.amazon.awssdk.services.glue.model.UpdateTableRequest;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+
+import static io.dataspray.common.DeployEnvironment.DEPLOY_ENVIRONMENT_PROP_NAME;
 
 @Slf4j
 @ApplicationScoped
@@ -78,7 +82,8 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     public static final String ETL_BUCKET_PROP_NAME = "etl.bucket.name";
     public static final String FIREHOSE_STREAM_NAME_PROP_NAME = "etl.firehose.name";
     public static final String GLUE_CUSTOMER_PREFIX = "customer-";
-    public static final String GLUE_SCHEMA_FOR_QUEUE_PREFIX = "queue-";
+    public static final Function<DeployEnvironment, String> GLUE_CUSTOMER_PREFIX_GETTER = deployEnv ->
+            DeployEnvironment.RESOURCE_PREFIX + deployEnv.getSuffix().substring(1 /* Remove duplicate dash */) + "-customer-";
     public static final String ETL_MESSAGE_TS = "_ds_message_ts";
     public static final String ETL_MESSAGE_ID = "_ds_message_id";
     public static final String ETL_MESSAGE_KEY = "_ds_message_key";
@@ -114,6 +119,8 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
             .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}", organizationName)
             .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TOPIC + "}", topicName);
 
+    @ConfigProperty(name = DEPLOY_ENVIRONMENT_PROP_NAME)
+    DeployEnvironment deployEnv;
     @ConfigProperty(name = "aws.accountId")
     String awsAccountId;
     @ConfigProperty(name = ETL_BUCKET_PROP_NAME)
@@ -145,8 +152,8 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
 
     @Override
     public Optional<TableDefinition> getTableDefinition(String organizationName, String topicName) {
-        return getRegistry(organizationName)
-                .flatMap(registry -> getLatestSchemaVersion(topicName, registry))
+        return getRegistry()
+                .flatMap(registry -> getLatestSchemaVersion(organizationName, topicName, registry))
                 .map(schemaVersion -> new TableDefinition(
                         schemaVersion.schemaDefinition(),
                         schemaVersion.dataFormat()));
@@ -160,9 +167,9 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
             String schemaDefinition,
             BatchRetention retention) {
 
-        GetRegistryResponse registry = getOrCreateRegistry(organizationName);
+        GetRegistryResponse registry = getOrCreateRegistry();
 
-        String schemaVersionId = createOrUpdateSchema(topicName, dataFormat, schemaDefinition, registry);
+        String schemaVersionId = createOrUpdateSchema(organizationName, topicName, dataFormat, schemaDefinition, registry);
 
         String databaseName = getOrCreateDatabase(organizationName);
 
@@ -171,12 +178,12 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
         organizationStore.addGlueDatabaseToOrganization(organizationName, databaseName);
     }
 
-    private String getSchemaNameForQueue(String topicName) {
-        return GLUE_SCHEMA_FOR_QUEUE_PREFIX + topicName;
+    public static String getSchemaNameForQueue(String organizationName, String topicName) {
+        return "customer-" + organizationName + "-topic-" + topicName;
     }
 
-    private Optional<GetSchemaResponse> getSchema(String topicName, GetRegistryResponse registry) {
-        String schemaName = getSchemaNameForQueue(topicName);
+    private Optional<GetSchemaResponse> getSchema(String organizationName, String topicName, GetRegistryResponse registry) {
+        String schemaName = getSchemaNameForQueue(organizationName, topicName);
         try {
             return Optional.of(glueClient.getSchema(GetSchemaRequest.builder()
                     .schemaId(SchemaId.builder()
@@ -187,9 +194,9 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
         }
     }
 
-    private String createOrUpdateSchema(String topicName, DataFormat dataFormat, String schemaDefinition, GetRegistryResponse registry) {
-        String schemaName = getSchemaNameForQueue(topicName);
-        Optional<GetSchemaResponse> schemaPreviousOpt = getSchema(topicName, registry);
+    private String createOrUpdateSchema(String organizationName, String topicName, DataFormat dataFormat, String schemaDefinition, GetRegistryResponse registry) {
+        String schemaName = getSchemaNameForQueue(organizationName, topicName);
+        Optional<GetSchemaResponse> schemaPreviousOpt = getSchema(organizationName, topicName, registry);
 
         final String schemaVersionId;
         if (schemaPreviousOpt.isEmpty()) {
@@ -223,8 +230,8 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
         return schemaVersionId;
     }
 
-    private Optional<GetSchemaVersionResponse> getLatestSchemaVersion(String topicName, GetRegistryResponse registry) {
-        String schemaName = getSchemaNameForQueue(topicName);
+    private Optional<GetSchemaVersionResponse> getLatestSchemaVersion(String organizationName, String topicName, GetRegistryResponse registry) {
+        String schemaName = getSchemaNameForQueue(organizationName, topicName);
         try {
             return Optional.of(glueClient.getSchemaVersion(GetSchemaVersionRequest.builder()
                     .schemaId(SchemaId.builder()
@@ -238,8 +245,8 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
         }
     }
 
-    private String getOrCreateDatabase(String customerId) {
-        String databaseName = getDatabaseName(customerId);
+    private String getOrCreateDatabase(String organizationName) {
+        String databaseName = getDatabaseName(deployEnv, organizationName);
         try {
             return glueClient.getDatabase(GetDatabaseRequest.builder()
                             .catalogId(awsAccountId)
@@ -255,20 +262,20 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
         }
     }
 
-    private String getDatabaseName(String customerId) {
-        return GLUE_CUSTOMER_PREFIX + customerId;
+    public static String getDatabaseName(DeployEnvironment deployEnv, String organizationName) {
+        return GLUE_CUSTOMER_PREFIX_GETTER.apply(deployEnv) + organizationName;
     }
 
     private void upsertTableAndSchema(
-            String customerId,
+            String organizationName,
             String topicName,
             String registryName,
             String databaseName,
             String schemaVersionId,
             BatchRetention retention) {
 
-        String schemaName = getSchemaNameForQueue(topicName);
-        String tableName = getTableName(customerId, topicName);
+        String schemaName = getSchemaNameForQueue(organizationName, topicName);
+        String tableName = getTableName(topicName);
         Optional<Table> tablePreviousOpt;
         try {
             tablePreviousOpt = Optional.of(glueClient.getTable(GetTableRequest.builder()
@@ -286,7 +293,7 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
                     .databaseName(databaseName)
                     .tableInput(TableInput.builder()
                             .name(tableName)
-                            .description("Auto-created for customer " + customerId + " topic " + topicName)
+                            .description("Auto-created for customer " + organizationName + " topic " + topicName)
                             .tableType("EXTERNAL_TABLE")
                             .parameters(Map.of(
                                     "classification", "json",
@@ -294,7 +301,7 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
                             .storageDescriptor(StorageDescriptor.builder()
                                     .location("s3://" + etlBucketName + "/" + ETL_BUCKET_TARGET_PREFIX.apply(
                                             retention,
-                                            customerId,
+                                            organizationName,
                                             topicName))
                                     .compressed(true)
                                     .inputFormat("org.apache.hadoop.mapred.TextInputFormat")
@@ -327,26 +334,26 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
         }
     }
 
-    private String getTableName(String customerId, String topicName) {
-        return GLUE_CUSTOMER_PREFIX + customerId + "-queue-" + topicName;
+    public static String getTableName(String topicName) {
+        return "stream-" + topicName;
     }
 
-    private Optional<GetRegistryResponse> getRegistry(String customerId) {
+    private Optional<GetRegistryResponse> getRegistry() {
         try {
             return Optional.of(glueClient.getRegistry(GetRegistryRequest.builder()
                     .registryId(RegistryId.builder()
-                            .registryName(getRegistryName(customerId)).build()).build()));
+                            .registryName(getRegistryName(deployEnv)).build()).build()));
         } catch (EntityNotFoundException ex) {
             return Optional.empty();
         }
     }
 
-    private GetRegistryResponse getOrCreateRegistry(String customerId) {
-        GetRegistryResponse response = getRegistry(customerId)
+    private GetRegistryResponse getOrCreateRegistry() {
+        GetRegistryResponse response = getRegistry()
                 .or(() -> {
                     glueClient.createRegistry(CreateRegistryRequest.builder()
-                            .registryName(getRegistryName(customerId)).build());
-                    return getRegistry(customerId);
+                            .registryName(getRegistryName(deployEnv)).build());
+                    return getRegistry();
                 })
                 .orElseThrow();
         if (RegistryStatus.DELETING.equals(response.status())) {
@@ -356,7 +363,10 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
         return response;
     }
 
-    private String getRegistryName(String customerId) {
-        return GLUE_CUSTOMER_PREFIX + customerId;
+    /**
+     * Registry is shared across customers. (AWS Limit is only 100 per region)
+     */
+    public static String getRegistryName(DeployEnvironment deployEnv) {
+        return DeployEnvironment.RESOURCE_PREFIX + deployEnv.getSuffix().substring(1 /* Remove duplicate dash */) + "-customer";
     }
 }

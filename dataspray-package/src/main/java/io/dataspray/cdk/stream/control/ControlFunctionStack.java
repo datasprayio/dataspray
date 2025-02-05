@@ -29,6 +29,7 @@ import io.dataspray.cdk.site.NextSiteStack;
 import io.dataspray.cdk.store.AuthNzStack;
 import io.dataspray.cdk.store.SingleTableStack;
 import io.dataspray.common.DeployEnvironment;
+import io.dataspray.store.impl.FirehoseS3AthenaBatchStore;
 import io.dataspray.store.impl.LambdaDeployerImpl;
 import io.dataspray.store.impl.SqsStreamStore;
 import lombok.Getter;
@@ -208,6 +209,30 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         "dynamodb:UpdateTimeToLive"))
                 .resources(ImmutableList.of(
                         "arn:aws:dynamodb:" + getRegion() + ":" + getAccount() + ":table/" + LambdaDeployerImpl.CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(getDeployEnv()) + "*"
+                ))
+                .build());
+        // Allow management of customer's Glue database
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+                .sid(getConstructIdCamelCase("CustomerManagementGlue"))
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "glue:CreateRegistry",
+                        "glue:GetRegistry",
+                        "glue:CreateSchema",
+                        "glue:GetSchema",
+                        "glue:RegisterSchemaVersion",
+                        "glue:GetSchemaVersion",
+                        "glue:CreateDatabase",
+                        "glue:GetDatabase",
+                        "glue:CreateTable",
+                        "glue:GetTable",
+                        "glue:UpdateTable"))
+                .resources(ImmutableList.of(
+                        "arn:aws:glue:" + getRegion() + ":" + getAccount() + ":catalog",
+                        "arn:aws:glue:" + getRegion() + ":" + getAccount() + ":database/" + FirehoseS3AthenaBatchStore.getDatabaseName(getDeployEnv(), "*"),
+                        "arn:aws:glue:" + getRegion() + ":" + getAccount() + ":table/" + FirehoseS3AthenaBatchStore.getDatabaseName(getDeployEnv(), "*") + "/" + FirehoseS3AthenaBatchStore.getTableName("*"),
+                        "arn:aws:glue:" + getRegion() + ":" + getAccount() + ":schema/" + FirehoseS3AthenaBatchStore.getSchemaNameForQueue("*", "*"),
+                        "arn:aws:glue:" + getRegion() + ":" + getAccount() + ":registry/" + FirehoseS3AthenaBatchStore.getRegistryName(getDeployEnv())
                 ))
                 .build());
         // Unfortunately not all permissions allow for resource-specific restrictions.

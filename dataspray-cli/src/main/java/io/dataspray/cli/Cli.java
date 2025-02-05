@@ -40,6 +40,7 @@ import picocli.CommandLine.Spec;
                 Install.class,
                 Env.class,
                 Deploy.class,
+                UploadSchema.class,
                 Activate.class,
                 Pause.class,
                 Resume.class,
