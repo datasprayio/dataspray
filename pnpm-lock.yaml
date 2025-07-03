@@ -164,8 +164,8 @@ importers:
         version: 18.2.0(react@18.2.0)
     devDependencies:
       '@types/node':
-        specifier: 20.11.0
-        version: 20.11.0
+        specifier: 24.0.10
+        version: 24.0.10
       typescript:
         specifier: 5.3.3
         version: 5.3.3
@@ -1592,6 +1592,13 @@ packages:
       react: 19.0.0
     dev: false
 
+  /@cloudscape-design/component-toolkit@1.0.0-beta.105:
+    resolution: {integrity: sha512-Lee5Pqm3SOFQCE33Fe6ej/MvZSIDlAU/Q2RungJY7MQg/c1iVkulG3EwJiwarBGRDZda5iCjz+28odhaSZ/eKw==}
+    dependencies:
+      '@juggle/resize-observer': 3.4.0
+      tslib: 2.8.1
+    dev: false
+
   /@cloudscape-design/component-toolkit@1.0.0-beta.86:
     resolution: {integrity: sha512-cOwKdOj4FL7Kw7NGwHirtDcNBBxbtggoEkbS0gsShOSY0NJBMwhNAgNDD4aT3jEA5X/qHSKEJ1s9RutCtHAj9g==}
     dependencies:
@@ -1602,7 +1609,7 @@ packages:
   /@cloudscape-design/components-themeable@3.0.892:
     resolution: {integrity: sha512-GI2sy8ORNjRbjBs3LYhAY5d+RhC+omvaWc4hZQ2i79pGCXhKzpFQjwffLOt++YWrWRhCv5ChXUDNNQUq3qa0kw==}
     dependencies:
-      '@cloudscape-design/component-toolkit': 1.0.0-beta.86
+      '@cloudscape-design/component-toolkit': 1.0.0-beta.105
       '@cloudscape-design/theming-build': 1.0.74
     dev: false
 
@@ -4747,12 +4754,6 @@ packages:
       form-data: 4.0.1
     dev: false
 
-  /@types/node@20.11.0:
-    resolution: {integrity: sha512-o9bjXmDNcF7GbM4CNQpmi+TutCgap/K3w1JyKgxAjqx41zp9qlIAVFi0IhCNsJcXolEqLWhbFbEeL0PvYm4pcQ==}
-    dependencies:
-      undici-types: 5.26.5
-    dev: true
-
   /@types/node@20.11.16:
     resolution: {integrity: sha512-gKb0enTmRCzXSSUJDq6/sPcqrfCv2mkkG6Jt/clpn5eiCbKTY+SgZUxo+p8ZKMof5dCp9vHQUAB7wOUTod22wQ==}
     dependencies:
@@ -4763,6 +4764,12 @@ packages:
     resolution: {integrity: sha512-Fll2FZ1riMjNmlmJOdAyY5pUbkftXslB5DgEzlIuNaiWhXd00FhWxVC/r4yV/4wBb9JfImTu+jiSvXTkJ7F/gA==}
     dependencies:
       undici-types: 6.20.0
+
+  /@types/node@24.0.10:
+    resolution: {integrity: sha512-ENHwaH+JIRTDIEEbDK6QSQntAYGtbvdDXnMXnZaZ6k13Du1dPMmprkEHIL7ok2Wl2aZevetwTAb5S+7yIF+enA==}
+    dependencies:
+      undici-types: 7.8.0
+    dev: true
 
   /@types/normalize-package-data@2.4.4:
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
@@ -10894,9 +10901,14 @@ packages:
 
   /undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
+    dev: false
 
   /undici-types@6.20.0:
     resolution: {integrity: sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==}
+
+  /undici-types@7.8.0:
+    resolution: {integrity: sha512-9UJ2xGDvQ43tYyVMpuHlsgApydB8ZKfVYTsLDhXkFL/6gfkp+U8xTGdh8pMJv1SpZna0zxG1DwsKZsreLbXBxw==}
+    dev: true
 
   /unified@10.1.2:
     resolution: {integrity: sha512-pUSWAi/RAnVy1Pif2kAoeWNBa3JVrx0MId2LASj8G+7AiHWoKZNTomq6LG326T68U7/e263X6fTdcXIy7XnF7Q==}
