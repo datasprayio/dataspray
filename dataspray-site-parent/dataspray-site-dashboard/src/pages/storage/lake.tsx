@@ -22,6 +22,7 @@
 
 import {NextPageWithLayout} from "../_app";
 import DashboardLayout from "../../layout/DashboardLayout";
+import DashboardAppLayout from "../../layout/DashboardAppLayout";
 import {
     Box,
     Button,
@@ -49,6 +50,7 @@ import {
 } from "dataspray-client";
 import {formatBytes, formatDuration, getStatusType, truncate} from "../../util/queryUtil";
 
+
 const LakePage: NextPageWithLayout = () => {
     const {currentOrganizationName} = useAuth();
     const [sqlQuery, setSqlQuery] = useState('');
@@ -59,6 +61,7 @@ const LakePage: NextPageWithLayout = () => {
     const [isExecuting, setIsExecuting] = useState(false);
     const [schema, setSchema] = useState<DatabaseSchemaResponse>();
     const {addAlert, beginProcessing} = useAlerts();
+
 
     // Load schema on mount
     useEffect(() => {
@@ -79,8 +82,8 @@ const LakePage: NextPageWithLayout = () => {
         if (!queryExecutionId || !queryStatus) return;
         if (queryStatus.state === 'SUCCEEDED' || queryStatus.state === 'FAILED') return;
 
-        const interval = setInterval(async () => {
-            await checkQueryStatus(queryExecutionId);
+        const interval = setInterval(() => {
+            checkQueryStatus(queryExecutionId);
         }, 2000);
 
         return () => clearInterval(interval);
@@ -88,26 +91,30 @@ const LakePage: NextPageWithLayout = () => {
 
     const loadSchema = async () => {
         if (!currentOrganizationName) return;
+
         try {
             const response = await getClient().query().getDatabaseSchema({
                 organizationName: currentOrganizationName
             });
             setSchema(response);
         } catch (e: any) {
-            addAlert({type: 'error', content: `Failed to load schema: ${e?.message || 'Unknown error'}`});
+            console.error('Failed to load schema:', e);
+            addAlert({type: 'error', content: 'Failed to load database schema'});
         }
     };
 
     const loadHistory = async () => {
         if (!currentOrganizationName) return;
+
         try {
-            const response: QueryHistoryResponse = await getClient().query().getQueryHistory({
+            const response = await getClient().query().getQueryHistory({
                 organizationName: currentOrganizationName,
                 maxResults: 50
             });
             setQueryHistory(response.queries || []);
         } catch (e: any) {
             console.error('Failed to load history:', e);
+            // Silently fail for history - not critical
         }
     };
 
@@ -127,7 +134,8 @@ const LakePage: NextPageWithLayout = () => {
             addAlert({type: 'success', content: `Query submitted: ${response.queryExecutionId}`});
             await loadHistory(); // Refresh history
         } catch (e: any) {
-            addAlert({type: 'error', content: `Failed to submit query: ${e?.message || 'Unknown error'}`});
+            console.error('Failed to submit query:', e);
+            addAlert({type: 'error', content: 'Failed to submit query. Check console for details.'});
             setIsExecuting(false);
         }
     };
@@ -151,7 +159,8 @@ const LakePage: NextPageWithLayout = () => {
                 setIsExecuting(false);
             }
         } catch (e: any) {
-            addAlert({type: 'error', content: `Failed to check query status: ${e?.message || 'Unknown error'}`});
+            console.error('Failed to check query status:', e);
+            addAlert({type: 'error', content: 'Failed to check query status'});
             setIsExecuting(false);
         }
     };
@@ -168,7 +177,8 @@ const LakePage: NextPageWithLayout = () => {
             });
             setQueryResults(results);
         } catch (e: any) {
-            addAlert({type: 'error', content: `Failed to load results: ${e?.message || 'Unknown error'}`});
+            console.error('Failed to load results:', e);
+            addAlert({type: 'error', content: 'Failed to load query results'});
         }
     };
 
@@ -179,10 +189,12 @@ const LakePage: NextPageWithLayout = () => {
     };
 
     return (
-        <ContentLayout
-            header={<Header variant="h1">Data Lake Query</Header>}
-        >
-            <SpaceBetween size="l">
+        <DashboardAppLayout
+            content={(
+                <ContentLayout
+                    header={<Header variant="h1">Data Lake Query</Header>}
+                >
+                    <SpaceBetween size="l">
                 {/* Query Editor Section */}
                 <Container
                     header={<Header variant="h2">Query Editor</Header>}
@@ -391,8 +403,10 @@ const LakePage: NextPageWithLayout = () => {
                         </ExpandableSection>
                     </Container>
                 )}
-            </SpaceBetween>
-        </ContentLayout>
+                    </SpaceBetween>
+                </ContentLayout>
+            )}
+        />
     );
 };
 

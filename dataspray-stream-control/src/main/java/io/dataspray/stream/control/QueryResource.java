@@ -176,13 +176,20 @@ public class QueryResource extends AbstractResource implements QueryApi {
                 execution.getQueryExecutionId(),
                 execution.getSqlQuery(),
                 QueryExecutionStatus.StateEnum.valueOf(execution.getState().name()),
-                execution.getSubmittedAt(),
-                execution.getCompletedAt(),
+                toOffsetDateTime(execution.getSubmittedAt()),
+                toOffsetDateTime(execution.getCompletedAt()),
                 execution.getBytesScanned(),
                 execution.getExecutionTimeMs(),
                 execution.getErrorMessage(),
                 execution.getUsername()
         );
+    }
+
+    /**
+     * Convert Instant to OffsetDateTime (API uses OffsetDateTime for better serialization compatibility).
+     */
+    private static java.time.OffsetDateTime toOffsetDateTime(java.time.Instant instant) {
+        return instant == null ? null : instant.atOffset(java.time.ZoneOffset.UTC);
     }
 
     /**

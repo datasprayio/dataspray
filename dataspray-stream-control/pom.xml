@@ -183,8 +183,6 @@
                                 ${project.build.directory}/openapi/template/jaxrs-cxf/.openapi-generator-ignore
                             </ignoreFileOverride>
                             <templateDirectory>${project.build.directory}/openapi/template/jaxrs-cxf</templateDirectory>
-                            <typeMappings>OffsetDateTime=Instant</typeMappings>
-                            <importMappings>java.time.OffsetDateTime=java.time.Instant</importMappings>
                             <additionalProperties>
                                 <additionalProperty>java8=true</additionalProperty>
                                 <additionalProperty>modelPackage=io.dataspray.stream.control.model</additionalProperty>
