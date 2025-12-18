@@ -46,6 +46,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 @Slf4j
@@ -78,6 +79,7 @@ public class GsonUtil {
                             .registerTypeAdapterFactory(ImmutableAdapterFactory.forGuava())
                             .registerTypeAdapterFactory(new NonnullAdapterFactory())
                             .registerTypeAdapter(Instant.class, new InstantTypeConverter())
+                            .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeConverter())
                             .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeConverter())
                             .registerTypeAdapter(LocalDate.class, new LocalDateTypeConverter())
                             .registerTypeAdapter(LocalTime.class, new LocalTimeTypeConverter())
@@ -114,6 +116,19 @@ public class GsonUtil {
         @Override
         public Instant deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
             return Instant.parse(json.getAsString());
+        }
+    }
+
+    private static class OffsetDateTimeTypeConverter
+            implements JsonSerializer<OffsetDateTime>, JsonDeserializer<OffsetDateTime> {
+        @Override
+        public JsonElement serialize(OffsetDateTime src, Type srcType, JsonSerializationContext context) {
+            return new JsonPrimitive(src.toString());
+        }
+
+        @Override
+        public OffsetDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            return OffsetDateTime.parse(json.getAsString());
         }
     }
 
