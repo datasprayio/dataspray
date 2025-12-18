@@ -104,7 +104,7 @@ public class DatasprayStack {
         IngestFunctionStack ingestStack = new IngestFunctionStack(app, deployEnv, ingestCodeZip, singleTableStack);
         functionStacks.add(ingestStack);
 
-        ControlFunctionStack controlStack = new ControlFunctionStack(app, deployEnv, controlCodeZip, authNzStack, dashboardSite, singleTableStack);
+        ControlFunctionStack controlStack = new ControlFunctionStack(app, deployEnv, controlCodeZip, authNzStack, dashboardSite, singleTableStack, ingestStack);
         functionStacks.add(controlStack);
 
         ApiStack apiStack = new ApiStack(app, ApiStack.Options.builder()

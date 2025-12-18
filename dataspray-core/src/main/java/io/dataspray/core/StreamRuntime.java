@@ -54,6 +54,23 @@ public interface StreamRuntime {
 
     TaskStatus delete(Organization organization, Project project, String processorName);
 
+    // Query operations
+    io.dataspray.stream.control.client.model.SubmitQueryResponse submitQuery(
+            Organization organization, Project project, String sqlQuery);
+
+    io.dataspray.stream.control.client.model.QueryExecutionStatus getQueryStatus(
+            Organization organization, Project project, String queryExecutionId);
+
+    io.dataspray.stream.control.client.model.QueryResultsResponse getQueryResults(
+            Organization organization, Project project, String queryExecutionId,
+            String nextToken, Integer maxResults);
+
+    io.dataspray.stream.control.client.model.QueryHistoryResponse getQueryHistory(
+            Organization organization, Project project, Integer maxResults);
+
+    io.dataspray.stream.control.client.model.DatabaseSchemaResponse getDatabaseSchema(
+            Organization organization, Project project);
+
     @Value
     class Organization {
         String name;

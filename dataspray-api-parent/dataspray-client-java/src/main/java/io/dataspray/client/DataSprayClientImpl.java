@@ -30,6 +30,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Strings;
 import io.dataspray.stream.control.client.ControlApi;
 import io.dataspray.stream.control.client.HealthApi;
+import io.dataspray.stream.control.client.QueryApi;
 import io.dataspray.stream.control.client.model.DeployRequest;
 import io.dataspray.stream.control.client.model.DeployVersionCheckResponse;
 import io.dataspray.stream.control.client.model.TaskVersion;
@@ -105,6 +106,16 @@ public class DataSprayClientImpl implements DataSprayClient {
         apiClient.setApiKeyPrefix("apikey");
         apiClient.setApiKey(access.getApiKey());
         return new ControlApi(apiClient);
+    }
+
+    @Override
+    public QueryApi query() {
+        io.dataspray.stream.control.client.ApiClient apiClient = new io.dataspray.stream.control.client.ApiClient();
+        access.getEndpoint().ifPresent(apiClient::setBasePath);
+        apiClient.setHttpClient(getHttpClient(false, false));
+        apiClient.setApiKeyPrefix("apikey");
+        apiClient.setApiKey(access.getApiKey());
+        return new QueryApi(apiClient);
     }
 
     @Override

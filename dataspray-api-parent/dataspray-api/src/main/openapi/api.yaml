@@ -73,3 +73,13 @@ paths:
     $ref: 'paths-control-topic.yaml#/~1v1~1organization~1{organizationName}~1topic~1{topicName}~1schema'
   /v1/organization/{organizationName}/topic/{topicName}/message:
     $ref: 'paths-ingest.yaml#/~1v1~1organization~1{organizationName}~1topic~1{topicName}~1message'
+  /v1/organization/{organizationName}/query/submit:
+    $ref: 'paths-control-query.yaml#/~1v1~1organization~1{organizationName}~1query~1submit'
+  /v1/organization/{organizationName}/query/{queryExecutionId}/status:
+    $ref: 'paths-control-query.yaml#/~1v1~1organization~1{organizationName}~1query~1{queryExecutionId}~1status'
+  /v1/organization/{organizationName}/query/{queryExecutionId}/results:
+    $ref: 'paths-control-query.yaml#/~1v1~1organization~1{organizationName}~1query~1{queryExecutionId}~1results'
+  /v1/organization/{organizationName}/query/history:
+    $ref: 'paths-control-query.yaml#/~1v1~1organization~1{organizationName}~1query~1history'
+  /v1/organization/{organizationName}/query/schema:
+    $ref: 'paths-control-query.yaml#/~1v1~1organization~1{organizationName}~1query~1schema'

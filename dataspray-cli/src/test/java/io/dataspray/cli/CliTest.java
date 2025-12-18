@@ -34,4 +34,7 @@ public class CliTest {
     }
 
     // TODO https://quarkus.io/guides/command-mode-reference#testing-command-mode-applications
+    // More comprehensive CLI output testing could be added by capturing stdout/stderr
+    // Current test infrastructure (@Launch) only verifies exit codes, not actual output/behavior
+    // Proper tests should verify help text content, error messages, formatted output, etc.
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Matus Faro
+ * Copyright 2025 Matus Faro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,36 +20,13 @@
  * SOFTWARE.
  */
 
-package io.dataspray.client;
+package io.dataspray.store;
 
-import com.google.common.base.Function;
-import io.dataspray.stream.control.client.ControlApi;
-import io.dataspray.stream.control.client.HealthApi;
-import io.dataspray.stream.control.client.QueryApi;
-import io.dataspray.stream.control.client.model.DeployRequest;
-import io.dataspray.stream.control.client.model.TaskVersion;
-import io.dataspray.stream.ingest.client.IngestApi;
-
-import java.io.File;
-
-public interface DataSprayClient {
-
-    static DataSprayClient get(Access access) {
-        return new DataSprayClientImpl(access);
+/**
+ * Exception thrown when a requested query resource is not found.
+ */
+public class QueryNotFoundException extends RuntimeException {
+    public QueryNotFoundException(String message) {
+        super(message);
     }
-
-    HealthApi health();
-
-    IngestApi ingest();
-
-    ControlApi control();
-
-    QueryApi query();
-
-    TaskVersion uploadAndPublish(
-            String organizationName,
-            String taskId,
-            File codeZipFile,
-            Function<String, DeployRequest> codeUrlToDeployRequest
-    );
 }

@@ -34,7 +34,9 @@ import {
     IngestApi,
     IngestApiInterface,
     OrganizationApi,
-    OrganizationApiInterface
+    OrganizationApiInterface,
+    QueryApi,
+    QueryApiInterface
 } from "./client";
 
 export interface DataSprayClientConfig {
@@ -87,6 +89,10 @@ export class DataSprayClient {
 
     organization(): OrganizationApiInterface {
         return this.getClient(OrganizationApi);
+    }
+
+    query(): QueryApiInterface {
+        return this.getClient(QueryApi);
     }
 
     async uploadCode(presignedUrl: string, file: Blob) {

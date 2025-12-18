@@ -387,4 +387,72 @@ public class StreamRuntimeImpl implements StreamRuntime {
                 return "?";
         }
     }
+
+    @Override
+    public io.dataspray.stream.control.client.model.SubmitQueryResponse submitQuery(
+            Organization organization, Project project, String sqlQuery) {
+        try {
+            return DataSprayClient.get(organization.toAccess())
+                    .query()
+                    .submitQuery(
+                            organization.getName(),
+                            new io.dataspray.stream.control.client.model.SubmitQueryRequest()
+                                    .sqlQuery(sqlQuery));
+        } catch (ApiException ex) {
+            throw new RuntimeException("Failed to submit query", ex);
+        }
+    }
+
+    @Override
+    public io.dataspray.stream.control.client.model.QueryExecutionStatus getQueryStatus(
+            Organization organization, Project project, String queryExecutionId) {
+        try {
+            return DataSprayClient.get(organization.toAccess())
+                    .query()
+                    .getQueryStatus(organization.getName(), queryExecutionId);
+        } catch (ApiException ex) {
+            throw new RuntimeException("Failed to get query status", ex);
+        }
+    }
+
+    @Override
+    public io.dataspray.stream.control.client.model.QueryResultsResponse getQueryResults(
+            Organization organization, Project project, String queryExecutionId,
+            String nextToken, Integer maxResults) {
+        try {
+            return DataSprayClient.get(organization.toAccess())
+                    .query()
+                    .getQueryResults(
+                            organization.getName(),
+                            queryExecutionId,
+                            nextToken,
+                            maxResults);
+        } catch (ApiException ex) {
+            throw new RuntimeException("Failed to get query results", ex);
+        }
+    }
+
+    @Override
+    public io.dataspray.stream.control.client.model.QueryHistoryResponse getQueryHistory(
+            Organization organization, Project project, Integer maxResults) {
+        try {
+            return DataSprayClient.get(organization.toAccess())
+                    .query()
+                    .getQueryHistory(organization.getName(), maxResults);
+        } catch (ApiException ex) {
+            throw new RuntimeException("Failed to get query history", ex);
+        }
+    }
+
+    @Override
+    public io.dataspray.stream.control.client.model.DatabaseSchemaResponse getDatabaseSchema(
+            Organization organization, Project project) {
+        try {
+            return DataSprayClient.get(organization.toAccess())
+                    .query()
+                    .getDatabaseSchema(organization.getName());
+        } catch (ApiException ex) {
+            throw new RuntimeException("Failed to get database schema", ex);
+        }
+    }
 }

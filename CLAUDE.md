@@ -45,6 +45,33 @@ mvn test -pl dataspray-store -Dtest=CognitoUserStoreTest#testMethodName
 mvn verify -Pnative
 ```
 
+### Test Quality Standards
+
+**CRITICAL: Write meaningful tests only. Do not inflate test counts with useless tests.**
+
+❌ **BAD - Useless test that verifies nothing:**
+```java
+@Test
+@Launch(value = {"query"}, exitCode = 0)
+public void testQueryHelp() throws Exception {
+    // Should display help message
+}
+```
+This test only checks exit code 0, doesn't verify output, behavior, or correctness. It's test count inflation.
+
+✅ **GOOD - Tests that verify actual behavior:**
+- Assert on actual output/results (captured stdout, returned values, etc.)
+- Verify state changes (database records, file contents, API responses)
+- Test error conditions with specific error messages
+- Validate business logic with concrete inputs and expected outputs
+
+**Requirements:**
+1. Every test must assert something meaningful
+2. Tests without assertions that verify behavior should be deleted
+3. CLI tests must capture and verify output when testing help/formatting
+4. Never create tests just to increase coverage numbers
+5. Test real functionality, edge cases, and error handling
+
 ## Environment Setup
 
 Requires GraalVM 21, Maven 3.9.6, Node.js 22.17.0. See `.sdkmanrc` and `.nvmrc`.

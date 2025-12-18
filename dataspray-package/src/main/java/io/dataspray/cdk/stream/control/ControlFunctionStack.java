@@ -28,6 +28,7 @@ import io.dataspray.cdk.api.ApiFunctionStack;
 import io.dataspray.cdk.site.NextSiteStack;
 import io.dataspray.cdk.store.AuthNzStack;
 import io.dataspray.cdk.store.SingleTableStack;
+import io.dataspray.cdk.stream.ingest.IngestFunctionStack;
 import io.dataspray.common.DeployEnvironment;
 import io.dataspray.store.impl.FirehoseS3AthenaBatchStore;
 import io.dataspray.store.impl.LambdaDeployerImpl;
@@ -55,7 +56,7 @@ public class ControlFunctionStack extends ApiFunctionStack {
     private final String bucketCodeName;
     private final Bucket bucketCode;
 
-    public ControlFunctionStack(Construct parent, DeployEnvironment deployEnv, String codeZip, AuthNzStack authNzStack, NextSiteStack dashboardSiteStack, SingleTableStack singleTableStack) {
+    public ControlFunctionStack(Construct parent, DeployEnvironment deployEnv, String codeZip, AuthNzStack authNzStack, NextSiteStack dashboardSiteStack, SingleTableStack singleTableStack, IngestFunctionStack ingestStack) {
         super(parent, Options.builder()
                 .deployEnv(deployEnv)
                 .baseFunctionName("control")
@@ -63,7 +64,8 @@ public class ControlFunctionStack extends ApiFunctionStack {
                 .apiTags(ImmutableSet.of(
                         "AuthNZ",
                         "Control",
-                        "Organization"))
+                        "Organization",
+                        "Query"))
                 .corsForSite(dashboardSiteStack)
                 .memorySize(256)
                 .memorySizeNative(256)
@@ -234,6 +236,30 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         "arn:aws:glue:" + getRegion() + ":" + getAccount() + ":schema/" + FirehoseS3AthenaBatchStore.getSchemaNameForQueue("*", "*"),
                         "arn:aws:glue:" + getRegion() + ":" + getAccount() + ":registry/" + FirehoseS3AthenaBatchStore.getRegistryName(getDeployEnv())
                 ))
+                .build());
+        // Allow Athena query execution
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+                .sid(getConstructIdCamelCase("CustomerManagementAthena"))
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "athena:StartQueryExecution",
+                        "athena:GetQueryExecution",
+                        "athena:GetQueryResults",
+                        "athena:StopQueryExecution"))
+                .resources(ImmutableList.of("*"))
+                .build());
+        // Allow S3 access for Athena to read data and write results
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+                .sid(getConstructIdCamelCase("CustomerManagementAthenaS3"))
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "s3:GetObject",
+                        "s3:ListBucket",
+                        "s3:GetBucketLocation",
+                        "s3:PutObject"))
+                .resources(ImmutableList.of(
+                        ingestStack.getBucketEtl().getBucketArn(),
+                        ingestStack.getBucketEtl().getBucketArn() + "/*"))
                 .build());
         // Unfortunately not all permissions allow for resource-specific restrictions.
         getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()

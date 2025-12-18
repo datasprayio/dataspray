@@ -1,0 +1,253 @@
+components:
+  schemas:
+    SubmitQueryRequest:
+      type: object
+      required:
+        - sqlQuery
+      properties:
+        sqlQuery:
+          type: string
+          description: SQL SELECT query to execute
+
+    SubmitQueryResponse:
+      type: object
+      required:
+        - queryExecutionId
+      properties:
+        queryExecutionId:
+          type: string
+          description: Athena query execution ID
+
+    QueryExecutionStatus:
+      type: object
+      required:
+        - queryExecutionId
+        - sqlQuery
+        - state
+        - submittedAt
+      properties:
+        queryExecutionId:
+          type: string
+        sqlQuery:
+          type: string
+        state:
+          type: string
+          enum: [ QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED ]
+        submittedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        bytesScanned:
+          type: integer
+          format: int64
+        executionTimeMs:
+          type: integer
+          format: int64
+        errorMessage:
+          type: string
+        username:
+          type: string
+
+    QueryResultColumn:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+
+    QueryResultsResponse:
+      type: object
+      required:
+        - columns
+        - rows
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryResultColumn'
+        rows:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+        nextToken:
+          type: string
+          description: Pagination token for next page of results
+
+    QueryHistoryResponse:
+      type: object
+      required:
+        - queries
+      properties:
+        queries:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryExecutionStatus'
+
+    DatabaseTable:
+      type: object
+      required:
+        - name
+        - columns
+      properties:
+        name:
+          type: string
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryResultColumn'
+
+    DatabaseSchemaResponse:
+      type: object
+      required:
+        - databaseName
+        - tables
+      properties:
+        databaseName:
+          type: string
+        tables:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatabaseTable'
+
+/v1/organization/{organizationName}/query/submit:
+  post:
+    operationId: submitQuery
+    tags: [ Query ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SubmitQueryRequest'
+    responses:
+      '200':
+        description: Query submitted successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitQueryResponse'
+      '400':
+        description: Invalid SQL query
+
+/v1/organization/{organizationName}/query/{queryExecutionId}/status:
+  get:
+    operationId: getQueryStatus
+    tags: [ Query ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: queryExecutionId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Query status
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryExecutionStatus'
+      '404':
+        description: Query not found
+
+/v1/organization/{organizationName}/query/{queryExecutionId}/results:
+  get:
+    operationId: getQueryResults
+    tags: [ Query ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: queryExecutionId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: nextToken
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: maxResults
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          maximum: 1000
+    responses:
+      '200':
+        description: Query results
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryResultsResponse'
+      '400':
+        description: Query has not succeeded yet
+      '404':
+        description: Query not found
+
+/v1/organization/{organizationName}/query/history:
+  get:
+    operationId: getQueryHistory
+    tags: [ Query ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: maxResults
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 50
+          maximum: 100
+    responses:
+      '200':
+        description: Query history
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryHistoryResponse'
+
+/v1/organization/{organizationName}/query/schema:
+  get:
+    operationId: getDatabaseSchema
+    tags: [ Query ]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Database schema
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatabaseSchemaResponse'
+      '404':
+        description: Database not found

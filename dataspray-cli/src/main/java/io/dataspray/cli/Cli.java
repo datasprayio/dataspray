@@ -46,7 +46,8 @@ import picocli.CommandLine.Spec;
                 Resume.class,
                 Delete.class,
                 List.class,
-                Status.class
+                Status.class,
+                Query.class
         }
 )
 public class Cli {
