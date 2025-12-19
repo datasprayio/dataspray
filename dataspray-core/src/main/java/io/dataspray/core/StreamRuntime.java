@@ -71,6 +71,13 @@ public interface StreamRuntime {
     io.dataspray.stream.control.client.model.DatabaseSchemaResponse getDatabaseSchema(
             Organization organization, Project project);
 
+    // Topic schema operations
+    io.dataspray.stream.control.client.model.TopicSchema getTopicSchema(
+            Organization organization, Project project, String topicName);
+
+    io.dataspray.stream.control.client.model.TopicSchema recalculateTopicSchema(
+            Organization organization, Project project, String topicName);
+
     @Value
     class Organization {
         String name;

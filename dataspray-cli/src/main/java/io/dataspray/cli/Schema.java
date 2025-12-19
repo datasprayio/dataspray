@@ -23,6 +23,9 @@
 package io.dataspray.cli;
 
 import com.google.common.base.Strings;
+import io.dataspray.core.Codegen;
+import io.dataspray.core.Project;
+import io.dataspray.core.StreamRuntime;
 import io.dataspray.stream.control.client.model.TopicSchema;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -63,15 +66,20 @@ public class Schema implements Runnable {
 
         @Inject
         CliConfig cliConfig;
+        @Inject
+        StreamRuntime streamRuntime;
+        @Inject
+        Codegen codegen;
 
         @Override
         public void run() {
+            Project project = codegen.loadProject();
             var profile = cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName)));
 
-            log.info("Recalculating schema for topic: {} in organization: {}", topicName, profile.organizationName());
+            log.info("Recalculating schema for topic: {} in organization: {}", topicName, profile.getName());
 
             try {
-                TopicSchema schema = profile.controlApi().recalculateTopicSchema(profile.organizationName(), topicName);
+                TopicSchema schema = streamRuntime.recalculateTopicSchema(profile, project, topicName);
                 log.info("Schema recalculated successfully:");
                 log.info("Format: {}", schema.getFormat());
                 log.info("Schema:\n{}", schema.getSchema());
@@ -97,15 +105,20 @@ public class Schema implements Runnable {
 
         @Inject
         CliConfig cliConfig;
+        @Inject
+        StreamRuntime streamRuntime;
+        @Inject
+        Codegen codegen;
 
         @Override
         public void run() {
+            Project project = codegen.loadProject();
             var profile = cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName)));
 
-            log.info("Fetching schema for topic: {} in organization: {}", topicName, profile.organizationName());
+            log.info("Fetching schema for topic: {} in organization: {}", topicName, profile.getName());
 
             try {
-                TopicSchema schema = profile.controlApi().getTopicSchema(profile.organizationName(), topicName);
+                TopicSchema schema = streamRuntime.getTopicSchema(profile, project, topicName);
                 log.info("Current schema:");
                 log.info("Format: {}", schema.getFormat());
                 log.info("Schema:\n{}", schema.getSchema());

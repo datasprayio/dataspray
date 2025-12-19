@@ -455,4 +455,28 @@ public class StreamRuntimeImpl implements StreamRuntime {
             throw new RuntimeException("Failed to get database schema", ex);
         }
     }
+
+    @Override
+    public io.dataspray.stream.control.client.model.TopicSchema getTopicSchema(
+            Organization organization, Project project, String topicName) {
+        try {
+            return DataSprayClient.get(organization.toAccess())
+                    .control()
+                    .getTopicSchema(organization.getName(), topicName);
+        } catch (ApiException ex) {
+            throw new RuntimeException("Failed to get topic schema for " + topicName, ex);
+        }
+    }
+
+    @Override
+    public io.dataspray.stream.control.client.model.TopicSchema recalculateTopicSchema(
+            Organization organization, Project project, String topicName) {
+        try {
+            return DataSprayClient.get(organization.toAccess())
+                    .control()
+                    .recalculateTopicSchema(organization.getName(), topicName);
+        } catch (ApiException ex) {
+            throw new RuntimeException("Failed to recalculate schema for topic " + topicName, ex);
+        }
+    }
 }
