@@ -102,8 +102,8 @@ export function S3FileBrowser({organizationName, topicName}: Props) {
         return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     };
 
-    const formatDate = (dateString: string): string => {
-        return new Date(dateString).toLocaleString();
+    const formatDate = (date: string | Date): string => {
+        return new Date(date).toLocaleString();
     };
 
     return (

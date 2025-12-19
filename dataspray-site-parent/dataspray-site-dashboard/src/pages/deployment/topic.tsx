@@ -72,7 +72,7 @@ const Page: NextPageWithLayout = () => {
         } catch (e: any) {
             onError({content: `Failed to delete topic ${selectedTopicName}: ${e?.message || 'Unknown error'}`});
         }
-    }, [beginProcessing, currentOrganizationName, selectedTopicName]);
+    }, [beginProcessing, currentOrganizationName, selectedTopicName, update]);
 
     const [isRecalculatingSchema, setIsRecalculatingSchema] = useState(false);
     const onRecalculateSchemaClick = useCallback(async () => {

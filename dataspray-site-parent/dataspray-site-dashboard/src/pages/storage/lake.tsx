@@ -39,7 +39,7 @@ import {
     ColumnLayout
 } from "@cloudscape-design/components";
 import {useAuth} from "../../auth/auth";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {getClient} from "../../util/dataSprayClientWrapper";
 import {useAlerts} from "../../util/useAlerts";
 import {
@@ -62,34 +62,7 @@ const LakePage: NextPageWithLayout = () => {
     const [schema, setSchema] = useState<DatabaseSchemaResponse>();
     const {addAlert, beginProcessing} = useAlerts();
 
-
-    // Load schema on mount
-    useEffect(() => {
-        if (currentOrganizationName) {
-            loadSchema();
-        }
-    }, [currentOrganizationName]);
-
-    // Load query history
-    useEffect(() => {
-        if (currentOrganizationName) {
-            loadHistory();
-        }
-    }, [currentOrganizationName]);
-
-    // Poll for query status if query is running
-    useEffect(() => {
-        if (!queryExecutionId || !queryStatus) return;
-        if (queryStatus.state === 'SUCCEEDED' || queryStatus.state === 'FAILED') return;
-
-        const interval = setInterval(() => {
-            checkQueryStatus(queryExecutionId);
-        }, 2000);
-
-        return () => clearInterval(interval);
-    }, [queryExecutionId, queryStatus]);
-
-    const loadSchema = async () => {
+    const loadSchema = useCallback(async () => {
         if (!currentOrganizationName) return;
 
         try {
@@ -101,9 +74,9 @@ const LakePage: NextPageWithLayout = () => {
             console.error('Failed to load schema:', e);
             addAlert({type: 'error', content: 'Failed to load database schema'});
         }
-    };
+    }, [currentOrganizationName, addAlert]);
 
-    const loadHistory = async () => {
+    const loadHistory = useCallback(async () => {
         if (!currentOrganizationName) return;
 
         try {
@@ -116,31 +89,40 @@ const LakePage: NextPageWithLayout = () => {
             console.error('Failed to load history:', e);
             // Silently fail for history - not critical
         }
-    };
+    }, [currentOrganizationName]);
 
-    const executeQuery = async () => {
-        if (!currentOrganizationName || !sqlQuery.trim()) return;
+    // Load schema on mount
+    useEffect(() => {
+        if (currentOrganizationName) {
+            loadSchema();
+        }
+    }, [currentOrganizationName, loadSchema]);
 
-        setIsExecuting(true);
-        setQueryResults(undefined);
-        setQueryStatus(undefined);
+    // Load query history
+    useEffect(() => {
+        if (currentOrganizationName) {
+            loadHistory();
+        }
+    }, [currentOrganizationName, loadHistory]);
+
+    const loadResults = useCallback(async (qid: string, nextToken?: string) => {
+        if (!currentOrganizationName) return;
 
         try {
-            const response = await getClient().query().submitQuery({
+            const results = await getClient().query().getQueryResults({
                 organizationName: currentOrganizationName,
-                submitQueryRequest: {sqlQuery}
+                queryExecutionId: qid,
+                nextToken,
+                maxResults: 100
             });
-            setQueryExecutionId(response.queryExecutionId);
-            addAlert({type: 'success', content: `Query submitted: ${response.queryExecutionId}`});
-            await loadHistory(); // Refresh history
+            setQueryResults(results);
         } catch (e: any) {
-            console.error('Failed to submit query:', e);
-            addAlert({type: 'error', content: 'Failed to submit query. Check console for details.'});
-            setIsExecuting(false);
+            console.error('Failed to load results:', e);
+            addAlert({type: 'error', content: 'Failed to load query results'});
         }
-    };
+    }, [currentOrganizationName, addAlert]);
 
-    const checkQueryStatus = async (qid: string) => {
+    const checkQueryStatus = useCallback(async (qid: string) => {
         if (!currentOrganizationName) return;
 
         try {
@@ -163,22 +145,39 @@ const LakePage: NextPageWithLayout = () => {
             addAlert({type: 'error', content: 'Failed to check query status'});
             setIsExecuting(false);
         }
-    };
+    }, [currentOrganizationName, addAlert, loadHistory, loadResults]);
 
-    const loadResults = async (qid: string, nextToken?: string) => {
-        if (!currentOrganizationName) return;
+    // Poll for query status if query is running
+    useEffect(() => {
+        if (!queryExecutionId || !queryStatus) return;
+        if (queryStatus.state === 'SUCCEEDED' || queryStatus.state === 'FAILED') return;
+
+        const interval = setInterval(() => {
+            checkQueryStatus(queryExecutionId);
+        }, 2000);
+
+        return () => clearInterval(interval);
+    }, [queryExecutionId, queryStatus, checkQueryStatus]);
+
+    const executeQuery = async () => {
+        if (!currentOrganizationName || !sqlQuery.trim()) return;
+
+        setIsExecuting(true);
+        setQueryResults(undefined);
+        setQueryStatus(undefined);
 
         try {
-            const results = await getClient().query().getQueryResults({
+            const response = await getClient().query().submitQuery({
                 organizationName: currentOrganizationName,
-                queryExecutionId: qid,
-                nextToken,
-                maxResults: 100
+                submitQueryRequest: {sqlQuery}
             });
-            setQueryResults(results);
+            setQueryExecutionId(response.queryExecutionId);
+            addAlert({type: 'success', content: `Query submitted: ${response.queryExecutionId}`});
+            await loadHistory(); // Refresh history
         } catch (e: any) {
-            console.error('Failed to load results:', e);
-            addAlert({type: 'error', content: 'Failed to load query results'});
+            console.error('Failed to submit query:', e);
+            addAlert({type: 'error', content: 'Failed to submit query. Check console for details.'});
+            setIsExecuting(false);
         }
     };
 
