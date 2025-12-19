@@ -22,7 +22,7 @@
 
 import {NextPageWithLayout} from "../_app";
 import DashboardLayout from "../../layout/DashboardLayout";
-import {SplitPanel, StatusIndicator, Table} from "@cloudscape-design/components";
+import {ContentLayout, SpaceBetween, SplitPanel, StatusIndicator, Table} from "@cloudscape-design/components";
 import DashboardAppLayout from "../../layout/DashboardAppLayout";
 import {useAuth} from "../../auth/auth";
 import {getHeaderCounterTextSingle} from "../../table/tableUtil";
@@ -33,6 +33,7 @@ import {DeleteTopicModal} from "../../deployment/DeleteTopicModal";
 import {TopicActionHeader} from "../../deployment/TopicActionHeader";
 import {EditTopic, EditType} from "../../deployment/EditTopic";
 import {useAlerts} from "../../util/useAlerts";
+import {S3FileBrowser} from "../../deployment/S3FileBrowser";
 
 const Yes = <StatusIndicator type='success'>Yes</StatusIndicator>;
 const No = <StatusIndicator type='stopped'>No</StatusIndicator>;
@@ -54,7 +55,7 @@ const Page: NextPageWithLayout = () => {
     const onDeleteCancel = useCallback(() => {
         setShowConfirmDeleteTopicName(undefined);
     }, []);
-    const {beginProcessing} = useAlerts();
+    const {beginProcessing, addAlert} = useAlerts();
     const onDeleteConfirmedClick = useCallback(async () => {
         if (!currentOrganizationName || !selectedTopicName) {
             return;
@@ -72,6 +73,42 @@ const Page: NextPageWithLayout = () => {
             onError({content: `Failed to delete topic ${selectedTopicName}: ${e?.message || 'Unknown error'}`});
         }
     }, [beginProcessing, currentOrganizationName, selectedTopicName]);
+
+    const [isRecalculatingSchema, setIsRecalculatingSchema] = useState(false);
+    const onRecalculateSchemaClick = useCallback(async () => {
+        if (!currentOrganizationName || !selectedTopicName) {
+            return;
+        }
+
+        // Check if topic has batch enabled
+        if (!selectedTopic?.batch) {
+            addAlert({
+                type: 'error',
+                content: `Topic ${selectedTopicName} does not have batch enabled`
+            });
+            return;
+        }
+
+        setIsRecalculatingSchema(true);
+        try {
+            const schema = await getClient().control().recalculateTopicSchema({
+                topicName: selectedTopicName,
+                organizationName: currentOrganizationName,
+            });
+            addAlert({
+                type: 'success',
+                content: `Schema recalculated successfully for topic ${selectedTopicName}`
+            });
+            console.log('Recalculated schema:', schema);
+        } catch (e: any) {
+            addAlert({
+                type: 'error',
+                content: `Failed to recalculate schema: ${e?.message || 'Unknown error'}`
+            });
+        } finally {
+            setIsRecalculatingSchema(false);
+        }
+    }, [addAlert, currentOrganizationName, selectedTopicName, selectedTopic]);
 
     const [splitPanelOpen, setSplitPanelOpen] = useState<boolean>(false);
     const [editType, setEditType] = useState<EditType>(EditType.EDIT_TOPIC);
@@ -131,18 +168,22 @@ const Page: NextPageWithLayout = () => {
             />
             <DashboardAppLayout
                 content={(
-                    <Table
-                        header={(
-                            <TopicActionHeader
-                                counter={getHeaderCounterTextSingle(Object.keys(data?.topics || {}).length, false)}
-                                onCreateClick={editType !== EditType.CREATE_TOPIC ? onCreateClick : undefined}
-                                onEditDefaultClick={editType !== EditType.EDIT_DEFAULT_TOPIC ? onEditDefaultClick : undefined}
-                                onDeleteClick={selectedTopic ? onDeleteClick : undefined}
-                            />
-                        )}
-                        variant='full-page'
-                        stickyHeader
-                        columnDefinitions={[
+                    <ContentLayout disableOverlap>
+                        <SpaceBetween size="l">
+                            <Table
+                                header={(
+                                    <TopicActionHeader
+                                        counter={getHeaderCounterTextSingle(Object.keys(data?.topics || {}).length, false)}
+                                        onCreateClick={editType !== EditType.CREATE_TOPIC ? onCreateClick : undefined}
+                                        onEditDefaultClick={editType !== EditType.EDIT_DEFAULT_TOPIC ? onEditDefaultClick : undefined}
+                                        onRecalculateSchemaClick={selectedTopic?.batch ? onRecalculateSchemaClick : undefined}
+                                        recalculateSchemaLoading={isRecalculatingSchema}
+                                        onDeleteClick={selectedTopic ? onDeleteClick : undefined}
+                                    />
+                                )}
+                                variant='container'
+                                stickyHeader
+                                columnDefinitions={[
                             {
                                 id: 'name',
                                 header: 'Name',
@@ -177,6 +218,15 @@ const Page: NextPageWithLayout = () => {
                         }}
                         loading={isLoading}
                     />
+
+                    {selectedTopicName && selectedTopic?.batch && currentOrganizationName && (
+                        <S3FileBrowser
+                            organizationName={currentOrganizationName}
+                            topicName={selectedTopicName}
+                        />
+                    )}
+                        </SpaceBetween>
+                    </ContentLayout>
                 )}
                 splitPanel={splitPanel}
                 splitPanelOpen={splitPanelOpen}

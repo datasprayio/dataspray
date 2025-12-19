@@ -135,6 +135,8 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     @Inject
     AthenaClient athenaClient;
     @Inject
+    software.amazon.awssdk.services.s3.S3Client s3Client;
+    @Inject
     OrganizationStore organizationStore;
     @Inject
     CustomerLogger customerLog;
@@ -361,6 +363,202 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
                                         + "registry is in state " + response.statusAsString());
         }
         return response;
+    }
+
+    @Override
+    public FilesListResult listFiles(String organizationName, String topicName, BatchRetention retention, String prefix, int maxResults, String nextToken) {
+        log.info("Listing files for organization: {}, topic: {}, prefix: {}", organizationName, topicName, prefix);
+
+        // Build S3 prefix for this topic
+        String basePrefix = ETL_BUCKET_TARGET_PREFIX.apply(retention, organizationName, topicName)
+                .replace("/year=!{timestamp:yyyy}", "")
+                .replace("/month=!{timestamp:MM}", "")
+                .replace("/day=!{timestamp:dd}", "")
+                .replace("/hour=!{timestamp:HH}/", "");
+
+        String fullPrefix = prefix != null && !prefix.isEmpty()
+                ? basePrefix + "/" + prefix
+                : basePrefix;
+
+        log.debug("Listing S3 objects with prefix: s3://{}/{}", etlBucketName, fullPrefix);
+
+        // Limit max results
+        int limitedMaxResults = Math.min(Math.max(1, maxResults), 1000);
+
+        software.amazon.awssdk.services.s3.model.ListObjectsV2Request.Builder requestBuilder =
+                software.amazon.awssdk.services.s3.model.ListObjectsV2Request.builder()
+                        .bucket(etlBucketName)
+                        .prefix(fullPrefix)
+                        .maxKeys(limitedMaxResults);
+
+        if (nextToken != null && !nextToken.isEmpty()) {
+            requestBuilder.continuationToken(nextToken);
+        }
+
+        software.amazon.awssdk.services.s3.model.ListObjectsV2Response response =
+                s3Client.listObjectsV2(requestBuilder.build());
+
+        java.util.List<S3File> files = response.contents().stream()
+                .map(s3Object -> new S3File(
+                        s3Object.key(),
+                        s3Object.size(),
+                        s3Object.lastModified()
+                ))
+                .collect(java.util.stream.Collectors.toList());
+
+        return new FilesListResult(
+                files,
+                response.nextContinuationToken()
+        );
+    }
+
+    @Override
+    public PresignedUrl getFileDownloadUrl(String organizationName, String topicName, BatchRetention retention, String key) {
+        log.info("Generating presigned URL for organization: {}, topic: {}, key: {}", organizationName, topicName, key);
+
+        // Validate the key belongs to this topic's prefix (security check)
+        String basePrefix = ETL_BUCKET_TARGET_PREFIX.apply(retention, organizationName, topicName)
+                .replace("/year=!{timestamp:yyyy}", "")
+                .replace("/month=!{timestamp:MM}", "")
+                .replace("/day=!{timestamp:dd}", "")
+                .replace("/hour=!{timestamp:HH}/", "");
+
+        if (!key.startsWith(basePrefix)) {
+            throw new IllegalArgumentException("Invalid file key - does not belong to this topic");
+        }
+
+        // Generate presigned URL valid for 15 minutes
+        java.time.Duration expiration = java.time.Duration.ofMinutes(15);
+        java.time.Instant expiresAt = java.time.Instant.now().plus(expiration);
+
+        software.amazon.awssdk.services.s3.presigner.S3Presigner presigner =
+                software.amazon.awssdk.services.s3.presigner.S3Presigner.create();
+
+        try {
+            software.amazon.awssdk.services.s3.model.GetObjectRequest getObjectRequest =
+                    software.amazon.awssdk.services.s3.model.GetObjectRequest.builder()
+                            .bucket(etlBucketName)
+                            .key(key)
+                            .build();
+
+            software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest presignRequest =
+                    software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest.builder()
+                            .signatureDuration(expiration)
+                            .getObjectRequest(getObjectRequest)
+                            .build();
+
+            software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest presignedRequest =
+                    presigner.presignGetObject(presignRequest);
+
+            String url = presignedRequest.url().toString();
+            log.debug("Generated presigned URL: {}", url);
+
+            return new PresignedUrl(url, expiresAt);
+        } finally {
+            presigner.close();
+        }
+    }
+
+    @Override
+    public TableDefinition recalculateTableDefinition(String organizationName, String topicName, BatchRetention retention) {
+        log.info("Recalculating schema for organization: {}, topic: {}", organizationName, topicName);
+
+        // Build S3 prefix for this topic
+        String s3Prefix = ETL_BUCKET_TARGET_PREFIX.apply(retention, organizationName, topicName)
+                .replace("/year=!{timestamp:yyyy}", "")
+                .replace("/month=!{timestamp:MM}", "")
+                .replace("/day=!{timestamp:dd}", "")
+                .replace("/hour=!{timestamp:HH}/", "");
+
+        log.debug("Listing S3 objects with prefix: s3://{}/{}", etlBucketName, s3Prefix);
+
+        // List objects to find sample data
+        software.amazon.awssdk.services.s3.model.ListObjectsV2Request listRequest =
+                software.amazon.awssdk.services.s3.model.ListObjectsV2Request.builder()
+                        .bucket(etlBucketName)
+                        .prefix(s3Prefix)
+                        .maxKeys(100)
+                        .build();
+
+        software.amazon.awssdk.services.s3.model.ListObjectsV2Response listResponse = s3Client.listObjectsV2(listRequest);
+
+        if (listResponse.contents().isEmpty()) {
+            throw new IllegalArgumentException("No data found for organization: " + organizationName +
+                    ", topic: " + topicName + ". Please ingest data first.");
+        }
+
+        // Read up to 10 sample objects to infer schema
+        java.util.Set<String> allFields = new java.util.LinkedHashSet<>();
+        int samplesRead = 0;
+        int maxSamples = Math.min(10, listResponse.contents().size());
+
+        for (software.amazon.awssdk.services.s3.model.S3Object s3Object : listResponse.contents()) {
+            if (samplesRead >= maxSamples) break;
+            if (s3Object.size() == 0) continue;
+
+            try {
+                // Get object
+                software.amazon.awssdk.services.s3.model.GetObjectRequest getRequest =
+                        software.amazon.awssdk.services.s3.model.GetObjectRequest.builder()
+                                .bucket(etlBucketName)
+                                .key(s3Object.key())
+                                .build();
+
+                byte[] objectBytes = s3Client.getObjectAsBytes(getRequest).asByteArray();
+
+                // Parse JSON (assuming JSON Lines format with potential GZIP)
+                String content = new String(objectBytes, java.nio.charset.StandardCharsets.UTF_8);
+
+                // Handle both single JSON object and JSON Lines format
+                String[] lines = content.split("\\r?\\n");
+                for (String line : lines) {
+                    if (line.trim().isEmpty()) continue;
+                    try {
+                        com.google.gson.JsonObject jsonObject = new com.google.gson.JsonParser()
+                                .parse(line)
+                                .getAsJsonObject();
+
+                        // Collect all field names
+                        jsonObject.keySet().forEach(allFields::add);
+                    } catch (Exception e) {
+                        log.warn("Failed to parse JSON line from {}: {}", s3Object.key(), e.getMessage());
+                    }
+                }
+
+                samplesRead++;
+            } catch (Exception e) {
+                log.warn("Failed to read S3 object {}: {}", s3Object.key(), e.getMessage());
+            }
+        }
+
+        if (allFields.isEmpty()) {
+            throw new IllegalArgumentException("Could not parse any JSON data from S3 for topic: " + topicName);
+        }
+
+        log.info("Inferred {} fields from {} sample files", allFields.size(), samplesRead);
+
+        // Build JSON schema
+        com.google.gson.JsonObject schemaObject = new com.google.gson.JsonObject();
+        schemaObject.addProperty("type", "object");
+        com.google.gson.JsonObject properties = new com.google.gson.JsonObject();
+
+        for (String field : allFields) {
+            com.google.gson.JsonObject fieldSchema = new com.google.gson.JsonObject();
+            // Default to string type - Athena will handle type coercion
+            fieldSchema.addProperty("type", "string");
+            properties.add(field, fieldSchema);
+        }
+
+        schemaObject.add("properties", properties);
+
+        String schemaDefinition = new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(schemaObject);
+
+        log.debug("Inferred schema: {}", schemaDefinition);
+
+        // Update the table with inferred schema
+        setTableDefinition(organizationName, topicName, DataFormat.JSON, schemaDefinition, retention);
+
+        return new TableDefinition(schemaDefinition, DataFormat.JSON);
     }
 
     /**

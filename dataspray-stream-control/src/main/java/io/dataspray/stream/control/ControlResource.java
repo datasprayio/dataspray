@@ -44,6 +44,8 @@ import io.dataspray.store.TopicStore.Batch;
 import io.dataspray.store.util.WithCursor;
 import io.dataspray.stream.control.model.DeployRequest;
 import io.dataspray.stream.control.model.DeployVersionCheckResponse;
+import io.dataspray.stream.control.model.FileDownloadUrlResponse;
+import io.dataspray.stream.control.model.S3Object;
 import io.dataspray.stream.control.model.SchemaFormat;
 import io.dataspray.stream.control.model.TaskStatus;
 import io.dataspray.stream.control.model.TaskStatus.StatusEnum;
@@ -52,6 +54,7 @@ import io.dataspray.stream.control.model.TaskVersion;
 import io.dataspray.stream.control.model.TaskVersions;
 import io.dataspray.stream.control.model.Topic;
 import io.dataspray.stream.control.model.TopicBatch;
+import io.dataspray.stream.control.model.TopicFilesResponse;
 import io.dataspray.stream.control.model.TopicSchema;
 import io.dataspray.stream.control.model.TopicStoreKey;
 import io.dataspray.stream.control.model.TopicStoreKey.TableTypeEnum;
@@ -289,6 +292,104 @@ public class ControlResource extends AbstractResource implements ControlApi {
                 updateTopicSchemaRequest.getSchema(),
                 batch.getRetention());
         throw new WebApplicationException(Response.Status.CREATED);
+    }
+
+    @Override
+    public TopicSchema recalculateTopicSchema(String organizationName, String topicName) {
+        log.info("Recalculate topic schema request for organization: {}, topic: {}", organizationName, topicName);
+
+        // Validate organization access
+        if (!getOrganizationNames().contains(organizationName)) {
+            throw new jakarta.ws.rs.ForbiddenException("Access denied to organization: " + organizationName);
+        }
+
+        Batch batch = topicStore.getTopic(organizationName, topicName, false)
+                .orElseThrow(() -> new NotFoundException("Topic not found: " + topicName))
+                .getBatch()
+                .orElseThrow(() -> new BadRequestException(
+                        "Topic " + topicName + " does not have batch enabled"));
+
+        try {
+            BatchStore.TableDefinition tableDefinition = batchStore.recalculateTableDefinition(
+                    organizationName,
+                    topicName,
+                    batch.getRetention());
+
+            return new TopicSchema(
+                    tableDefinition.getSchema(),
+                    SchemaFormat.valueOf(tableDefinition.getDataFormat().name()));
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException(ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public TopicFilesResponse listTopicFiles(String organizationName, String topicName, String prefix, Integer maxResults, String nextToken) {
+        log.info("List topic files request for organization: {}, topic: {}, prefix: {}", organizationName, topicName, prefix);
+
+        // Validate organization access
+        if (!getOrganizationNames().contains(organizationName)) {
+            throw new jakarta.ws.rs.ForbiddenException("Access denied to organization: " + organizationName);
+        }
+
+        Batch batch = topicStore.getTopic(organizationName, topicName, false)
+                .orElseThrow(() -> new NotFoundException("Topic not found: " + topicName))
+                .getBatch()
+                .orElseThrow(() -> new BadRequestException(
+                        "Topic " + topicName + " does not have batch enabled"));
+
+        int effectiveMaxResults = maxResults != null ? maxResults : 100;
+
+        BatchStore.FilesListResult result = batchStore.listFiles(
+                organizationName,
+                topicName,
+                batch.getRetention(),
+                prefix,
+                effectiveMaxResults,
+                nextToken
+        );
+
+        java.util.List<S3Object> s3Objects = result.getFiles().stream()
+                .map(file -> new S3Object(
+                        file.getKey(),
+                        file.getSize(),
+                        java.time.OffsetDateTime.ofInstant(file.getLastModified(), java.time.ZoneOffset.UTC)
+                ))
+                .collect(java.util.stream.Collectors.toList());
+
+        return new TopicFilesResponse(s3Objects, result.getNextToken());
+    }
+
+    @Override
+    public FileDownloadUrlResponse getTopicFileDownloadUrl(String organizationName, String topicName, String key) {
+        log.info("Get file download URL request for organization: {}, topic: {}, key: {}", organizationName, topicName, key);
+
+        // Validate organization access
+        if (!getOrganizationNames().contains(organizationName)) {
+            throw new jakarta.ws.rs.ForbiddenException("Access denied to organization: " + organizationName);
+        }
+
+        Batch batch = topicStore.getTopic(organizationName, topicName, false)
+                .orElseThrow(() -> new NotFoundException("Topic not found: " + topicName))
+                .getBatch()
+                .orElseThrow(() -> new BadRequestException(
+                        "Topic " + topicName + " does not have batch enabled"));
+
+        try {
+            BatchStore.PresignedUrl presignedUrl = batchStore.getFileDownloadUrl(
+                    organizationName,
+                    topicName,
+                    batch.getRetention(),
+                    key
+            );
+
+            return new FileDownloadUrlResponse(
+                    presignedUrl.getUrl(),
+                    java.time.OffsetDateTime.ofInstant(presignedUrl.getExpiresAt(), java.time.ZoneOffset.UTC)
+            );
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException(ex.getMessage(), ex);
+        }
     }
 
     @Override

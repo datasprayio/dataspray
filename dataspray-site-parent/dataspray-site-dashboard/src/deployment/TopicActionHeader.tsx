@@ -27,12 +27,16 @@ interface Props extends HeaderProps {
     onCreateClick?: () => void;
     onEditDefaultClick?: () => void;
     onDeleteClick?: () => void;
+    onRecalculateSchemaClick?: () => void;
+    recalculateSchemaLoading?: boolean;
 }
 
 export function TopicActionHeader({
     onCreateClick,
     onEditDefaultClick,
     onDeleteClick,
+    onRecalculateSchemaClick,
+    recalculateSchemaLoading,
     ...headerProps
 }: Props) {
     return (
@@ -45,6 +49,13 @@ export function TopicActionHeader({
                     </Button>
                     <Button variant='primary' disabled={!onEditDefaultClick} onClick={() => onEditDefaultClick?.()}>
                         Edit default
+                    </Button>
+                    <Button
+                        disabled={!onRecalculateSchemaClick}
+                        onClick={() => onRecalculateSchemaClick?.()}
+                        loading={recalculateSchemaLoading}
+                    >
+                        Recalculate Schema
                     </Button>
                     <Button disabled={!onDeleteClick} onClick={() => onDeleteClick?.()}>
                         Delete

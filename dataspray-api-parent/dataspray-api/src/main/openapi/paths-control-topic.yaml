@@ -117,6 +117,48 @@ components:
       type: string
       enum:
         - JSON
+    TopicFilesResponse:
+      type: object
+      required:
+        - files
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/S3Object'
+        nextToken:
+          type: string
+    S3Object:
+      type: object
+      required:
+        - key
+        - size
+        - lastModified
+      properties:
+        key:
+          type: string
+          description: S3 object key
+        size:
+          type: integer
+          format: int64
+          description: File size in bytes
+        lastModified:
+          type: string
+          format: date-time
+          description: Last modified timestamp
+    FileDownloadUrlResponse:
+      type: object
+      required:
+        - url
+        - expiresAt
+      properties:
+        url:
+          type: string
+          description: Presigned URL for downloading the file
+        expiresAt:
+          type: string
+          format: date-time
+          description: URL expiration time
 
 /v1/organization/{organizationName}/topics:
   get:
@@ -285,3 +327,112 @@ components:
         description: Schema unchanged or not needed
       '400':
         description: Schema validation failed
+  post:
+    operationId: recalculateTopicSchema
+    tags: [ Control ]
+    summary: Recalculate schema from ingested S3 data
+    description: Infers the schema from actual data stored in S3 and updates the Glue table definition
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: topicName
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Schema recalculated successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicSchema'
+      '404':
+        description: Topic not found or no data available
+      '400':
+        description: Topic does not have batch enabled
+/v1/organization/{organizationName}/topic/{topicName}/files:
+  get:
+    operationId: listTopicFiles
+    tags: [ Control ]
+    summary: List files stored in S3 for a topic
+    description: Lists objects in S3 for a batch-enabled topic with pagination support
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: topicName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: prefix
+        in: query
+        required: false
+        description: Prefix to filter files (e.g., "year=2025/month=01/")
+        schema:
+          type: string
+      - name: maxResults
+        in: query
+        required: false
+        description: Maximum number of files to return (default 100, max 1000)
+        schema:
+          type: integer
+          format: int32
+          default: 100
+      - name: nextToken
+        in: query
+        required: false
+        description: Continuation token for pagination
+        schema:
+          type: string
+    responses:
+      '200':
+        description: List of files
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicFilesResponse'
+      '404':
+        description: Topic not found
+      '400':
+        description: Topic does not have batch enabled
+/v1/organization/{organizationName}/topic/{topicName}/files/download:
+  get:
+    operationId: getTopicFileDownloadUrl
+    tags: [ Control ]
+    summary: Get presigned URL to download a file
+    description: Generates a temporary presigned URL for downloading a specific file from S3
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: topicName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: key
+        in: query
+        required: true
+        description: S3 object key to download
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Presigned URL generated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileDownloadUrlResponse'
+      '404':
+        description: File not found
+      '400':
+        description: Invalid request

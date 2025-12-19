@@ -44,9 +44,65 @@ public interface BatchStore {
                             String schemaDefinition,
                             BatchRetention retention);
 
+    /**
+     * Recalculate schema by inferring from S3 data.
+     * Reads sample data files, merges all fields, and updates the Glue table.
+     *
+     * @return The inferred table definition
+     * @throws IllegalArgumentException if topic doesn't have batch enabled or no data exists
+     */
+    TableDefinition recalculateTableDefinition(String organizationName,
+                                                String topicName,
+                                                BatchRetention retention);
+
+    /**
+     * List files in S3 for a topic.
+     *
+     * @param prefix Optional prefix to filter results (e.g., "year=2025/month=01/")
+     * @param maxResults Maximum number of results (default 100, max 1000)
+     * @param nextToken Continuation token for pagination
+     * @return List of S3 objects with pagination token
+     */
+    FilesListResult listFiles(String organizationName,
+                               String topicName,
+                               BatchRetention retention,
+                               String prefix,
+                               int maxResults,
+                               String nextToken);
+
+    /**
+     * Generate presigned URL for downloading a file.
+     *
+     * @param key S3 object key
+     * @return Presigned URL and expiration time
+     */
+    PresignedUrl getFileDownloadUrl(String organizationName,
+                                     String topicName,
+                                     BatchRetention retention,
+                                     String key);
+
     @Value
     class TableDefinition {
         String schema;
         DataFormat dataFormat;
+    }
+
+    @Value
+    class FilesListResult {
+        java.util.List<S3File> files;
+        String nextToken;
+    }
+
+    @Value
+    class S3File {
+        String key;
+        long size;
+        java.time.Instant lastModified;
+    }
+
+    @Value
+    class PresignedUrl {
+        String url;
+        java.time.Instant expiresAt;
     }
 }

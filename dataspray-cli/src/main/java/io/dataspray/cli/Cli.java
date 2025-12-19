@@ -41,6 +41,7 @@ import picocli.CommandLine.Spec;
                 Env.class,
                 Deploy.class,
                 UploadSchema.class,
+                Schema.class,
                 Activate.class,
                 Pause.class,
                 Resume.class,
