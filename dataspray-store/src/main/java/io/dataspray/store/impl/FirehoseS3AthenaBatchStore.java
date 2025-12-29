@@ -494,41 +494,50 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
                                                ", topic: " + topicName + ". Please ingest data first.");
         }
 
-        // Read up to 10 sample objects to infer schema
+        // Read sample data to infer schema (up to 10k lines across all files)
         java.util.Set<String> allFields = new java.util.LinkedHashSet<>();
         int samplesRead = 0;
+        int totalLinesProcessed = 0;
         int maxSamples = Math.min(10, listResponse.contents().size());
+        int maxTotalLines = 10000;
 
         for (software.amazon.awssdk.services.s3.model.S3Object s3Object : listResponse.contents()) {
-            if (samplesRead >= maxSamples) break;
+            if (samplesRead >= maxSamples || totalLinesProcessed >= maxTotalLines) break;
             if (s3Object.size() == 0) continue;
 
             try {
-                // Get object
+                // Get object as a stream (avoid loading entire file into memory)
                 software.amazon.awssdk.services.s3.model.GetObjectRequest getRequest =
                         software.amazon.awssdk.services.s3.model.GetObjectRequest.builder()
                                 .bucket(etlBucketName)
                                 .key(s3Object.key())
                                 .build();
 
-                byte[] objectBytes = s3Client.getObjectAsBytes(getRequest).asByteArray();
+                int remainingLines = maxTotalLines - totalLinesProcessed;
 
-                // Parse JSON (assuming JSON Lines format with potential GZIP)
-                String content = new String(objectBytes, java.nio.charset.StandardCharsets.UTF_8);
+                try (software.amazon.awssdk.core.ResponseInputStream<software.amazon.awssdk.services.s3.model.GetObjectResponse> s3InputStream = s3Client.getObject(getRequest)) {
 
-                // Handle both single JSON object and JSON Lines format
-                String[] lines = content.split("\\r?\\n");
-                for (String line : lines) {
-                    if (line.trim().isEmpty()) continue;
+                    // Try to decompress as GZIP first (Firehose uses GZIP compression)
+                    java.io.InputStream decompressedStream;
                     try {
-                        com.google.gson.JsonObject jsonObject = new com.google.gson.JsonParser()
-                                .parse(line)
-                                .getAsJsonObject();
+                        decompressedStream = new java.util.zip.GZIPInputStream(s3InputStream);
+                    } catch (java.io.IOException e) {
+                        // If GZIP decompression fails, try reading as plain text
+                        log.debug("File {} is not GZIP compressed ({}), reading as plain text", s3Object.key(), e.getMessage());
+                        // Reset not supported, so we need to re-fetch the object
+                        try (software.amazon.awssdk.core.ResponseInputStream<software.amazon.awssdk.services.s3.model.GetObjectResponse> s3InputStreamRetry = s3Client.getObject(getRequest)) {
+                            decompressedStream = s3InputStreamRetry;
+                            int linesProcessed = processJsonLinesStream(s3Object.key(), decompressedStream, allFields, remainingLines);
+                            totalLinesProcessed += linesProcessed;
+                        }
+                        samplesRead++;
+                        continue;
+                    }
 
-                        // Collect all field names
-                        jsonObject.keySet().forEach(allFields::add);
-                    } catch (Exception e) {
-                        log.warn("Failed to parse JSON line from {}: {}", s3Object.key(), e.getMessage());
+                    // Stream and parse JSON lines
+                    try (java.io.InputStream stream = decompressedStream) {
+                        int linesProcessed = processJsonLinesStream(s3Object.key(), stream, allFields, remainingLines);
+                        totalLinesProcessed += linesProcessed;
                     }
                 }
 
@@ -542,7 +551,7 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
             throw new IllegalArgumentException("Could not parse any JSON data from S3 for topic: " + topicName);
         }
 
-        log.info("Inferred {} fields from {} sample files", allFields.size(), samplesRead);
+        log.info("Inferred {} fields from {} lines across {} sample files", allFields.size(), totalLinesProcessed, samplesRead);
 
         // Build JSON schema
         com.google.gson.JsonObject schemaObject = new com.google.gson.JsonObject();
@@ -566,6 +575,44 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
         setTableDefinition(organizationName, topicName, DataFormat.JSON, schemaDefinition, retention);
 
         return new TableDefinition(schemaDefinition, DataFormat.JSON);
+    }
+
+    /**
+     * Process a JSON Lines stream, extracting all field names without loading the entire file into memory.
+     *
+     * @param key S3 object key (for logging)
+     * @param inputStream The input stream to read from
+     * @param allFields Set to collect field names into
+     * @param maxLines Maximum number of lines to process from this stream
+     * @return The number of lines actually processed
+     */
+    private int processJsonLinesStream(String key, java.io.InputStream inputStream, java.util.Set<String> allFields, int maxLines) {
+        int linesProcessed = 0;
+
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(inputStream, java.nio.charset.StandardCharsets.UTF_8))) {
+
+            String line;
+            while ((line = reader.readLine()) != null && linesProcessed < maxLines) {
+                if (line.trim().isEmpty()) continue;
+
+                try {
+                    com.google.gson.JsonObject jsonObject = new com.google.gson.JsonParser()
+                            .parse(line)
+                            .getAsJsonObject();
+
+                    // Collect all field names
+                    jsonObject.keySet().forEach(allFields::add);
+                    linesProcessed++;
+                } catch (Exception e) {
+                    log.warn("Failed to parse JSON line from {}: {}", key, e.getMessage());
+                }
+            }
+        } catch (java.io.IOException e) {
+            log.warn("Failed to read stream from {}: {}", key, e.getMessage());
+        }
+
+        return linesProcessed;
     }
 
     /**
