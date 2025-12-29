@@ -1,0 +1,193 @@
+components:
+  schemas:
+    StateListRequest:
+      type: object
+      properties:
+        keyPrefix:
+          type: array
+          items:
+            type: string
+          description: Optional key prefix filter (e.g., ["task", "processorId"])
+        cursor:
+          type: string
+          description: Pagination cursor
+        limit:
+          type: integer
+          format: int32
+          default: 50
+          description: Maximum number of entries to return
+
+    StateEntry:
+      type: object
+      required:
+        - keyParts
+        - mergedKey
+        - attributes
+      properties:
+        keyParts:
+          type: array
+          items:
+            type: string
+          description: Composite key as array (e.g., ["task", "processorId"])
+        mergedKey:
+          type: string
+          description: Display key (merged DynamoDB pk value)
+        attributes:
+          type: object
+          additionalProperties: true
+          description: Dynamic state attributes
+        ttlInEpochSec:
+          type: integer
+          format: int64
+          nullable: true
+          description: TTL timestamp in epoch seconds
+
+    StateListResponse:
+      type: object
+      required:
+        - entries
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/StateEntry'
+        nextCursor:
+          type: string
+          nullable: true
+          description: Cursor for next page of results
+
+    StateGetRequest:
+      type: object
+      required:
+        - keyParts
+      properties:
+        keyParts:
+          type: array
+          items:
+            type: string
+          description: Composite key identifying the state entry
+
+    StateUpsertRequest:
+      type: object
+      required:
+        - keyParts
+        - attributes
+      properties:
+        keyParts:
+          type: array
+          items:
+            type: string
+          description: Composite key identifying the state entry
+        attributes:
+          type: object
+          additionalProperties: true
+          description: State attributes to store
+        ttlInSec:
+          type: integer
+          format: int64
+          description: TTL in seconds from now (optional)
+
+    StateDeleteRequest:
+      type: object
+      required:
+        - keyParts
+      properties:
+        keyParts:
+          type: array
+          items:
+            type: string
+          description: Composite key identifying the state entry to delete
+
+/v1/organization/{organizationName}/state/list:
+  post:
+    operationId: listState
+    tags: [Control]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StateListRequest'
+    responses:
+      '200':
+        description: List of state entries
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StateListResponse'
+
+/v1/organization/{organizationName}/state/get:
+  post:
+    operationId: getState
+    tags: [Control]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StateGetRequest'
+    responses:
+      '200':
+        description: State entry found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StateEntry'
+      '404':
+        description: State entry not found
+
+/v1/organization/{organizationName}/state/upsert:
+  post:
+    operationId: upsertState
+    tags: [Control]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StateUpsertRequest'
+    responses:
+      '200':
+        description: State entry created or updated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StateEntry'
+
+/v1/organization/{organizationName}/state/delete:
+  post:
+    operationId: deleteState
+    tags: [Control]
+    parameters:
+      - name: organizationName
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StateDeleteRequest'
+    responses:
+      '204':
+        description: State entry deleted successfully

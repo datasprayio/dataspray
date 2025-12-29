@@ -87,3 +87,11 @@ paths:
     $ref: 'paths-control-query.yaml#/~1v1~1organization~1{organizationName}~1query~1history'
   /v1/organization/{organizationName}/query/schema:
     $ref: 'paths-control-query.yaml#/~1v1~1organization~1{organizationName}~1query~1schema'
+  /v1/organization/{organizationName}/state/list:
+    $ref: 'paths-control-state.yaml#/~1v1~1organization~1{organizationName}~1state~1list'
+  /v1/organization/{organizationName}/state/get:
+    $ref: 'paths-control-state.yaml#/~1v1~1organization~1{organizationName}~1state~1get'
+  /v1/organization/{organizationName}/state/upsert:
+    $ref: 'paths-control-state.yaml#/~1v1~1organization~1{organizationName}~1state~1upsert'
+  /v1/organization/{organizationName}/state/delete:
+    $ref: 'paths-control-state.yaml#/~1v1~1organization~1{organizationName}~1state~1delete'
