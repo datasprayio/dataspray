@@ -49,9 +49,15 @@ export default function Navigation() {
                 },
                 {type: 'divider'},
                 {
-                    type: 'section-group', title: 'Storage', items: [
-                        {type: 'link', text: 'State', href: '/storage/state'},
-                        {type: 'link', text: 'Lake', href: '/storage/lake'},
+                    type: 'section-group', title: 'State', items: [
+                        {type: 'link', text: 'Browser', href: '/storage/state'},
+                    ]
+                },
+                {type: 'divider'},
+                {
+                    type: 'section-group', title: 'Lake', items: [
+                        {type: 'link', text: 'Query', href: '/storage/lake/query'},
+                        {type: 'link', text: 'Files', href: '/storage/lake/files'},
                     ]
                 },
                 ...FooterItems,

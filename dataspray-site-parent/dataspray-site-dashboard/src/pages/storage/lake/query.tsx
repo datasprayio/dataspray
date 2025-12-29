@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-import {NextPageWithLayout} from "../_app";
-import DashboardLayout from "../../layout/DashboardLayout";
-import DashboardAppLayout from "../../layout/DashboardAppLayout";
+import {NextPageWithLayout} from "../../_app";
+import DashboardLayout from "../../../layout/DashboardLayout";
+import DashboardAppLayout from "../../../layout/DashboardAppLayout";
 import {
     Box,
     Button,
@@ -38,17 +38,17 @@ import {
     Textarea,
     ColumnLayout
 } from "@cloudscape-design/components";
-import {useAuth} from "../../auth/auth";
+import {useAuth} from "../../../auth/auth";
 import {useCallback, useEffect, useState} from "react";
-import {getClient} from "../../util/dataSprayClientWrapper";
-import {useAlerts} from "../../util/useAlerts";
+import {getClient} from "../../../util/dataSprayClientWrapper";
+import {useAlerts} from "../../../util/useAlerts";
 import {
     DatabaseSchemaResponse,
     QueryExecutionStatus,
     QueryHistoryResponse,
     QueryResultsResponse
 } from "dataspray-client";
-import {formatBytes, formatDuration, getStatusType, truncate} from "../../util/queryUtil";
+import {formatBytes, formatDuration, getStatusType, truncate} from "../../../util/queryUtil";
 
 
 const LakePage: NextPageWithLayout = () => {
@@ -60,19 +60,31 @@ const LakePage: NextPageWithLayout = () => {
     const [queryHistory, setQueryHistory] = useState<QueryExecutionStatus[]>([]);
     const [isExecuting, setIsExecuting] = useState(false);
     const [schema, setSchema] = useState<DatabaseSchemaResponse>();
+    const [hasNoSchema, setHasNoSchema] = useState<boolean | undefined>(undefined);
+    const [isLoadingSchema, setIsLoadingSchema] = useState(false);
     const {addAlert, beginProcessing} = useAlerts();
 
     const loadSchema = useCallback(async () => {
         if (!currentOrganizationName) return;
 
+        setIsLoadingSchema(true);
         try {
             const response = await getClient().query().getDatabaseSchema({
                 organizationName: currentOrganizationName
             });
             setSchema(response);
+            setHasNoSchema(false);
         } catch (e: any) {
-            console.error('Failed to load schema:', e);
-            addAlert({type: 'error', content: 'Failed to load database schema'});
+            // Check if it's a 404 (no schema exists yet)
+            if (e?.response?.status === 404 || e?.status === 404) {
+                setHasNoSchema(true);
+                setSchema(undefined);
+            } else {
+                console.error('Failed to load schema:', e);
+                addAlert({type: 'error', content: 'Failed to load database schema'});
+            }
+        } finally {
+            setIsLoadingSchema(false);
         }
     }, [currentOrganizationName, addAlert]);
 
@@ -176,7 +188,20 @@ const LakePage: NextPageWithLayout = () => {
             await loadHistory(); // Refresh history
         } catch (e: any) {
             console.error('Failed to submit query:', e);
-            addAlert({type: 'error', content: 'Failed to submit query. Check console for details.'});
+            let errorMessage = 'Unknown error occurred';
+            if (e.response) {
+                const status = e.response.status;
+                const statusText = e.response.statusText || '';
+                let message = e.response.data?.error?.message || e.response.data?.message || e.response.data?.error;
+                if (!message && e.response.data) {
+                    // Try to stringify the data if it's an object
+                    message = typeof e.response.data === 'string' ? e.response.data : JSON.stringify(e.response.data);
+                }
+                errorMessage = message ? `${status} ${statusText}: ${message}` : `${status} ${statusText}`;
+            } else if (e.message) {
+                errorMessage = e.message;
+            }
+            addAlert({type: 'error', content: `Failed to submit query: ${errorMessage}`});
             setIsExecuting(false);
         }
     };
@@ -194,6 +219,131 @@ const LakePage: NextPageWithLayout = () => {
                     header={<Header variant="h1">Data Lake Query</Header>}
                 >
                     <SpaceBetween size="l">
+                {/* Schema Browser Section */}
+                <Container
+                    header={
+                        <Header
+                            variant="h2"
+                            description="Available tables and columns in your data lake"
+                        >
+                            Schema Browser
+                        </Header>
+                    }
+                >
+                    {isLoadingSchema && (
+                        <Box textAlign="center" padding={{vertical: 'xxl'}}>
+                            <StatusIndicator type="loading">Loading schema...</StatusIndicator>
+                        </Box>
+                    )}
+
+                    {!isLoadingSchema && schema && (
+                        <ExpandableSection
+                            headerText={`Database: ${schema.databaseName}`}
+                            defaultExpanded
+                        >
+                            <SpaceBetween size="m">
+                                {(schema.tables || []).map(table => (
+                                    <ExpandableSection
+                                        key={table.name}
+                                        headerText={`Table: ${table.name}`}
+                                    >
+                                        <Table
+                                            columnDefinitions={[
+                                                {
+                                                    id: 'name',
+                                                    header: 'Column Name',
+                                                    cell: (item: any) => (
+                                                        <Box variant="code">{item.name}</Box>
+                                                    )
+                                                },
+                                                {
+                                                    id: 'type',
+                                                    header: 'Data Type',
+                                                    cell: (item: any) => item.type
+                                                }
+                                            ]}
+                                            items={table.columns || []}
+                                            variant="embedded"
+                                        />
+                                    </ExpandableSection>
+                                ))}
+                            </SpaceBetween>
+                        </ExpandableSection>
+                    )}
+
+                    {!isLoadingSchema && hasNoSchema === true && (
+                        <Box textAlign="center" padding={{vertical: 'xxl'}}>
+                            <SpaceBetween size="m">
+                                <Box variant="strong" fontSize="heading-m">No data available yet</Box>
+                                <Box variant="p" color="text-body-secondary">
+                                    Your data lake schema will appear here once you start ingesting data into your streams.
+                                </Box>
+                            </SpaceBetween>
+                        </Box>
+                    )}
+                </Container>
+
+                {/* Query History Section */}
+                <Container
+                    header={<Header variant="h2">Query History</Header>}
+                >
+                    <Table
+                        columnDefinitions={[
+                            {
+                                id: 'queryExecutionId',
+                                header: 'Query ID',
+                                cell: (item: QueryExecutionStatus) => item.queryExecutionId,
+                                width: 200
+                            },
+                            {
+                                id: 'sqlQuery',
+                                header: 'Query',
+                                cell: (item: QueryExecutionStatus) => (
+                                    <Box variant="code">{truncate(item.sqlQuery || '', 80)}</Box>
+                                )
+                            },
+                            {
+                                id: 'state',
+                                header: 'Status',
+                                cell: (item: QueryExecutionStatus) => (
+                                    <StatusIndicator type={getStatusType(item.state!)}>
+                                        {item.state}
+                                    </StatusIndicator>
+                                ),
+                                width: 120
+                            },
+                            {
+                                id: 'bytesScanned',
+                                header: 'Data Scanned',
+                                cell: (item: QueryExecutionStatus) =>
+                                    formatBytes(item.bytesScanned),
+                                width: 120
+                            },
+                            {
+                                id: 'actions',
+                                header: 'Actions',
+                                cell: (item: QueryExecutionStatus) => (
+                                    <Button
+                                        iconName="search"
+                                        variant="inline-link"
+                                        onClick={() => viewHistoryQuery(item)}
+                                    >
+                                        View
+                                    </Button>
+                                ),
+                                width: 100
+                            }
+                        ]}
+                        items={queryHistory}
+                        loadingText="Loading history..."
+                        empty={
+                            <Box textAlign="center">
+                                <Box variant="strong">No query history</Box>
+                            </Box>
+                        }
+                    />
+                </Container>
+
                 {/* Query Editor Section */}
                 <Container
                     header={<Header variant="h2">Query Editor</Header>}
@@ -216,7 +366,7 @@ const LakePage: NextPageWithLayout = () => {
                                 onClick={executeQuery}
                                 loading={isExecuting}
                                 variant="primary"
-                                disabled={!sqlQuery.trim()}
+                                disabled={!sqlQuery.trim() || isLoadingSchema || hasNoSchema === true}
                             >
                                 Execute Query
                             </Button>
@@ -292,114 +442,6 @@ const LakePage: NextPageWithLayout = () => {
                                 </Box>
                             )}
                         </SpaceBetween>
-                    </Container>
-                )}
-
-                {/* Query History Section */}
-                <Container
-                    header={<Header variant="h2">Query History</Header>}
-                >
-                    <Table
-                        columnDefinitions={[
-                            {
-                                id: 'queryExecutionId',
-                                header: 'Query ID',
-                                cell: (item: QueryExecutionStatus) => item.queryExecutionId,
-                                width: 200
-                            },
-                            {
-                                id: 'sqlQuery',
-                                header: 'Query',
-                                cell: (item: QueryExecutionStatus) => (
-                                    <Box variant="code">{truncate(item.sqlQuery || '', 80)}</Box>
-                                )
-                            },
-                            {
-                                id: 'state',
-                                header: 'Status',
-                                cell: (item: QueryExecutionStatus) => (
-                                    <StatusIndicator type={getStatusType(item.state!)}>
-                                        {item.state}
-                                    </StatusIndicator>
-                                ),
-                                width: 120
-                            },
-                            {
-                                id: 'bytesScanned',
-                                header: 'Data Scanned',
-                                cell: (item: QueryExecutionStatus) =>
-                                    formatBytes(item.bytesScanned),
-                                width: 120
-                            },
-                            {
-                                id: 'actions',
-                                header: 'Actions',
-                                cell: (item: QueryExecutionStatus) => (
-                                    <Button
-                                        iconName="search"
-                                        variant="inline-link"
-                                        onClick={() => viewHistoryQuery(item)}
-                                    >
-                                        View
-                                    </Button>
-                                ),
-                                width: 100
-                            }
-                        ]}
-                        items={queryHistory}
-                        loadingText="Loading history..."
-                        empty={
-                            <Box textAlign="center">
-                                <Box variant="strong">No query history</Box>
-                            </Box>
-                        }
-                    />
-                </Container>
-
-                {/* Schema Browser Section */}
-                {schema && (
-                    <Container
-                        header={
-                            <Header
-                                variant="h2"
-                                description="Available tables and columns in your data lake"
-                            >
-                                Schema Browser
-                            </Header>
-                        }
-                    >
-                        <ExpandableSection
-                            headerText={`Database: ${schema.databaseName}`}
-                            defaultExpanded
-                        >
-                            <SpaceBetween size="m">
-                                {(schema.tables || []).map(table => (
-                                    <ExpandableSection
-                                        key={table.name}
-                                        headerText={`Table: ${table.name}`}
-                                    >
-                                        <Table
-                                            columnDefinitions={[
-                                                {
-                                                    id: 'name',
-                                                    header: 'Column Name',
-                                                    cell: (item: any) => (
-                                                        <Box variant="code">{item.name}</Box>
-                                                    )
-                                                },
-                                                {
-                                                    id: 'type',
-                                                    header: 'Data Type',
-                                                    cell: (item: any) => item.type
-                                                }
-                                            ]}
-                                            items={table.columns || []}
-                                            variant="embedded"
-                                        />
-                                    </ExpandableSection>
-                                ))}
-                            </SpaceBetween>
-                        </ExpandableSection>
                     </Container>
                 )}
                     </SpaceBetween>

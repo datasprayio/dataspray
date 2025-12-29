@@ -107,6 +107,13 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
                                                                    "/organization=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}"
                                                                    + "/athena-results")
             .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}", ATHENA_RESULTS_DEFAULT_RETENTION.name());
+
+    /**
+     * S3 bucket prefix path format for batch files.
+     *
+     * IMPORTANT: If you change this format, update the parsing regex in:
+     * dataspray-site-dashboard/src/deployment/S3FileBrowser.tsx parseS3Key()
+     */
     public static final String ETL_BUCKET_PREFIX = ETL_BUCKET_ORGANIZATION_PREFIX +
                                                    "/topic=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_TOPIC + "}" +
                                                    "/year=!{timestamp:yyyy}" +
@@ -484,7 +491,7 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
 
         if (listResponse.contents().isEmpty()) {
             throw new IllegalArgumentException("No data found for organization: " + organizationName +
-                    ", topic: " + topicName + ". Please ingest data first.");
+                                               ", topic: " + topicName + ". Please ingest data first.");
         }
 
         // Read up to 10 sample objects to infer schema

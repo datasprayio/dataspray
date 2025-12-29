@@ -47,6 +47,7 @@ const Page: NextPageWithLayout = () => {
     } = useTaskStore(currentOrganizationName);
     const [selectedTaskId, setSelectedTaskId] = useState<string>();
     const selectedTask = selectedTaskId ? tasks.find(task => task.taskId === selectedTaskId) : undefined;
+    const [splitPanelOpen, setSplitPanelOpen] = useState<boolean>(false);
     const {beginProcessing} = useAlerts();
 
     const onPauseClick = useCallback(async () => {
@@ -166,7 +167,12 @@ const Page: NextPageWithLayout = () => {
                         selectionType="single"
                         trackBy={task => task.taskId}
                         selectedItems={selectedTask ? [selectedTask] : []}
-                        onSelectionChange={event => setSelectedTaskId(event.detail.selectedItems?.[0]?.taskId)}
+                        onSelectionChange={event => {
+                            setSelectedTaskId(event.detail.selectedItems?.[0]?.taskId);
+                            if (event.detail.selectedItems?.[0]?.taskId) {
+                                setSplitPanelOpen(true);
+                            }
+                        }}
                         loading={isLoading}
                         pagination={(
                             <Pagination
@@ -182,6 +188,8 @@ const Page: NextPageWithLayout = () => {
                     />
                 )}
                 splitPanel={splitPanel}
+                splitPanelOpen={splitPanelOpen}
+                onSplitPanelToggle={e => setSplitPanelOpen(e.detail.open)}
             />
         </>
     )

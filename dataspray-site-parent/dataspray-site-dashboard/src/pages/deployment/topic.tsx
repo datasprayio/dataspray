@@ -22,7 +22,7 @@
 
 import {NextPageWithLayout} from "../_app";
 import DashboardLayout from "../../layout/DashboardLayout";
-import {ContentLayout, SpaceBetween, SplitPanel, StatusIndicator, Table} from "@cloudscape-design/components";
+import {ContentLayout, SpaceBetween, SplitPanel, StatusIndicator, Table, Tabs} from "@cloudscape-design/components";
 import DashboardAppLayout from "../../layout/DashboardAppLayout";
 import {useAuth} from "../../auth/auth";
 import {getHeaderCounterTextSingle} from "../../table/tableUtil";
@@ -112,6 +112,7 @@ const Page: NextPageWithLayout = () => {
 
     const [splitPanelOpen, setSplitPanelOpen] = useState<boolean>(false);
     const [editType, setEditType] = useState<EditType>(EditType.EDIT_TOPIC);
+    const [activeTabId, setActiveTabId] = useState<string>('config');
     const onCreateClick = useCallback(() => {
         setEditType(EditType.CREATE_TOPIC);
         setSelectedTopicName(undefined);
@@ -143,7 +144,39 @@ const Page: NextPageWithLayout = () => {
     const splitPanel = (
         <SplitPanel header={splitPanelHeader}>
             {!!splitPanelDisabled && 'No topic selected.'}
-            {!splitPanelDisabled && (
+            {!splitPanelDisabled && editType === EditType.EDIT_TOPIC && selectedTopicName && (
+                <Tabs
+                    activeTabId={activeTabId}
+                    onChange={({detail}) => setActiveTabId(detail.activeTabId)}
+                    tabs={[
+                        {
+                            id: 'config',
+                            label: 'Configuration',
+                            content: (
+                                <EditTopic
+                                    key={splitPanelHeader}
+                                    editType={editType}
+                                    topicName={selectedTopicName}
+                                    topic={selectedTopic}
+                                    allowUndefinedTopics={data?.allowUndefinedTopics}
+                                    onUpdated={update}
+                                />
+                            )
+                        },
+                        ...(selectedTopic?.batch && currentOrganizationName ? [{
+                            id: 'files',
+                            label: 'Files',
+                            content: (
+                                <S3FileBrowser
+                                    organizationName={currentOrganizationName}
+                                    topicName={selectedTopicName}
+                                />
+                            )
+                        }] : [])
+                    ]}
+                />
+            )}
+            {!splitPanelDisabled && editType !== EditType.EDIT_TOPIC && (
                 <EditTopic
                     key={splitPanelHeader}
                     editType={editType}
@@ -215,16 +248,13 @@ const Page: NextPageWithLayout = () => {
                         onSelectionChange={event => {
                             setSelectedTopicName(event.detail.selectedItems?.[0]?.name);
                             setEditType(EditType.EDIT_TOPIC);
+                            if (event.detail.selectedItems?.[0]?.name) {
+                                setSplitPanelOpen(true);
+                                setActiveTabId('config');
+                            }
                         }}
                         loading={isLoading}
                     />
-
-                    {selectedTopicName && selectedTopic?.batch && currentOrganizationName && (
-                        <S3FileBrowser
-                            organizationName={currentOrganizationName}
-                            topicName={selectedTopicName}
-                        />
-                    )}
                         </SpaceBetween>
                     </ContentLayout>
                 )}

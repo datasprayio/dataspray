@@ -73,8 +73,11 @@ export function S3FileBrowser({organizationName, topicName}: Props) {
     }, [organizationName, topicName, addAlert]);
 
     useEffect(() => {
-        loadFiles(prefix);
-    }, [loadFiles, prefix]);
+        if (organizationName && topicName) {
+            loadFiles(prefix);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [organizationName, topicName, prefix]);
 
     const handleDownload = async (key: string) => {
         try {
@@ -106,12 +109,48 @@ export function S3FileBrowser({organizationName, topicName}: Props) {
         return new Date(date).toLocaleString();
     };
 
+    // Parse S3 file path to extract metadata
+    // Expected format (defined in backend FirehoseS3AthenaBatchStore.java ETL_BUCKET_PREFIX):
+    // retention={RETENTION}/organization={ORG}/topic={TOPIC}/year={YYYY}/month={MM}/day={DD}/hour={HH}/{filename}
+    // Example: retention=THREE_MONTHS/organization=smotana/topic=http-events/year=2025/month=12/day=21/hour=09/file.gz
+    const parseS3Key = (key: string): { filename: string; topic?: string; retention?: string } => {
+        try {
+            // Regex to extract metadata from S3 path format
+            // IMPORTANT: If you change this regex, update the backend path generation in:
+            //   dataspray-store/src/main/java/io/dataspray/store/impl/FirehoseS3AthenaBatchStore.java ETL_BUCKET_PREFIX
+            const regex = /^retention=([^/]+)\/organization=([^/]+)\/topic=([^/]+)\/year=(\d+)\/month=(\d+)\/day=(\d+)\/hour=(\d+)\/(.+)$/;
+            const match = key.match(regex);
+
+            if (match) {
+                return {
+                    retention: match[1],
+                    topic: match[3],
+                    filename: match[8]
+                };
+            }
+        } catch (e) {
+            console.error('Failed to parse S3 key:', e);
+        }
+
+        // Fallback: show full key as filename
+        return { filename: key };
+    };
+
     return (
         <Container
             header={
                 <Header
                     variant="h2"
                     description="Browse and download files stored in S3"
+                    actions={
+                        <Button
+                            iconName="refresh"
+                            onClick={() => loadFiles(prefix)}
+                            loading={isLoading}
+                        >
+                            Refresh
+                        </Button>
+                    }
                 >
                     Files
                 </Header>
@@ -142,6 +181,25 @@ export function S3FileBrowser({organizationName, topicName}: Props) {
                 <Table
                     columnDefinitions={[
                         {
+                            id: 'actions',
+                            header: 'Actions',
+                            cell: (item: S3Object) => (
+                                <Button
+                                    variant="inline-icon"
+                                    iconName="download"
+                                    onClick={() => handleDownload(item.key)}
+                                    ariaLabel="Download file"
+                                />
+                            ),
+                            width: 80
+                        },
+                        {
+                            id: 'size',
+                            header: 'Size',
+                            cell: (item: S3Object) => formatBytes(item.size),
+                            width: 120
+                        },
+                        {
                             id: 'key',
                             header: 'Name',
                             cell: (item: S3Object) => {
@@ -166,15 +224,11 @@ export function S3FileBrowser({organizationName, topicName}: Props) {
                                     );
                                 }
 
-                                return displayName;
+                                // Parse the S3 key to extract filename
+                                const parsed = parseS3Key(item.key);
+                                return parsed.filename;
                             },
                             sortingField: 'key'
-                        },
-                        {
-                            id: 'size',
-                            header: 'Size',
-                            cell: (item: S3Object) => formatBytes(item.size),
-                            width: 120
                         },
                         {
                             id: 'lastModified',
@@ -183,18 +237,22 @@ export function S3FileBrowser({organizationName, topicName}: Props) {
                             width: 200
                         },
                         {
-                            id: 'actions',
-                            header: 'Actions',
-                            cell: (item: S3Object) => (
-                                <Button
-                                    variant="inline-link"
-                                    iconName="download"
-                                    onClick={() => handleDownload(item.key)}
-                                >
-                                    Download
-                                </Button>
-                            ),
-                            width: 120
+                            id: 'topic',
+                            header: 'Topic',
+                            cell: (item: S3Object) => {
+                                const parsed = parseS3Key(item.key);
+                                return parsed.topic || '-';
+                            },
+                            width: 150
+                        },
+                        {
+                            id: 'retention',
+                            header: 'Retention',
+                            cell: (item: S3Object) => {
+                                const parsed = parseS3Key(item.key);
+                                return parsed.retention || '-';
+                            },
+                            width: 150
                         }
                     ]}
                     items={files}

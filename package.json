@@ -8,7 +8,7 @@
   "license": "MIT",
   "pnpm": {
     "patchedDependencies": {
-      "@cloudscape-design/components@3.0.880": "dataspray-site-parent/dataspray-site-dashboard/patches/@cloudscape-design__components@3.0.880.patch"
+      "@cloudscape-design/components@3.0.1164": "patches/@cloudscape-design__components@3.0.1164.patch"
     }
   }
 }

@@ -1,0 +1,116 @@
+diff --git a/checkbox/interfaces.d.ts b/checkbox/interfaces.d.ts
+index 5db8619c0bb0836bb0d08d033abd24c630a95713..9009374d17ef2c1642fa82d210ce511761ace9c8 100644
+--- a/checkbox/interfaces.d.ts
++++ b/checkbox/interfaces.d.ts
+@@ -21,6 +21,10 @@ export interface CheckboxProps extends BaseCheckboxProps {
+    * Called when the user changes the component state. The event `detail` contains the current value for the `checked` property.
+    */
+   onChange?: NonCancelableEventHandler<CheckboxProps.ChangeDetail>;
++  /**
++   * Underlying native onBlur event handler.
++   */
++  onBlurNative?: React.FocusEventHandler<HTMLInputElement>;
+   /**
+    * Specifies whether to add `aria-required` to the native control.
+    */
+diff --git a/checkbox/internal.js b/checkbox/internal.js
+index 9573b9b39efdb9ddd1be23090a83f3a17c0bde7b..a9f5a5b6090b55bd9f3953d973e887ddf9e3059c 100644
+--- a/checkbox/internal.js
++++ b/checkbox/internal.js
+@@ -13,7 +13,7 @@ import useForwardFocus from '../internal/hooks/forward-focus';
+ import WithNativeAttributes from '../internal/utils/with-native-attributes';
+ import { getAbstractSwitchStyles, getCheckboxIconStyles } from './style';
+ import styles from './styles.css.js';
+-const InternalCheckbox = React.forwardRef(({ controlId, name, checked, disabled, readOnly, ariaRequired, indeterminate, children, description, ariaLabel, onFocus, onBlur, onChange, tabIndex: explicitTabIndex, showOutline, ariaControls, style, nativeInputAttributes, __internalRootRef, __injectAnalyticsComponentMetadata = false, ...rest }, ref) => {
++const InternalCheckbox = React.forwardRef(({ controlId, name, checked, disabled, readOnly, ariaRequired, indeterminate, children, description, ariaLabel, onFocus, onBlur, onBlurNative, onChange, tabIndex: explicitTabIndex, showOutline, ariaControls, style, nativeInputAttributes, __internalRootRef, __injectAnalyticsComponentMetadata = false, ...rest }, ref) => {
+     const { ariaDescribedby, ariaLabelledby } = useFormFieldContext(rest);
+     const baseProps = getBaseProps(rest);
+     const checkboxRef = useRef(null);
+@@ -38,7 +38,10 @@ const InternalCheckbox = React.forwardRef(({ controlId, name, checked, disabled,
+     if (!disabled && !readOnly) {
+         analyticsMetadata.action = !checked ? 'select' : 'deselect';
+     }
+-    return (React.createElement(AbstractSwitch, { ...baseProps, className: clsx(styles.root, baseProps.className), controlClassName: styles['checkbox-control'], outlineClassName: styles.outline, controlId: controlId, disabled: disabled, readOnly: readOnly, label: children, description: description, descriptionBottomPadding: true, ariaLabel: ariaLabel, ariaLabelledby: ariaLabelledby, ariaDescribedby: ariaDescribedby, ariaControls: ariaControls, showOutline: showOutline, nativeControl: nativeControlProps => (React.createElement(WithNativeAttributes, { ...nativeControlProps, tag: "input", componentName: "Checkbox", nativeAttributes: nativeInputAttributes, ref: checkboxRef, type: "checkbox", checked: checked, name: name, "aria-required": ariaRequired ? 'true' : undefined, "aria-disabled": readOnly && !disabled ? 'true' : undefined, tabIndex: tabIndex, onFocus: () => fireNonCancelableEvent(onFocus), onBlur: () => fireNonCancelableEvent(onBlur), 
++    return (React.createElement(AbstractSwitch, { ...baseProps, className: clsx(styles.root, baseProps.className), controlClassName: styles['checkbox-control'], outlineClassName: styles.outline, controlId: controlId, disabled: disabled, readOnly: readOnly, label: children, description: description, descriptionBottomPadding: true, ariaLabel: ariaLabel, ariaLabelledby: ariaLabelledby, ariaDescribedby: ariaDescribedby, ariaControls: ariaControls, showOutline: showOutline, nativeControl: nativeControlProps => (React.createElement(WithNativeAttributes, { ...nativeControlProps, tag: "input", componentName: "Checkbox", nativeAttributes: nativeInputAttributes, ref: checkboxRef, type: "checkbox", checked: checked, name: name, "aria-required": ariaRequired ? 'true' : undefined, "aria-disabled": readOnly && !disabled ? 'true' : undefined, tabIndex: tabIndex, onFocus: () => fireNonCancelableEvent(onFocus), onBlur: e => {
++                onBlurNative && onBlurNative(e);
++                fireNonCancelableEvent(onBlur);
++            },
+             // empty handler to suppress React controllability warning
+             onChange: () => { } })), onClick: () => {
+             var _a;
+diff --git a/input/index.js b/input/index.js
+index 5a67ec387bc11063f15a24d299815c1e9a530f7b..177e7d1268b32c2724f2fde057213b86cdc3010a 100644
+--- a/input/index.js
++++ b/input/index.js
+@@ -8,7 +8,7 @@ import useBaseComponent from '../internal/hooks/use-base-component';
+ import { applyDisplayName } from '../internal/utils/apply-display-name';
+ import InternalInput from './internal';
+ import styles from './styles.css.js';
+-const Input = React.forwardRef(({ value, type = 'text', step, inputMode, autoComplete = true, spellcheck, disabled, readOnly, disableBrowserAutocorrect, onKeyDown, onKeyUp, onChange, onBlur, onFocus, ariaRequired, name, placeholder, autoFocus, ariaLabel, ariaLabelledby, ariaDescribedby, invalid, warning, controlId, clearAriaLabel, nativeInputAttributes, style, ...rest }, ref) => {
++const Input = React.forwardRef(({ value, type = 'text', step, inputMode, autoComplete = true, spellcheck, disabled, readOnly, disableBrowserAutocorrect, onKeyDown, onKeyUp, onChange, onChangeNative, onBlur, onBlurNative, onFocus, ariaRequired, name, placeholder, autoFocus, ariaLabel, ariaLabelledby, ariaDescribedby, invalid, warning, controlId, clearAriaLabel, nativeInputAttributes, style, ...rest }, ref) => {
+     const baseComponentProps = useBaseComponent('Input', {
+         props: { autoComplete, autoFocus, disableBrowserAutocorrect, inputMode, readOnly, spellcheck, type },
+     });
+@@ -36,7 +36,9 @@ const Input = React.forwardRef(({ value, type = 'text', step, inputMode, autoCom
+         onKeyDown,
+         onKeyUp,
+         onChange,
++        onChangeNative,
+         onBlur,
++        onBlurNative,
+         onFocus,
+         placeholder,
+         readOnly,
+diff --git a/input/interfaces.d.ts b/input/interfaces.d.ts
+index a8f006d0ac3b44fb12ab3a40826b3ac9c83673a9..81186af7b9075ef84ac873f171426ec2cdb173f0 100644
+--- a/input/interfaces.d.ts
++++ b/input/interfaces.d.ts
+@@ -55,6 +55,10 @@ export interface BaseInputProps {
+    * Called when input focus is removed from the UI control.
+    */
+   onBlur?: NonCancelableEventHandler<null>;
++  /**
++   * Underlying native onBlur event handler.
++   */
++  onBlurNative?: NonCancelableEventHandler<null>;
+   /**
+    * Called when input focus is moved to the UI control.
+    */
+@@ -64,6 +68,10 @@ export interface BaseInputProps {
+    * The event `detail` contains the current value of the field.
+    */
+   onChange?: NonCancelableEventHandler<InputProps.ChangeDetail>;
++  /**
++   * Underlying native onChange event handler.
++   */
++  onChangeNative?: NonCancelableEventHandler<InputProps.ChangeDetail>;
+   /**
+    * Attributes to add to the native `input` element.
+    * Some attributes will be automatically combined with internal attribute values:
+diff --git a/input/internal.js b/input/internal.js
+index 6ba94c0917001247b4bfd860df36816f16ffab62..c904a053498d4b2f9542c3573104201effa3a4d4 100644
+--- a/input/internal.js
++++ b/input/internal.js
+@@ -15,7 +15,7 @@ import WithNativeAttributes from '../internal/utils/with-native-attributes';
+ import { getInputStyles } from './styles';
+ import { convertAutoComplete, useSearchProps } from './utils';
+ import styles from './styles.css.js';
+-function InternalInput({ type = 'text', step, inputMode, autoComplete = true, ariaLabel, clearAriaLabel: clearAriaLabelOverride, name, value, placeholder, autoFocus, disabled, readOnly, disableBrowserAutocorrect, spellcheck, __noBorderRadius, __leftIcon, __leftIconVariant = 'subtle', __onLeftIconClick, ariaRequired, __rightIcon, __onRightIconClick, onKeyDown, onKeyUp, onChange, __onDelayedInput, __onBlurWithDetail, onBlur, onFocus, nativeInputAttributes, __internalRootRef, __inheritFormFieldProps, __injectAnalyticsComponentMetadata, __skipNativeAttributesWarnings, style, ...rest }, ref) {
++function InternalInput({ type = 'text', step, inputMode, autoComplete = true, ariaLabel, clearAriaLabel: clearAriaLabelOverride, name, value, placeholder, autoFocus, disabled, readOnly, disableBrowserAutocorrect, spellcheck, __noBorderRadius, __leftIcon, __leftIconVariant = 'subtle', __onLeftIconClick, ariaRequired, __rightIcon, __onRightIconClick, onKeyDown, onKeyUp, onChange, onChangeNative, __onDelayedInput, __onBlurWithDetail, onBlur, onBlurNative, onFocus, nativeInputAttributes, __internalRootRef, __inheritFormFieldProps, __injectAnalyticsComponentMetadata, __skipNativeAttributesWarnings, style, ...rest }, ref) {
+     const baseProps = getBaseProps(rest);
+     const i18n = useInternalI18n('input');
+     const fireDelayedInput = useDebounceCallback((value) => fireNonCancelableEvent(__onDelayedInput, { value }));
+@@ -59,8 +59,12 @@ function InternalInput({ type = 'text', step, inputMode, autoComplete = true, ar
+         onKeyUp: onKeyUp && (event => fireKeyboardEvent(onKeyUp, event)),
+         // We set a default value on the component in order to force it into the controlled mode.
+         value: value !== null && value !== void 0 ? value : '',
+-        onChange: onChange && (event => handleChange(event.target.value)),
++        onChange: (onChange || onChangeNative) && (event => {
++            onChangeNative && onChangeNative(event);
++            onChange && handleChange(event.target.value);
++        }),
+         onBlur: e => {
++            onBlurNative && onBlurNative(e);
+             fireNonCancelableEvent(onBlur);
+             fireNonCancelableEvent(__onBlurWithDetail, { relatedTarget: e.relatedTarget });
+         },

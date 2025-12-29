@@ -1,7 +1,9 @@
-# Allow locally installed packages to be used in the workspace similar to Maven local cache
 packages:
-  - 'dataspray-runner-parent/dataspray-runner-typescript'
-  - 'dataspray-api-parent/dataspray-client-typescript'
-  - 'dataspray-site-parent/dataspray-site-dashboard'
-  - 'dataspray-site-parent/dataspray-site-docs'
-  - 'dataspray-site-parent/dataspray-site-landing'
+  - dataspray-runner-parent/dataspray-runner-typescript
+  - dataspray-api-parent/dataspray-client-typescript
+  - dataspray-site-parent/dataspray-site-dashboard
+  - dataspray-site-parent/dataspray-site-docs
+  - dataspray-site-parent/dataspray-site-landing
+
+patchedDependencies:
+  '@cloudscape-design/components@3.0.1164': patches/@cloudscape-design__components@3.0.1164.patch
