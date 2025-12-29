@@ -103,6 +103,8 @@ public class ControlResource extends AbstractResource implements ControlApi {
     BatchStore batchStore;
     @Inject
     JobStore jobStore;
+    @Inject
+    io.dataspray.store.StateStore stateStore;
 
     @Override
     public TaskStatus activateVersion(String organizationName, String taskId, String version) {
@@ -536,5 +538,98 @@ public class ControlResource extends AbstractResource implements ControlApi {
                 log.error("Unknown state {}", state);
                 throw new InternalServerErrorException("Unknown state: " + state);
         }
+    }
+
+    // State management methods
+
+    @Override
+    public io.dataspray.stream.control.model.StateListResponse listState(String organizationName, io.dataspray.stream.control.model.StateListRequest request) {
+        log.info("Listing state for org: {}, keyPrefix: {}", organizationName, request.getKeyPrefix());
+
+        // Validate organization access
+        if (!getOrganizationNames().contains(organizationName)) {
+            log.warn("User attempted to access state for unauthorized organization: {}", organizationName);
+            throw new NotFoundException("Organization not found or access denied");
+        }
+
+        WithCursor<java.util.List<io.dataspray.store.StateStore.StateEntry>> result = stateStore.listState(
+                organizationName,
+                Optional.ofNullable(request.getKeyPrefix())
+                        .map(list -> list.toArray(new String[0])),
+                Optional.ofNullable(request.getCursor()),
+                Optional.ofNullable(request.getLimit()).orElse(50)
+        );
+
+        java.util.List<io.dataspray.stream.control.model.StateEntry> entries = result.getData().stream()
+                .map(this::toApiStateEntry)
+                .collect(Collectors.toList());
+
+        return io.dataspray.stream.control.model.StateListResponse.builder()
+                .entries(entries)
+                .nextCursor(result.getCursorOpt().orElse(null))
+                .build();
+    }
+
+    @Override
+    public io.dataspray.stream.control.model.StateEntry getState(String organizationName, io.dataspray.stream.control.model.StateGetRequest request) {
+        log.info("Getting state for org: {}, key: {}", organizationName, request.getKeyParts());
+
+        // Validate organization access
+        if (!getOrganizationNames().contains(organizationName)) {
+            log.warn("User attempted to access state for unauthorized organization: {}", organizationName);
+            throw new NotFoundException("Organization not found or access denied");
+        }
+
+        return stateStore.getState(
+                organizationName,
+                request.getKeyParts().toArray(new String[0])
+        )
+                .map(this::toApiStateEntry)
+                .orElseThrow(() -> new NotFoundException("State not found"));
+    }
+
+    @Override
+    public io.dataspray.stream.control.model.StateEntry upsertState(String organizationName, io.dataspray.stream.control.model.StateUpsertRequest request) {
+        log.info("Upserting state for org: {}, key: {}", organizationName, request.getKeyParts());
+
+        // Validate organization access
+        if (!getOrganizationNames().contains(organizationName)) {
+            log.warn("User attempted to access state for unauthorized organization: {}", organizationName);
+            throw new NotFoundException("Organization not found or access denied");
+        }
+
+        io.dataspray.store.StateStore.StateEntry result = stateStore.upsertState(
+                organizationName,
+                request.getKeyParts().toArray(new String[0]),
+                com.google.common.collect.ImmutableMap.copyOf(request.getAttributes()),
+                Optional.ofNullable(request.getTtlInSec())
+        );
+
+        return toApiStateEntry(result);
+    }
+
+    @Override
+    public void deleteState(String organizationName, io.dataspray.stream.control.model.StateDeleteRequest request) {
+        log.info("Deleting state for org: {}, key: {}", organizationName, request.getKeyParts());
+
+        // Validate organization access
+        if (!getOrganizationNames().contains(organizationName)) {
+            log.warn("User attempted to access state for unauthorized organization: {}", organizationName);
+            throw new NotFoundException("Organization not found or access denied");
+        }
+
+        stateStore.deleteState(
+                organizationName,
+                request.getKeyParts().toArray(new String[0])
+        );
+    }
+
+    private io.dataspray.stream.control.model.StateEntry toApiStateEntry(io.dataspray.store.StateStore.StateEntry entry) {
+        return io.dataspray.stream.control.model.StateEntry.builder()
+                .keyParts(java.util.List.of(entry.getKeyParts()))
+                .mergedKey(entry.getMergedKey())
+                .attributes(entry.getAttributes())
+                .ttlInEpochSec(entry.getTtlInEpochSec().orElse(null))
+                .build();
     }
 }
