@@ -19,7 +19,7 @@
     "@aws-sdk/client-cognito-identity-provider": "^3.738.0",
     "@cloudscape-design/board-components": "^3.0.89",
     "@cloudscape-design/collection-hooks": "^1.0.59",
-    "@cloudscape-design/components": "^3.0.880",
+    "@cloudscape-design/components": "3.0.1164",
     "@cloudscape-design/components-themeable": "^3.0.892",
     "@cloudscape-design/global-styles": "^1.0.35",
     "@fontsource/roboto": "^5.1.1",
