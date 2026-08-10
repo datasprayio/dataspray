@@ -28,3 +28,4 @@ export {StateManager, DynamoStateManager, TTL_IN_EPOCH_SEC_KEY_NAME} from './sta
 export {StateManagerFactory, StateManagerFactoryImpl} from './stateManagerFactory';
 export {mergeStrings, unMergeString} from './util/stringSerdeUtil';
 export {HttpRequest} from './httpRequest';
+export {HttpResponseException} from './httpResponse';

@@ -48,7 +48,7 @@ public interface CliConfig {
 
     boolean hasDefaultProfileName();
 
-    void setDefaultOrganization(String organizationName);
+    void setDefaultProfile(String profileName);
 
     @Value
     class ConfigState {

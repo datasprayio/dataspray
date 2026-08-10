@@ -31,6 +31,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 
+import java.io.Console;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -65,33 +66,33 @@ public class EnvLogin implements Runnable {
 
         // Retrieve profile name
         String profileName = Optional.ofNullable(Strings.emptyToNull(this.profileName))
-                .or(() -> Optional.ofNullable(System.console().readLine("Enter value for profile name: "))
+                .or(() -> Optional.ofNullable(getConsole().readLine("Enter value for profile name: "))
                         .map(String::trim)
                         .filter(Predicate.not(String::isBlank)))
                 .orElseThrow(() -> new RuntimeException("Need to supply profile name"));
 
         // Retrieve organization name
         String organizationName = Optional.ofNullable(Strings.emptyToNull(this.organizationName))
-                .or(() -> Optional.ofNullable(System.console().readLine("Enter value for organization name: "))
+                .or(() -> Optional.ofNullable(getConsole().readLine("Enter value for organization name: "))
                         .map(String::trim)
                         .filter(Predicate.not(String::isBlank)))
                 .orElseThrow(() -> new RuntimeException("Need to supply organization name"));
 
-        // Decide whether org should be set as default
+        // Decide whether profile should be set as default
         if (setAsDefault || !cliConfig.hasDefaultProfileName()) {
-            cliConfig.setDefaultOrganization(organizationName);
+            cliConfig.setDefaultProfile(profileName);
         } else {
-            boolean setAsDefaultResponse = Optional.ofNullable(System.console().readLine("Set as default organization? (y/n): "))
+            boolean setAsDefaultResponse = Optional.ofNullable(getConsole().readLine("Set as default profile? (y/n): "))
                     .map(String::trim)
                     .filter("y"::equalsIgnoreCase)
                     .isPresent();
             if (setAsDefaultResponse) {
-                cliConfig.setDefaultOrganization(organizationName);
+                cliConfig.setDefaultProfile(profileName);
             }
         }
         // Retrieve api key
         String apiKey = Optional.ofNullable(Strings.emptyToNull(this.apiKey))
-                .or(() -> Optional.ofNullable(System.console().readPassword("Enter value for API Key: "))
+                .or(() -> Optional.ofNullable(getConsole().readPassword("Enter value for API Key: "))
                         .map(String::valueOf)
                         .map(String::trim)
                         .filter(Predicate.not(String::isBlank)))
@@ -99,7 +100,7 @@ public class EnvLogin implements Runnable {
 
         // Retrieve endpoint or use default if blank
         Optional<String> endpointOpt = Optional.ofNullable(Strings.emptyToNull(this.endpoint))
-                .or(() -> Optional.ofNullable(System.console().readLine("Enter value or leave blank for endpoint (https://api.dataspray.io): "))
+                .or(() -> Optional.ofNullable(getConsole().readLine("Enter value or leave blank for endpoint (https://api.dataspray.io): "))
                         .map(String::valueOf)
                         .map(String::trim)
                         .filter(Predicate.not(String::isBlank)));
@@ -113,7 +114,7 @@ public class EnvLogin implements Runnable {
                 log.info("Successfully verified API Key against server!");
             } catch (ApiException ex) {
                 log.error("Failed to verify API against server! ({} {})", ex.getCode(), ex.getMessage(), ex);
-                boolean saveAnyway = Optional.ofNullable(System.console().readLine("Save anyway? (y/n): "))
+                boolean saveAnyway = Optional.ofNullable(getConsole().readLine("Save anyway? (y/n): "))
                         .map(String::trim)
                         .filter("y"::equalsIgnoreCase)
                         .isPresent();
@@ -126,5 +127,18 @@ public class EnvLogin implements Runnable {
         // Write organization to disk
         cliConfig.setProfile(profileName, organization);
         log.info("Wrote profile to disk");
+    }
+
+    /**
+     * Fetch interactive console, failing with a clear message if unavailable (e.g. output is piped or running
+     * non-interactively) instead of throwing a {@link NullPointerException}.
+     */
+    private Console getConsole() {
+        Console console = System.console();
+        if (console == null) {
+            throw new RuntimeException("No interactive console available to prompt for missing values. "
+                    + "Supply all required values via command-line options (see --help).");
+        }
+        return console;
     }
 }

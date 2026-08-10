@@ -89,12 +89,12 @@ public class UploadSchema implements Runnable {
                                             ex);
                                 }
                                 return null;
-                            })));
-        }
+                            }, executor)));
 
-        // Wait for all to complete
-        CompletableFuture.allOf(Streams.concat(
-                uploadSchemaTasks.stream()
-        ).toArray(CompletableFuture[]::new)).join();
+            // Wait for all to complete before closing the executor
+            CompletableFuture.allOf(Streams.concat(
+                    uploadSchemaTasks.stream()
+            ).toArray(CompletableFuture[]::new)).join();
+        }
     }
 }

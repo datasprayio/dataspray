@@ -20,9 +20,20 @@
  * SOFTWARE.
  */
 
-package io.dataspray.core;
+import {APIGatewayProxyStructuredResultV2} from 'aws-lambda';
 
-public interface BatchRuntime {
+/**
+ * Throw from a web handler to short-circuit processing and respond with the given HTTP response.
+ * <p>
+ * Mirrors the Java runner's io.dataspray.runner.dto.web.HttpResponseException.
+ */
+export class HttpResponseException extends Error {
 
-    void setCatalog(String dataSprayApiKey, Project project, String cat);
+    readonly response: APIGatewayProxyStructuredResultV2;
+
+    constructor(response: APIGatewayProxyStructuredResultV2) {
+        super(`HTTP response exception with status ${response.statusCode}`);
+        this.response = response;
+        Object.setPrototypeOf(this, HttpResponseException.prototype);
+    }
 }

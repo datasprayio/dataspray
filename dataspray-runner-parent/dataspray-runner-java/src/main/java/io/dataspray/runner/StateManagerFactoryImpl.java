@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 
@@ -41,7 +42,8 @@ public class StateManagerFactoryImpl implements StateManagerFactory {
 
     private final String tableName;
     private final Gson gson = new Gson();
-    private final ConcurrentMap<String[], StateManager> stateManagers = Maps.newConcurrentMap();
+    /** Keyed on an immutable List copy of the key parts; String[] has identity equality and would never cache-hit. */
+    private final ConcurrentMap<List<String>, StateManager> stateManagers = Maps.newConcurrentMap();
     private static volatile StateManagerFactory INSTANCE;
 
     @VisibleForTesting
@@ -68,8 +70,8 @@ public class StateManagerFactoryImpl implements StateManagerFactory {
 
     @Override
     public StateManager getStateManager(String[] key, Optional<Duration> ttl) {
-        return stateManagers.computeIfAbsent(key,
-                k -> new DynamoStateManager(tableName, gson, DynamoProvider.get(), k, ttl));
+        return stateManagers.computeIfAbsent(List.of(key),
+                k -> new DynamoStateManager(tableName, gson, DynamoProvider.get(), key, ttl));
     }
 
     @Override

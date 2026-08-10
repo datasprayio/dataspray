@@ -49,14 +49,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -330,19 +327,6 @@ public class StreamRuntimeImpl implements StreamRuntime {
         return status;
     }
 
-    private String getCommitHash(Project project) throws GitAPIException {
-        Iterator<RevCommit> revs = project.getGit()
-                .log()
-                .setMaxCount(1)
-                .call()
-                .iterator();
-        if (revs.hasNext()) {
-            return revs.next().getName();
-        } else {
-            return "unknown";
-        }
-    }
-
     private void printStatus(TaskStatus taskStatus, boolean printHeader) {
         if (printHeader) {
             log.info("{}\t{}\t{}\t{}\t{}",
@@ -373,19 +357,6 @@ public class StreamRuntimeImpl implements StreamRuntime {
                         version.getVersion(),
                         version.getDescription()))
                 .forEach(content -> log.info("{}", content));
-    }
-
-    private String getStatusEnumAsChar(TaskStatus.StatusEnum statusEnum) {
-        switch (statusEnum) {
-            case RUNNING:
-                return "✔";
-            case PAUSED:
-                return "✘";
-            case NOTFOUND:
-                return "!";
-            default:
-                return "?";
-        }
     }
 
     @Override

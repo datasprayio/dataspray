@@ -104,8 +104,6 @@ public class CodegenImpl implements Codegen {
     @Inject
     MergeStrategies mergeStrategies;
 
-    private boolean schemasFolderGenerated = false;
-
     @Override
     @SneakyThrows
     public Project initProject(String basePath, String projectName, SampleProject sample) {
@@ -268,18 +266,15 @@ public class CodegenImpl implements Codegen {
     }
 
     private Path createDataFormatDir(Project project, DataFormat dataFormat, boolean overwriteWriteableTemplate) {
-        if (!schemasFolderGenerated) {
-            schemasFolderGenerated = true;
-
-            // Create schemas folder
-            Path schemasPath = project.getAbsolutePath().resolve(SCHEMAS_FOLDER);
-            if (schemasPath.toFile().mkdir()) {
-                log.info("Created schemas folder " + schemasPath);
-            }
-
-            // Initialize templates folder
-            applyTemplate(project, Template.SCHEMAS.getFilesFromResources(), schemasPath, Optional.of(0L), contextBuilder.createForTemplates(project), overwriteWriteableTemplate);
+        // Create schemas folder; idempotent, safe to run for every data format
+        Path schemasPath = project.getAbsolutePath().resolve(SCHEMAS_FOLDER);
+        if (schemasPath.toFile().mkdir()) {
+            log.info("Created schemas folder " + schemasPath);
         }
+
+        // Initialize templates folder
+        applyTemplate(project, Template.SCHEMAS.getFilesFromResources(), schemasPath, Optional.of(0L), contextBuilder.createForTemplates(project), overwriteWriteableTemplate);
+
         return createDir(getDataFormatDir(project, dataFormat));
     }
 

@@ -85,7 +85,7 @@ public class Deploy implements Runnable {
                     log.error("Task {} failed to deploy", selectedTaskId, ex);
                 }
                 return null;
-            })));
+            }, executor)));
 
             // Schema uploads (Applies to all distinct inputs and outputs of all deployed tasks)
             if (updateSchema) {
@@ -107,14 +107,14 @@ public class Deploy implements Runnable {
                                                 ex);
                                     }
                                     return null;
-                                })));
+                                }, executor)));
             }
-        }
 
-        // Wait for all to complete
-        CompletableFuture.allOf(Streams.concat(
-                deployTasks.stream(),
-                uploadSchemaTasks.stream()
-        ).toArray(CompletableFuture[]::new)).join();
+            // Wait for all to complete before closing the executor
+            CompletableFuture.allOf(Streams.concat(
+                    deployTasks.stream(),
+                    uploadSchemaTasks.stream()
+            ).toArray(CompletableFuture[]::new)).join();
+        }
     }
 }

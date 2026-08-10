@@ -23,18 +23,28 @@
 package io.dataspray.cli;
 
 import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 import io.quarkus.test.junit.main.QuarkusMainTest;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @QuarkusMainTest
 public class CliTest {
+
     @Test
     @Launch(value = {}, exitCode = 2)
-    public void test() throws Exception {
-    }
+    public void testNoArgsPrintsUsageWithSubcommands(LaunchResult result) throws Exception {
+        assertEquals(2, result.exitCode());
 
-    // TODO https://quarkus.io/guides/command-mode-reference#testing-command-mode-applications
-    // More comprehensive CLI output testing could be added by capturing stdout/stderr
-    // Current test infrastructure (@Launch) only verifies exit codes, not actual output/behavior
-    // Proper tests should verify help text content, error messages, formatted output, etc.
+        // Missing subcommand should print usage listing the available subcommands
+        String output = result.getOutput() + System.lineSeparator() + result.getErrorOutput();
+        assertTrue(output.contains("Usage:"), "Expected usage text in output, got:\n" + output);
+        assertTrue(output.contains("dst"), "Expected command name 'dst' in usage, got:\n" + output);
+        for (String subcommand : new String[]{"init", "deploy", "query", "status", "upload-schema"}) {
+            assertTrue(output.contains(subcommand),
+                    "Expected usage to list subcommand '" + subcommand + "', got:\n" + output);
+        }
+    }
 }

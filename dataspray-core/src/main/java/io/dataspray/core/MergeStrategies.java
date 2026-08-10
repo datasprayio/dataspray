@@ -33,8 +33,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -54,11 +52,6 @@ public class MergeStrategies {
     @FunctionalInterface
     public interface JsonConflictResolution {
         void resolve(String key, JsonObject originalJson, JsonElement originalElement, JsonElement templateElement);
-    }
-
-    @FunctionalInterface
-    public interface XmlConflictResolution {
-        void resolve(Element originalElement, Element templateElement, Document targetDocument);
     }
 
     @Inject
