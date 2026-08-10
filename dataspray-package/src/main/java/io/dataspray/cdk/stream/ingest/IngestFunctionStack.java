@@ -42,6 +42,7 @@ import software.amazon.awscdk.services.kinesisfirehose.destinations.alpha.Enable
 import software.amazon.awscdk.services.kinesisfirehose.destinations.alpha.S3Bucket;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IntelligentTieringConfiguration;
 import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
@@ -120,6 +121,8 @@ public class IngestFunctionStack extends ApiFunctionStack {
         bucketEtl = Bucket.Builder.create(this, bucketEtlName)
                 .bucketName(bucketEtlName)
                 .autoDeleteObjects(false)
+                .encryption(BucketEncryption.S3_MANAGED)
+                .enforceSsl(true)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 // Add different expiry for each retention prefix
                 .lifecycleRules(Arrays.stream(TopicStore.BatchRetention.values()).map(batchRetention -> LifecycleRule.builder()

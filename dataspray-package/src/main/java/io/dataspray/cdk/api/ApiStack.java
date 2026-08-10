@@ -196,7 +196,7 @@ public class ApiStack extends FunctionStack {
                 Optional.empty(),
                 Optional.of(ThrottleSettings.builder()
                         .rateLimit(100)
-                        .burstLimit(10).build()));
+                        .burstLimit(200).build()));
         usagePlanOrganization = createUsagePlan(restApi, UsageKeyType.ORGANIZATION, 1,
                 Optional.of(QuotaSettings.builder()
                         .limit(1000) // 0.0115 rps
@@ -211,24 +211,24 @@ public class ApiStack extends FunctionStack {
                         .offset(0)
                         .period(Period.DAY).build()),
                 Optional.of(ThrottleSettings.builder()
-                        .rateLimit(30) // 30 rps
-                        .burstLimit(30).build()));
+                        .rateLimit(3) // 3x the 1 rps quota to allow bursts within the daily quota
+                        .burstLimit(6).build()));
         usagePlanTenRps = createUsagePlan(restApi, UsageKeyType.ORGANIZATION_TEN_RPS, 1,
                 Optional.of(QuotaSettings.builder()
                         .limit(10 * 24 * 60 * 60) // 10 rps (e.g. $300/mo)
                         .offset(0)
                         .period(Period.DAY).build()),
                 Optional.of(ThrottleSettings.builder()
-                        .rateLimit(300) // 30 rps
-                        .burstLimit(300).build()));
+                        .rateLimit(30) // 3x the 10 rps quota to allow bursts within the daily quota
+                        .burstLimit(60).build()));
         usagePlanHundredRps = createUsagePlan(restApi, UsageKeyType.ORGANIZATION_HUNDRED_RPS, 1,
                 Optional.of(QuotaSettings.builder()
                         .limit(100 * 24 * 60 * 60) // 100 rps (e.g. $3000/mo)
                         .offset(0)
                         .period(Period.DAY).build()),
                 Optional.of(ThrottleSettings.builder()
-                        .rateLimit(300) // 30 rps
-                        .burstLimit(300).build()));
+                        .rateLimit(300) // 3x the 100 rps quota to allow bursts within the daily quota
+                        .burstLimit(600).build()));
 
         String usageKeyApiKeyUnlimited = DynamoApiGatewayApiAccessStore.getUsageKeyApiKey(getDeployEnv(), UsageKeyType.UNLIMITED, Optional.empty());
         apiKeyUnlimited = ApiKey.Builder.create(this, getConstructId(usageKeyApiKeyUnlimited))

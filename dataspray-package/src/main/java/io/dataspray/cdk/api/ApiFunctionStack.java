@@ -70,7 +70,8 @@ public abstract class ApiFunctionStack extends FunctionStack {
 
     public String getCorsAllowOrigins(final BaseStack stack) {
         return switch (getDeployEnv()) {
-            case TEST, STAGING -> "*";
+            // Only tests get a wildcard; staging serves real Cognito-backed data
+            case TEST -> "*";
             default -> options.getCorsForSite()
                     .flatMap(NextSiteStack::getSubdomainOpt)
                     .map(subdomain -> "https://" + subdomain + "." + DnsStack.createFqdn(stack, getDeployEnv()))

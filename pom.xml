@@ -956,7 +956,7 @@
                     <family>mac</family>
                 </os>
                 <property>
-                    <name>!skipTests</name>
+                    <name>skipTests</name>
                 </property>
             </activation>
             <properties>
@@ -971,7 +971,7 @@
                     <family>mac</family>
                 </os>
                 <property>
-                    <name>!skipITs</name>
+                    <name>skipITs</name>
                 </property>
             </activation>
             <properties>
