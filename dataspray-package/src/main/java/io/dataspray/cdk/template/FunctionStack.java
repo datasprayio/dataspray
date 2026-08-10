@@ -30,6 +30,7 @@ import lombok.SneakyThrows;
 import lombok.Value;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.services.lambda.Alias;
+import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.lambda.Architecture;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
@@ -84,6 +85,8 @@ public abstract class FunctionStack extends BaseStack {
         Function.Builder functionBuilder = Function.Builder.create(this, constructId)
                 .functionName(functionName)
                 .code(Code.fromAsset(codeZip))
+                // Without an explicit retention, Lambda-created log groups never expire
+                .logRetention(RetentionDays.ONE_MONTH)
                 .timeout(Duration.minutes(5));
 
         // Lambda differences between a native image and JVM

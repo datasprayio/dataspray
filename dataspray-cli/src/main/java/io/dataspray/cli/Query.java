@@ -29,16 +29,21 @@ import io.dataspray.core.Codegen;
 import io.dataspray.core.Project;
 import io.dataspray.core.StreamRuntime;
 import io.dataspray.stream.control.client.model.*;
+import io.dataspray.stream.control.client.model.QueryExecutionStatus.StateEnum;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.Spec;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -62,13 +67,37 @@ public class Query implements Runnable {
         System.err.println("Run 'dst query --help' for more information");
     }
 
+    private static String formatBytes(Long bytes) {
+        if (bytes == null || bytes == 0) return "0 B";
+        String[] units = {"B", "KB", "MB", "GB", "TB"};
+        int unitIndex = 0;
+        double size = bytes;
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+        }
+        return String.format("%.2f %s", size, units[unitIndex]);
+    }
+
+    private static String formatTimestamp(Object timestamp) {
+        if (timestamp == null) return "N/A";
+        return DateTimeFormatter.ISO_INSTANT.format((java.time.Instant) timestamp);
+    }
+
     @Slf4j
     @Command(name = "execute",
             aliases = {"exec"},
             description = "Execute SQL query against data lake")
     static class Execute implements Runnable {
+        /** Maximum time to wait for a query to complete when using --wait */
+        private static final Duration POLL_TIMEOUT = Duration.ofMinutes(30);
+        /** Interval between query status polls when using --wait */
+        private static final Duration POLL_INTERVAL = Duration.ofSeconds(2);
+
         @Mixin
         LoggingMixin loggingMixin;
+        @Spec
+        CommandSpec spec;
         @Option(names = {"-p", "--profile"}, description = "Profile name")
         String profileName;
         @Option(names = {"-q", "--query"}, description = "SQL query to execute")
@@ -109,9 +138,9 @@ public class Query implements Runnable {
             if (wait) {
                 // Poll for completion
                 System.out.println("Waiting for query to complete...");
-                QueryExecutionStatus status = pollUntilComplete(queryId);
+                QueryExecutionStatus status = pollUntilComplete(project, queryId);
 
-                if ("SUCCEEDED".equals(status.getState().getValue())) {
+                if (StateEnum.SUCCEEDED == status.getState()) {
                     System.out.println("Query completed successfully");
                     System.out.println("Bytes scanned: " + formatBytes(status.getBytesScanned()));
                     System.out.println("Execution time: " + status.getExecutionTimeMs() + "ms");
@@ -128,16 +157,16 @@ public class Query implements Runnable {
 
                     displayResults(results);
                 } else {
-                    System.err.println("Query failed: " + status.getErrorMessage());
-                    System.exit(1);
+                    throw new CommandLine.ExecutionException(spec.commandLine(),
+                            "Query failed: " + status.getErrorMessage());
                 }
             }
         }
 
         private String getSqlQuery() {
             if (sqlQuery != null && queryFile != null) {
-                System.err.println("Error: Cannot specify both --query and --file");
-                System.exit(1);
+                throw new CommandLine.ExecutionException(spec.commandLine(),
+                        "Error: Cannot specify both --query and --file");
             }
 
             if (sqlQuery != null) {
@@ -148,31 +177,39 @@ public class Query implements Runnable {
                 try {
                     return Files.readString(Paths.get(queryFile));
                 } catch (IOException e) {
-                    System.err.println("Error reading query file: " + e.getMessage());
-                    System.exit(1);
+                    throw new CommandLine.ExecutionException(spec.commandLine(),
+                            "Error reading query file: " + e.getMessage(), e);
                 }
             }
 
-            System.err.println("Error: Must specify either --query or --file");
-            System.exit(1);
-            return null;
+            throw new CommandLine.ExecutionException(spec.commandLine(),
+                    "Error: Must specify either --query or --file");
         }
 
-        private QueryExecutionStatus pollUntilComplete(String queryId) {
+        private QueryExecutionStatus pollUntilComplete(Project project, String queryId) {
+            StreamRuntime.Organization organization = cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName)));
+            long deadlineNanos = System.nanoTime() + POLL_TIMEOUT.toNanos();
             while (true) {
                 QueryExecutionStatus status = streamRuntime.getQueryStatus(
-                        cliConfig.getProfile(Optional.ofNullable(Strings.emptyToNull(profileName))),
-                        codegen.loadProject(),
+                        organization,
+                        project,
                         queryId
                 );
 
-                String state = status.getState().getValue();
-                if ("SUCCEEDED".equals(state) || "FAILED".equals(state) || "CANCELLED".equals(state)) {
+                StateEnum state = status.getState();
+                if (StateEnum.SUCCEEDED == state || StateEnum.FAILED == state || StateEnum.CANCELLED == state) {
                     return status;
                 }
 
+                if (System.nanoTime() >= deadlineNanos) {
+                    throw new CommandLine.ExecutionException(spec.commandLine(),
+                            "Timed out after " + POLL_TIMEOUT.toMinutes() + " minutes waiting for query " + queryId
+                            + " to complete; last known state: " + state
+                            + ". Check its progress with 'dst query status " + queryId + "'.");
+                }
+
                 try {
-                    Thread.sleep(2000);
+                    Thread.sleep(POLL_INTERVAL.toMillis());
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     throw new RuntimeException("Interrupted while waiting for query", e);
@@ -192,18 +229,6 @@ public class Query implements Runnable {
                     TableFormatter.printCsv(results.getColumns(), results.getRows());
                     break;
             }
-        }
-
-        private String formatBytes(Long bytes) {
-            if (bytes == null || bytes == 0) return "0 B";
-            String[] units = {"B", "KB", "MB", "GB", "TB"};
-            int unitIndex = 0;
-            double size = bytes;
-            while (size >= 1024 && unitIndex < units.length - 1) {
-                size /= 1024;
-                unitIndex++;
-            }
-            return String.format("%.2f %s", size, units[unitIndex]);
         }
     }
 
@@ -249,23 +274,6 @@ public class Query implements Runnable {
             if (status.getErrorMessage() != null) {
                 System.out.println("Error: " + status.getErrorMessage());
             }
-        }
-
-        private String formatTimestamp(Object timestamp) {
-            if (timestamp == null) return "N/A";
-            return DateTimeFormatter.ISO_INSTANT.format((java.time.Instant) timestamp);
-        }
-
-        private String formatBytes(Long bytes) {
-            if (bytes == null || bytes == 0) return "0 B";
-            String[] units = {"B", "KB", "MB", "GB", "TB"};
-            int unitIndex = 0;
-            double size = bytes;
-            while (size >= 1024 && unitIndex < units.length - 1) {
-                size /= 1024;
-                unitIndex++;
-            }
-            return String.format("%.2f %s", size, units[unitIndex]);
         }
     }
 
@@ -368,23 +376,6 @@ public class Query implements Runnable {
                         truncate(query.getSqlQuery(), 60)
                 );
             }
-        }
-
-        private String formatTimestamp(Object timestamp) {
-            if (timestamp == null) return "N/A";
-            return DateTimeFormatter.ISO_INSTANT.format((java.time.Instant) timestamp);
-        }
-
-        private String formatBytes(Long bytes) {
-            if (bytes == null || bytes == 0) return "0 B";
-            String[] units = {"B", "KB", "MB", "GB", "TB"};
-            int unitIndex = 0;
-            double size = bytes;
-            while (size >= 1024 && unitIndex < units.length - 1) {
-                size /= 1024;
-                unitIndex++;
-            }
-            return String.format("%.2f %s", size, units[unitIndex]);
         }
 
         private String truncate(String str, int maxLen) {

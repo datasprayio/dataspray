@@ -33,6 +33,7 @@ import {getClient} from "../../util/dataSprayClientWrapper";
 import {DeleteTaskModal} from "../../deployment/DeleteTaskModal";
 import {useAlerts} from "../../util/useAlerts";
 import {ViewTask} from "../../deployment/ViewTask";
+import {getErrorMessage} from "../../util/errorUtil";
 
 const Page: NextPageWithLayout = () => {
     const {currentOrganizationName} = useAuth();
@@ -62,7 +63,7 @@ const Page: NextPageWithLayout = () => {
             });
             onSuccess({content: `Task ${selectedTaskId} paused successfully`});
         } catch (e: any) {
-            onError({content: `Failed to pause task ${selectedTaskId}: ${e?.message || 'Unknown error'}`});
+            onError({content: `Failed to pause task ${selectedTaskId}: ${await getErrorMessage(e)}`});
         }
     }, [beginProcessing, currentOrganizationName, selectedTaskId]);
     const onResumeClick = useCallback(async () => {
@@ -77,7 +78,7 @@ const Page: NextPageWithLayout = () => {
             });
             onSuccess({content: `Task ${selectedTaskId} resumed successfully`});
         } catch (e: any) {
-            onError({content: `Failed to resume task ${selectedTaskId}: ${e?.message || 'Unknown error'}`});
+            onError({content: `Failed to resume task ${selectedTaskId}: ${await getErrorMessage(e)}`});
         }
     }, [beginProcessing, currentOrganizationName, selectedTaskId]);
     const [showConfirmDeleteTaskId, setShowConfirmDeleteTaskId] = useState<string>();
@@ -100,7 +101,7 @@ const Page: NextPageWithLayout = () => {
             onSuccess({content: `Task ${selectedTaskId} deleted successfully`});
             setShowConfirmDeleteTaskId(undefined);
         } catch (e: any) {
-            onError({content: `Failed to delete task ${selectedTaskId}: ${e?.message || 'Unknown error'}`});
+            onError({content: `Failed to delete task ${selectedTaskId}: ${await getErrorMessage(e)}`});
         }
     }, [beginProcessing, currentOrganizationName, selectedTaskId]);
 

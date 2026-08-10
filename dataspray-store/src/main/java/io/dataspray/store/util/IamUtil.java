@@ -54,8 +54,11 @@ public class IamUtil {
     WaiterUtil waiterUtil;
 
     public Role getOrCreateRole(String roleName, String permissionBoundaryName, String description) {
-        // Setup function IAM role
-        String roleArn = "arn:aws:iam::" + awsAccountId + ":role/" + roleName;
+        return getOrCreateRole(roleName, permissionBoundaryName, description,
+                "lambda.amazonaws.com", "sts:AssumeRole");
+    }
+
+    public Role getOrCreateRole(String roleName, String permissionBoundaryName, String description, String principalService, String assumeAction) {
         try {
             Role role = iamClient.getRole(GetRoleRequest.builder()
                             .roleName(roleName)
@@ -72,9 +75,9 @@ public class IamUtil {
                             "Version", "2012-10-17",
                             "Statement", List.of(Map.of(
                                     "Effect", "Allow",
-                                    "Action", List.of("sts:AssumeRole"),
+                                    "Action", List.of(assumeAction),
                                     "Principal", Map.of(
-                                            "Service", List.of("lambda.amazonaws.com")))))))
+                                            "Service", List.of(principalService)))))))
                     .build());
             log.info("Created role {}", roleName);
             return waiterUtil.resolve(iamClient.waiter().waitUntilRoleExists(GetRoleRequest.builder()

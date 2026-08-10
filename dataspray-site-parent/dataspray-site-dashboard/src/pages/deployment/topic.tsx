@@ -34,6 +34,7 @@ import {TopicActionHeader} from "../../deployment/TopicActionHeader";
 import {EditTopic, EditType} from "../../deployment/EditTopic";
 import {useAlerts} from "../../util/useAlerts";
 import {S3FileBrowser} from "../../deployment/S3FileBrowser";
+import {getErrorMessage} from "../../util/errorUtil";
 
 const Yes = <StatusIndicator type='success'>Yes</StatusIndicator>;
 const No = <StatusIndicator type='stopped'>No</StatusIndicator>;
@@ -70,7 +71,7 @@ const Page: NextPageWithLayout = () => {
             onSuccess({content: `Topic ${selectedTopicName} deleted successfully`});
             setShowConfirmDeleteTopicName(undefined);
         } catch (e: any) {
-            onError({content: `Failed to delete topic ${selectedTopicName}: ${e?.message || 'Unknown error'}`});
+            onError({content: `Failed to delete topic ${selectedTopicName}: ${await getErrorMessage(e)}`});
         }
     }, [beginProcessing, currentOrganizationName, selectedTopicName, update]);
 
@@ -91,7 +92,7 @@ const Page: NextPageWithLayout = () => {
 
         setIsRecalculatingSchema(true);
         try {
-            const schema = await getClient().control().recalculateTopicSchema({
+            await getClient().control().recalculateTopicSchema({
                 topicName: selectedTopicName,
                 organizationName: currentOrganizationName,
             });
@@ -99,11 +100,10 @@ const Page: NextPageWithLayout = () => {
                 type: 'success',
                 content: `Schema recalculated successfully for topic ${selectedTopicName}`
             });
-            console.log('Recalculated schema:', schema);
         } catch (e: any) {
             addAlert({
                 type: 'error',
-                content: `Failed to recalculate schema: ${e?.message || 'Unknown error'}`
+                content: `Failed to recalculate schema: ${await getErrorMessage(e)}`
             });
         } finally {
             setIsRecalculatingSchema(false);

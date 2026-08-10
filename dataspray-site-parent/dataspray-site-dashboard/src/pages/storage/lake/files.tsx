@@ -37,6 +37,7 @@ import {getClient} from "../../../util/dataSprayClientWrapper";
 import {useAlerts} from "../../../util/useAlerts";
 import {Topic} from "dataspray-client";
 import {S3FileBrowser} from "../../../deployment/S3FileBrowser";
+import {getErrorMessage} from "../../../util/errorUtil";
 
 const LakeFilesPage: NextPageWithLayout = () => {
     const {currentOrganizationName} = useAuth();
@@ -67,8 +68,7 @@ const LakeFilesPage: NextPageWithLayout = () => {
             }
         } catch (e: any) {
             console.error('Failed to load topics:', e);
-            const errorMessage = e.response?.data?.error?.message || e.message || 'Unknown error';
-            addAlert({type: 'error', content: `Failed to load topics: ${errorMessage}`});
+            addAlert({type: 'error', content: `Failed to load topics: ${await getErrorMessage(e)}`});
         } finally {
             setIsLoadingTopics(false);
         }

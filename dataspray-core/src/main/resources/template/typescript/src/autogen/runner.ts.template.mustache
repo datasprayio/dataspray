@@ -4,7 +4,7 @@ import {
     LambdaFunctionURLEvent,
 } from 'aws-lambda';
 {{/processor.web}}
-import { typer } from 'media-typer';
+import { parse as parseMediaType } from 'media-typer';
 {{^processor.inputStreams.empty}}
 import {
     {{#processor.web}}
@@ -44,7 +44,7 @@ import { Processor } from './processor';
 {{#processor.web}}
 {{#endpoints}}
 {{^contentTypes.empty}}
-const ENDPOINT_ALLOWED_CONTENT_TYPES_{{{nameSnakeUpper}}} = [{{#contentTypes}}typer.parse("{{{.}}}"){{^-last}}, {{/-last}}{{/contentTypes}}];
+const ENDPOINT_ALLOWED_CONTENT_TYPES_{{{nameSnakeUpper}}} = [{{#contentTypes}}parseMediaType("{{{.}}}"){{^-last}}, {{/-last}}{{/contentTypes}}];
 {{#-last}}
 
 {{/-last}}
@@ -61,7 +61,7 @@ class Runner extends Entrypoint {
         {{^endpoints.empty}}
 
         const pathDirs: string[] = request.rawPath.split("/");
-        const contentType = typer.parse(request.headersMap['content-type'] || 'text/plain')
+        const contentType = parseMediaType(request.headersMap['content-type'] || 'text/plain')
         {{/endpoints.empty}}
         {{#endpoints}}
 
@@ -106,9 +106,9 @@ class Runner extends Entrypoint {
     {{#processor.inputStreams}}
     {{^dataFormat.isSerdeString}}
 
-    private to{{{dataFormat.nameCamelUpper}}}(data: string): {{{dataFormat.nameCamelUpper}}} {
+    private to{{{dataFormat.nameCamelUpper}}}(data: string): {{#dataFormat.isSerdeBinary}}Buffer{{/dataFormat.isSerdeBinary}}{{^dataFormat.isSerdeBinary}}{{{dataFormat.nameCamelUpper}}}{{/dataFormat.isSerdeBinary}} {
         {{#dataFormat.isSerdeBinary}}
-        return Buffer.from(data, 'base64').toString('utf8');
+        return Buffer.from(data, 'base64');
         {{/dataFormat.isSerdeBinary}}
         {{#dataFormat.isSerdeJson}}
         const dataJson = JSON.parse(data);

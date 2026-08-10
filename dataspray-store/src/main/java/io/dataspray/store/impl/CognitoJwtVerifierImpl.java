@@ -69,7 +69,8 @@ public class CognitoJwtVerifierImpl implements CognitoJwtVerifier, RSAKeyProvide
         try {
             rawJwt = jwtVerifier.verify(accessToken);
         } catch (JWTVerificationException ex) {
-            log.info("Failed to verify Cognito access key {}", accessToken, ex);
+            // Do not log the token itself
+            log.info("Failed to verify Cognito access token", ex);
             return Optional.empty();
         }
 

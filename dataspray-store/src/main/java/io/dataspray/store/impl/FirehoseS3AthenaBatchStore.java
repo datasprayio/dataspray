@@ -36,7 +36,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.function.TriFunction;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.services.athena.AthenaClient;
 import software.amazon.awssdk.services.firehose.FirehoseClient;
 import software.amazon.awssdk.services.firehose.model.PutRecordRequest;
 import software.amazon.awssdk.services.firehose.model.Record;
@@ -103,9 +102,9 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     public static final String ETL_BUCKET_ORGANIZATION_PREFIX = ETL_BUCKET_RETENTION_PREFIX +
                                                                 "/organization=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}";
     public static final BatchRetention ATHENA_RESULTS_DEFAULT_RETENTION = BatchRetention.WEEK;
-    public static final String ETL_BUCKET_ATHENA_RESULTS_PREFIX = (ETL_BUCKET_ORGANIZATION_PREFIX +
-                                                                   "/organization=!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}"
-                                                                   + "/athena-results")
+    /** Upper bound on distinct field names collected during schema inference. */
+    private static final int MAX_INFERRED_FIELDS = 1000;
+    public static final String ETL_BUCKET_ATHENA_RESULTS_PREFIX = (ETL_BUCKET_ORGANIZATION_PREFIX + "/athena-results")
             .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_RETENTION + "}", ATHENA_RESULTS_DEFAULT_RETENTION.name());
 
     /**
@@ -140,9 +139,9 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     @Inject
     GlueClient glueClient;
     @Inject
-    AthenaClient athenaClient;
-    @Inject
     software.amazon.awssdk.services.s3.S3Client s3Client;
+    @Inject
+    software.amazon.awssdk.services.s3.presigner.S3Presigner s3Presigner;
     @Inject
     OrganizationStore organizationStore;
     @Inject
@@ -220,7 +219,7 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
                     .schemaVersionId();
         } else {
             if (!dataFormat.equals(schemaPreviousOpt.get().dataFormat())) {
-                throw new BadRequestException("Target " + topicName + " format is " + schemaPreviousOpt.get().dataFormat() + ", cannot changge format to " + dataFormat);
+                throw new BadRequestException("Target " + topicName + " format is " + schemaPreviousOpt.get().dataFormat() + ", cannot change format to " + dataFormat);
             }
             schemaVersionId = glueClient.registerSchemaVersion(RegisterSchemaVersionRequest.builder()
                             .schemaId(SchemaId.builder()
@@ -332,9 +331,19 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
             // Nothing to do, changing schema version to version that already is set
             // Usually happens when updating schema with identical schema content to current version
         } else {
+            // UpdateTable replaces the whole table definition, so carry over the previous
+            // table's fields and only swap the schema reference
+            Table tablePrevious = tablePreviousOpt.get();
             glueClient.updateTable(UpdateTableRequest.builder()
+                    .catalogId(awsAccountId)
+                    .databaseName(databaseName)
                     .tableInput(TableInput.builder()
-                            .storageDescriptor(StorageDescriptor.builder()
+                            .name(tablePrevious.name())
+                            .description(tablePrevious.description())
+                            .tableType(tablePrevious.tableType())
+                            .parameters(tablePrevious.parameters())
+                            .partitionKeys(tablePrevious.partitionKeys())
+                            .storageDescriptor(tablePrevious.storageDescriptor().toBuilder()
                                     .schemaReference(SchemaReference.builder()
                                             .schemaId(SchemaId.builder()
                                                     .registryName(registryName)
@@ -376,15 +385,11 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     public FilesListResult listFiles(String organizationName, String topicName, BatchRetention retention, String prefix, int maxResults, String nextToken) {
         log.info("Listing files for organization: {}, topic: {}, prefix: {}", organizationName, topicName, prefix);
 
-        // Build S3 prefix for this topic
-        String basePrefix = ETL_BUCKET_TARGET_PREFIX.apply(retention, organizationName, topicName)
-                .replace("/year=!{timestamp:yyyy}", "")
-                .replace("/month=!{timestamp:MM}", "")
-                .replace("/day=!{timestamp:dd}", "")
-                .replace("/hour=!{timestamp:HH}/", "");
+        // Build S3 prefix for this topic; keep the trailing slash so topic "foo" does not match "foobar"
+        String basePrefix = getTopicBasePrefix(retention, organizationName, topicName);
 
         String fullPrefix = prefix != null && !prefix.isEmpty()
-                ? basePrefix + "/" + prefix
+                ? basePrefix + prefix
                 : basePrefix;
 
         log.debug("Listing S3 objects with prefix: s3://{}/{}", etlBucketName, fullPrefix);
@@ -423,12 +428,9 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
     public PresignedUrl getFileDownloadUrl(String organizationName, String topicName, BatchRetention retention, String key) {
         log.info("Generating presigned URL for organization: {}, topic: {}, key: {}", organizationName, topicName, key);
 
-        // Validate the key belongs to this topic's prefix (security check)
-        String basePrefix = ETL_BUCKET_TARGET_PREFIX.apply(retention, organizationName, topicName)
-                .replace("/year=!{timestamp:yyyy}", "")
-                .replace("/month=!{timestamp:MM}", "")
-                .replace("/day=!{timestamp:dd}", "")
-                .replace("/hour=!{timestamp:HH}/", "");
+        // Validate the key belongs to this topic's prefix (security check).
+        // The trailing slash prevents topic "foo" from authorizing keys under "foobar/"
+        String basePrefix = getTopicBasePrefix(retention, organizationName, topicName);
 
         if (!key.startsWith(basePrefix)) {
             throw new IllegalArgumentException("Invalid file key - does not belong to this topic");
@@ -438,32 +440,34 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
         java.time.Duration expiration = java.time.Duration.ofMinutes(15);
         java.time.Instant expiresAt = java.time.Instant.now().plus(expiration);
 
-        software.amazon.awssdk.services.s3.presigner.S3Presigner presigner =
-                software.amazon.awssdk.services.s3.presigner.S3Presigner.create();
+        software.amazon.awssdk.services.s3.model.GetObjectRequest getObjectRequest =
+                software.amazon.awssdk.services.s3.model.GetObjectRequest.builder()
+                        .bucket(etlBucketName)
+                        .key(key)
+                        .build();
 
-        try {
-            software.amazon.awssdk.services.s3.model.GetObjectRequest getObjectRequest =
-                    software.amazon.awssdk.services.s3.model.GetObjectRequest.builder()
-                            .bucket(etlBucketName)
-                            .key(key)
-                            .build();
+        software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest presignRequest =
+                software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest.builder()
+                        .signatureDuration(expiration)
+                        .getObjectRequest(getObjectRequest)
+                        .build();
 
-            software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest presignRequest =
-                    software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest.builder()
-                            .signatureDuration(expiration)
-                            .getObjectRequest(getObjectRequest)
-                            .build();
+        software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest presignedRequest =
+                s3Presigner.presignGetObject(presignRequest);
 
-            software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest presignedRequest =
-                    presigner.presignGetObject(presignRequest);
+        return new PresignedUrl(presignedRequest.url().toString(), expiresAt);
+    }
 
-            String url = presignedRequest.url().toString();
-            log.debug("Generated presigned URL: {}", url);
-
-            return new PresignedUrl(url, expiresAt);
-        } finally {
-            presigner.close();
-        }
+    /**
+     * Topic's S3 prefix with the timestamp partitions stripped, always ending in a slash.
+     */
+    private static String getTopicBasePrefix(BatchRetention retention, String organizationName, String topicName) {
+        return ETL_BUCKET_TARGET_PREFIX.apply(retention, organizationName, topicName)
+                       .replace("/year=!{timestamp:yyyy}", "")
+                       .replace("/month=!{timestamp:MM}", "")
+                       .replace("/day=!{timestamp:dd}", "")
+                       .replace("/hour=!{timestamp:HH}/", "")
+               + "/";
     }
 
     @Override
@@ -471,11 +475,7 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
         log.info("Recalculating schema for organization: {}, topic: {}", organizationName, topicName);
 
         // Build S3 prefix for this topic
-        String s3Prefix = ETL_BUCKET_TARGET_PREFIX.apply(retention, organizationName, topicName)
-                .replace("/year=!{timestamp:yyyy}", "")
-                .replace("/month=!{timestamp:MM}", "")
-                .replace("/day=!{timestamp:dd}", "")
-                .replace("/hour=!{timestamp:HH}/", "");
+        String s3Prefix = getTopicBasePrefix(retention, organizationName, topicName);
 
         log.debug("Listing S3 objects with prefix: s3://{}/{}", etlBucketName, s3Prefix);
 
@@ -597,12 +597,18 @@ public class FirehoseS3AthenaBatchStore implements BatchStore {
                 if (line.trim().isEmpty()) continue;
 
                 try {
-                    com.google.gson.JsonObject jsonObject = new com.google.gson.JsonParser()
-                            .parse(line)
+                    com.google.gson.JsonObject jsonObject = com.google.gson.JsonParser
+                            .parseString(line)
                             .getAsJsonObject();
 
-                    // Collect all field names
-                    jsonObject.keySet().forEach(allFields::add);
+                    // Collect all field names, bounded so a pathological topic cannot exhaust memory
+                    for (String fieldName : jsonObject.keySet()) {
+                        if (allFields.size() >= MAX_INFERRED_FIELDS && !allFields.contains(fieldName)) {
+                            log.warn("Schema inference field cap of {} reached for {}, ignoring further fields", MAX_INFERRED_FIELDS, key);
+                            break;
+                        }
+                        allFields.add(fieldName);
+                    }
                     linesProcessed++;
                 } catch (Exception e) {
                     log.warn("Failed to parse JSON line from {}: {}", key, e.getMessage());

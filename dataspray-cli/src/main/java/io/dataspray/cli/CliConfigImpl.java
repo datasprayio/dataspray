@@ -77,10 +77,10 @@ public class CliConfigImpl implements CliConfig {
         }
 
         // Find from default config
-        Optional<String> organizationFromConfigDefault = Optional.ofNullable(Strings.emptyToNull(getRootConfig().getString(PROPERTY_DEFAULT_PROFILE)));
-        if (organizationFromConfigDefault.isPresent()) {
-            return getProfile(organizationFromConfigDefault.get())
-                    .orElseThrow(() -> new RuntimeException("No API key found for organization " + profileNameOpt.get() + " defined as default in config"));
+        Optional<String> profileFromConfigDefault = Optional.ofNullable(Strings.emptyToNull(getRootConfig().getString(PROPERTY_DEFAULT_PROFILE)));
+        if (profileFromConfigDefault.isPresent()) {
+            return getProfile(profileFromConfigDefault.get())
+                    .orElseThrow(() -> new RuntimeException("No profile found with name " + profileFromConfigDefault.get() + " defined as default in config"));
         }
 
         throw new RuntimeException("No API key found. Please login first.");
@@ -129,10 +129,10 @@ public class CliConfigImpl implements CliConfig {
     }
 
     @Override
-    public void setDefaultOrganization(String organizationName) {
-        getRootConfig().setProperty(PROPERTY_DEFAULT_PROFILE, organizationName);
+    public void setDefaultProfile(String profileName) {
+        getRootConfig().setProperty(PROPERTY_DEFAULT_PROFILE, profileName);
         save();
-        log.info("Saved organization {} as default", organizationName);
+        log.info("Saved profile {} as default", profileName);
     }
 
     private INIConfiguration readConfig() {

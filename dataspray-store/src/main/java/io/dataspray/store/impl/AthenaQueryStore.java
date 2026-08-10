@@ -27,7 +27,6 @@ import io.dataspray.common.DeployEnvironment;
 import io.dataspray.singletable.IndexSchema;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
-import io.dataspray.store.CustomerLogger;
 import io.dataspray.store.QueryNotFoundException;
 import io.dataspray.store.QueryStore;
 import io.quarkus.runtime.Startup;
@@ -61,7 +60,6 @@ import software.amazon.awssdk.services.glue.model.GetTablesResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -78,17 +76,24 @@ import static io.dataspray.store.impl.FirehoseS3AthenaBatchStore.*;
 @ApplicationScoped
 public class AthenaQueryStore implements QueryStore {
 
-    private static final Duration QUERY_HISTORY_TTL = Duration.ofDays(7);
+    // Roughly matches Athena's own query execution retention
+    private static final Duration QUERY_HISTORY_TTL = Duration.ofDays(45);
 
-    // Forbidden SQL keywords (DDL/DML operations)
-    private static final List<String> FORBIDDEN_KEYWORDS = Arrays.asList(
-            "CREATE", "DROP", "ALTER", "INSERT", "UPDATE", "DELETE",
-            "TRUNCATE", "GRANT", "REVOKE", "MERGE"
+    // Forbidden SQL keywords (DDL/DML operations), matched against the comment/literal-stripped query
+    private static final Pattern FORBIDDEN_KEYWORDS_PATTERN = Pattern.compile(
+            "\\b(CREATE|DROP|ALTER|INSERT|UPDATE|DELETE|TRUNCATE|GRANT|REVOKE|MERGE|UNLOAD|MSCK|VACUUM)\\b",
+            Pattern.CASE_INSENSITIVE
     );
 
-    // Pattern to extract database names from SQL (basic implementation)
+    // SQL line comments, block comments and single-quoted string literals ('' is the escape)
+    private static final Pattern SQL_COMMENTS_AND_LITERALS_PATTERN = Pattern.compile(
+            "--[^\\n]*|/\\*.*?\\*/|'(?:[^']|'')*'",
+            Pattern.DOTALL
+    );
+
+    // Extracts database qualifiers such as FROM "db"."table", FROM `db`.`table` or JOIN db.table
     private static final Pattern DATABASE_PATTERN = Pattern.compile(
-            "FROM\\s+(?:`([^`]+)`|([\\w-]+))\\.",
+            "(?:FROM|JOIN)\\s+(?:\"([^\"]+)\"|`([^`]+)`|([\\w-]+))\\s*\\.",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -111,9 +116,6 @@ public class AthenaQueryStore implements QueryStore {
     SingleTable singleTable;
 
     @Inject
-    CustomerLogger customerLog;
-
-    @Inject
     DynamoDbClient dynamoClient;
 
     private TableSchema<QueryHistoryRecord> queryHistorySchema;
@@ -130,15 +132,16 @@ public class AthenaQueryStore implements QueryStore {
     public String submitQuery(String organizationName, String sqlQuery, String username) {
         log.info("Submitting query for organization: {}", organizationName);
 
-        // 1. Validate SQL query (defense in depth - IAM is primary security)
-        validateSqlQuery(sqlQuery);
-
-        // 2. Get database name
+        // 1. Get database name
         String databaseName = FirehoseS3AthenaBatchStore.getDatabaseName(deployEnv, organizationName);
+
+        // 2. Validate SQL query, including rejecting references to other organizations' databases
+        validateSqlQuery(sqlQuery, databaseName);
 
         // 3. Verify database exists
         try {
             glueClient.getDatabase(GetDatabaseRequest.builder()
+                    .catalogId(awsAccountId)
                     .name(databaseName)
                     .build());
         } catch (EntityNotFoundException ex) {
@@ -194,35 +197,51 @@ public class AthenaQueryStore implements QueryStore {
                                            Optional<String> nextToken, int maxResults) {
         log.debug("Getting query results: {} (maxResults: {})", queryExecutionId, maxResults);
 
-        // 1. Verify query belongs to organization
+        // 1. Verify query belongs to organization and check its state
         verifyQueryOwnership(organizationName, queryExecutionId);
-
-        // 2. Check query state
-        QueryExecution execution = getQueryExecution(organizationName, queryExecutionId);
-        if (execution.getState() != QueryState.SUCCEEDED) {
-            throw new IllegalArgumentException("Query has not succeeded yet. Current state: " + execution.getState());
+        software.amazon.awssdk.services.athena.model.QueryExecution athenaExecution = athenaClient
+                .getQueryExecution(GetQueryExecutionRequest.builder()
+                        .queryExecutionId(queryExecutionId)
+                        .build())
+                .queryExecution();
+        QueryState state = mapQueryState(athenaExecution.status().state());
+        if (state != QueryState.SUCCEEDED) {
+            throw new IllegalArgumentException("Query has not succeeded yet. Current state: " + state);
         }
 
-        // 3. Get query results from Athena
+        // 2. Get query results from Athena
         GetQueryResultsRequest.Builder requestBuilder = GetQueryResultsRequest.builder()
                 .queryExecutionId(queryExecutionId)
-                .maxResults(Math.min(maxResults, 1000)); // Cap at 1000
+                .maxResults(Math.min(Math.max(1, maxResults), 1000)); // Cap at 1..1000
 
         nextToken.ifPresent(requestBuilder::nextToken);
 
         GetQueryResultsResponse response = athenaClient.getQueryResults(requestBuilder.build());
         ResultSet resultSet = response.resultSet();
 
-        // 4. Extract column information
+        // 3. Extract column information
         List<Column> columns = resultSet.resultSetMetadata().columnInfo().stream()
                 .map(col -> new Column(col.name(), col.type()))
                 .collect(Collectors.toList());
 
-        // 5. Extract rows (skip header row if on first page)
+        // 4. Extract rows. SELECT-style results repeat the column names as the first row of the
+        //    first page; DDL/SHOW-style results do not. Only skip the first row when it actually
+        //    matches the column labels.
         List<List<String>> rows = new ArrayList<>();
         List<Row> athenaRows = resultSet.rows();
 
-        int startIndex = (nextToken.isEmpty() && !athenaRows.isEmpty()) ? 1 : 0; // Skip header on first page
+        int startIndex = 0;
+        if (nextToken.isEmpty() && !athenaRows.isEmpty()) {
+            List<String> firstRow = athenaRows.get(0).data().stream()
+                    .map(Datum::varCharValue)
+                    .collect(Collectors.toList());
+            List<String> columnNames = columns.stream()
+                    .map(Column::getName)
+                    .collect(Collectors.toList());
+            if (firstRow.equals(columnNames)) {
+                startIndex = 1;
+            }
+        }
         for (int i = startIndex; i < athenaRows.size(); i++) {
             Row row = athenaRows.get(i);
             List<String> rowData = row.data().stream()
@@ -253,19 +272,27 @@ public class AthenaQueryStore implements QueryStore {
                 .executeStream(dynamoClient)
                 .collect(Collectors.toList());
 
-        // Fetch Athena execution details for each query
+        // Fetch Athena execution details in batches of 50 (BatchGetQueryExecution limit)
+        Map<String, software.amazon.awssdk.services.athena.model.QueryExecution> executionById = new java.util.HashMap<>();
+        for (List<QueryHistoryRecord> chunk : com.google.common.collect.Lists.partition(records, 50)) {
+            try {
+                athenaClient.batchGetQueryExecution(software.amazon.awssdk.services.athena.model.BatchGetQueryExecutionRequest.builder()
+                                .queryExecutionIds(chunk.stream()
+                                        .map(QueryHistoryRecord::getQueryExecutionId)
+                                        .collect(Collectors.toList()))
+                                .build())
+                        .queryExecutions()
+                        .forEach(execution -> executionById.put(execution.queryExecutionId(), execution));
+            } catch (Exception ex) {
+                log.warn("Failed to batch fetch query execution details", ex);
+            }
+        }
+
         return records.stream()
-                .map(record -> {
-                    try {
-                        GetQueryExecutionRequest request = GetQueryExecutionRequest.builder()
-                                .queryExecutionId(record.getQueryExecutionId())
-                                .build();
-                        GetQueryExecutionResponse response = athenaClient.getQueryExecution(request);
-                        return mapToQueryExecution(response.queryExecution());
-                    } catch (Exception ex) {
-                        log.warn("Failed to fetch query execution details for: {}", record.getQueryExecutionId(), ex);
-                        // Return basic info from DynamoDB
-                        return new QueryExecution(
+                .map(record -> Optional.ofNullable(executionById.get(record.getQueryExecutionId()))
+                        .map(this::mapToQueryExecution)
+                        // Athena no longer knows this execution (expired or fetch failed); return what we stored
+                        .orElseGet(() -> new QueryExecution(
                                 record.getQueryExecutionId(),
                                 record.getSqlQuery(),
                                 QueryState.FAILED,
@@ -275,9 +302,7 @@ public class AthenaQueryStore implements QueryStore {
                                 null,
                                 "Unable to fetch query details",
                                 record.getUsername()
-                        );
-                    }
-                })
+                        )))
                 .collect(Collectors.toList());
     }
 
@@ -297,22 +322,26 @@ public class AthenaQueryStore implements QueryStore {
             throw new QueryNotFoundException("No database found for organization: " + organizationName);
         }
 
-        // Get all tables in the database
-        GetTablesRequest request = GetTablesRequest.builder()
-                .catalogId(awsAccountId)
-                .databaseName(databaseName)
-                .build();
-
-        GetTablesResponse response = glueClient.getTables(request);
-
-        List<Table> tables = response.tableList().stream()
-                .map(glueTable -> {
-                    List<Column> columns = glueTable.storageDescriptor().columns().stream()
-                            .map(col -> new Column(col.name(), col.type()))
-                            .collect(Collectors.toList());
-                    return new Table(glueTable.name(), columns);
-                })
-                .collect(Collectors.toList());
+        // Get all tables in the database, following pagination
+        List<Table> tables = new ArrayList<>();
+        String tablesNextToken = null;
+        do {
+            GetTablesResponse response = glueClient.getTables(GetTablesRequest.builder()
+                    .catalogId(awsAccountId)
+                    .databaseName(databaseName)
+                    .nextToken(tablesNextToken)
+                    .build());
+            response.tableList().forEach(glueTable -> {
+                // Views and some table types have no storage descriptor
+                List<Column> columns = Optional.ofNullable(glueTable.storageDescriptor())
+                        .map(storageDescriptor -> storageDescriptor.columns().stream()
+                                .map(col -> new Column(col.name(), col.type()))
+                                .collect(Collectors.toList()))
+                        .orElseGet(List::of);
+                tables.add(new Table(glueTable.name(), columns));
+            });
+            tablesNextToken = response.nextToken();
+        } while (tablesNextToken != null);
 
         return new DatabaseSchema(databaseName, tables);
     }
@@ -327,23 +356,35 @@ public class AthenaQueryStore implements QueryStore {
     }
 
     /**
-     * Validate SQL query to prevent DDL/DML operations.
-     * Defense in depth - IAM permissions are the primary security mechanism.
+     * Validate SQL query: reject DDL/DML operations and references to other organizations' databases.
+     * The query execution context only sets the <em>default</em> database, so fully-qualified
+     * references must be checked here.
      */
-    private void validateSqlQuery(String sqlQuery) {
+    @VisibleForTesting
+    void validateSqlQuery(String sqlQuery, String allowedDatabaseName) {
         if (sqlQuery == null || sqlQuery.trim().isEmpty()) {
             throw new IllegalArgumentException("SQL query cannot be empty");
         }
 
-        // Normalize query for keyword checking (uppercase, remove comments)
-        String normalizedQuery = sqlQuery.toUpperCase();
+        // Strip comments and string literals so keywords hidden in them neither trip nor bypass the checks
+        String strippedQuery = SQL_COMMENTS_AND_LITERALS_PATTERN.matcher(sqlQuery).replaceAll(" ");
 
-        // Check for forbidden keywords
-        for (String keyword : FORBIDDEN_KEYWORDS) {
-            // Use word boundary check to avoid false positives (e.g., "INSERTED" shouldn't match "INSERT")
-            if (normalizedQuery.matches(".*\\b" + keyword + "\\b.*")) {
+        var forbiddenMatcher = FORBIDDEN_KEYWORDS_PATTERN.matcher(strippedQuery);
+        if (forbiddenMatcher.find()) {
+            throw new IllegalArgumentException(
+                    "Query contains forbidden operation: " + forbiddenMatcher.group(1).toUpperCase()
+                    + ". Only SELECT queries are allowed.");
+        }
+
+        // Reject fully-qualified references to any database other than the organization's own
+        var databaseMatcher = DATABASE_PATTERN.matcher(strippedQuery);
+        while (databaseMatcher.find()) {
+            String referencedDatabase = Optional.ofNullable(databaseMatcher.group(1))
+                    .or(() -> Optional.ofNullable(databaseMatcher.group(2)))
+                    .orElseGet(() -> databaseMatcher.group(3));
+            if (!referencedDatabase.equalsIgnoreCase(allowedDatabaseName)) {
                 throw new IllegalArgumentException(
-                        "Query contains forbidden operation: " + keyword + ". Only SELECT queries are allowed.");
+                        "Query references database '" + referencedDatabase + "' which does not belong to your organization.");
             }
         }
     }

@@ -144,6 +144,41 @@ public class AthenaQueryStoreTest extends AbstractTest {
         assertTrue(table.getColumns().stream().anyMatch(c -> c.getName().equals("user_id") && c.getType().equals("string")));
     }
 
+    @Test
+    public void testValidateSqlQuery_allowed() {
+        // Plain SELECTs, own-database qualification, and keywords inside comments/literals are fine
+        athenaQueryStore.validateSqlQuery("SELECT * FROM mytable LIMIT 10", testDatabaseName);
+        athenaQueryStore.validateSqlQuery("SELECT * FROM \"" + testDatabaseName + "\".mytable", testDatabaseName);
+        athenaQueryStore.validateSqlQuery("SELECT * FROM `" + testDatabaseName + "`.mytable", testDatabaseName);
+        athenaQueryStore.validateSqlQuery("SELECT 'DROP TABLE x' AS quoted FROM mytable", testDatabaseName);
+        athenaQueryStore.validateSqlQuery("SELECT * FROM mytable -- DELETE nothing\n", testDatabaseName);
+        athenaQueryStore.validateSqlQuery("SELECT a\nFROM mytable\nWHERE b = 1", testDatabaseName);
+    }
+
+    @Test
+    public void testValidateSqlQuery_forbiddenKeywords() {
+        assertThrows(IllegalArgumentException.class, () ->
+                athenaQueryStore.validateSqlQuery("DROP TABLE mytable", testDatabaseName));
+        // Regression: keyword on a later line used to pass (String.matches without DOTALL)
+        assertThrows(IllegalArgumentException.class, () ->
+                athenaQueryStore.validateSqlQuery("SELECT * FROM mytable;\nDROP TABLE mytable", testDatabaseName));
+        assertThrows(IllegalArgumentException.class, () ->
+                athenaQueryStore.validateSqlQuery("/* harmless */ DELETE FROM mytable", testDatabaseName));
+        assertThrows(IllegalArgumentException.class, () ->
+                athenaQueryStore.validateSqlQuery("   ", testDatabaseName));
+    }
+
+    @Test
+    public void testValidateSqlQuery_crossDatabaseRejected() {
+        assertThrows(IllegalArgumentException.class, () ->
+                athenaQueryStore.validateSqlQuery("SELECT * FROM \"someone-elses-db\".\"secrets\"", testDatabaseName));
+        assertThrows(IllegalArgumentException.class, () ->
+                athenaQueryStore.validateSqlQuery("SELECT * FROM otherdb.secrets", testDatabaseName));
+        assertThrows(IllegalArgumentException.class, () ->
+                athenaQueryStore.validateSqlQuery(
+                        "SELECT * FROM mytable a JOIN otherdb.secrets b ON a.id = b.id", testDatabaseName));
+    }
+
     // Helper methods
 
     private void createTestDatabase(String databaseName) {

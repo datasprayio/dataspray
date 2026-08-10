@@ -11,7 +11,7 @@
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS"), WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -24,6 +24,7 @@ package io.dataspray.store.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import io.dataspray.singletable.StringSerdeUtil;
 import io.dataspray.store.CustomerDynamoStore;
 import io.dataspray.store.StateStore;
@@ -32,11 +33,27 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.*;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.dynamodb.model.ReturnValue;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
+import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -47,6 +64,10 @@ public class DynamoStateStore implements StateStore {
     private static final String TTL_ATTR = "ttlInEpochSec";
     private static final String PK_ATTR = "pk";
     private static final String SK_ATTR = "sk";
+    /** Attribute names that make up the item key/TTL; user attributes must never overwrite these. */
+    private static final ImmutableSet<String> RESERVED_ATTRS = ImmutableSet.of(PK_ATTR, SK_ATTR, TTL_ATTR);
+    /** Bound the number of Scan pages fetched per listState call. */
+    private static final int LIST_MAX_PAGES = 10;
 
     @Inject
     DynamoDbClient dynamo;
@@ -63,12 +84,6 @@ public class DynamoStateStore implements StateStore {
 
         String tableName = customerDynamoStore.getTableName(organizationName);
 
-        // Build scan request
-        ScanRequest.Builder scanBuilder = ScanRequest.builder()
-                .tableName(tableName)
-                .limit(limit);
-
-        // Build filter expression
         Map<String, String> expressionNames = new HashMap<>();
         Map<String, AttributeValue> expressionValues = new HashMap<>();
 
@@ -85,38 +100,46 @@ public class DynamoStateStore implements StateStore {
             filterExpression += " AND begins_with(#pk, :prefix)";
         }
 
-        scanBuilder
-                .filterExpression(filterExpression)
-                .expressionAttributeNames(expressionNames)
-                .expressionAttributeValues(expressionValues);
+        // Scan's limit applies before the filter, so keep paging until we have enough matches
+        List<StateEntry> entries = new ArrayList<>();
+        Optional<Map<String, AttributeValue>> exclusiveStartKey = cursor.map(this::decodeCursor);
+        Optional<String> nextCursor = Optional.empty();
+        for (int page = 0; page < LIST_MAX_PAGES && entries.size() < limit; page++) {
+            ScanRequest.Builder scanBuilder = ScanRequest.builder()
+                    .tableName(tableName)
+                    .limit(limit)
+                    .filterExpression(filterExpression)
+                    .expressionAttributeNames(expressionNames)
+                    .expressionAttributeValues(expressionValues);
+            exclusiveStartKey.ifPresent(scanBuilder::exclusiveStartKey);
 
-        // Add cursor for pagination
-        cursor.ifPresent(c -> {
-            Map<String, AttributeValue> startKey = decodeCursor(c);
-            scanBuilder.exclusiveStartKey(startKey);
-        });
+            ScanResponse response;
+            try {
+                response = dynamo.scan(scanBuilder.build());
+            } catch (ResourceNotFoundException e) {
+                log.warn("Table not found for organization: {}", organizationName);
+                return new WithCursor<>(ImmutableList.of(), Optional.empty());
+            }
 
-        ScanResponse response;
-        try {
-            response = dynamo.scan(scanBuilder.build());
-        } catch (ResourceNotFoundException e) {
-            log.warn("Table not found for organization: {}", organizationName);
-            return new WithCursor<>(ImmutableList.of(), Optional.empty());
+            response.items().stream()
+                    .limit((long) limit - entries.size())
+                    .map(this::itemToStateEntry)
+                    .forEach(entries::add);
+
+            exclusiveStartKey = Optional.ofNullable(response.lastEvaluatedKey())
+                    .filter(k -> !k.isEmpty());
+            nextCursor = exclusiveStartKey.map(this::encodeCursor);
+            if (exclusiveStartKey.isEmpty()) {
+                break;
+            }
         }
-
-        List<StateEntry> entries = response.items().stream()
-                .map(this::itemToStateEntry)
-                .collect(Collectors.toList());
-
-        Optional<String> nextCursor = Optional.ofNullable(response.lastEvaluatedKey())
-                .filter(k -> !k.isEmpty())
-                .map(this::encodeCursor);
 
         return new WithCursor<>(entries, nextCursor);
     }
 
     @Override
     public Optional<StateEntry> getState(String organizationName, String[] keyParts) {
+        validateKeyParts(keyParts);
         String tableName = customerDynamoStore.getTableName(organizationName);
         String mergedKey = StringSerdeUtil.mergeStrings(keyParts);
 
@@ -146,40 +169,67 @@ public class DynamoStateStore implements StateStore {
             ImmutableMap<String, Object> attributes,
             Optional<Long> ttlInSec) {
 
+        validateKeyParts(keyParts);
+        attributes.keySet().forEach(attrName -> {
+            if (attrName.isBlank()) {
+                throw new IllegalArgumentException("Attribute names must not be blank");
+            }
+            if (RESERVED_ATTRS.contains(attrName)) {
+                throw new IllegalArgumentException("Attribute name is reserved: " + attrName);
+            }
+        });
+
         String tableName = customerDynamoStore.getTableName(organizationName);
         String mergedKey = StringSerdeUtil.mergeStrings(keyParts);
 
-        Map<String, AttributeValue> item = new HashMap<>();
-        item.put(PK_ATTR, AttributeValue.fromS(mergedKey));
-        item.put(SK_ATTR, AttributeValue.fromS(SORT_KEY_VALUE));
-
-        // Add TTL if provided
-        ttlInSec.ifPresent(ttl -> {
-            long ttlEpoch = Instant.now().plusSeconds(ttl).getEpochSecond();
-            item.put(TTL_ATTR, AttributeValue.fromN(String.valueOf(ttlEpoch)));
-        });
-
-        // Convert attributes to DynamoDB format
-        attributes.forEach((key, value) -> {
-            item.put(key, marshalValue(value));
-        });
-
-        try {
-            dynamo.putItem(PutItemRequest.builder()
-                    .tableName(tableName)
-                    .item(item)
-                    .build());
-        } catch (ResourceNotFoundException e) {
-            log.error("Table not found for organization: {}. State tables must be created via task deployment.", organizationName);
-            throw new RuntimeException("State table not found for organization: " + organizationName, e);
+        // Update only the supplied attributes so concurrent writers (e.g. a running task) don't lose theirs
+        Map<String, String> expressionNames = new HashMap<>();
+        Map<String, AttributeValue> expressionValues = new HashMap<>();
+        List<String> setClauses = new ArrayList<>();
+        int i = 0;
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            String nameRef = "#a" + i;
+            String valueRef = ":v" + i;
+            expressionNames.put(nameRef, entry.getKey());
+            expressionValues.put(valueRef, marshalValue(entry.getValue()));
+            setClauses.add(nameRef + " = " + valueRef);
+            i++;
+        }
+        if (ttlInSec.isPresent()) {
+            long ttlEpoch = Instant.now().plusSeconds(ttlInSec.get()).getEpochSecond();
+            expressionNames.put("#ttl", TTL_ATTR);
+            expressionValues.put(":ttl", AttributeValue.fromN(String.valueOf(ttlEpoch)));
+            setClauses.add("#ttl = :ttl");
         }
 
-        return getState(organizationName, keyParts)
-                .orElseThrow(() -> new RuntimeException("Failed to retrieve state after upsert"));
+        UpdateItemRequest.Builder updateBuilder = UpdateItemRequest.builder()
+                .tableName(tableName)
+                .key(Map.of(
+                        PK_ATTR, AttributeValue.fromS(mergedKey),
+                        SK_ATTR, AttributeValue.fromS(SORT_KEY_VALUE)
+                ))
+                .returnValues(ReturnValue.ALL_NEW);
+        if (!setClauses.isEmpty()) {
+            updateBuilder
+                    .updateExpression("SET " + String.join(", ", setClauses))
+                    .expressionAttributeNames(expressionNames)
+                    .expressionAttributeValues(expressionValues);
+        }
+
+        UpdateItemResponse response;
+        try {
+            response = dynamo.updateItem(updateBuilder.build());
+        } catch (ResourceNotFoundException e) {
+            log.warn("Table not found for organization: {}. State tables must be created via task deployment.", organizationName);
+            throw new StateTableNotFoundException(organizationName, e);
+        }
+
+        return itemToStateEntry(response.attributes());
     }
 
     @Override
     public void deleteState(String organizationName, String[] keyParts) {
+        validateKeyParts(keyParts);
         String tableName = customerDynamoStore.getTableName(organizationName);
         String mergedKey = StringSerdeUtil.mergeStrings(keyParts);
 
@@ -199,6 +249,17 @@ public class DynamoStateStore implements StateStore {
 
     // Helper methods
 
+    private void validateKeyParts(String[] keyParts) {
+        if (keyParts == null || keyParts.length == 0) {
+            throw new IllegalArgumentException("Key parts must not be empty");
+        }
+        for (String keyPart : keyParts) {
+            if (keyPart == null || keyPart.isEmpty()) {
+                throw new IllegalArgumentException("Key parts must not contain empty values");
+            }
+        }
+    }
+
     private StateEntry itemToStateEntry(Map<String, AttributeValue> item) {
         String mergedKey = item.get(PK_ATTR).s();
         String[] keyParts = StringSerdeUtil.unMergeString(mergedKey);
@@ -207,16 +268,16 @@ public class DynamoStateStore implements StateStore {
                 .filter(attr -> attr.n() != null)
                 .map(attr -> Long.parseLong(attr.n()));
 
-        ImmutableMap<String, Object> attributes = item.entrySet().stream()
-                .filter(e -> !e.getKey().equals(PK_ATTR)
-                        && !e.getKey().equals(SK_ATTR)
-                        && !e.getKey().equals(TTL_ATTR))
-                .collect(ImmutableMap.toImmutableMap(
-                        Map.Entry::getKey,
-                        e -> unmarshalValue(e.getValue())
-                ));
+        Map<String, Object> attributes = new HashMap<>();
+        item.forEach((attrName, attrValue) -> {
+            if (!RESERVED_ATTRS.contains(attrName)) {
+                attributes.put(attrName, unmarshalValue(attrValue));
+            }
+        });
 
-        return new StateEntry(keyParts, mergedKey, attributes, ttl);
+        // Drop null values which ImmutableMap cannot hold (NUL-typed attributes)
+        attributes.values().removeIf(Objects::isNull);
+        return new StateEntry(keyParts, mergedKey, ImmutableMap.copyOf(attributes), ttl);
     }
 
     private AttributeValue marshalValue(Object value) {
@@ -229,23 +290,11 @@ public class DynamoStateStore implements StateStore {
         } else if (value instanceof Boolean) {
             return AttributeValue.fromBool((Boolean) value);
         } else if (value instanceof Collection) {
-            // Try to handle as string set
             Collection<?> coll = (Collection<?>) value;
-            if (coll.isEmpty()) {
-                return AttributeValue.fromSs(Collections.emptyList());
-            }
-            Object first = coll.iterator().next();
-            if (first instanceof String) {
-                @SuppressWarnings("unchecked")
-                Collection<String> stringColl = (Collection<String>) coll;
-                return AttributeValue.fromSs(new ArrayList<>(stringColl));
-            } else if (first instanceof Number) {
-                List<String> numbers = coll.stream()
-                        .map(Object::toString)
-                        .collect(Collectors.toList());
-                return AttributeValue.fromNs(numbers);
-            }
-            // Fall through to generic handling
+            // Preserve order and duplicates by storing as a DynamoDB list
+            return AttributeValue.fromL(coll.stream()
+                    .map(this::marshalValue)
+                    .collect(Collectors.toList()));
         } else if (value instanceof Map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) value;
@@ -262,28 +311,30 @@ public class DynamoStateStore implements StateStore {
     }
 
     private Object unmarshalValue(AttributeValue attr) {
-        if (attr.s() != null) {
-            return attr.s();
-        } else if (attr.n() != null) {
-            return new BigDecimal(attr.n());
-        } else if (attr.bool() != null) {
-            return attr.bool();
-        } else if (attr.ss() != null && !attr.ss().isEmpty()) {
-            return ImmutableList.copyOf(attr.ss());
-        } else if (attr.ns() != null && !attr.ns().isEmpty()) {
-            return attr.ns().stream()
+        // Use the explicit type: SDK v2 auto-construct collections are non-null even when absent
+        return switch (attr.type()) {
+            case S -> attr.s();
+            case N -> new BigDecimal(attr.n());
+            case BOOL -> attr.bool();
+            case SS -> ImmutableList.copyOf(attr.ss());
+            case NS -> attr.ns().stream()
                     .map(BigDecimal::new)
                     .collect(ImmutableList.toImmutableList());
-        } else if (attr.m() != null) {
-            return attr.m().entrySet().stream()
-                    .collect(ImmutableMap.toImmutableMap(
-                            Map.Entry::getKey,
-                            e -> unmarshalValue(e.getValue())
-                    ));
-        } else if (attr.nul() != null && attr.nul()) {
-            return null;
-        }
-        return null;
+            case BS -> attr.bs().stream()
+                    .map(bytes -> Base64.getEncoder().encodeToString(bytes.asByteArray()))
+                    .collect(ImmutableList.toImmutableList());
+            case B -> Base64.getEncoder().encodeToString(attr.b().asByteArray());
+            case L -> attr.l().stream()
+                    .map(this::unmarshalValue)
+                    .collect(Collectors.toList());
+            case M -> {
+                Map<String, Object> map = new HashMap<>();
+                attr.m().forEach((key, val) -> map.put(key, unmarshalValue(val)));
+                yield map;
+            }
+            case NUL -> null;
+            default -> null;
+        };
     }
 
     private String encodeCursor(Map<String, AttributeValue> lastKey) {
@@ -293,7 +344,12 @@ public class DynamoStateStore implements StateStore {
     }
 
     private Map<String, AttributeValue> decodeCursor(String cursor) {
-        String pk = new String(Base64.getDecoder().decode(cursor));
+        String pk;
+        try {
+            pk = new String(Base64.getDecoder().decode(cursor));
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Invalid cursor", ex);
+        }
         return Map.of(
                 PK_ATTR, AttributeValue.fromS(pk),
                 SK_ATTR, AttributeValue.fromS(SORT_KEY_VALUE)

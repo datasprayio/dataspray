@@ -54,16 +54,26 @@ public class OrganizationResource extends AbstractResource implements Organizati
         // Validate your username
         String username = getUsername().orElseThrow(() -> new ClientErrorException(403));
 
+        // Validate the name before it flows into IAM ARNs, queue/table/database names
+        if (!OrganizationStore.isOrganizationNameValid(organizationName)) {
+            throw new ClientErrorException(
+                    "Organization name must be 3-64 characters of letters, numbers or underscores",
+                    400);
+        }
+
         // Create organization
         try {
             organizationStore.createOrganization(organizationName, username);
         } catch (GroupExistsException ex) {
             throw new ClientErrorException(409, ex);
+        } catch (IllegalArgumentException ex) {
+            throw new ClientErrorException(ex.getMessage(), 400);
         }
     }
 
     @Override
     public void inviteToOrganization(String organizationName, String email, String username) {
+        verifyOrganizationMember(organizationName);
 
         if (Strings.isNullOrEmpty(username)) {
             // Check that the user exists given the email
@@ -89,6 +99,7 @@ public class OrganizationResource extends AbstractResource implements Organizati
 
     @Override
     public String rateLimitGet(String organizationName) {
+        verifyOrganizationMember(organizationName);
         UsageKeyType usageKeyType = organizationStore.getMetadata(organizationName)
                 .getUsageKeyType();
 
@@ -105,6 +116,12 @@ public class OrganizationResource extends AbstractResource implements Organizati
 
     @Override
     public void rateLimitAdjust(String organizationName, RateLimitLevel level) {
+        verifyOrganizationMember(organizationName);
+        // Only the organization author may change rate limits until proper roles exist
+        String username = getUsername().orElseThrow(() -> new ClientErrorException(403));
+        if (!username.equals(organizationStore.getMetadata(organizationName).getAuthorUsername())) {
+            throw new ClientErrorException("Only the organization owner can adjust rate limits", 403);
+        }
         @Nullable UsageKeyType usageKeyType = switch (level) {
             case DEFAULT -> UsageKeyType.ORGANIZATION;
             case ONE -> UsageKeyType.ORGANIZATION_ONE_RPS;

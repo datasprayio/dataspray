@@ -1,4 +1,0 @@
-fastapi==0.79.0
-mangum==0.15.0
-pydantic==1.8.2
-pytest==7.1.2

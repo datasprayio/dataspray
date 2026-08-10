@@ -67,7 +67,7 @@ public class Env implements Runnable {
             // Profiles
             Optional<String> defaultProfileName = configState.getDefaultProfileName();
             for (Entry<String, Organization> profile : configState.getOrganizationByProfileName().entrySet()) {
-                boolean isDefault = profile.getValue().getName().equals(defaultProfileName.orElse(null));
+                boolean isDefault = profile.getKey().equals(defaultProfileName.orElse(null));
                 if (profile.getValue().getEndpoint().isPresent()) {
                     log.info("\n{}\t{}\t{}\t{}", isDefault, profile.getKey(), profile.getValue().getName(), profile.getValue().getEndpoint().get());
                 } else {

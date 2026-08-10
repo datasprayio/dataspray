@@ -20,25 +20,20 @@
  * SOFTWARE.
  */
 
-package io.dataspray.devenv;
+import {APIGatewayProxyStructuredResultV2} from 'aws-lambda';
 
-import com.google.common.base.Strings;
-import io.dataspray.devenv.DevEnvManager.DevEnv;
-import lombok.extern.slf4j.Slf4j;
+/**
+ * Throw from a web handler to short-circuit processing and respond with the given HTTP response.
+ * <p>
+ * Mirrors the Java runner's io.dataspray.runner.dto.web.HttpResponseException.
+ */
+export class HttpResponseException extends Error {
 
-@Slf4j
-public class CdkEntrypoint {
-    /** CDK entrypoint */
-    public static void main(String... args) {
-        if (args.length != 2 || Strings.isNullOrEmpty(args[0])) {
-            log.error("Usage: <stack_id> <ecr_image_tag>");
-            System.exit(1);
-        }
-        String stackId = args[0];
-        String imageTag = args[1];
+    readonly response: APIGatewayProxyStructuredResultV2;
 
-        DevEnvManager devEnvManager = new DevEnvManagerImpl();
-        DevEnv devEnv = devEnvManager.create(stackId, imageTag);
-        log.info("Created dev env: {}", devEnv);
+    constructor(response: APIGatewayProxyStructuredResultV2) {
+        super(`HTTP response exception with status ${response.statusCode}`);
+        this.response = response;
+        Object.setPrototypeOf(this, HttpResponseException.prototype);
     }
 }

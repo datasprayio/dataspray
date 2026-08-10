@@ -15,6 +15,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: topicName
         in: path
         required: true

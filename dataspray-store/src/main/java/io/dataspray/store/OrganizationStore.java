@@ -36,6 +36,18 @@ import java.util.Optional;
 
 public interface OrganizationStore {
 
+    /**
+     * Organization names flow into IAM policy ARNs, SQS queue names (where a dash is the
+     * separator), DynamoDB table names, Glue database names and S3 prefixes; and the API Gateway
+     * authorizer strips characters outside [A-Za-z0-9-_] when building policy ARNs, so any name
+     * containing other characters would collide with its stripped form. Restrict accordingly.
+     */
+    String ORGANIZATION_NAME_VALIDATION = "^[a-zA-Z0-9_]{3,64}$";
+
+    static boolean isOrganizationNameValid(String organizationName) {
+        return organizationName != null && organizationName.matches(ORGANIZATION_NAME_VALIDATION);
+    }
+
     GroupType createOrganization(String organizationName, String authorUsername);
 
     ImmutableSet<Organization> getOrganizationsForUser(String username);

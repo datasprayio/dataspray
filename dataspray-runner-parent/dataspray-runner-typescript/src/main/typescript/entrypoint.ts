@@ -32,6 +32,7 @@ import {RawCoordinator, RawCoordinatorImpl} from './rawCoordinator';
 import {MessageMetadata} from "./message";
 import {StateManagerFactoryImpl} from "./stateManagerFactory";
 import {toHttpRequest} from "./httpRequest";
+import {HttpResponseException} from "./httpResponse";
 
 export abstract class Entrypoint {
 
@@ -85,6 +86,7 @@ export abstract class Entrypoint {
                         msg.body,
                         RawCoordinatorImpl.get());
             } catch (error) {
+                console.error('Failed to process SQS message', error);
                 sqsBatchResponse.batchItemFailures
                         .push({itemIdentifier: msg.messageId});
             }
@@ -94,9 +96,19 @@ export abstract class Entrypoint {
     }
 
     handleHttpRequest = async (request: LambdaFunctionURLEvent): Promise<APIGatewayProxyStructuredResultV2> => {
-        const response = await this.web(
-                toHttpRequest(request),
-                RawCoordinatorImpl.get());
+        let response: APIGatewayProxyStructuredResultV2;
+        try {
+            response = await this.web(
+                    toHttpRequest(request),
+                    RawCoordinatorImpl.get());
+        } catch (error) {
+            if (error instanceof HttpResponseException) {
+                response = error.response;
+            } else {
+                console.error('Failed to process HTTP request', error);
+                response = {statusCode: 500, body: 'Fatal failure'};
+            }
+        }
         console.log(`${request.requestContext.http.method} ${request.rawPath} ${response.statusCode} ${response.body?.length || 0} ${request.requestContext.http.userAgent}`)
         return response;
     }

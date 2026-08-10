@@ -34,11 +34,22 @@ import {
 import {getClient} from '../util/dataSprayClientWrapper';
 import {useAlerts} from '../util/useAlerts';
 import {S3Object} from 'dataspray-client';
+import {getErrorMessage} from '../util/errorUtil';
 
 interface Props {
     organizationName: string;
     topicName: string;
 }
+
+/**
+ * Row shown in the browser table: either a real S3 object (file) or a virtual
+ * folder derived client-side from the next `/`-separated segment of the keys
+ * relative to the current prefix (the S3 listing is done without a delimiter,
+ * so it never returns folder entries itself).
+ */
+type BrowserItem =
+    | { itemType: 'folder'; name: string; fullPrefix: string }
+    | ({ itemType: 'file' } & S3Object);
 
 export function S3FileBrowser({organizationName, topicName}: Props) {
     const [files, setFiles] = useState<S3Object[]>([]);
@@ -65,7 +76,7 @@ export function S3FileBrowser({organizationName, topicName}: Props) {
         } catch (e: any) {
             addAlert({
                 type: 'error',
-                content: `Failed to load files: ${e?.message || 'Unknown error'}`
+                content: `Failed to load files: ${await getErrorMessage(e)}`
             });
         } finally {
             setIsLoading(false);
@@ -92,7 +103,7 @@ export function S3FileBrowser({organizationName, topicName}: Props) {
         } catch (e: any) {
             addAlert({
                 type: 'error',
-                content: `Failed to generate download URL: ${e?.message || 'Unknown error'}`
+                content: `Failed to generate download URL: ${await getErrorMessage(e)}`
             });
         }
     };
@@ -136,6 +147,33 @@ export function S3FileBrowser({organizationName, topicName}: Props) {
         return { filename: key };
     };
 
+    // Derive virtual folders from the next `/`-separated segment of each key
+    // relative to the current prefix; deduped folders are listed before files.
+    const items: BrowserItem[] = React.useMemo(() => {
+        const folderNames = new Set<string>();
+        const fileItems: BrowserItem[] = [];
+        for (const file of files) {
+            const relativeKey = file.key.startsWith(prefix)
+                ? file.key.substring(prefix.length)
+                : file.key;
+            const slashIndex = relativeKey.indexOf('/');
+            if (slashIndex >= 0) {
+                // Key is nested deeper; surface only its next segment as a folder
+                folderNames.add(relativeKey.substring(0, slashIndex));
+            } else if (relativeKey) {
+                fileItems.push({itemType: 'file', ...file});
+            }
+        }
+        return [
+            ...Array.from(folderNames).sort().map(name => ({
+                itemType: 'folder' as const,
+                name,
+                fullPrefix: prefix + name + '/',
+            })),
+            ...fileItems,
+        ];
+    }, [files, prefix]);
+
     return (
         <Container
             header={
@@ -162,11 +200,10 @@ export function S3FileBrowser({organizationName, topicName}: Props) {
                         <Link
                             variant="primary"
                             onFollow={() => {
-                                // Go up one level
-                                const parts = prefix.split('/');
-                                parts.pop(); // Remove last part
-                                parts.pop(); // Remove empty string after trailing slash
-                                setPrefix(parts.length > 0 ? parts.join('/') + '/' : '');
+                                // Go up exactly one segment
+                                const segments = prefix.split('/').filter(segment => segment.length > 0);
+                                segments.pop();
+                                setPrefix(segments.length > 0 ? segments.join('/') + '/' : '');
                                 setCurrentPage(1);
                             }}
                         >
@@ -183,43 +220,38 @@ export function S3FileBrowser({organizationName, topicName}: Props) {
                         {
                             id: 'actions',
                             header: 'Actions',
-                            cell: (item: S3Object) => (
+                            cell: (item: BrowserItem) => item.itemType === 'file' ? (
                                 <Button
                                     variant="inline-icon"
                                     iconName="download"
                                     onClick={() => handleDownload(item.key)}
                                     ariaLabel="Download file"
                                 />
-                            ),
+                            ) : null,
                             width: 80
                         },
                         {
                             id: 'size',
                             header: 'Size',
-                            cell: (item: S3Object) => formatBytes(item.size),
+                            cell: (item: BrowserItem) => item.itemType === 'file'
+                                ? formatBytes(item.size)
+                                : '-',
                             width: 120
                         },
                         {
                             id: 'key',
                             header: 'Name',
-                            cell: (item: S3Object) => {
-                                const displayName = prefix
-                                    ? item.key.substring(prefix.length)
-                                    : item.key;
-
-                                // Check if this looks like a folder (ends with multiple path parts)
-                                const parts = displayName.split('/');
-                                if (parts.length > 1 && parts[parts.length - 1] === '') {
-                                    // It's a folder-like prefix
+                            cell: (item: BrowserItem) => {
+                                if (item.itemType === 'folder') {
                                     return (
                                         <Link
                                             variant="primary"
                                             onFollow={() => {
-                                                setPrefix(item.key);
+                                                setPrefix(item.fullPrefix);
                                                 setCurrentPage(1);
                                             }}
                                         >
-                                            📁 {parts[0]}/
+                                            📁 {item.name}/
                                         </Link>
                                     );
                                 }
@@ -233,29 +265,29 @@ export function S3FileBrowser({organizationName, topicName}: Props) {
                         {
                             id: 'lastModified',
                             header: 'Last Modified',
-                            cell: (item: S3Object) => formatDate(item.lastModified),
+                            cell: (item: BrowserItem) => item.itemType === 'file'
+                                ? formatDate(item.lastModified)
+                                : '-',
                             width: 200
                         },
                         {
                             id: 'topic',
                             header: 'Topic',
-                            cell: (item: S3Object) => {
-                                const parsed = parseS3Key(item.key);
-                                return parsed.topic || '-';
-                            },
+                            cell: (item: BrowserItem) => item.itemType === 'file'
+                                ? (parseS3Key(item.key).topic || '-')
+                                : '-',
                             width: 150
                         },
                         {
                             id: 'retention',
                             header: 'Retention',
-                            cell: (item: S3Object) => {
-                                const parsed = parseS3Key(item.key);
-                                return parsed.retention || '-';
-                            },
+                            cell: (item: BrowserItem) => item.itemType === 'file'
+                                ? (parseS3Key(item.key).retention || '-')
+                                : '-',
                             width: 150
                         }
                     ]}
-                    items={files}
+                    items={items}
                     loading={isLoading}
                     loadingText="Loading files..."
                     empty={

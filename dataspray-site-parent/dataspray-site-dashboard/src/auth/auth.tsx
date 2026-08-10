@@ -83,7 +83,8 @@ export const useAuth = (behavior?: 'redirect-if-signed-in' | 'redirect-if-signed
 
     // Setup auto-refreshing of tokens
     useEffect(() => {
-        refreshTokenIfNecessary(onSignIn, authResult, accessToken, idToken);
+        // Returns a cleanup that cancels the scheduled refresh (if one was scheduled)
+        return refreshTokenIfNecessary(onSignIn, authResult, accessToken, idToken);
     }, [accessToken, authResult, idToken, onSignIn]);
 
     // Fetch current organization name or pick first one from the group
@@ -157,7 +158,7 @@ const refreshTokenIfNecessary = (
         authResult?: AuthResult | null | undefined,
         accessToken?: CognitoAccessToken,
         idToken?: CognitoIdToken,
-) => {
+): (() => void) | undefined => {
 
     // Only refresh if we have tokens and we're not already refreshing them
     const jti = accessToken?.jti;
@@ -173,9 +174,8 @@ const refreshTokenIfNecessary = (
         // Refresh when 59/60 of the lifetime of the token has passed
         const refreshAtInEpochSec = issuedInEpochSec + (expiresInEpochSec - issuedInEpochSec) * 59 / 60;
         const refreshInMs = (refreshAtInEpochSec - nowInEpochSec) * 1000;
-        console.debug(`Token ${jti} is ${Math.floor((nowInEpochSec - issuedInEpochSec) * 100 / (expiresInEpochSec - issuedInEpochSec))}% through its lifetime, refreshing in ${Math.floor(refreshInMs / 1000 / 60)}min`);
 
-        setTimeout(async () => {
+        const timerId = setTimeout(async () => {
             if (jti !== refreshingJti) return;
 
             try {
@@ -196,7 +196,6 @@ const refreshTokenIfNecessary = (
                 }
 
                 // Persist token
-                console.debug('Successfully refreshed token')
                 onSignIn(signInResponse.result);
 
             } catch (e: any) {
@@ -204,7 +203,17 @@ const refreshTokenIfNecessary = (
                 return;
             }
         }, refreshInMs);
+
+        // Cleanup: cancel the scheduled refresh and release the lock so a
+        // subsequent effect run can re-schedule it
+        return () => {
+            clearTimeout(timerId);
+            if (refreshingJti === jti) {
+                refreshingJti = undefined;
+            }
+        };
     }
+    return undefined;
 }
 
 const signUp = async (

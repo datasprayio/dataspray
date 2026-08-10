@@ -80,12 +80,7 @@ public class DataSprayClientImpl implements DataSprayClient {
 
     @Override
     public HealthApi health() {
-        io.dataspray.stream.control.client.ApiClient apiClient = new io.dataspray.stream.control.client.ApiClient();
-        access.getEndpoint().ifPresent(apiClient::setBasePath);
-        apiClient.setHttpClient(getHttpClient(false, false));
-        apiClient.setApiKeyPrefix("apikey");
-        apiClient.setApiKey(access.getApiKey());
-        return new HealthApi(apiClient);
+        return new HealthApi(createControlApiClient());
     }
 
     @Override
@@ -100,22 +95,21 @@ public class DataSprayClientImpl implements DataSprayClient {
 
     @Override
     public ControlApi control() {
-        io.dataspray.stream.control.client.ApiClient apiClient = new io.dataspray.stream.control.client.ApiClient();
-        access.getEndpoint().ifPresent(apiClient::setBasePath);
-        apiClient.setHttpClient(getHttpClient(false, false));
-        apiClient.setApiKeyPrefix("apikey");
-        apiClient.setApiKey(access.getApiKey());
-        return new ControlApi(apiClient);
+        return new ControlApi(createControlApiClient());
     }
 
     @Override
     public QueryApi query() {
+        return new QueryApi(createControlApiClient());
+    }
+
+    private io.dataspray.stream.control.client.ApiClient createControlApiClient() {
         io.dataspray.stream.control.client.ApiClient apiClient = new io.dataspray.stream.control.client.ApiClient();
         access.getEndpoint().ifPresent(apiClient::setBasePath);
         apiClient.setHttpClient(getHttpClient(false, false));
         apiClient.setApiKeyPrefix("apikey");
         apiClient.setApiKey(access.getApiKey());
-        return new QueryApi(apiClient);
+        return apiClient;
     }
 
     @Override

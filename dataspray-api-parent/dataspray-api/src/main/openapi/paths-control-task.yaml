@@ -215,6 +215,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
     requestBody:
       required: true
       content:
@@ -239,6 +240,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: cursor
         in: query
         schema:
@@ -260,6 +262,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: taskId
         in: path
         required: true
@@ -283,6 +286,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: taskId
         in: path
         required: true
@@ -323,6 +327,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: taskId
         in: path
         required: true
@@ -350,6 +355,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: taskId
         in: path
         required: true
@@ -372,6 +378,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: taskId
         in: path
         required: true
@@ -399,6 +406,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: taskId
         in: path
         required: true
@@ -421,6 +429,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: taskId
         in: path
         required: true
@@ -443,6 +452,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: taskId
         in: path
         required: true

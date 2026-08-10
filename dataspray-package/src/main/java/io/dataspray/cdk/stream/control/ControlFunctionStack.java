@@ -42,6 +42,7 @@ import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
@@ -119,8 +120,11 @@ public class ControlFunctionStack extends ApiFunctionStack {
         bucketCodeName = getConstructId("code-upload-bucket");
         bucketCode = Bucket.Builder.create(this, getConstructId("code-upload-bucket"))
                 .bucketName(bucketCodeName)
-                .autoDeleteObjects(false)
+                // DESTROY without autoDelete would fail stack deletion on any in-flight upload
+                .autoDeleteObjects(true)
                 .removalPolicy(RemovalPolicy.DESTROY)
+                .encryption(BucketEncryption.S3_MANAGED)
+                .enforceSsl(true)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .lifecycleRules(ImmutableList.of(
                         LifecycleRule.builder()
@@ -213,6 +217,22 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         "arn:aws:dynamodb:" + getRegion() + ":" + getAccount() + ":table/" + LambdaDeployerImpl.CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(getDeployEnv()) + "*"
                 ))
                 .build());
+        // Allow item-level access to customer state tables (state browser endpoints)
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+                .sid(getConstructIdCamelCase("CustomerManagementDynamoData"))
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "dynamodb:GetItem",
+                        "dynamodb:Query",
+                        "dynamodb:Scan",
+                        "dynamodb:PutItem",
+                        "dynamodb:UpdateItem",
+                        "dynamodb:DeleteItem"))
+                .resources(ImmutableList.of(
+                        "arn:aws:dynamodb:" + getRegion() + ":" + getAccount() + ":table/" + LambdaDeployerImpl.CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(getDeployEnv()) + "*",
+                        "arn:aws:dynamodb:" + getRegion() + ":" + getAccount() + ":table/" + LambdaDeployerImpl.CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(getDeployEnv()) + "*/index/*"
+                ))
+                .build());
         // Allow management of customer's Glue database
         getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
                 .sid(getConstructIdCamelCase("CustomerManagementGlue"))
@@ -246,7 +266,9 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         "athena:GetQueryExecution",
                         "athena:GetQueryResults",
                         "athena:StopQueryExecution"))
-                .resources(ImmutableList.of("*"))
+                // Queries run in the default workgroup; scope to it instead of the whole account
+                .resources(ImmutableList.of(
+                        "arn:aws:athena:" + getRegion() + ":" + getAccount() + ":workgroup/primary"))
                 .build());
         // Allow S3 access for Athena to read data and write results
         getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
@@ -267,9 +289,19 @@ public class ControlFunctionStack extends ApiFunctionStack {
                 .effect(Effect.ALLOW)
                 .actions(ImmutableList.of(
                         "lambda:ListFunctions",
-                        "lambda:ListEventSourceMappings",
+                        "lambda:ListEventSourceMappings"))
+                .resources(ImmutableList.of("*"))
+                .build());
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+                .sid(getConstructIdCamelCase("CustomerManagementLambdaCreateEventSourceMapping"))
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
                         "lambda:CreateEventSourceMapping"))
                 .resources(ImmutableList.of("*"))
+                // Resource must be * (mappings are addressed by UUID) but the target function can be conditioned
+                .conditions(java.util.Map.of("ArnLike", java.util.Map.of(
+                        "lambda:FunctionArn",
+                        "arn:aws:lambda:" + getRegion() + ":" + getAccount() + ":function:" + LambdaDeployerImpl.FUN_NAME_WILDCARD_GETTER.apply(getDeployEnv()))))
                 .build());
 
         getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
@@ -293,11 +325,23 @@ public class ControlFunctionStack extends ApiFunctionStack {
                         "iam:GetRole",
                         "iam:GetRolePolicy",
                         "iam:PassRole",
-                        "iam:CreateRole",
                         "iam:PutRolePolicy"))
                 .resources(ImmutableList.of(
                         "arn:aws:iam::" + getAccount() + ":policy/" + LambdaDeployerImpl.CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "*",
                         "arn:aws:iam::" + getAccount() + ":role/" + LambdaDeployerImpl.CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(getDeployEnv()) + "*"))
+                .build());
+        // CreateRole separately: require the permission boundary so a compromised control plane
+        // cannot mint an unbounded customer role
+        getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
+                .sid(getConstructIdCamelCase("CustomerManagementIamCreateRole"))
+                .effect(Effect.ALLOW)
+                .actions(ImmutableList.of(
+                        "iam:CreateRole"))
+                .resources(ImmutableList.of(
+                        "arn:aws:iam::" + getAccount() + ":role/" + LambdaDeployerImpl.CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(getDeployEnv()) + "*"))
+                .conditions(java.util.Map.of("StringEquals", java.util.Map.of(
+                        "iam:PermissionsBoundary",
+                        "arn:aws:iam::" + getAccount() + ":policy/" + customerFunctionPermissionBoundaryManagedPolicyName)))
                 .build());
 
         getApiFunction().getFunction().addToRolePolicy(PolicyStatement.Builder.create()
