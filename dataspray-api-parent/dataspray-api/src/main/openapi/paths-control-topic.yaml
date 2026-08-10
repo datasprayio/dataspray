@@ -170,6 +170,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
     responses:
       '200':
         description: Ok
@@ -188,6 +189,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: expectedVersion
         in: query
         required: false
@@ -225,6 +227,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: topicName
         in: path
         required: true
@@ -258,6 +261,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: topicName
         in: path
         required: true
@@ -286,6 +290,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: topicName
         in: path
         required: true
@@ -309,6 +314,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: topicName
         in: path
         required: true
@@ -338,6 +344,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: topicName
         in: path
         required: true
@@ -366,6 +373,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: topicName
         in: path
         required: true
@@ -414,6 +422,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: topicName
         in: path
         required: true

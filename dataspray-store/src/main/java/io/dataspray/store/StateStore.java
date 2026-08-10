@@ -36,6 +36,13 @@ import java.util.Optional;
  */
 public interface StateStore {
 
+    /** Thrown when the organization's state table does not exist yet (created on first task deployment). */
+    class StateTableNotFoundException extends RuntimeException {
+        public StateTableNotFoundException(String organizationName, Throwable cause) {
+            super("State table not found for organization: " + organizationName, cause);
+        }
+    }
+
     @Value
     class StateEntry {
         @NonNull String[] keyParts;

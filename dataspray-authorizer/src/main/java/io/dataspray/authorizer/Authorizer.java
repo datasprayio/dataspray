@@ -118,7 +118,8 @@ public class Authorizer implements RequestHandler<APIGatewayCustomAuthorizerEven
                 // Parse authorization as our API Key
                 String apiKeyStr = authorizationValue.substring(7);
                 ApiAccess apiAccess = apiAccessStore.getApiAccessByApiKey(apiKeyStr, true)
-                        .orElseThrow(() -> new ApiGatewayUnauthorized("invalid apikey found: " + apiKeyStr));
+                        // Do not include the key itself: the reason ends up in logs
+                        .orElseThrow(() -> new ApiGatewayUnauthorized("invalid apikey"));
 
                 // Extract access info
                 username = apiAccess.getOwnerUsername();

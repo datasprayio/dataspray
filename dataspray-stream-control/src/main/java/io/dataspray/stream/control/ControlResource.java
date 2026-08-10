@@ -108,18 +108,21 @@ public class ControlResource extends AbstractResource implements ControlApi {
 
     @Override
     public TaskStatus activateVersion(String organizationName, String taskId, String version) {
+        verifyOrganizationMember(organizationName);
         deployer.switchVersion(organizationName, taskId, version);
         return getStatus(organizationName, taskId);
     }
 
     @Override
     public TaskStatus delete(String organizationName, String taskId) {
+        verifyOrganizationMember(organizationName);
         deployer.delete(organizationName, taskId);
         return getStatus(organizationName, taskId);
     }
 
     @Override
     public TaskVersion deployVersion(String organizationName, String taskId, String sessionId, String invocationType, DeployRequest deployRequest) {
+        verifyOrganizationMember(organizationName);
         log.info("Deploying task {} org {} session {} invocationType {}", taskId, organizationName, sessionId, invocationType);
         Session session = jobStore.startSession(sessionId);
         try {
@@ -151,7 +154,9 @@ public class ControlResource extends AbstractResource implements ControlApi {
                                                     .allowHeaders(cors.getAllowHeaders())
                                                     .exposeHeaders(cors.getExposeHeaders())
                                                     .allowCredentials(cors.getAllowCredentials())
-                                                    .maxAge(cors.getMaxAge().intValue())
+                                                    .maxAge(Optional.ofNullable(cors.getMaxAge())
+                                                            .map(Number::intValue)
+                                                            .orElse(0))
                                                     .build()))),
                     Optional.ofNullable(deployRequest.getDynamoState()).map(state -> new LambdaDeployer.DynamoState(state.getLsiCount(), state.getGsiCount())),
                     deployRequest.getSwitchToNow());
@@ -178,6 +183,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
 
     @Override
     public DeployVersionCheckResponse deployVersionCheck(String organizationName, String taskId, String sessionId) {
+        verifyOrganizationMember(organizationName);
 
         Optional<Session> sessionOpt = jobStore.check(sessionId);
 
@@ -209,6 +215,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
 
     @Override
     public TaskVersions getVersions(String organizationName, String taskId) {
+        verifyOrganizationMember(organizationName);
         Versions versions = deployer.getVersions(organizationName, taskId);
         return new TaskVersions(
                 toTaskStatus(taskId, Optional.of(versions.getStatus())),
@@ -223,23 +230,27 @@ public class ControlResource extends AbstractResource implements ControlApi {
 
     @Override
     public TaskStatus pause(String organizationName, String taskId) {
+        verifyOrganizationMember(organizationName);
         deployer.pause(organizationName, taskId);
         return getStatus(organizationName, taskId);
     }
 
     @Override
     public TaskStatus resume(String organizationName, String taskId) {
+        verifyOrganizationMember(organizationName);
         deployer.resume(organizationName, taskId);
         return getStatus(organizationName, taskId);
     }
 
     @Override
     public TaskStatus status(String organizationName, String taskId) {
+        verifyOrganizationMember(organizationName);
         return getStatus(organizationName, taskId);
     }
 
     @Override
     public TaskStatuses statusAll(String organizationName, String cursor) {
+        verifyOrganizationMember(organizationName);
         WithCursor<ImmutableList<Status>> result = deployer.statusAll(organizationName, cursor);
         return new TaskStatuses(
                 result.getData().stream()
@@ -250,27 +261,32 @@ public class ControlResource extends AbstractResource implements ControlApi {
 
     @Override
     public Topics getTopics(String organizationName) {
+        verifyOrganizationMember(organizationName);
         TopicStore.Topics topics = topicStore.getTopics(organizationName, true);
         return modelToTargets(organizationName, topics);
     }
 
     @Override
     public Topics updateDefaultTopic(String organizationName, UpdateDefaultTopicRequest updateDefaultTopicRequest, Long expectVersion) {
+        verifyOrganizationMember(organizationName);
         return modelToTopics(topicStore.updateDefaultTopic(organizationName, Optional.ofNullable(updateDefaultTopicRequest.getTopic()).map(this::topicToModel), updateDefaultTopicRequest.getAllowUndefined(), Optional.ofNullable(expectVersion)));
     }
 
     @Override
     public Topics updateTopic(String organizationName, String topicName, Topic topic, Long expectVersion) {
+        verifyOrganizationMember(organizationName);
         return modelToTopics(topicStore.updateTopic(organizationName, topicName, topicToModel(topic), Optional.ofNullable(expectVersion)));
     }
 
     @Override
     public Topics deleteTopic(String organizationName, String topicName, Long expectVersion) {
+        verifyOrganizationMember(organizationName);
         return modelToTopics(topicStore.deleteTopic(organizationName, topicName, Optional.ofNullable(expectVersion)));
     }
 
     @Override
     public TopicSchema getTopicSchema(String organizationName, String topicName) {
+        verifyOrganizationMember(organizationName);
         return batchStore.getTableDefinition(organizationName, topicName).map(tableDefinition ->
                         new TopicSchema(
                                 tableDefinition.getSchema(),
@@ -281,18 +297,20 @@ public class ControlResource extends AbstractResource implements ControlApi {
 
     @Override
     public void updateTopicSchema(String organizationName, String topicName, UpdateTopicSchemaRequest updateTopicSchemaRequest) {
+        verifyOrganizationMember(organizationName);
         Batch batch = topicStore.getTopic(organizationName, topicName, false)
                 .orElseThrow(() -> new NotFoundException("Topic not found: " + topicName))
                 .getBatch()
-                .orElseThrow(() -> new WebApplicationException(
-                        "Topic " + topicName + " does not have batch enabled",
-                        Response.Status.NO_CONTENT));
+                .orElseThrow(() -> new BadRequestException(
+                        "Topic " + topicName + " does not have batch enabled"));
         batchStore.setTableDefinition(
                 organizationName,
                 topicName,
                 DataFormat.fromValue(updateTopicSchemaRequest.getFormat().name()),
                 updateTopicSchemaRequest.getSchema(),
                 batch.getRetention());
+        // Void JAX-RS method: throwing a 2xx WebApplicationException is the only way to produce
+        // the spec's 201 status without changing the generated interface
         throw new WebApplicationException(Response.Status.CREATED);
     }
 
@@ -300,10 +318,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
     public TopicSchema recalculateTopicSchema(String organizationName, String topicName) {
         log.info("Recalculate topic schema request for organization: {}, topic: {}", organizationName, topicName);
 
-        // Validate organization access
-        if (!getOrganizationNames().contains(organizationName)) {
-            throw new jakarta.ws.rs.ForbiddenException("Access denied to organization: " + organizationName);
-        }
+        verifyOrganizationMember(organizationName);
 
         Batch batch = topicStore.getTopic(organizationName, topicName, false)
                 .orElseThrow(() -> new NotFoundException("Topic not found: " + topicName))
@@ -329,10 +344,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
     public TopicFilesResponse listTopicFiles(String organizationName, String topicName, String prefix, Integer maxResults, String nextToken) {
         log.info("List topic files request for organization: {}, topic: {}, prefix: {}", organizationName, topicName, prefix);
 
-        // Validate organization access
-        if (!getOrganizationNames().contains(organizationName)) {
-            throw new jakarta.ws.rs.ForbiddenException("Access denied to organization: " + organizationName);
-        }
+        verifyOrganizationMember(organizationName);
 
         Batch batch = topicStore.getTopic(organizationName, topicName, false)
                 .orElseThrow(() -> new NotFoundException("Topic not found: " + topicName))
@@ -366,10 +378,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
     public FileDownloadUrlResponse getTopicFileDownloadUrl(String organizationName, String topicName, String key) {
         log.info("Get file download URL request for organization: {}, topic: {}, key: {}", organizationName, topicName, key);
 
-        // Validate organization access
-        if (!getOrganizationNames().contains(organizationName)) {
-            throw new jakarta.ws.rs.ForbiddenException("Access denied to organization: " + organizationName);
-        }
+        verifyOrganizationMember(organizationName);
 
         Batch batch = topicStore.getTopic(organizationName, topicName, false)
                 .orElseThrow(() -> new NotFoundException("Topic not found: " + topicName))
@@ -396,6 +405,7 @@ public class ControlResource extends AbstractResource implements ControlApi {
 
     @Override
     public UploadCodeResponse uploadCode(String organizationName, UploadCodeRequest uploadCodeRequest) {
+        verifyOrganizationMember(organizationName);
         UploadCodeClaim uploadCodeClaim = deployer.uploadCode(organizationName, uploadCodeRequest.getTaskId(), uploadCodeRequest.getContentLengthBytes());
         return new UploadCodeResponse(
                 jobStore.createSession().getSessionId(),
@@ -546,19 +556,21 @@ public class ControlResource extends AbstractResource implements ControlApi {
     public io.dataspray.stream.control.model.StateListResponse listState(String organizationName, io.dataspray.stream.control.model.StateListRequest request) {
         log.info("Listing state for org: {}, keyPrefix: {}", organizationName, request.getKeyPrefix());
 
-        // Validate organization access
-        if (!getOrganizationNames().contains(organizationName)) {
-            log.warn("User attempted to access state for unauthorized organization: {}", organizationName);
-            throw new NotFoundException("Organization not found or access denied");
-        }
+        verifyOrganizationMember(organizationName);
 
-        WithCursor<java.util.List<io.dataspray.store.StateStore.StateEntry>> result = stateStore.listState(
-                organizationName,
-                Optional.ofNullable(request.getKeyPrefix())
-                        .map(list -> list.toArray(new String[0])),
-                Optional.ofNullable(request.getCursor()),
-                Optional.ofNullable(request.getLimit()).orElse(50)
-        );
+        int limit = Math.min(Math.max(1, Optional.ofNullable(request.getLimit()).orElse(50)), 1000);
+        WithCursor<java.util.List<io.dataspray.store.StateStore.StateEntry>> result;
+        try {
+            result = stateStore.listState(
+                    organizationName,
+                    Optional.ofNullable(request.getKeyPrefix())
+                            .map(list -> list.toArray(new String[0])),
+                    Optional.ofNullable(request.getCursor()),
+                    limit
+            );
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException(ex.getMessage(), ex);
+        }
 
         java.util.List<io.dataspray.stream.control.model.StateEntry> entries = result.getData().stream()
                 .map(this::toApiStateEntry)
@@ -574,36 +586,42 @@ public class ControlResource extends AbstractResource implements ControlApi {
     public io.dataspray.stream.control.model.StateEntry getState(String organizationName, io.dataspray.stream.control.model.StateGetRequest request) {
         log.info("Getting state for org: {}, key: {}", organizationName, request.getKeyParts());
 
-        // Validate organization access
-        if (!getOrganizationNames().contains(organizationName)) {
-            log.warn("User attempted to access state for unauthorized organization: {}", organizationName);
-            throw new NotFoundException("Organization not found or access denied");
-        }
+        verifyOrganizationMember(organizationName);
 
-        return stateStore.getState(
-                organizationName,
-                request.getKeyParts().toArray(new String[0])
-        )
-                .map(this::toApiStateEntry)
-                .orElseThrow(() -> new NotFoundException("State not found"));
+        try {
+            return stateStore.getState(
+                            organizationName,
+                            requireKeyParts(request.getKeyParts())
+                    )
+                    .map(this::toApiStateEntry)
+                    .orElseThrow(() -> new NotFoundException("State not found"));
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException(ex.getMessage(), ex);
+        }
     }
 
     @Override
     public io.dataspray.stream.control.model.StateEntry upsertState(String organizationName, io.dataspray.stream.control.model.StateUpsertRequest request) {
         log.info("Upserting state for org: {}, key: {}", organizationName, request.getKeyParts());
 
-        // Validate organization access
-        if (!getOrganizationNames().contains(organizationName)) {
-            log.warn("User attempted to access state for unauthorized organization: {}", organizationName);
-            throw new NotFoundException("Organization not found or access denied");
-        }
+        verifyOrganizationMember(organizationName);
 
-        io.dataspray.store.StateStore.StateEntry result = stateStore.upsertState(
-                organizationName,
-                request.getKeyParts().toArray(new String[0]),
-                com.google.common.collect.ImmutableMap.copyOf(request.getAttributes()),
-                Optional.ofNullable(request.getTtlInSec())
-        );
+        if (request.getAttributes() == null) {
+            throw new BadRequestException("Attributes are required");
+        }
+        io.dataspray.store.StateStore.StateEntry result;
+        try {
+            result = stateStore.upsertState(
+                    organizationName,
+                    requireKeyParts(request.getKeyParts()),
+                    com.google.common.collect.ImmutableMap.copyOf(request.getAttributes()),
+                    Optional.ofNullable(request.getTtlInSec())
+            );
+        } catch (IllegalArgumentException | NullPointerException ex) {
+            throw new BadRequestException(ex.getMessage(), ex);
+        } catch (io.dataspray.store.StateStore.StateTableNotFoundException ex) {
+            throw new NotFoundException(ex.getMessage(), ex);
+        }
 
         return toApiStateEntry(result);
     }
@@ -612,16 +630,23 @@ public class ControlResource extends AbstractResource implements ControlApi {
     public void deleteState(String organizationName, io.dataspray.stream.control.model.StateDeleteRequest request) {
         log.info("Deleting state for org: {}, key: {}", organizationName, request.getKeyParts());
 
-        // Validate organization access
-        if (!getOrganizationNames().contains(organizationName)) {
-            log.warn("User attempted to access state for unauthorized organization: {}", organizationName);
-            throw new NotFoundException("Organization not found or access denied");
-        }
+        verifyOrganizationMember(organizationName);
 
-        stateStore.deleteState(
-                organizationName,
-                request.getKeyParts().toArray(new String[0])
-        );
+        try {
+            stateStore.deleteState(
+                    organizationName,
+                    requireKeyParts(request.getKeyParts())
+            );
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException(ex.getMessage(), ex);
+        }
+    }
+
+    private String[] requireKeyParts(java.util.List<String> keyParts) {
+        if (keyParts == null || keyParts.isEmpty()) {
+            throw new BadRequestException("Key parts are required");
+        }
+        return keyParts.toArray(new String[0]);
     }
 
     private io.dataspray.stream.control.model.StateEntry toApiStateEntry(io.dataspray.store.StateStore.StateEntry entry) {

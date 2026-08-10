@@ -22,7 +22,6 @@
 
 package io.dataspray.stream.ingest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
@@ -73,8 +72,6 @@ public class IngestResource extends AbstractResource implements IngestApi {
     CustomerLogger customerLog;
     @Inject
     CustomerMessageSerde customerMessageSerde;
-
-    private final ObjectMapper jsonSerde = new ObjectMapper();
 
     /**
      * <b>Ingest a message.</b>

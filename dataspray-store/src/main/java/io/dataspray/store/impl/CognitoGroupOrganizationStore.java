@@ -93,6 +93,10 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
     @Override
     public GroupType createOrganization(String organizationName, String authorUsername) {
 
+        if (!OrganizationStore.isOrganizationNameValid(organizationName)) {
+            throw new IllegalArgumentException("Organization name must match " + ORGANIZATION_NAME_VALIDATION);
+        }
+
         // Create group
         OrganizationMetadata organizationMetadata = new OrganizationMetadata(authorUsername, null);
         GroupType group = cognitoClient.createGroup(CreateGroupRequest.builder()
@@ -165,9 +169,9 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
 
     @Override
     public void addGlueDatabaseToOrganization(String organizationName, String databaseName) {
-        String groupRoleArn = getOrCreateGroupRoleArn(organizationName);
+        String groupRoleName = getOrCreateGroupRoleName(organizationName);
         String policyName = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "GroupGlue" + StringUtil.camelCase(databaseName, true);
-        iamUtil.ensurePolicyAttachedToRole(groupRoleArn, policyName, gson.toJson(Map.of(
+        iamUtil.ensurePolicyAttachedToRole(groupRoleName, policyName, gson.toJson(Map.of(
                 "Version", "2012-10-17",
                 "Statement", List.of(Map.of(
                                 "Effect", "Allow",
@@ -215,7 +219,7 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
                                         "s3:PutObject"
                                 ),
                                 "Resource",
-                                "arn:aws:s3:::"
+                                "arn:aws:s3:::" + etlBucketName + "/"
                                 + ETL_BUCKET_ATHENA_RESULTS_PREFIX
                                         .replace("!{partitionKeyFromQuery:" + ETL_PARTITION_KEY_ORGANIZATION + "}", organizationName)
                                 + "/*"
@@ -227,9 +231,9 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
 
     @Override
     public void addDynamoToOrganization(String organizationName, String tableName) {
-        String groupRoleArn = getOrCreateGroupRoleArn(organizationName);
+        String groupRoleName = getOrCreateGroupRoleName(organizationName);
         String policyName = CUSTOMER_FUNCTION_POLICY_PATH_PREFIX + "GroupDynamo" + StringUtil.camelCase(tableName, true);
-        iamUtil.ensurePolicyAttachedToRole(groupRoleArn, policyName, gson.toJson(Map.of(
+        iamUtil.ensurePolicyAttachedToRole(groupRoleName, policyName, gson.toJson(Map.of(
                 "Version", "2012-10-17",
                 "Statement", List.of(Map.of(
                         "Effect", "Allow",
@@ -246,22 +250,27 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
                                 "dynamodb:UpdateItem",
                                 "dynamodb:BatchWriteItem",
                                 "dynamodb:DeleteItem"),
-                        "Resource", Map.of(
+                        "Resource", List.of(
                                 "arn:aws:dynamodb:" + awsRegion + ":" + awsAccountId + ":table/" + tableName,
                                 "arn:aws:dynamodb:" + awsRegion + ":" + awsAccountId + ":table/" + tableName + "/index/*"
                         ))))));
     }
 
-    private String getOrCreateGroupRoleArn(String organizationName) {
+    private String getOrCreateGroupRoleName(String organizationName) {
         Optional<String> roleArnOpt = Optional.ofNullable(Strings.emptyToNull(getGroup(organizationName)
                 .roleArn()));
 
         if (roleArnOpt.isPresent()) {
-            return roleArnOpt.get();
+            // IAM APIs take the bare role name, not the ARN
+            String roleArn = roleArnOpt.get();
+            return roleArn.substring(roleArn.lastIndexOf('/') + 1);
         }
 
-        String groupRoleName = CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + organizationName + "-" + "-group-role";
-        String groupRoleArn = iamUtil.getOrCreateRole(groupRoleName, customerFunctionPermissionBoundaryName, "Auto-created for group role for org " + organizationName)
+        String groupRoleName = CUSTOMER_FUN_DYNAMO_OR_ROLE_NAME_PREFIX_GETTER.apply(deployEnv) + organizationName + "-group-role";
+        // This role is assumed via Cognito Identity federation, not by Lambda
+        String groupRoleArn = iamUtil.getOrCreateRole(groupRoleName, customerFunctionPermissionBoundaryName,
+                        "Auto-created for group role for org " + organizationName,
+                        "cognito-identity.amazonaws.com", "sts:AssumeRoleWithWebIdentity")
                 .arn();
 
         // Attach role to Cognito group
@@ -271,6 +280,6 @@ public class CognitoGroupOrganizationStore implements OrganizationStore {
                 .roleArn(groupRoleArn)
                 .build());
 
-        return groupRoleArn;
+        return groupRoleName;
     }
 }

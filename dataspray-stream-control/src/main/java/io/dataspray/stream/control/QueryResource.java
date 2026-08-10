@@ -56,11 +56,10 @@ public class QueryResource extends AbstractResource implements QueryApi {
     public SubmitQueryResponse submitQuery(String organizationName, SubmitQueryRequest request) {
         log.info("Submit query request for organization: {}", organizationName);
 
-        // Validate organization access
-        validateOrganizationAccess(organizationName);
+        verifyOrganizationMember(organizationName);
 
-        // Get username from security context
-        String username = getUsername().orElse("unknown");
+        // Get username from security context; fail closed rather than attributing to "unknown"
+        String username = getUsername().orElseThrow(() -> new jakarta.ws.rs.ForbiddenException("Username required"));
 
         // Submit query
         try {
@@ -77,8 +76,7 @@ public class QueryResource extends AbstractResource implements QueryApi {
     public QueryExecutionStatus getQueryStatus(String organizationName, String queryExecutionId) {
         log.debug("Get query status: {} for organization: {}", queryExecutionId, organizationName);
 
-        // Validate organization access
-        validateOrganizationAccess(organizationName);
+        verifyOrganizationMember(organizationName);
 
         // Get query execution
         try {
@@ -96,8 +94,7 @@ public class QueryResource extends AbstractResource implements QueryApi {
                                                 String nextToken, Integer maxResults) {
         log.debug("Get query results: {} for organization: {}", queryExecutionId, organizationName);
 
-        // Validate organization access
-        validateOrganizationAccess(organizationName);
+        verifyOrganizationMember(organizationName);
 
         // Get results
         try {
@@ -105,7 +102,7 @@ public class QueryResource extends AbstractResource implements QueryApi {
                     organizationName,
                     queryExecutionId,
                     Optional.ofNullable(nextToken),
-                    Optional.ofNullable(maxResults).orElse(100)
+                    Math.min(Math.max(1, Optional.ofNullable(maxResults).orElse(100)), 1000)
             );
             return mapToApiModel(page);
         } catch (IllegalArgumentException ex) {
@@ -119,14 +116,13 @@ public class QueryResource extends AbstractResource implements QueryApi {
     public QueryHistoryResponse getQueryHistory(String organizationName, Integer maxResults) {
         log.debug("Get query history for organization: {}", organizationName);
 
-        // Validate organization access
-        validateOrganizationAccess(organizationName);
+        verifyOrganizationMember(organizationName);
 
         // Get history
         try {
             var history = queryStore.getQueryHistory(
                     organizationName,
-                    Optional.ofNullable(maxResults).orElse(50)
+                    Math.min(Math.max(1, Optional.ofNullable(maxResults).orElse(50)), 200)
             );
             return new QueryHistoryResponse(
                     history.stream()
@@ -144,8 +140,7 @@ public class QueryResource extends AbstractResource implements QueryApi {
     public DatabaseSchemaResponse getDatabaseSchema(String organizationName) {
         log.debug("Get database schema for organization: {}", organizationName);
 
-        // Validate organization access
-        validateOrganizationAccess(organizationName);
+        verifyOrganizationMember(organizationName);
 
         // Get schema
         try {
@@ -155,16 +150,6 @@ public class QueryResource extends AbstractResource implements QueryApi {
             throw new BadRequestException(ex.getMessage(), ex);
         } catch (QueryNotFoundException ex) {
             throw new NotFoundException(ex.getMessage(), ex);
-        }
-    }
-
-    /**
-     * Validate that the current user has access to the organization.
-     */
-    private void validateOrganizationAccess(String organizationName) {
-        // Check if user belongs to this organization
-        if (!getOrganizationNames().contains(organizationName)) {
-            throw new jakarta.ws.rs.ForbiddenException("Access denied to organization: " + organizationName);
         }
     }
 

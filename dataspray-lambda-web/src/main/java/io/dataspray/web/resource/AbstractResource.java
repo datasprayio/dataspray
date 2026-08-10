@@ -26,6 +26,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import io.dataspray.common.authorizer.AuthorizerConstants;
 import io.quarkus.amazon.lambda.http.model.AwsProxyRequest;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -79,5 +80,19 @@ public abstract class AbstractResource {
                 .flatMap(names -> ImmutableSet.copyOf(names.split(",")).stream())
                 .filter(Predicate.not(Strings::isNullOrEmpty))
                 .collect(ImmutableSet.toImmutableSet());
+    }
+
+    /**
+     * Assert the caller is a member of the given organization.
+     * <p>
+     * Every organization-scoped endpoint must call this: the API Gateway authorizer policy is a
+     * first line of defense but is cached and ARN-sanitized, so it must not be relied on alone.
+     */
+    protected void verifyOrganizationMember(String organizationName) {
+        if (Strings.isNullOrEmpty(organizationName)
+            || !getOrganizationNames().contains(organizationName)) {
+            log.warn("User {} attempted to access unauthorized organization {}", getUsername().orElse("<anonymous>"), organizationName);
+            throw new ForbiddenException("Access denied to organization: " + organizationName);
+        }
     }
 }

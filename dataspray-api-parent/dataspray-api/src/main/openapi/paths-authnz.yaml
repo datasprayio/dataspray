@@ -335,6 +335,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
     responses:
       '200':
         description: Ok
@@ -352,6 +353,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
     requestBody:
       required: true
       content:
@@ -375,6 +377,7 @@ components:
         required: true
         schema:
           type: string
+          pattern: '^[a-zA-Z0-9_]{3,64}$'
       - name: apiKeyId
         in: path
         required: true

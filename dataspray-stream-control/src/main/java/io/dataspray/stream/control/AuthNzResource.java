@@ -96,6 +96,7 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
 
     @Override
     public ApiKeyWithSecret createApiKey(String organizationName, ApiKeyCreate apiKeyCreate) {
+        verifyOrganizationMember(organizationName);
         UsageKeyType apiAccessKeyType = organizationStore.getMetadata(organizationName)
                 .getUsageKeyType();
         ApiAccess apiAccess = apiAccessStore.createApiAccessForUser(
@@ -113,6 +114,7 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
 
     @Override
     public ApiKeys listApiKeys(String organizationName) {
+        verifyOrganizationMember(organizationName);
         return new ApiKeys(apiAccessStore.getApiAccessesByUser(
                         organizationName,
                         getUsername().orElseThrow(ForbiddenException::new)).stream()
@@ -122,9 +124,13 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
 
     @Override
     public void revokeApiKey(String organizationName, String apiKeyId) {
+        verifyOrganizationMember(organizationName);
+        String username = getUsername().orElseThrow(ForbiddenException::new);
         apiAccessStore.getApiAccessesById(
                         organizationName,
                         apiKeyId)
+                // Only the key's owner may revoke it
+                .filter(apiAccess -> username.equals(apiAccess.getOwnerUsername()))
                 .map(ApiAccess::getApiKey)
                 .ifPresent(apiAccessStore::revokeApiKey);
     }
@@ -148,7 +154,7 @@ public class AuthNzResource extends AbstractResource implements AuthNzApi {
 
         // Pre-validate password as a parameter to Cognito, password policy will be evaluated by Cognito itself
         // Password must match regex otherwise Cognito throws InvalidParameterException instead of InvalidPasswordException
-        if (!request.getPassword().matches("^[\\S]+.*[\\S]+$")) {
+        if (request.getPassword() == null || !request.getPassword().matches("^[\\S]+.*[\\S]+$")) {
             return SignUpResponse.builder()
                     .errorMsg("Password is too short or contains spaces at the beginning or end.")
                     .build();
