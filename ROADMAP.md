@@ -60,25 +60,13 @@ This document tracks all known areas needing attention, incomplete features, and
 
 ### Remote Workspace Feature
 
-**Status**: Multiple components unimplemented
-**Location**: `dataspray-remote-workspace/src/main/java/io/dataspray/devenv/DevEnvManagerImpl.java:35-48`
+**Status**: Removed 2026-08-10
+**Location**: was `dataspray-remote-workspace/` (recoverable from git history)
 
-**Context**: The remote development workspace feature is designed to provide cloud-based development environments but is largely unimplemented.
-
-**Impact**: Users cannot spin up remote development environments. The entire `dataspray-remote-workspace` module is non-functional.
-
-**Required Work**:
-1. **EFS Storage Setup** (line 38) - Create and configure EFS filesystem for persistent storage
-2. **Lambda Container Image** (line 35) - Build and push container image for Lambda
-3. **Function Endpoint Creation** (line 41) - Set up Lambda function URL or API Gateway endpoint
-4. **CloudFront Updates** (line 44) - Configure CDN distribution for the workspace
-5. **Environment Lifecycle Management** - Start, stop, snapshot operations
-
-**Related Files**:
-- `dataspray-remote-workspace/src/main/java/io/dataspray/devenv/DevEnvRunnerStack.java` - CDK stack
-- `dataspray-remote-workspace/src/main/java/io/dataspray/devenv/DevEnvImageRepoStack.java` - ECR repository stack
-- `dataspray-remote-workspace/src/main/container/Dockerfile` - Container definition
-- `dataspray-remote-workspace/Makefile` - Build targets (also has TODOs)
+**Context**: The module was never part of the Maven reactor, untouched since 2024-12, and its
+manager/Python implementation were non-functional stubs. Deleted during the 2026-08 review to
+avoid confusion; the CDK stacks (EFS + Lambda container + function URL) were the most complete
+part and can be resurrected from history if the feature is revived.
 
 ---
 
@@ -232,23 +220,6 @@ This document tracks all known areas needing attention, incomplete features, and
 
 ---
 
-### Dashboard Organization Form Error Handling
-
-**Status**: Incomplete
-**Location**: `dataspray-site-parent/dataspray-site-dashboard/src/pages/organization/create.tsx:65`
-
-**Context**: The organization creation form's `onSubmit` handler has a TODO for using `setError` to display validation errors.
-
-**Impact**: Users don't see form validation errors. Poor UX for organization creation flow.
-
-**Required Work**:
-1. Implement `setError` calls for validation failures
-2. Display error messages in form UI
-3. Handle API error responses
-4. Add success/failure notifications
-
----
-
 ## P3 - Low Priority / Infrastructure
 
 ### Docker ARM64 Architecture
@@ -350,9 +321,79 @@ This document tracks all known areas needing attention, incomplete features, and
 
 ---
 
+## New Items (from 2026-08-10 full review)
+
+### P1 - GitHub OIDC for deploys
+`deploy.yml` uses long-lived static AWS keys. Set up an OIDC provider + deploy role in AWS, then
+switch to `aws-actions/configure-aws-credentials` role assumption. Requires AWS-side changes.
+
+### P1 - Decouple artifact publishing from infra deploys
+`mvn clean deploy` both publishes every artifact to OSSRH/npm and deploys infrastructure; every
+master push does both. Split into separate lifecycle steps or workflows.
+
+### P1 - Cognito hardening decisions
+`AuthNzStack`: advanced security OFF (costs money to enable - needs a call), account recovery NONE,
+24h access tokens, ADMIN_USER_PASSWORD auth flow (passwords transit the control lambda). Also the
+dashboard persists the refresh token in sessionStorage. Revisit deliberately.
+
+### P2 - Native lambda architecture from build host
+`FunctionStack.detectNativeArch()` picks the deployed Lambda architecture from the build machine's
+`os.arch` - an ARM Mac vs x86 CI runner silently changes the artifact. Make it explicit.
+
+### P2 - Frontend test harness
+Zero JS tests and no runner configured (Maven only runs `pnpm lint`). Add vitest + RTL or
+Playwright, starting with `errorUtil`, auth flows, and the Athena query page.
+
+### P2 - CDK template assertions
+`DatasprayStackTest` deploys only dns + singletable against Moto and asserts only stack names.
+Add `Template.fromStack(...)` assertions for the IAM-heavy stacks.
+
+### P2 - CLI parity with API
+The CLI covers ~17 of 42 API operations. Missing: state (list/get/upsert/delete), topics CRUD,
+S3 file browsing, auth/apikey and organization commands - all already implemented server-side.
+
+### P2 - Schema inference quality
+All fields are typed `string` and sampling reads the lexicographically-first (oldest) S3 keys.
+Infer real types and sample recent partitions. `docs/schema-inference-design.md` status label is
+also stale relative to the commit that added it.
+
+### P3 - Predictable API Gateway key values
+Usage-plan `ApiKey` values are deterministic strings. Safe today only because the key source is
+`AUTHORIZER`; randomize before ever switching key source to `HEADER`.
+
+### P3 - Authorizer policy cache
+API Gateway caches authorizer policies for 5 minutes; org membership/key revocation lags by up to
+that. Reduce TTL or accept and document.
+
+### P3 - Publish dataspray-runner 0.0.9 to npm
+Local TS runner version is 0.0.9 but npm has 0.0.8; the generated-project template pins 0.0.8 on
+purpose. After publishing, bump `package.json.merge.mustache`.
+
+---
+
 ## Recently Completed
 
 _This section tracks items that have been addressed. Move items here when completed._
+
+### 2026-08-10 full review fixes
+- Tenant isolation: organization name validation (creation + OpenAPI patterns), org-membership
+  checks on every org-scoped endpoint, Athena cross-database rejection + SQL blocklist fixes,
+  S3 download prefix guard, owner-scoped API key revocation, author-only rate limit adjustment
+- State store: UpdateItem-based upsert, reserved attribute rejection, type-correct unmarshalling,
+  paged listState, missing DynamoDB data-action IAM grant for the control lambda
+- Org role IAM bug cluster fixed (invalid policy JSON, missing bucket in ARN, role ARN vs name,
+  Cognito federation trust policy)
+- CDK: Athena scoped to workgroup, CreateEventSourceMapping conditioned on customer functions,
+  permission boundary enforced via IAM condition, usage-plan throttle tiers corrected, staging
+  CORS locked down, 1-month log retention, S3 encryption + enforceSSL
+- CI: test.yml gating inverted-logic fix; macos-skipTests/skipITs activation fix; dataspray-package
+  version/AWS-profile hardcodes removed
+- Dashboard: Athena query polling + pagination, real error message parsing, S3 browser folder
+  navigation, auth refresh timer cleanup, home page, dead code/deps removal
+- CLI: parallel deploy executor fix, env/profile config bugs, bounded query polling, meaningful
+  CliTest; core: dead code + orphaned schema removal; TS runner error handling
+- Tests: DynamoStateStore, SQL validation, S3 prefix guard, org name validation (15 new tests)
+- Removed dead `dataspray-remote-workspace` module (was not in the reactor; stubs only)
 
 ---
 
