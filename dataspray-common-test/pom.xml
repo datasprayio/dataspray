@@ -129,6 +129,8 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
+            <!-- Override Quarkus BOM: 1.21.3 pins Docker API 1.32 which Docker >= 28 rejects -->
+            <version>1.21.4</version>
         </dependency>
     </dependencies>
 </project>
