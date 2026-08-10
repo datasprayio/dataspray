@@ -49,6 +49,7 @@ import {
     QueryResultsResponse
 } from "dataspray-client";
 import {formatBytes, formatDuration, getStatusType, truncate} from "../../../util/queryUtil";
+import {getErrorMessage} from "../../../util/errorUtil";
 
 
 const LakePage: NextPageWithLayout = () => {
@@ -127,7 +128,15 @@ const LakePage: NextPageWithLayout = () => {
                 nextToken,
                 maxResults: 100
             });
-            setQueryResults(results);
+            setQueryResults(prev => (nextToken && prev)
+                // Loading more: append rows, keep columns, take the new nextToken
+                ? {
+                    ...prev,
+                    rows: [...(prev.rows || []), ...(results.rows || [])],
+                    nextToken: results.nextToken,
+                }
+                // First page: replace entirely
+                : results);
         } catch (e: any) {
             console.error('Failed to load results:', e);
             addAlert({type: 'error', content: 'Failed to load query results'});
@@ -151,6 +160,9 @@ const LakePage: NextPageWithLayout = () => {
             } else if (status.state === 'FAILED') {
                 addAlert({type: 'error', content: `Query failed: ${status.errorMessage}`});
                 setIsExecuting(false);
+            } else if (status.state === 'CANCELLED') {
+                addAlert({type: 'warning', content: 'Query was cancelled'});
+                setIsExecuting(false);
             }
         } catch (e: any) {
             console.error('Failed to check query status:', e);
@@ -162,7 +174,7 @@ const LakePage: NextPageWithLayout = () => {
     // Poll for query status if query is running
     useEffect(() => {
         if (!queryExecutionId || !queryStatus) return;
-        if (queryStatus.state === 'SUCCEEDED' || queryStatus.state === 'FAILED') return;
+        if (queryStatus.state === 'SUCCEEDED' || queryStatus.state === 'FAILED' || queryStatus.state === 'CANCELLED') return;
 
         const interval = setInterval(() => {
             checkQueryStatus(queryExecutionId);
@@ -186,22 +198,11 @@ const LakePage: NextPageWithLayout = () => {
             setQueryExecutionId(response.queryExecutionId);
             addAlert({type: 'success', content: `Query submitted: ${response.queryExecutionId}`});
             await loadHistory(); // Refresh history
+            // Fetch the initial status so the polling effect takes over until a terminal state
+            await checkQueryStatus(response.queryExecutionId!);
         } catch (e: any) {
             console.error('Failed to submit query:', e);
-            let errorMessage = 'Unknown error occurred';
-            if (e.response) {
-                const status = e.response.status;
-                const statusText = e.response.statusText || '';
-                let message = e.response.data?.error?.message || e.response.data?.message || e.response.data?.error;
-                if (!message && e.response.data) {
-                    // Try to stringify the data if it's an object
-                    message = typeof e.response.data === 'string' ? e.response.data : JSON.stringify(e.response.data);
-                }
-                errorMessage = message ? `${status} ${statusText}: ${message}` : `${status} ${statusText}`;
-            } else if (e.message) {
-                errorMessage = e.message;
-            }
-            addAlert({type: 'error', content: `Failed to submit query: ${errorMessage}`});
+            addAlert({type: 'error', content: `Failed to submit query: ${await getErrorMessage(e, 'Unknown error occurred')}`});
             setIsExecuting(false);
         }
     };

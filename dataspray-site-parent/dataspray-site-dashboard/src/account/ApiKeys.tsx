@@ -31,6 +31,7 @@ import {getHeaderCounterTextSingle} from "../table/tableUtil";
 import {ApiKey} from "dataspray-client";
 import {dateToYyyyMmDd} from "../util/dateUtil";
 import {DeleteApiKeyModal} from "./DeleteApiKeyModal";
+import {getErrorMessage} from "../util/errorUtil";
 
 export const ApiKeys = () => {
     const [error, setError] = React.useState<string | undefined>(undefined);
@@ -62,7 +63,7 @@ export const ApiKeys = () => {
                             swr.mutate();
                         } catch (e: any) {
                             console.error('Failed to revoke access key', e ?? 'Unknown error')
-                            setError(e?.message || ('Failed to revoke access key: ' + (e || 'Unknown error')))
+                            setError('Failed to revoke access key: ' + await getErrorMessage(e))
                         }
                         setShowDeleteApiKeyModal(false);
                     }}

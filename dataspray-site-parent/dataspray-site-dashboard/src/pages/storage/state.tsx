@@ -45,6 +45,7 @@ import {getClient} from "../../util/dataSprayClientWrapper";
 import {useAlerts} from "../../util/useAlerts";
 import useTaskStore from "../../deployment/taskStore";
 import {StateEntry} from "dataspray-client";
+import {getErrorMessage} from "../../util/errorUtil";
 
 const StatePage: NextPageWithLayout = () => {
     const {currentOrganizationName} = useAuth();
@@ -86,7 +87,7 @@ const StatePage: NextPageWithLayout = () => {
         } catch (e: any) {
             addAlert({
                 type: 'error',
-                content: `Failed to load state: ${e?.message || 'Unknown error'}`
+                content: `Failed to load state: ${await getErrorMessage(e)}`
             });
         } finally {
             setIsLoading(false);
@@ -152,7 +153,7 @@ const StatePage: NextPageWithLayout = () => {
             loadStateEntries();
         } catch (e: any) {
             onError({
-                content: `Failed to update state: ${e?.message || 'Unknown error'}`
+                content: `Failed to update state: ${await getErrorMessage(e)}`
             });
         }
     };
@@ -179,7 +180,7 @@ const StatePage: NextPageWithLayout = () => {
             loadStateEntries();
         } catch (e: any) {
             onError({
-                content: `Failed to delete state: ${e?.message || 'Unknown error'}`
+                content: `Failed to delete state: ${await getErrorMessage(e)}`
             });
         }
     };

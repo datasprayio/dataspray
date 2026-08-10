@@ -40,6 +40,7 @@ import {useAlerts} from "../util/useAlerts";
 import {getClient} from "../util/dataSprayClientWrapper";
 import {useAuth} from "../auth/auth";
 import Button from "@cloudscape-design/components/button";
+import {getErrorMessage} from "../util/errorUtil";
 
 /** Matches DEFAULT_BATCH_RETENTION in TopicStore.java */
 export const DEFAULT_BATCH_RETENTION = 'THREE_MONTHS';
@@ -176,7 +177,7 @@ export const EditTopic = (props: {
                     props.onUpdated?.(updatedTopics);
                     onSuccess({content: messageSuccess});
                 } catch (e: any) {
-                    onError({content: `${messageFailure}: ${e?.message || 'Unknown error'}`});
+                    onError({content: `${messageFailure}: ${await getErrorMessage(e)}`});
                 }
             }}
         >

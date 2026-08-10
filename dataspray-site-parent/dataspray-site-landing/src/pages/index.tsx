@@ -60,47 +60,6 @@ const Home: NextPageWithLayout = () => {
                     </Typography>
                 </Box>
 
-                {/* <Block mirror title={(<>
-            <GradientTypography variant='h5'>Visualize</GradientTypography> your dataflow
-          </>)} description={(<>
-            <ul>
-              <li>See your streaming queues with your processors</li>
-              <li>Monitor throughput, bottlenecks, error rates</li>
-            </ul>
-          </>)} />
-
-          <Block title={(<>
-            Re-process <GradientTypography variant='h5'>historical data</GradientTypography> to inform your decisions
-          </>)} description={(<>
-            <ul>
-              <li>Run periodic jobs over the entire history</li>
-              <li>Use simple SQL to aggregate and query data you need</li>
-              <li>Feed the results back into you pipeline</li>
-            </ul>
-          </>)} />
-
-          <Block mirror title={(<>
-            Bring your own <GradientTypography variant='h5'>code</GradientTypography>
-          </>)} description={(<>
-            <ul>
-              <li>Own and manage your Git repo with entire pipeline</li>
-              <li>Write in Java, Python, JS/TS, or IDML </li>
-              <li>Use your own IDE or use our online editor</li>
-              <li>No vendor lock-in, eject generated boilerplate code and run on your own cluster</li>
-            </ul>
-          </>)} /> */}
-
-                {/* <Block mirror title={(<>
-            Affordable <GradientTypography variant='h5'>pay-for-use</GradientTypography> cloud
-          </>)} description={(<>
-            Ideal for deploymet
-          </>)} />
-
-          <Block mirror title={(<>
-            Affordable <GradientTypography variant='h5'>pay-for-use</GradientTypography> cloud
-          </>)} description={(<>
-            Ideal for deploymet
-          </>)} /> */}
             </Container>
         </>
     )

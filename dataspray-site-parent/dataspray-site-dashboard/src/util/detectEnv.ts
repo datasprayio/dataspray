@@ -53,7 +53,7 @@ export function getDocsUrl(): string {
         case Environment.LOCAL:
             return `http://docs.localhost:3000`;
         case Environment.SELF_HOST:
-            return `https://docs.${window.location.host}}`;
+            return `https://docs.${window.location.host}`;
     }
 }
 

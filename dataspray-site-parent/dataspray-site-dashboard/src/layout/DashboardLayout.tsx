@@ -108,11 +108,6 @@ export default function DashboardLayout(props: {
                                 description: idToken?.email,
                                 iconName: "user-profile",
                                 items: [
-                                    {id: "profile", text: "Profile"},
-                                    {
-                                        id: "preferences",
-                                        text: "Preferences"
-                                    },
                                     {
                                         id: "security", text: "Security",
                                         href: "/account/security"

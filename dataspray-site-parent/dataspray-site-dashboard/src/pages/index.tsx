@@ -23,14 +23,62 @@
 import {NextPageWithLayout} from "./_app";
 import DashboardLayout from "../layout/DashboardLayout";
 import DashboardAppLayout from "../layout/DashboardAppLayout";
+import {
+    Box,
+    Button,
+    Container,
+    ContentLayout,
+    Header,
+    SpaceBetween
+} from "@cloudscape-design/components";
+import {getDocsUrl} from "../util/detectEnv";
 
 const Page: NextPageWithLayout = () => {
     return (
         <DashboardAppLayout
             content={(
-                <>
-                    Add content here
-                </>
+                <ContentLayout
+                    header={<Header variant="h1">Welcome to DataSpray</Header>}
+                >
+                    <SpaceBetween size="l">
+                        <Container
+                            header={
+                                <Header
+                                    variant="h2"
+                                    description="Manage your stream processing pipeline from here"
+                                >
+                                    Get started
+                                </Header>
+                            }
+                        >
+                            <SpaceBetween size="m">
+                                <Box variant="p">
+                                    DataSpray is a stream processing developer toolkit. Deploy tasks,
+                                    manage topics, and query your data lake all in one place.
+                                </Box>
+                                <SpaceBetween direction="horizontal" size="xs">
+                                    <Button variant="primary" href="/deployment/task">
+                                        Tasks
+                                    </Button>
+                                    <Button href="/deployment/topic">
+                                        Topics
+                                    </Button>
+                                    <Button href="/storage/lake/query">
+                                        Query Data Lake
+                                    </Button>
+                                    <Button
+                                        href={getDocsUrl()}
+                                        iconAlign="right"
+                                        iconName="external"
+                                        target="_blank"
+                                    >
+                                        Documentation
+                                    </Button>
+                                </SpaceBetween>
+                            </SpaceBetween>
+                        </Container>
+                    </SpaceBetween>
+                </ContentLayout>
             )}
         />
     )
